@@ -7,5 +7,5 @@ include requirements-dev.txt
 include bin/sync_db
 include bin/shell
 include bin/user_proxy
-recursive-include config
-recursive-include tests
+recursive-include config *
+recursive-include tests *

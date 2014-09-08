@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+
+import argparse
+import sys
+
+from grouper import models
+from grouper.settings import settings
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Create schema on configured database.")
+    parser.add_argument("-c", "--config", default=None, help="Path to config file.")
+    args = parser.parse_args()
+
+    if not args.config:
+        print "--config is required."
+        sys.exit(1)
+
+    settings.update_from_config(args.config)
+
+    db_engine = models.get_db_engine(settings["database"])
+    models.Model.metadata.create_all(db_engine)

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import paginator, dropdown with context %}
+
+{% block heading %}
+    <a href="/groups">Groups</a>
+{% endblock %}
+
+{% block subheading %}
+    Requests (<a href="/groups/{{group.groupname}}">{{group.groupname}}</a>)
+{% endblock %}
+
+{% block headingbuttons %}
+    {{ dropdown("status", status, statuses, True) }}
+    {{ dropdown("limit", limit, [10, 25, 50]) }}
+    {{ paginator(offset, limit, total) }}
+{% endblock %}
+
+
+{% block content %}
+    <div class="row"><div class="col-sm-10 col-sm-offset-1">
+        <table class="table table-elist">
+            <thead>
+                <tr>
+                    {% if current_user.my_role(members) in ("manager", "owner") %}
+                        <th class="col-sm-1">Modify</th>
+                    {% endif %}
+                    <th class="col-sm-2">Requested</th>
+                    <th class="col-sm-2">Requester</th>
+                    <th class="col-sm-2">Status</th>
+                    <th class="col-sm-2">Requested At</th>
+                    <th class="col-sm-2">Expiration</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in requests %}
+                    <tr>
+                        {% if current_user.my_role(members) in ("manager", "owner") %}
+                            <td>
+                                <a href="/groups/{{group.groupname}}/requests/{{request.id}}"
+                                   class="btn btn-default btn-xs">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                            </td>
+                        {% endif %}
+                        <td>
+                            {{ TYPES[request.type] }}: {{ request.requesting }}
+                        </td>
+                        <td>{{ request.requester }}</td>
+                        <td>{{ request.status }}</td>
+                        <td>{{ request.requested_at|print_date }}</td>
+                        <td>{{ request.expiration|print_date }}</td>
+                    </tr>
+                    <tr>
+                        {% if current_user.my_role(members) in ("manager", "owner") %}
+                            <td>&nbsp;</td>
+                        {% endif %}
+                        <td colspan="5">
+                            <span style="padding-left: 10px;">
+                                <strong>Reason:</strong> <em>{{request.reason}}</em>
+                            </span>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div></div>
+{% endblock %}

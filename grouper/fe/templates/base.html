@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+        <title>{% block title %}Grouper{% endblock %}</title>
+
+        <link href="{{cdnjs_prefix}}/ajax/libs/twitter-bootstrap/3.1.1/css/bootstrap.min.css"
+              rel="stylesheet"
+              media="screen">
+        <link href="{{cdnjs_prefix}}/ajax/libs/font-awesome/4.1.0/css/font-awesome.min.css"
+              rel="stylesheet"
+              media="screen">
+        <link href="{{cdnjs_prefix}}/ajax/libs/bootstrap-datetimepicker/3.0.0/css/bootstrap-datetimepicker.min.css"
+              rel="stylesheet"
+            media="screen">
+        <link href="/static/css/grouper.css" rel="stylesheet" media="screen">
+
+        {% block head %} {% endblock %}
+
+    </head>
+
+    <body>
+        <div id="head-nav" class="navbar navbar-default navbar-fixed-top">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="fa fa-gear"></span>
+                </button>
+                <a class="navbar-brand" href="/"><span>GROUPER.</span></a>
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li class="{{is_active('/')}}"><a href="/">Home</a></li>
+                    <li class="{{is_active('/groups')}}"><a href="/groups">Groups</a></li>
+                    <li class="{{is_active('/users')}}"><a href="/users">Users</a></li>
+                    <li class="{{is_active('/help')}}"><a href="/help">Help</a></li>
+                </ul>
+
+                <form class="navbar-form navbar-right" role="search" action="/search" method="get">
+                    <div class="input-group" style="width: 300px; margin-right: 20px;">
+                        <input type="text" class="form-control" placeholder="Search" name="query" id="query" value="{{search_query}}">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="submit"><i class="fa fa-search"></i></button>
+                        </div>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="row"><div class="col-md-10 col-md-offset-1 container-wrapper">
+                <div class="row"><div class="col-md-12">
+                    <div class="alerts">
+                        {% for alert in alerts %}
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="alert alert-{{alert.severity}} alert-dismissable">
+                                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                                        <strong>{{alert.heading}}</strong> {{alert.message}}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div></div>
+                <div class="row"><div class="col-md-12">
+                    <div class="content">
+                        <div class="row"><div class="col-md-12">
+                            <div class="header">
+                                <h2>{% block heading %}{% endblock %}</h2>
+                                <h3><small>{% block subheading %}{% endblock %}</small></h3>
+                                <div class="buttons">
+                                    {% block headingbuttons %}{% endblock %}
+                                </div>
+                            </div>
+                        </div></div>
+                        <div class="row"><div class="col-md-12">
+                            {% block content %}{% endblock %}
+                        </div></div>
+                    </div>
+                </div></div>
+            </div></div>
+        </div>
+
+
+        <script src="{{cdnjs_prefix}}/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="{{cdnjs_prefix}}/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
+        <script src="{{cdnjs_prefix}}/ajax/libs/twitter-bootstrap/3.1.1/js/bootstrap.min.js"></script>
+        <script src="{{cdnjs_prefix}}/ajax/libs/moment.js/2.7.0/moment.min.js"></script>
+        <script src="/static/js/grouper.js"></script>
+        {% block script %} {% endblock %}
+
+    </body>
+</html>
+

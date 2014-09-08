@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import group_panel %}
+
+{% block heading %}
+    Profile
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-5">
+        {{ group_panel(400, groups, True) }}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block heading %}
+    <a href="/groups">Groups</a>
+{% endblock %}
+
+{% block subheading %}
+    Join (<a href="/groups/{{group.name}}">{{group.name}}</a>)
+{% endblock %}
+
+{% block content %}
+
+{% if form.member.choices %}
+    <div class="col-md-6 col-md-offset-3">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Join Group</h3>
+           </div>
+            <div class="panel-body">
+                <form class="form-horizontal" role="form"
+                      method="post" action="/groups/{{group.name}}/join">
+                    {% include "forms/group-join.html" %}
+                    <div class="form-group">
+                        <div class="col-sm-offset-3 col-sm-4">
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="col-md-8 col-md-offset-2">
+        <div class="alert alert-danger" role="alert">
+            You and all Groups you are a manager/owner of are already members of
+            the <em>{{group.name}}</em> Group. You can modify memberships from the member
+            list <a href="/groups/{{group.name}}">here</a>.
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}
+
+{% block script %}
+
+<script src="{{cdnjs_prefix}}/ajax/libs/bootstrap-datetimepicker/3.0.0/js/bootstrap-datetimepicker.min.js">
+</script>
+
+<script type="text/javascript">
+    $(function () {
+        $('#join-form-expiration').datetimepicker({
+            pickTime: false,
+            icons: {
+                time: "fa fa-clock-o",
+                date: "fa fa-calendar",
+                up: "fa fa-arrow-up",
+                down: "fa fa-arrow-down"
+            }
+        });
+    });
+</script>
+
+{% endblock %}

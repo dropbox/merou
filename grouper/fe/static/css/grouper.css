@@ -1,0 +1,249 @@
+body {
+    background: #383434;
+    overflow-y: scroll;
+}
+
+body.modal-open {
+    overflow-y: scroll;
+}
+
+.alerts {
+    margin: 0px;
+}
+
+span.disabled {
+    text-decoration: line-through;
+}
+
+.header h2 {
+    display: inline-block;
+    vertical-align: middle;
+    float: left;
+    border-right: 1px solid #a0a0a0;
+    padding-right: 15px;
+    padding-bottom: 10px;
+    margin: 0px;
+    margin-right: 10px;
+    margin-bottom: 20px;
+    text-shadow: 1px 1px 4px #A2A2A2;
+}
+
+.header h3 {
+    display: inline-block;
+    vertical-align: middle;
+    float: left;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    margin: 0px;
+    margin-right: 10px;
+    margin-bottom: 18px;
+    font-size: xx-large;
+}
+
+.header hr {
+    margin-top: -20px;
+    margin-bottom: 20px;
+    border: 0;
+    border-top: 1px solid #a0a0a0;
+}
+
+.header .buttons {
+    display: inline-block;
+    vertical-align: middle;
+    float: right;
+}
+
+.header h3 small {
+    color: #6b6b6b;
+}
+
+.header h2 a {
+    color: #333;
+}
+
+.header h2 a:hover {
+    color: #666;
+    text-decoration: none;
+}
+
+.header {
+    border-bottom: 1px solid #a0a0a0;
+    content: "";
+    min-height: 44px;
+}
+
+.alerts .alert {
+    margin-bottom: 0px;
+    border-radius: 0px;
+    padding: 4px 30px;
+    text-align: center;
+}
+
+.container-wrapper {
+    margin-top: 50px;
+    background-color: #ececec;
+    padding: 0px;
+}
+
+.content {
+    padding: 20px;
+}
+
+.direct {
+    color: #000000;
+}
+
+.indirect {
+    color: #7e7e7e;
+    font-style: italic;
+}
+
+/* Random Art */
+
+.random-art {
+    display: inline-block;
+    background-color: #fff;
+}
+
+.random-art .panel-body {
+    unicode-bidi: embed;
+    white-space: pre;
+    line-height: 1.42857143;
+    font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+    font-size: 15px;
+    font-style: italic;
+    font-weight: bold;
+    padding: 0px;
+    margin: -20px 10px;
+    letter-spacing: 5px;
+    text-shadow: 1px 1px 5px #808080;
+    height: 250px;
+    max-width: 700px;
+    word-wrap: break-word;
+}
+
+.modal {
+    overflow-y: initial;
+}
+
+.modal-header {
+    background-color: #505050;
+    color: #fafafa;
+}
+
+.modal-footer {
+    background-color: #f3f3f3;
+    padding: 10px;
+    border-top: 2px solid #cacaca;
+    margin-top: 0px;
+}
+
+.modal-content, .panel-default, .panel-heading {
+    border-radius: 0px;
+}
+
+.btn {
+    border-radius: 1px;
+}
+
+.btn-pending {
+    background-color: #ebebeb;
+    padding: 6px;
+}
+
+.table-elist > thead > tr > td,
+.table-elist > thead > tr > th {
+    background-color: #6b6868;
+    color: #fafafa;
+}
+
+.table-elist > tbody > tr > td,
+.table-elist > tbody > tr > th {
+    background-color: #fff;
+}
+
+.table-striped > tbody > tr:nth-child(2n+1) > td,
+.table-striped > tbody > tr:nth-child(2n+1) > th,
+.table-elist > tbody > tr:nth-child(2n+1) > td,
+.table-elist > tbody > tr:nth-child(2n+1) > th {
+    background-color: #e6e6e6;
+}
+
+.close {
+    opacity: .8;
+    color: #fafafa;
+}
+
+.panel-default>.panel-heading {
+    color: #fafafa;
+    background-color: #6b6868;
+    border-color: #000000;
+}
+
+.ra-border, .ra-key-type, .ra-key-len {
+    font-weight: bolder;
+}
+
+.ra-content {
+}
+
+/* Navbar */
+.navbar-default {
+    background-color: #0d99a4;
+    border-color: #1b4c93;
+}
+
+.navbar-default .navbar-brand {
+    color: #edf0f0;
+}
+
+.navbar-default .navbar-brand:hover, .navbar-default .navbar-brand:focus {
+    color: #f1eaf8;
+}
+
+.navbar-default .navbar-text {
+    color: #edf0f0;
+}
+
+.navbar-default .navbar-nav > li > a {
+    color: #edf0f0;
+}
+
+.navbar-default .navbar-nav > li > a:hover, .navbar-default .navbar-nav > li > a:focus {
+    color: #f1eaf8;
+}
+
+.navbar-default .navbar-nav > .active > a, .navbar-default .navbar-nav > .active > a:hover, .navbar-default .navbar-nav > .active > a:focus {
+    color: #f1eaf8;
+    background-color: #1b4c93;
+}
+
+.navbar-default .navbar-nav > .open > a, .navbar-default .navbar-nav > .open > a:hover, .navbar-default .navbar-nav > .open > a:focus {
+    color: #f1eaf8;
+    background-color: #1b4c93;
+}
+
+.navbar-default .navbar-toggle {
+    border-color: #1b4c93;
+}
+
+.navbar-default .navbar-toggle:hover, .navbar-default .navbar-toggle:focus {
+    background-color: #1b4c93;
+}
+
+.navbar-default .navbar-toggle .icon-bar {
+    background-color: #edf0f0;
+}
+
+.navbar-default .navbar-collapse,
+.navbar-default .navbar-form {
+    border-color: #edf0f0;
+}
+
+.navbar-default .navbar-link {
+    color: #edf0f0;
+}
+
+.navbar-default .navbar-link:hover {
+    color: #f1eaf8;
+}

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+    echo "Provide a single argument, a username."
+    exit 1
+fi
+
+mrproxy --header="X-Grouper-User: $1"

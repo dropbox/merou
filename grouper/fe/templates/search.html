@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import paginator, dropdown with context %}
+
+{% block heading %}
+    Search
+{% endblock %}
+
+{% block subheading %}
+    {{total}} Results
+{% endblock %}
+
+{% block headingbuttons %}
+    {{ dropdown("limit", limit, [10, 25, 50]) }}
+    {{ paginator(offset, limit, total) }}
+{% endblock %}
+
+{% block content %}
+    <div class="col-md-10 col-md-offset-1">
+        <table class="table table-elist">
+            <thead>
+                <tr>
+                    <th class="col-sm-2">Type</th>
+                    <th>Name</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for result in results %}
+                <tr>
+                    <td>{{result.type}}</td>
+                    <td>
+                        {% if result.type == "Group" %}
+                            <a href="/groups/{{result.name}}">{{result.name}}</a>
+                        {% elif result.type == "User" %}
+                            <a href="/users/{{result.name}}">{{result.name}}</a>
+                        {% else %}
+                            {{result.name}}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

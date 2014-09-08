@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block heading %}
+    <a href="/groups">Groups</a>
+{% endblock %}
+
+{% block subheading %}
+    Request Update (<a href="/groups/{{group.groupname}}">{{group.groupname}}</a>) |
+    {{TYPES[request.on_behalf_obj_type]}}: {{ request.get_on_behalf().name }}
+{% endblock %}
+
+{% block content %}
+<div class="row"><div class="col-md-10 col-md-offset-1">
+    <hr>
+    <table class="table table-elist">
+        <thead>
+            <tr>
+                <th class="col-sm-2">Change By</th>
+                <th class="col-sm-2">From Status</th>
+                <th class="col-sm-2">To Status</th>
+                <th class="col-sm-2">Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for update in updates %}
+                <tr>
+                    <td>{{ update.changed_by }}</td>
+                    <td>{{ update.from_status|default("", True) }}</td>
+                    <td>{{ update.to_status }}</td>
+                    <td>{{ update.change_at|print_date }}</td>
+                </tr>
+                <tr>
+                    <td colspan="5">
+                        <span style="padding-left: 10px;">
+                            <strong>Reason:</strong> <em>{{update.reason}}</em>
+                        </span>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div></div>
+
+<div class="col-md-6 col-md-offset-3">
+
+    {% if statuses[request.status] %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Update Request</h3>
+       </div>
+        <div class="panel-body">
+            <form class="form-horizontal" role="form"
+                  method="post" action="/groups/{{group.name}}/requests/{{request.id}}">
+                {% include "forms/group-request-update.html" %}
+                <div class="form-group">
+                    <div class="col-sm-offset-3 col-sm-4">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+
+</div>
+
+{% endblock %}

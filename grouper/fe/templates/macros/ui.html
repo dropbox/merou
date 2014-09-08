@@ -1,0 +1,133 @@
+{% macro group_panel(max_height, groups, show_role=False) -%}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">My Groups</h3>
+        </div>
+        <div style="
+            max-height: {{max_height}}px;
+            padding: 2px;
+            overflow-y: scroll;
+        ">
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th class="col-sm-2">Name</th>
+                        {% if show_role %}
+                            <th class="col-sm-2">Role</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for group in groups %}
+                    <tr>
+                        <td><a href="/groups/{{group.name}}">{{ group.name }}</a></td>
+                        {% if show_role %}
+                            <td class="col-sm-2">{{ROLES[group.role]}}</td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                {% if not groups %}
+                    <tr>
+                        <td colspan="2" class="text-center"><em>No Groups</em></td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{%- endmacro %}
+
+{% macro member_panel(max_height, members) -%}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Members</h3>
+        </div>
+        <div style="
+            max-height: {{max_height}}px;
+            padding: 2px;
+            overflow-y: scroll;
+        ">
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th class="col-sm-1">Type</th>
+                        <th class="col-sm-3">Name</th>
+                        <th class="col-sm-1">Role</th>
+                        <th class="col-sm-1">Expires</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for member in members.itervalues() %}
+                    <tr>
+                        <td>{{ member.type }}</td>
+                        <td>
+                            <a href="/{{member.type|lower}}s/{{member.membername}}">{{ member.membername }}</a>
+                        </td>
+                        <td>{{ ROLES[member.role] }}</td>
+                        <td>{{ member.expiration|delta_str }}</td>
+                    </tr>
+                {% endfor %}
+                {% if not members %}
+                    <tr>
+                        <td colspan="3" class="text-center"><em>No Members</em></td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{%- endmacro %}
+
+
+{% macro dropdown(key, current, values, allow_none=False) -%}
+    <div class="btn-group">
+        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+            {% if current %}
+                {{key|title}}: {{current}}
+            {% else %}
+                {{key|title}}
+            {% endif %}
+            <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" role="menu">
+        {% if allow_none %}
+            <li><a href="{{ update_qs(**{key: []}) }}">None</a></li>
+        {% endif %}
+        {% for value in values %}
+            <li><a href="{{ update_qs(**{key: value}) }}">{{value}}</a></li>
+        {% endfor %}
+        </ul>
+    </div>
+{%- endmacro %}
+
+
+{% macro paginator(offset, limit, total) -%}
+    <div class="btn-group" style="padding-right: 10px;">
+        {% set pages = (total/limit)|round(method='ceil')|int %}
+        {% if offset == 0 %}
+            <a class="btn btn-default disabled"><i class="fa fa-angle-double-left"></i></a>
+        {% else %}
+            <a class="btn btn-default" href="{{ update_qs(offset=0) }}"><i class="fa fa-angle-double-left"></i></a>
+        {% endif %}
+
+        {% if offset != 0 %}
+            <a class="btn btn-default" href="{{ update_qs(offset=offset-limit) }}"><i class="fa fa-angle-left"></i></a>
+        {% else %}
+            <a class="btn btn-default disabled"><i class="fa fa-angle-left"></i></a>
+        {% endif %}
+
+        <a class="btn btn-default disabled">Page {{ ((offset+limit)/limit)|int}} of {{ pages }}</a>
+
+        {% if offset + limit < total %}
+            <a class="btn btn-default" href="{{ update_qs(offset=offset+limit) }}"><i class="fa fa-angle-right"></i></a>
+        {% else %}
+            <a class="btn btn-default disabled"><i class="fa fa-angle-right"></i></a>
+        {% endif %}
+
+        {% if offset + limit < total %}
+            <a class="btn btn-default" href="{{ update_qs(offset=(pages-1)*limit) }}"><i class="fa fa-angle-double-right"></i></a>
+        {% else %}
+            <a class="btn btn-default disabled"><i class="fa fa-angle-double-right"></i></a>
+        {% endif %}
+    </div>
+{%- endmacro %}

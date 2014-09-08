@@ -1,0 +1,11 @@
+include LICENSE
+include runtests
+include README
+include README.md
+include requirements.txt
+include requirements-dev.txt
+include bin/sync_db
+include bin/shell
+include bin/user_proxy
+recursive-include config
+recursive-include tests

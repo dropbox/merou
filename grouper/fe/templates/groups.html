@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import paginator, dropdown with context %}
+
+{% block heading %}
+    Groups
+{% endblock %}
+
+{% block subheading %}
+    {{total}} group(s)
+{% endblock %}
+
+{% block headingbuttons %}
+    {{ dropdown("limit", limit, [10, 25, 50]) }}
+    {{ paginator(offset, limit, total) }}
+    <button class="btn btn-success" data-toggle="modal" data-target="#createModal">
+        <i class="fa fa-plus"></i> Create
+    </button>
+{% endblock %}
+
+{% block content %}
+    <div class="col-md-10 col-md-offset-1">
+        <table class="table table-elist">
+            <thead>
+                <tr>
+                    <th class="col-sm-2">Groupname</th>
+                    <th class="col-sm-4">Description</th>
+                    <th class="col-sm-1">Can join?</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for group in groups %}
+                <tr>
+                    <td><a href="/groups/{{group.name}}">{{group.groupname}}</a></td>
+                    <td>{{group.description|default("", True)}}</td>
+                    <td>
+                        {% if group.canjoin == "canjoin" %}
+                            Anyone
+                        {% else %}
+                            Must Ask
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+<div class="modal fade" id="createModal" tabindex="-1" role="dialog"
+      aria-labelledby="createModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                    <span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">Join Group</h4>
+           </div>
+            <div class="modal-body">
+                <form id="createForm" class="form-horizontal" role="form"
+                      method="post" action="/groups">
+                    {% include "forms/group.html" %}
+            </div>
+            <div class="modal-footer">
+                <button id="formSubmit" type="submit" class="btn btn-primary">
+                    Submit
+                </button>
+            </div>
+                </form>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block script %}
+
+<script type="text/javascript">
+    $(function(){
+
+        $("#createModal").on("shown.bs.modal", function(){
+            $("#groupname").focus();
+        });
+        $("#formSubmit").click(function() {
+            $("#createFrom").submit();
+        });
+    });
+</script>
+{% endblock %}

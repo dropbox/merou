@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import paginator, dropdown with context %}
+
+{% block heading %}
+    Users
+{% endblock %}
+
+{% block subheading %}
+    {{total}} users(s)
+{% endblock %}
+
+{% block headingbuttons %}
+    {{ dropdown("limit", limit, [10, 25, 50]) }}
+    {{ paginator(offset, limit, total) }}
+{% endblock %}
+
+{% block content %}
+    <div class="col-md-10 col-md-offset-1">
+        <table class="table table-elist">
+            <thead>
+                <tr>
+                    <th class="col-sm-2">Username</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for user in users %}
+                <tr>
+                    <td><a href="/users/{{user.name}}">{{user.username}}</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

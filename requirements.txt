@@ -1,0 +1,14 @@
+Jinja2==2.7.2
+MarkupSafe==0.23
+PyYAML==3.11
+SQLAlchemy==0.9.4
+WTForms==2.0
+argparse==1.2.1
+backports.ssl-match-hostname==3.4.0.2
+bittle==0.2.1
+expvar==0.0.2
+networkx==1.8.1
+pytz==2014.4
+tornado==3.2.2
+wsgiref==0.1.2
+wtforms-tornado==0.0.1

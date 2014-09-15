@@ -31,10 +31,10 @@ Creating a development instance:
 ```bash
 
 # Setup the database.
-PYTHONPATH=. bin/sync_db -c config/dev.yaml
+PYTHONPATH=. bin/grouper-ctl -vvvc config/dev.yaml sync_db
 
 # Run the development reverse proxy
-bin/user_proxy $USER
+PYTHONPATH=. bin/grouper-ctl -vvc config/dev.yaml user_proxy $USER
 
 # Run the frontend server
 PYTHONPATH=. bin/grouper-fe --config=config/dev.yaml -vv

@@ -27,7 +27,7 @@ kwargs = {
     "version": str(__version__),
     "packages": ["grouper", "grouper.fe", "grouper.api"],
     "package_data": package_data,
-    "scripts": ["bin/grouper-api", "bin/grouper-fe"],
+    "scripts": ["bin/grouper-api", "bin/grouper-fe", "bin/grouper-ctl"],
     "description": "Self-service Nested Group Management Server.",
     # PyPi, despite not parsing markdown, will prefer the README.md to the
     # standard README. Explicitly read it here.

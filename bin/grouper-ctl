@@ -15,12 +15,19 @@ import yaml
 
 import grouper
 from grouper import models
+from grouper.capabilities import Capabilities
 from grouper.graph import GroupGraph
 from grouper.settings import settings
 from grouper.util import get_loglevel
 
 
 sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
+
+
+def make_session():
+    db_engine = models.get_db_engine(settings["database"])
+    models.Session.configure(bind=db_engine)
+    return models.Session()
 
 
 def sync_db_command(args):
@@ -54,10 +61,7 @@ def user_proxy_command(args):
 
 
 def shell_command(args):
-    db_engine = models.get_db_engine(settings["database"])
-    models.Session.configure(bind=db_engine)
-    session = models.Session()
-
+    session = make_session()
     code.interact(local={
         "session": session,
         "graph": GroupGraph.from_db(session),
@@ -65,6 +69,30 @@ def shell_command(args):
         "models": models,
         "pp": pprint,
     })
+
+
+def capabilities_command(args):
+    session = make_session()
+    user = session.query(models.User).filter_by(username=args.username).scalar()
+    if not user:
+        print "No such user %s" % args.username
+        return
+    capabilities = Capabilities(user.capabilities)
+
+    if args.subcommand == "list":
+        for key in Capabilities.words:
+            if capabilities.has(key):
+                print key
+    elif args.subcommand == "add":
+        print "Setting %s on user %s" % (args.capability, args.username)
+        capabilities.set(args.capability)
+        user.capabilities = capabilities.dump()
+        session.commit()
+    elif args.subcommand == "rm":
+        print "Removing %s from user %s" % (args.capability, args.username)
+        capabilities.clear(args.capability)
+        user.capabilities = capabilities.dump()
+        session.commit()
 
 
 def main():
@@ -96,6 +124,22 @@ def main():
 
     shell_parser = subparsers.add_parser("shell", help="Launch a shell with models imported.")
     shell_parser.set_defaults(func=shell_command)
+
+    capabilities_parser = subparsers.add_parser("capabilities", help="Make a user an user or group admin.")
+    capabilities_parser.set_defaults(func=capabilities_command)
+    capabilities_subparser = capabilities_parser.add_subparsers(dest="subcommand")
+
+    capabilities_list_parser = capabilities_subparser.add_parser("list", help="List capabilities of a user.")
+    capabilities_list_parser.add_argument("username")
+
+    capabilities_add_parser = capabilities_subparser.add_parser("add", help="Add capabilities to a user.")
+    capabilities_add_parser.add_argument("username")
+    capabilities_add_parser.add_argument("capability", choices=Capabilities.words.keys())
+
+    capabilities_rm_parser = capabilities_subparser.add_parser("rm", help="Remove capabilities from a user.")
+    capabilities_rm_parser.add_argument("username")
+    capabilities_rm_parser.add_argument("capability", choices=Capabilities.words.keys())
+
 
     args = parser.parse_args()
     settings.update_from_config(args.config)

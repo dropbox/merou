@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label, literal
 
 
-from .util import GrouperHandler
+from .util import GrouperHandler, Alert
 from .forms import GroupForm, GroupJoinForm, GroupRequestModifyForm
 from ..models import (
     User, Group, Request, GROUP_JOIN_CHOICES,
@@ -139,9 +139,14 @@ class GroupView(GrouperHandler):
 
         num_pending = group.my_requests("pending").count()
 
+        alerts = []
+        self_pending = group.my_requests("pending", user=self.current_user).count()
+        if self_pending:
+            alerts.append(Alert('info', 'You have a pending request to join this group.', None))
+
         self.render(
             "group.html", group=group, members=members, groups=groups,
-            num_pending=num_pending
+            num_pending=num_pending, alerts=alerts
         )
 
 

@@ -1,3 +1,4 @@
+.env
 grouper.sqlite
 
 __pycache__

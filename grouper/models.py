@@ -470,7 +470,7 @@ class Group(Model):
 
         return groups
 
-    def my_requests(self, status=None):
+    def my_requests(self, status=None, user=None):
 
         members = self.session.query(
             label("type", literal(1)),
@@ -506,6 +506,12 @@ class Group(Model):
         if status:
             requests = requests.filter(
                 Request.status == status
+            )
+
+        if user:
+            requests = requests.filter(
+                Request.on_behalf_obj_pk == user.id,
+                Request.on_behalf_obj_type == 0
             )
 
         return requests

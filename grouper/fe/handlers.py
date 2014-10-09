@@ -6,11 +6,12 @@ from sqlalchemy import union_all
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label, literal
 
+import sshpubkey
 
 from .util import GrouperHandler, Alert
-from .forms import GroupForm, GroupJoinForm, GroupRequestModifyForm
+from .forms import GroupForm, GroupJoinForm, GroupRequestModifyForm, PublicKeyForm
 from ..models import (
-    User, Group, Request, GROUP_JOIN_CHOICES,
+    User, Group, Request, PublicKey, GROUP_JOIN_CHOICES,
     REQUEST_STATUS_CHOICES,
 )
 
@@ -60,7 +61,8 @@ class Search(GrouperHandler):
             result = results[0]
             return self.redirect("/{}s/{}".format(result.type.lower(), result.name))
 
-        self.render("search.html", results=results, search_query=query, offset=offset, limit=limit, total=total)
+        self.render("search.html", results=results, search_query=query,
+                    offset=offset, limit=limit, total=total)
 
 
 class UserView(GrouperHandler):
@@ -74,8 +76,14 @@ class UserView(GrouperHandler):
         if not user:
             return self.notfound()
 
+        can_control = False
+        if (user.name == self.current_user.name) or self.current_user.user_admin:
+            can_control = True
+
         groups = user.my_groups()
-        self.render("user.html", user=user, groups=groups)
+        public_keys = user.my_public_keys()
+        self.render("user.html", user=user, groups=groups, public_keys=public_keys,
+                    can_control=can_control)
 
 
 class UsersView(GrouperHandler):
@@ -85,7 +93,8 @@ class UsersView(GrouperHandler):
         if limit > 50:
             limit = 50
 
-        users = (self.session.query(User)
+        users = (
+            self.session.query(User)
             .filter(User.enabled == True)
             .order_by(User.username)
         )
@@ -251,7 +260,8 @@ class GroupsView(GrouperHandler):
         if limit > 50:
             limit = 50
 
-        groups = (self.session.query(Group)
+        groups = (
+            self.session.query(Group)
             .filter(Group.enabled == True)
             .order_by(Group.groupname)
         )
@@ -464,6 +474,90 @@ class GroupDisable(GrouperHandler):
         self.session.commit()
 
         return self.redirect("/groups/{}".format(group.name))
+
+
+class PublicKeyAdd(GrouperHandler):
+    def get(self, user_id=None, username=None):
+        user = User.get(self.session, user_id, username)
+        if not user:
+            return self.notfound()
+
+        if (user.name != self.current_user.name) and not self.current_user.user_admin:
+            return self.forbidden()
+
+        self.render("public-key-add.html", form=PublicKeyForm(), user=user)
+
+    def post(self, user_id=None, username=None):
+        user = User.get(self.session, user_id, username)
+        if not user:
+            return self.notfound()
+
+        if (user.name != self.current_user.name) and not self.current_user.user_admin:
+            return self.forbidden()
+
+        form = PublicKeyForm(self.request.arguments)
+        if not form.validate():
+            return self.render(
+                "public-key-add.html", form=form, user=user,
+                alerts=self.get_form_alerts(form.errors),
+            )
+
+        pubkey = sshpubkey.PublicKey.from_str(form.data["public_key"])
+        db_pubkey = PublicKey(
+            user=user,
+            public_key=pubkey.key,
+            fingerprint=pubkey.fingerprint,
+        )
+        try:
+            db_pubkey.add(self.session)
+            self.session.flush()
+        except IntegrityError:
+            self.session.rollback()
+            form.public_key.errors.append(
+                "Key already in use. Public keys must be unique."
+            )
+            return self.render(
+                "public-key-add.html", form=form, user=user,
+                alerts=self.get_form_alerts(form.errors),
+            )
+
+        self.session.commit()
+
+        return self.redirect("/users/{}".format(user.name))
+
+
+class PublicKeyDelete(GrouperHandler):
+    def get(self, user_id=None, username=None, key_id=None):
+        user = User.get(self.session, user_id, username)
+        if not user:
+            return self.notfound()
+
+        if (user.name != self.current_user.name) and not self.current_user.user_admin:
+            return self.forbidden()
+
+        try:
+            key = user.my_public_keys(key_id=key_id)[0]
+        except IndexError:
+            return self.notfound()
+
+        self.render("public-key-delete.html", user=user, key=key)
+
+    def post(self, user_id=None, username=None, key_id=None):
+        user = User.get(self.session, user_id, username)
+        if not user:
+            return self.notfound()
+
+        if (user.name != self.current_user.name) and not self.current_user.user_admin:
+            return self.forbidden()
+
+        key = self.session.query(PublicKey).filter_by(id=key_id, user_id=user.id).scalar()
+        if not key:
+            return self.notfound()
+
+        self.session.delete(key)
+        self.session.commit()
+
+        return self.redirect("/users/{}".format(user.name))
 
 
 class Help(GrouperHandler):

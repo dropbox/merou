@@ -767,6 +767,5 @@ class PublicKey(Model):
     user = relationship(User, foreign_keys=[user_id])
 
     public_key = Column(Text, nullable=False, unique=True)
-    fingerprint = Column(Text, nullable=False)
-    created_on = Column(DateTime, default=datetime.utcnow,
-                        onupdate=func.current_timestamp(), nullable=False)
+    fingerprint = Column(String(length=64), nullable=False)
+    created_on = Column(DateTime, default=datetime.utcnow, nullable=False)

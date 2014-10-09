@@ -31,6 +31,8 @@ class ValidateDate(object):
 
 
 class ValidatePublicKey(object):
+    # TODO: Add ability to specify things like bit depth, key type, etc, as requirements
+    # for what kind of keys are allowed.
     def __call__(self, form, field):
         try:
             sshpubkey.PublicKey.from_str(field.data)

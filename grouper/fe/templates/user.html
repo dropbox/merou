@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import group_panel %}
+{% from 'macros/ui.html' import group_panel, public_key_panel %}
 
 {% block heading %}
     <a href="/users">Users</a>
@@ -29,8 +29,10 @@
     <div class="col-md-5">
         {{ group_panel(400, groups, True) }}
     </div>
+    <div class="col-md-6">
+        {{ public_key_panel(400, user, public_keys, can_control) }}
+    </div>
 </div>
-
 
 <div class="modal fade" id="enableModal" tabindex="-1" role="dialog"
       aria-labelledby="enableModal" aria-hidden="true">

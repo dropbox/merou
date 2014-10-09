@@ -1,5 +1,6 @@
 from datetime import datetime
 import re
+import sshpubkey
 
 from wtforms import SelectField, TextField, TextAreaField, validators
 from wtforms.validators import ValidationError
@@ -27,6 +28,21 @@ class ValidateDate(object):
         except ValueError:
             raise ValidationError(
                 "{} does not match format 'MM/DD/YYYY'".format(field.data))
+
+
+class ValidatePublicKey(object):
+    def __call__(self, form, field):
+        try:
+            sshpubkey.PublicKey.from_str(field.data)
+        except sshpubkey.exc.PublicKeyParseError:
+            raise ValidationError("Public key appears to be invalid.")
+
+
+class PublicKeyForm(Form):
+    public_key = TextAreaField("Public Key", [
+        validators.Required(),
+        ValidatePublicKey(),
+    ])
 
 
 class GroupForm(Form):

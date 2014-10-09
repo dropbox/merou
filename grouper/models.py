@@ -11,7 +11,6 @@ from sqlalchemy import (
     ForeignKey, Enum, DateTime, SmallInteger, Index
 )
 from sqlalchemy import or_, union_all, desc
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, object_session
@@ -190,6 +189,24 @@ class User(Model):
         """ Returns all pending requests actionable by this user. """
         #TODO(gary) Do.
         self.session.query()
+
+    def my_public_keys(self, key_id=None):
+
+        keys = self.session.query(
+            PublicKey.id,
+            PublicKey.public_key,
+            PublicKey.created_on,
+            PublicKey.fingerprint,
+        ).filter(
+            PublicKey.user_id == self.id
+        )
+
+        if key_id:
+            keys = keys.filter(
+                PublicKey.id == key_id
+            )
+
+        return keys.all()
 
     def my_groups(self):
 
@@ -620,7 +637,7 @@ class Request(Model):
         self.session.flush()
 
         Comment(
-            obj_type = 3,
+            obj_type=3,
             obj_pk=request_status_change.id,
             user_id=requester.id,
             comment=reason,
@@ -738,3 +755,18 @@ class Counter(Model):
     @classmethod
     def decr(cls, session, name, count=1):
         return cls.incr(session, name, -count)
+
+
+class PublicKey(Model):
+
+    __tablename__ = "public_keys"
+
+    id = Column(Integer, primary_key=True)
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user = relationship(User, foreign_keys=[user_id])
+
+    public_key = Column(Text, nullable=False, unique=True)
+    fingerprint = Column(Text, nullable=False)
+    created_on = Column(DateTime, default=datetime.utcnow,
+                        onupdate=func.current_timestamp(), nullable=False)

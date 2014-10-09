@@ -9,6 +9,7 @@ bittle==0.2.1
 expvar==0.0.2
 networkx==1.8.1
 pytz==2014.4
+sshpubkey==0.1.2
 tornado==3.2.2
 wsgiref==0.1.2
 wtforms-tornado==0.0.1

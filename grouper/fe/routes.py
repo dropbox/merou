@@ -16,6 +16,11 @@ for regex in (r"(?P<user_id>[0-9]+)", USER_VALIDATION):
         (r"/users/{}".format(regex), handlers.UserView),
         (r"/users/{}/disable".format(regex), handlers.UserDisable),
         (r"/users/{}/enable".format(regex), handlers.UserEnable),
+        (r"/users/{}/public-key/add".format(regex), handlers.PublicKeyAdd),
+        (
+            r"/users/{}/public-key/(?P<key_id>[0-9+])/delete".format(regex),
+            handlers.PublicKeyDelete
+        ),
     ])
 
 for regex in (r"(?P<group_id>[0-9]+)", GROUP_VALIDATION):

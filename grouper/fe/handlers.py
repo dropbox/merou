@@ -505,7 +505,7 @@ class PublicKeyAdd(GrouperHandler):
         pubkey = sshpubkey.PublicKey.from_str(form.data["public_key"])
         db_pubkey = PublicKey(
             user=user,
-            public_key=pubkey.key,
+            public_key='%s %s %s' % (pubkey.key_type, pubkey.key, pubkey.comment),
             fingerprint=pubkey.fingerprint,
         )
         try:
@@ -554,7 +554,7 @@ class PublicKeyDelete(GrouperHandler):
         if not key:
             return self.notfound()
 
-        self.session.delete(key)
+        key.delete(self.session)
         self.session.commit()
 
         return self.redirect("/users/{}".format(user.name))

@@ -47,6 +47,8 @@ class GroupGraph(object):
         checkpoint, checkpoint_time = self._get_checkpoint(session)
         if checkpoint == self.checkpoint:
             logging.debug("Checkpoint hasn't changed. Not Updating.")
+            return
+        logging.debug("Checkpoint changed; updating!")
 
         new_graph = DiGraph()
         new_graph.add_nodes_from(self._get_nodes_from_db(session))
@@ -61,6 +63,8 @@ class GroupGraph(object):
             elif node_type == "Group":
                 groups.add(node_name)
 
+        user_metadata = self._get_user_metadata(session)
+
         with self.lock:
             self._graph = new_graph
             self._rgraph = rgraph
@@ -68,6 +72,7 @@ class GroupGraph(object):
             self.checkpoint_time = checkpoint_time
             self.users = users
             self.groups = groups
+            self.user_metadata = user_metadata
 
     @staticmethod
     def _get_checkpoint(session):
@@ -75,6 +80,28 @@ class GroupGraph(object):
         if counter is None:
             return 0, 0
         return counter.count, int(counter.last_modified.strftime("%s"))
+
+    @staticmethod
+    def _get_user_metadata(session):
+        '''
+        Returns a dict of username: { dict of metadata }.
+        '''
+        users = session.query(User).filter(
+            User.enabled == True
+        )
+
+        out = {}
+        for user in users:
+            out[user.username] = {
+                "public_keys": [
+                    {
+                        "public_key": key.public_key,
+                        "fingerprint": key.fingerprint,
+                        "created_on": str(key.created_on),
+                    } for key in user.my_public_keys()
+                ],
+            }
+        return out
 
     @staticmethod
     def _get_nodes_from_db(session):

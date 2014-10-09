@@ -45,8 +45,8 @@ class Users(GraphHandler):
             if not username:
                 return self.success({
                     "users": [
-                        username
-                        for username in self.graph.users
+                        user
+                        for user in self.graph.users
                     ],
                 })
 
@@ -56,6 +56,7 @@ class Users(GraphHandler):
             details = self.graph.get_user_details(username, cutoff)
 
             out = {"user": {"name": username}}
+            out["user"].update(self.graph.user_metadata.get(username, {}))
             out.update(details)
             return self.success(out)
 
@@ -68,8 +69,8 @@ class Groups(GraphHandler):
             if not groupname:
                 return self.success({
                     "groups": [
-                        groupname
-                        for groupname in self.graph.groups
+                        group
+                        for group in self.graph.groups
                     ],
                 })
 

@@ -52,12 +52,16 @@ class Session(_Session):
 
     _add = _Session.add
     _add_all = _Session.add_all
+    _delete = _Session.delete
 
     def add(self, *args, **kwargs):
         raise NotImplementedError("Use add method on models instead.")
 
     def add_all(self, *args, **kwargs):
         raise NotImplementedError("Use add method on models instead.")
+
+    def delete(self, *args, **kwargs):
+        raise NotImplementedError("Use delete method on models instead.")
 
 
 Session = sessionmaker(class_=Session)
@@ -90,6 +94,10 @@ class Model(object):
 
     def add(self, session):
         session._add(self)
+        return self
+
+    def delete(self, session):
+        session._delete(self)
         return self
 
 
@@ -769,3 +777,13 @@ class PublicKey(Model):
     public_key = Column(Text, nullable=False, unique=True)
     fingerprint = Column(String(length=64), nullable=False)
     created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    def add(self, session):
+        super(PublicKey, self).add(session)
+        Counter.incr(session, "updates")
+        return self
+
+    def delete(self, session):
+        super(PublicKey, self).delete(session)
+        Counter.incr(session, "updates")
+        return self

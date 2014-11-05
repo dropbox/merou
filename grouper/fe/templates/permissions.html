@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import paginator, dropdown with context %}
+
+{% block heading %}
+    Permissions
+{% endblock %}
+
+{% block subheading %}
+    {{total}} permission(s)
+{% endblock %}
+
+{% block headingbuttons %}
+    {{ dropdown("limit", limit, [10, 25, 50]) }}
+    {{ paginator(offset, limit, total) }}
+    {% if can_create %}
+    <a class="btn btn-success" href="/permissions/create">
+        <i class="fa fa-plus"></i> Create
+    </a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <div class="col-md-10 col-md-offset-1">
+        <table class="table table-elist">
+            <thead>
+                <tr>
+                    <th class="col-sm-2">Name</th>
+                    <th class="col-sm-5">Description</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for permission in permissions %}
+                <tr>
+                    <td><a href="/permission/{{permission.name}}">{{permission.name}}</a></td>
+                    <td>{{permission.description|default("", True)}}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block heading %}
+    <a href="/permissions">Permissions</a>
+{% endblock %}
+
+{% block subheading %}
+    Create
+{% endblock %}
+
+{% block content %}
+<div class="col-md-6 col-md-offset-3">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Create Permission</h3>
+       </div>
+        <div class="panel-body">
+            <form class="form-horizontal" role="form"
+                  method="post" action="/permissions/create">
+                {% include "forms/permission.html" %}
+                <div class="form-permission">
+                    <div class="col-sm-offset-3 col-sm-4">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

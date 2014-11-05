@@ -7,4 +7,5 @@ Capabilities = bittle.FlagWord([
                     # as well as set/unset capabilities on a User account.
     "group_admin",  # Allows a User to approve/deny/revoke membership to
                     # any group.
+    "permission_admin",  # Allows a User to manipulate any permission.
 ])

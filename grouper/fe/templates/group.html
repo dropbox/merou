@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import group_panel, member_panel %}
+{% from 'macros/ui.html' import group_panel, member_panel, permission_panel, log_entry_panel %}
 
 {% block heading %}
     <a href="/groups">Groups</a>
@@ -69,6 +69,16 @@
     </div>
     <div class="col-md-5">
         {{ group_panel(400, groups) }}
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        {{ permission_panel(400, permissions, group=group, can_grant=current_user.my_grantable_permissions()) }}
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        {{ log_entry_panel(400, log_entries) }}
     </div>
 </div>
 

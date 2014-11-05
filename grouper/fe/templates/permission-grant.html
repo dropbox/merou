@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block heading %}
+    <a href="/permissions">Permissions</a>
+{% endblock %}
+
+{% block subheading %}
+    Grant Permission to {{ group.name }}
+{% endblock %}
+
+{% block content %}
+<div class="col-md-6 col-md-offset-3">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Grant Permission to {{ group.name }}</h3>
+       </div>
+        <div class="panel-body">
+            <form class="form-horizontal" role="form"
+                  method="post" action="/permissions/grant/{{ group.name }}">
+                {% include "forms/permission-grant.html" %}
+                <div class="form-permission">
+                    <div class="col-sm-offset-3 col-sm-4">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

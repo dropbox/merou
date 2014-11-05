@@ -1,14 +1,19 @@
 from . import handlers
-from ..constants import USER_VALIDATION, GROUP_VALIDATION
+from ..constants import USER_VALIDATION, GROUP_VALIDATION, PERMISSION_VALIDATION
+
 HANDLERS = [
-
     (r"/", handlers.Index),
-    (r"/search", handlers.Search),
-
-    (r"/users", handlers.UsersView),
-
     (r"/groups", handlers.GroupsView),
-
+    (r"/permission/{}".format(PERMISSION_VALIDATION), handlers.PermissionView),
+    (r"/permissions", handlers.PermissionsView),
+    (r"/permissions/create", handlers.PermissionsCreate),
+    (r"/permissions/grant/{}".format(GROUP_VALIDATION), handlers.PermissionsGrant),
+    (
+        r"/permissions/{}/revoke/(?P<mapping_id>[0-9+])".format(PERMISSION_VALIDATION),
+        handlers.PermissionsRevoke
+    ),
+    (r"/search", handlers.Search),
+    (r"/users", handlers.UsersView),
 ]
 
 for regex in (r"(?P<user_id>[0-9]+)", USER_VALIDATION):

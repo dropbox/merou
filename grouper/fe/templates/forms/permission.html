@@ -1,0 +1,17 @@
+{% macro form_field(field, label_width, field_width) -%}
+    <div class="form-group {% if field.errors %}has-error{% endif %}">
+        <label for="{{field.label.field_id}}"
+               class="col-sm-{{label_width}} control-label">
+            {{ field.label.text }} {% if field.flags.required %}*{% endif %}
+        </label>
+        <div class="col-sm-{{field_width}}">
+            {{ field(**kwargs) }}
+        </div>
+    </div>
+{%- endmacro %}
+
+
+{{ form_field(form.name, 3, 8, class_="form-control") }}
+{{ form_field(form.description, 3, 8, class_="form-control", rows=5) }}
+
+{{ xsrf_form() }}

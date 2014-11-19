@@ -1,4 +1,4 @@
-{% macro public_key_panel(max_height, user, public_keys, can_control) -%}
+{% macro public_key_panel(max_height, user, public_keys, can_control=False) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">My Public Keys</h3>
@@ -128,6 +128,134 @@
     </div>
 {%- endmacro %}
 
+{% macro log_entry_panel(max_height, log_entries) -%}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Recent Activity</h3>
+        </div>
+        <div style="
+            max-height: {{max_height}}px;
+            padding: 2px;
+            overflow-y: scroll;
+        ">
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th class="col-sm-2">Date</th>
+                        <th class="col-sm-2">Actor</th>
+                        <th class="col-sm-2">Action</th>
+                        <th class="col-sm-2">Description</th>
+                        <th class="col-sm-2">Extra</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for entry in log_entries %}
+                    <tr>
+                        <td class="col-sm-2">{{ entry.log_time|print_date }}</td>
+                        <td class="col-sm-2">
+                            <a href="/users/{{ entry.actor.name }}">{{ entry.actor.name }}</a>
+                        </td>
+                        <td class="col-sm-2">{{ entry.action }}</td>
+                        <td class="col-sm-2">{{ entry.description }}</td>
+                        <td class="col-sm-2">
+                            {% if entry.on_group %}
+                                Group: <a href="/groups/{{ entry.on_group.name }}">{{ entry.on_group.name }}</a><br />
+                            {% endif %}
+                            {% if entry.on_permission %}
+                                Permission: <a href="/permission/{{ entry.on_permission.name }}">{{ entry.on_permission.name }}</a><br />
+                            {% endif %}
+                            {% if entry.on_user %}
+                                User: <a href="/users/{{ entry.on_user.name }}">{{ entry.on_user.name }}</a><br />
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                {% if not log_entries %}
+                    <tr>
+                        <td colspan="5" class="text-center">
+                            <em>No activity found.</em>
+                        </td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{%- endmacro %}
+
+{% macro permission_panel(max_height, mappings, group=None, can_grant=False, show_via=False) -%}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">My Permissions</h3>
+        </div>
+        <div style="
+            max-height: {{max_height}}px;
+            padding: 2px;
+            overflow-y: scroll;
+        ">
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th class="col-sm-2">Permission</th>
+                        <th class="col-sm-2">Argument</th>
+                        {% if show_via %}
+                            <th class="col-sm-2">From Group</th>
+                        {% endif %}
+                        {% if can_grant %}
+                            <th class="col-sm-2"></th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for map in mappings %}
+                    <tr>
+                        <td><a href="/permission/{{map.name}}">{{ map.name }}</a></td>
+                        <td class="col-sm-2">{{map.argument|default("(unargumented)", True)}}</td>
+                        {% if show_via %}
+                            <td class="col-sm-2"><a href="/groups/{{map.groupname}}">{{map.groupname}}</a></td>
+                        {% endif %}
+                        {% if can_grant %}
+                            <td class="col-sm-2">
+                                <a class="btn btn-default btn-xs" href="/permissions/{{ map.name }}/revoke/{{ map.mapping_id }}">
+                                <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span> Revoke
+                                </a>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                {% if show_via %}
+                    <tr>
+                        <td colspan="5" class="text-center"><strong>
+                            Only direct permissions granted from a group you are a member of are shown.
+                            Permissions indirectly granted are not shown.
+                        </strong></td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center"><strong>
+                            Only permissions that this group grants are shown here.
+                        </strong></td>
+                    </tr>
+                {% endif %}
+                {% if not mappings %}
+                    <tr>
+                        <td colspan="5" class="text-center">
+                            <em>No permissions found.</em>
+                        </td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+        {% if group and can_grant %}
+        <div class='panel-footer'>
+            <a class="btn btn-default btn-sm" href="/permissions/grant/{{ group.name }}">
+            <span class="glyphicon glyphicon-plus"></span> Add Permission
+            </a>
+        </div>
+        {% endif %}
+    </div>
+{%- endmacro %}
 
 {% macro dropdown(key, current, values, allow_none=False) -%}
     <div class="btn-group">

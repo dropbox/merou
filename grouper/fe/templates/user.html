@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import group_panel, public_key_panel %}
+{% from 'macros/ui.html' import group_panel, public_key_panel, permission_panel, log_entry_panel %}
 
 {% block heading %}
     <a href="/users">Users</a>
@@ -29,8 +29,18 @@
     <div class="col-md-5">
         {{ group_panel(400, groups, True) }}
     </div>
-    <div class="col-md-6">
+    <div class="col-md-7">
         {{ public_key_panel(400, user, public_keys, can_control) }}
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        {{ permission_panel(400, permissions, show_via=True) }}
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        {{ log_entry_panel(400, log_entries) }}
     </div>
 </div>
 

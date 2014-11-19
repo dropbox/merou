@@ -9,13 +9,12 @@ import getpass
 import logging
 from mrproxy import UserProxyHandler
 from pprint import pprint
-import sys
-import yaml
-
+from sqlalchemy.exc import IntegrityError
 
 import grouper
 from grouper import models
 from grouper.capabilities import Capabilities
+from grouper.constants import SYSTEM_PERMISSIONS
 from grouper.graph import GroupGraph
 from grouper.settings import settings
 from grouper.util import get_loglevel
@@ -33,6 +32,21 @@ def make_session():
 def sync_db_command(args):
     db_engine = models.get_db_engine(settings["database"])
     models.Model.metadata.create_all(db_engine)
+
+    # Add some basic database structures we know we will need if they don't exist.
+    session = make_session()
+    for name, description in SYSTEM_PERMISSIONS:
+        test = models.Permission.get(session, name)
+        if test:
+            continue
+        permission = models.Permission(name=name, description=description)
+        try:
+            permission.add(session)
+            session.flush()
+        except IntegrityError:
+            session.rollback()
+            raise Exception('Failed to create permission: %s' % (name, ))
+        session.commit()
 
 
 def user_proxy_command(args):
@@ -108,7 +122,6 @@ def main():
                         version="%%(prog)s %s" % grouper.__version__,
                         help="Display version information.")
 
-
     subparsers = parser.add_subparsers(dest="command")
 
     sync_db_parser = subparsers.add_parser("sync_db", help="Apply database schema to database.")
@@ -139,7 +152,6 @@ def main():
     capabilities_rm_parser = capabilities_subparser.add_parser("rm", help="Remove capabilities from a user.")
     capabilities_rm_parser.add_argument("username")
     capabilities_rm_parser.add_argument("capability", choices=Capabilities.words.keys())
-
 
     args = parser.parse_args()
     settings.update_from_config(args.config)

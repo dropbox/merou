@@ -7,10 +7,11 @@ import logging
 
 from sqlalchemy import create_engine
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean,
+    Column, Integer, String, Text, Boolean, UniqueConstraint,
     ForeignKey, Enum, DateTime, SmallInteger, Index
 )
-from sqlalchemy import or_, union_all, desc
+from sqlalchemy import or_, union_all, asc, desc
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, object_session
@@ -182,6 +183,10 @@ class User(Model):
     def group_admin(self):
         return Capabilities(self.capabilities).has("group_admin")
 
+    @property
+    def permission_admin(self):
+        return Capabilities(self.capabilities).has("permission_admin")
+
     def is_member(self, members):
         return ("User", self.name) in members
 
@@ -215,6 +220,49 @@ class User(Model):
             )
 
         return keys.all()
+
+    def my_log_entries(self):
+
+        return AuditLog.get_entries(self.session, involve_user_id=self.id, limit=20)
+
+    def my_permissions(self):
+
+        # TODO: Make this walk the tree, so we can get a user's entire set of permissions.
+        now = datetime.utcnow()
+        permissions = self.session.query(
+            Permission.name,
+            PermissionMap.argument,
+            PermissionMap.granted_on,
+            Group.groupname,
+        ).filter(
+            PermissionMap.permission_id == Permission.id,
+            PermissionMap.group_id == Group.id,
+            GroupEdge.group_id == Group.id,
+            GroupEdge.member_pk == self.id,
+            GroupEdge.member_type == 0,
+            GroupEdge.active == True,
+            self.enabled == True,
+            Group.enabled == True,
+            or_(
+                GroupEdge.expiration > now,
+                GroupEdge.expiration == None
+            )
+        ).order_by(
+            asc("name"), asc("argument"), asc("groupname")
+        ).all()
+
+        return permissions
+
+    def my_grantable_permissions(self):
+        '''
+        Returns a list of permissions this user is allowed to grant. This is an expensive call,
+        potentially, as it has to walk the graph for a user.
+
+        TODO: actually walk the graph.
+        '''
+        if self.permission_admin:
+            return Permission.get_all(self.session)
+        return []
 
     def my_groups(self):
 
@@ -392,6 +440,21 @@ class Group(Model):
 
         Counter.incr(self.session, "updates")
 
+    def my_permissions(self):
+
+        permissions = self.session.query(
+            Permission.id,
+            Permission.name,
+            label("mapping_id", PermissionMap.id),
+            PermissionMap.argument,
+            PermissionMap.granted_on,
+        ).filter(
+            PermissionMap.permission_id == Permission.id,
+            PermissionMap.group_id == self.id,
+        ).all()
+
+        return permissions
+
     def my_users(self):
 
         now = datetime.utcnow()
@@ -412,6 +475,10 @@ class Group(Model):
         ).all()
 
         return users
+
+    def my_log_entries(self):
+
+        return AuditLog.get_entries(self.session, on_group_id=self.id, limit=20)
 
     def my_members(self):
 
@@ -787,3 +854,180 @@ class PublicKey(Model):
         super(PublicKey, self).delete(session)
         Counter.incr(session, "updates")
         return self
+
+
+class Permission(Model):
+    '''
+    Represents permission types. See PermissionEdge for the mapping of which permissions
+    exist on a given Group.
+    '''
+
+    __tablename__ = "permissions"
+
+    id = Column(Integer, primary_key=True)
+
+    name = Column(String(length=64), unique=True, nullable=False)
+    description = Column(Text, nullable=False)
+    created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    @staticmethod
+    def get(session, name=None):
+        if name is not None:
+            return session.query(Permission).filter_by(name=name).scalar()
+        return None
+
+    @staticmethod
+    def get_all(session):
+        return session.query(Permission).order_by(asc("name")).all()
+
+    def get_mapped_groups(self):
+        '''
+        Return a list of tuples: (Group object, argument).
+        '''
+        results = self.session.query(
+            Group.groupname,
+            PermissionMap.argument,
+            PermissionMap.granted_on,
+        ).filter(
+            Group.id == PermissionMap.group_id,
+            PermissionMap.permission_id == self.id,
+        )
+        return results.all()
+
+    def my_log_entries(self):
+
+        return AuditLog.get_entries(self.session, on_permission_id=self.id, limit=20)
+
+
+class PermissionMap(Model):
+    '''
+    Maps a relationship between a Permission and a Group. Note that a single permission can be
+    mapped into a given group multiple times, as long as the argument is unique.
+
+    These include the optional arguments, which can either be a string, an asterisks ("*"), or
+    Null to indicate no argument.
+    '''
+
+    __tablename__ = "permissions_map"
+    __table_args__ = (
+        UniqueConstraint('permission_id', 'group_id', 'argument', name='uidx1'),
+    )
+
+    id = Column(Integer, primary_key=True)
+
+    permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=False)
+    permission = relationship(Permission, foreign_keys=[permission_id])
+
+    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
+    group = relationship(Group, foreign_keys=[group_id])
+
+    argument = Column(String(length=64), nullable=True)
+    granted_on = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    @staticmethod
+    def get(session, id=None):
+        if id is not None:
+            return session.query(PermissionMap).filter_by(id=id).scalar()
+        return None
+
+    def add(self, session):
+        super(PermissionMap, self).add(session)
+        Counter.incr(session, "updates")
+        return self
+
+    def delete(self, session):
+        super(PermissionMap, self).delete(session)
+        Counter.incr(session, "updates")
+        return self
+
+
+class AuditLogFailure(Exception):
+    pass
+
+
+class AuditLog(Model):
+    '''
+    Logs actions taken in the system. This is a pretty simple logging framework to just
+    let us track everything that happened. The main use case is to show users what has
+    happened recently, to help them understand.
+    '''
+
+    __tablename__ = "audit_log"
+
+    id = Column(Integer, primary_key=True)
+    log_time = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # The actor is the person who took an action.
+    actor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    actor = relationship(User, foreign_keys=[actor_id])
+
+    # The 'on_*' columns are what was acted on.
+    on_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    on_user = relationship(User, foreign_keys=[on_user_id])
+    on_group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
+    on_group = relationship(Group, foreign_keys=[on_group_id])
+    on_permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=True)
+    on_permission = relationship(Permission, foreign_keys=[on_permission_id])
+
+    # The action and description columns are text. These are mostly displayed
+    # to the user as-is, but we might provide filtering or something.
+    action = Column(String(length=64), nullable=False)
+    description = Column(Text, nullable=False)
+
+    @staticmethod
+    def log(session, actor_id, action, description,
+            on_user_id=None, on_group_id=None, on_permission_id=None):
+        '''
+        Log an event in the database.
+        '''
+        entry = AuditLog(
+            actor_id=actor_id,
+            log_time=datetime.utcnow(),
+            action=action,
+            description=description,
+            on_user_id=on_user_id if on_user_id else None,
+            on_group_id=on_group_id if on_group_id else None,
+            on_permission_id=on_permission_id if on_permission_id else None,
+        )
+        try:
+            entry.add(session)
+            session.flush()
+        except IntegrityError:
+            session.rollback()
+            raise AuditLogFailure()
+        session.commit()
+
+    @staticmethod
+    def get_entries(session, actor_id=None, on_user_id=None, on_group_id=None,
+                    on_permission_id=None, limit=None, offset=None, involve_user_id=None):
+        '''
+        Flexible method for getting log entries. By default it returns all entries
+        starting at the newest. Most recent first.
+
+        involve_user_id, if set, is (actor_id OR on_user_id).
+        '''
+
+        results = session.query(AuditLog)
+
+        if actor_id:
+            results = results.filter(AuditLog.actor_id == actor_id)
+        if on_user_id:
+            results = results.filter(AuditLog.on_user_id == on_user_id)
+        if on_group_id:
+            results = results.filter(AuditLog.on_group_id == on_group_id)
+        if on_permission_id:
+            results = results.filter(AuditLog.on_permission_id == on_permission_id)
+        if involve_user_id:
+            results = results.filter(or_(
+                AuditLog.on_user_id == involve_user_id,
+                AuditLog.actor_id == involve_user_id
+            ))
+
+        results = results.order_by(desc(AuditLog.log_time))
+
+        if offset:
+            results = results.offset(offset)
+        if limit:
+            results = results.limit(limit)
+
+        return results.all()

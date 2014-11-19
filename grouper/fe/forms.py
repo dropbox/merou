@@ -12,8 +12,9 @@ from .. import models
 
 class ValidateRegex(object):
     def __init__(self, regex):
-        self.regex = regex
-        self._re = re.compile(regex)
+        # We assume any regex passed to us does not have line anchors.
+        self.regex = r'^' + regex + r'$'
+        self._re = re.compile(self.regex)
 
     def __call__(self, form, field):
         if not self._re.match(field.data):
@@ -47,6 +48,25 @@ class PublicKeyForm(Form):
     ])
 
 
+class PermissionGrantForm(Form):
+    permission = SelectField("Permission", [
+        validators.Required(),
+    ], choices=[["", "(select one)"]], default="")
+    argument = TextField("Argument", [
+        validators.Length(min=0, max=128),
+        ValidateRegex(constants.ARGUMENT_VALIDATION),
+    ])
+
+
+class PermissionForm(Form):
+    name = TextField("Name", [
+        validators.Length(min=3, max=64),
+        validators.Required(),
+        ValidateRegex(constants.PERMISSION_VALIDATION),
+    ])
+    description = TextAreaField("Description")
+
+
 class GroupForm(Form):
     groupname = TextField("Name", [
         validators.Length(min=3, max=32),
@@ -60,7 +80,6 @@ class GroupForm(Form):
 
 
 class GroupRequestModifyForm(Form):
-
     status = SelectField("New Status", [
         validators.Required(),
     ])
@@ -73,7 +92,7 @@ class GroupJoinForm(Form):
     member = SelectField("Member", [
         validators.Length(min=3, max=32),
         validators.Required(),
-        ValidateRegex(constants.GROUP_VALIDATION),
+        ValidateRegex(r"(?:User|Member): {}".format(constants.GROUP_VALIDATION)),
     ])
     role = SelectField("Role", [
         validators.Length(min=3, max=32),

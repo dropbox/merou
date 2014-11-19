@@ -6,21 +6,26 @@ from sqlalchemy import union_all
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label, literal
 
+import re
 import sshpubkey
 
-from .util import GrouperHandler, Alert
-from .forms import GroupForm, GroupJoinForm, GroupRequestModifyForm, PublicKeyForm
-from ..models import (
-    User, Group, Request, PublicKey, GROUP_JOIN_CHOICES,
-    REQUEST_STATUS_CHOICES,
+from ..constants import RESERVED_NAMES
+from .forms import (
+    GroupForm, GroupJoinForm, GroupRequestModifyForm, PublicKeyForm,
+    PermissionForm, PermissionGrantForm,
 )
+from ..models import (
+    User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog,
+    GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES,
+)
+from .util import GrouperHandler, Alert
 
 
 class Index(GrouperHandler):
     def get(self):
-        user = self.get_current_user()
-        groups = user.my_groups()
-        self.render("index.html", user=user, groups=groups)
+        # For now, redirect to viewing your own profile. TODO: maybe have a
+        # Grouper home page where you can maybe do stuff?
+        return self.redirect("/users/{}".format(self.current_user.name))
 
 
 class Search(GrouperHandler):
@@ -82,8 +87,205 @@ class UserView(GrouperHandler):
 
         groups = user.my_groups()
         public_keys = user.my_public_keys()
+        permissions = user.my_permissions()
+        log_entries = user.my_log_entries()
         self.render("user.html", user=user, groups=groups, public_keys=public_keys,
-                    can_control=can_control)
+                    can_control=can_control, permissions=permissions,
+                    log_entries=log_entries)
+
+
+class PermissionsCreate(GrouperHandler):
+    def get(self):
+        if not self.current_user.permission_admin:
+            return self.forbidden()
+
+        return self.render(
+            "permission-create.html", form=PermissionForm(),
+        )
+
+    def post(self, name=None, description=None):
+        if not self.current_user.permission_admin:
+            return self.forbidden()
+
+        form = PermissionForm(self.request.arguments)
+        if not form.validate():
+            return self.render(
+                "permission-create.html", form=form,
+                alerts=self.get_form_alerts(form.errors)
+            )
+
+        for reserved in RESERVED_NAMES:
+            if re.match(reserved, form.data["name"]):
+                form.name.errors.append(
+                    "Permission names must not match the pattern: %s" % (reserved, )
+                )
+                return self.render(
+                    "permission-create.html", form=form,
+                    alerts=self.get_form_alerts(form.errors),
+                )
+
+        permission = Permission(name=form.data["name"], description=form.data["description"])
+        try:
+            permission.add(self.session)
+            self.session.flush()
+        except IntegrityError:
+            self.session.rollback()
+            form.name.errors.append(
+                "Name already in use. Permissions must be unique."
+            )
+            return self.render(
+                "permission-create.html", form=form,
+                alerts=self.get_form_alerts(form.errors),
+            )
+
+        self.session.commit()
+
+        AuditLog.log(self.session, self.current_user.id, 'create_permission',
+                     'Created permission.', on_permission_id=permission.id)
+
+        return self.redirect("/permission/{}".format(permission.name))
+
+
+class PermissionsGrant(GrouperHandler):
+    def get(self, groupname=None):
+        if not self.current_user.permission_admin:
+            return self.forbidden()
+
+        group = Group.get(self.session, None, groupname)
+        if not group:
+            return self.notfound()
+
+        form = PermissionGrantForm()
+        form.permission.choices = [["", "(select one)"]]
+        for perm in self.current_user.my_grantable_permissions():
+            form.permission.choices.append([perm.name, perm.name])
+
+        return self.render(
+            "permission-grant.html", form=form, group=group,
+        )
+
+    def post(self, groupname=None, permission=None, argument=None):
+        if not self.current_user.permission_admin:
+            return self.forbidden()
+
+        group = Group.get(self.session, None, groupname)
+        if not group:
+            return self.notfound()
+
+        form = PermissionGrantForm(self.request.arguments)
+        form.permission.choices = [["", "(select one)"]]
+        grantable = self.current_user.my_grantable_permissions()
+        for perm in grantable:
+            form.permission.choices.append([perm.name, perm.name])
+
+        if not form.validate():
+            return self.render(
+                "permission-grant.html", form=form, group=group,
+                alerts=self.get_form_alerts(form.errors)
+            )
+
+        permission = Permission.get(self.session, form.data["permission"])
+        if not permission:
+            return self.notfound()  # Shouldn't happen.
+
+        if permission.name not in [perm.name for perm in grantable]:
+            return self.forbidden()
+
+        mapping = PermissionMap(permission_id=permission.id, group_id=group.id,
+                                argument=form.data["argument"])
+        try:
+            mapping.add(self.session)
+            self.session.flush()
+        except IntegrityError:
+            self.session.rollback()
+            form.argument.errors.append(
+                "Permission and Argument already mapped to this group."
+            )
+            return self.render(
+                "permission-grant.html", form=form, group=group,
+                alerts=self.get_form_alerts(form.errors),
+            )
+
+        self.session.commit()
+
+        AuditLog.log(self.session, self.current_user.id, 'grant_permission',
+                     'Granted permission with argument: {}'.format(form.data["argument"]),
+                     on_permission_id=permission.id, on_group_id=group.id)
+
+        return self.redirect("/groups/{}".format(group.name))
+
+
+class PermissionsRevoke(GrouperHandler):
+    def get(self, name=None, mapping_id=None):
+        if not self.current_user.permission_admin:
+            return self.forbidden()
+
+        mapping = PermissionMap.get(self.session, id=mapping_id)
+        if not mapping:
+            return self.notfound()
+
+        self.render("permission-revoke.html", mapping=mapping)
+
+    def post(self, name=None, mapping_id=None):
+        if not self.current_user.permission_admin:
+            return self.forbidden()
+
+        mapping = PermissionMap.get(self.session, id=mapping_id)
+        if not mapping:
+            return self.notfound()
+
+        permission = mapping.permission
+        group = mapping.group
+
+        mapping.delete(self.session)
+        self.session.commit()
+
+        AuditLog.log(self.session, self.current_user.id, 'revoke_permission',
+                     'Revoked permission with argument: {}'.format(mapping.argument),
+                     on_group_id=group.id, on_permission_id=permission.id)
+
+        return self.redirect('/groups/{}'.format(group.name))
+
+
+class PermissionsView(GrouperHandler):
+    '''
+    Controller for viewing the major permissions list. There is no privacy here; the existence of
+    a permission is public.
+    '''
+    def get(self):
+        offset = int(self.get_argument("offset", 0))
+        limit = int(self.get_argument("limit", 10))
+        if limit > 50:
+            limit = 50
+
+        permissions = (
+            self.session.query(Permission)
+            .order_by(Permission.name)
+        )
+        total = permissions.count()
+        permissions = permissions.offset(offset).limit(limit).all()
+        can_create = self.current_user.permission_admin
+
+        self.render(
+            "permissions.html", permissions=permissions, offset=offset, limit=limit, total=total,
+            can_create=can_create,
+        )
+
+
+class PermissionView(GrouperHandler):
+    def get(self, name=None):
+        permission = Permission.get(self.session, name)
+        if not permission:
+            return self.notfound()
+
+        can_delete = self.current_user.permission_admin
+        mapped_groups = permission.get_mapped_groups()
+        log_entries = permission.my_log_entries()
+
+        self.render(
+            "permission.html", permission=permission, can_delete=can_delete,
+            mapped_groups=mapped_groups, log_entries=log_entries,
+        )
 
 
 class UsersView(GrouperHandler):
@@ -118,6 +320,9 @@ class UserEnable(GrouperHandler):
         user.enable()
         self.session.commit()
 
+        AuditLog.log(self.session, self.current_user.id, 'enable_user',
+                     'Enabled user.', on_user_id=user.id)
+
         return self.redirect("/users/{}".format(user.name))
 
 
@@ -134,6 +339,9 @@ class UserDisable(GrouperHandler):
         user.disable(self.current_user)
         self.session.commit()
 
+        AuditLog.log(self.session, self.current_user.id, 'disable_user',
+                     'Disabled user.', on_user_id=user.id)
+
         return self.redirect("/users/{}".format(user.name))
 
 
@@ -145,6 +353,8 @@ class GroupView(GrouperHandler):
 
         members = group.my_members()
         groups = group.my_groups()
+        permissions = group.my_permissions()
+        log_entries = group.my_log_entries()
 
         num_pending = group.my_requests("pending").count()
 
@@ -155,7 +365,8 @@ class GroupView(GrouperHandler):
 
         self.render(
             "group.html", group=group, members=members, groups=groups,
-            num_pending=num_pending, alerts=alerts
+            num_pending=num_pending, alerts=alerts, permissions=permissions,
+            log_entries=log_entries,
         )
 
 
@@ -216,6 +427,10 @@ class GroupRequestUpdate(GrouperHandler):
             form.data["reason"]
         )
         self.session.commit()
+
+        AuditLog.log(self.session, self.current_user.id, 'update_request',
+                     'Updated request to status: {}'.format(form.data["status"]),
+                     on_group_id=group.id, on_user_id=request.requester.id)
 
         return self.redirect("/groups/{}/requests".format(group.name))
 
@@ -306,6 +521,9 @@ class GroupsView(GrouperHandler):
         group.add_member(user, user, "Group Creator", "actioned", None, "owner")
         self.session.commit()
 
+        AuditLog.log(self.session, self.current_user.id, 'create_group',
+                     'Created new group.', on_group_id=group.id)
+
         return self.redirect("/groups/{}".format(group.name))
 
 
@@ -349,6 +567,17 @@ class GroupJoin(GrouperHandler):
             role=form.data["role"]
         )
         self.session.commit()
+
+        if group.canjoin == 'canask':
+            AuditLog.log(self.session, self.current_user.id, 'join_group',
+                         'Requested to join with role: {}'.format(form.data["role"]),
+                         on_group_id=group.id, on_user_id=self.current_user.id)
+        elif group.canjoin == 'canjoin':
+            AuditLog.log(self.session, self.current_user.id, 'join_group',
+                         'Auto-approved join with role: {}'.format(form.data["role"]),
+                         on_group_id=group.id, on_user_id=self.current_user.id)
+        else:
+            raise Exception('Need to update the GroupJoin.post audit logging')
 
         return self.redirect("/groups/{}".format(group.name))
 
@@ -441,6 +670,9 @@ class GroupEdit(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors)
             )
 
+        AuditLog.log(self.session, self.current_user.id, 'edit_group',
+                     'Edited group.', on_group_id=group.id)
+
         return self.redirect("/groups/{}".format(group.name))
 
 
@@ -457,6 +689,9 @@ class GroupEnable(GrouperHandler):
         group.enable()
         self.session.commit()
 
+        AuditLog.log(self.session, self.current_user.id, 'enable_group',
+                     'Enabled group.', on_group_id=group.id)
+
         return self.redirect("/groups/{}".format(group.name))
 
 
@@ -472,6 +707,9 @@ class GroupDisable(GrouperHandler):
 
         group.disable()
         self.session.commit()
+
+        AuditLog.log(self.session, self.current_user.id, 'disable_group',
+                     'Disabled group.', on_group_id=group.id)
 
         return self.redirect("/groups/{}".format(group.name))
 
@@ -523,6 +761,10 @@ class PublicKeyAdd(GrouperHandler):
 
         self.session.commit()
 
+        AuditLog.log(self.session, self.current_user.id, 'add_public_key',
+                     'Added public key: {}'.format(pubkey.fingerprint),
+                     on_user_id=self.current_user.id)
+
         return self.redirect("/users/{}".format(user.name))
 
 
@@ -556,6 +798,10 @@ class PublicKeyDelete(GrouperHandler):
 
         key.delete(self.session)
         self.session.commit()
+
+        AuditLog.log(self.session, self.current_user.id, 'delete_public_key',
+                     'Deleted public key: {}'.format(key.fingerprint),
+                     on_user_id=self.current_user.id)
 
         return self.redirect("/users/{}".format(user.name))
 

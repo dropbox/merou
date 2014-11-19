@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import log_entry_panel, paginator, dropdown with context %}
+
+{% block heading %}
+    Permissions
+{% endblock %}
+
+{% block subheading %}
+    {{ permission.name }}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 col-md-offset-1">
+        <table class="table table-elist">
+            <thead>
+                <tr>
+                    <th class="col-sm-2">Group</th>
+                    <th class="col-sm-5">Argument</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for mapped_group in mapped_groups %}
+                <tr>
+                    <td><a href="/groups/{{mapped_group.groupname}}">{{mapped_group.groupname}}</a></td>
+                    <td>{{mapped_group.argument|default("(unargumented)", True)}}</td>
+                </tr>
+            {% endfor %}
+            {% if not mapped_groups %}
+                <tr>
+                    <td colspan="2" class="text-center"><em>This permission is not mapped to any
+                    groups. To grant this permission to a group, visit the group page.</em></td>
+                </tr>
+            {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-10 col-md-offset-1">
+        {{ log_entry_panel(400, log_entries) }}
+    </div>
+</div>
+{% endblock %}

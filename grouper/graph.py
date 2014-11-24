@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime
 from networkx import DiGraph, single_source_shortest_path
 from threading import RLock
@@ -7,7 +8,10 @@ from sqlalchemy import or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import label, literal
 
-from .models import Group, User, GroupEdge, Counter, GROUP_EDGE_ROLES
+from .models import (
+    Group, User, GroupEdge, Counter, GROUP_EDGE_ROLES,
+    Permission, PermissionMap, MappedPermission,
+)
 
 
 MEMBER_TYPE_MAP = {
@@ -25,6 +29,9 @@ class GroupGraph(object):
         self.groups = set()
         self.checkpoint = 0
         self.checkpoint_time = 0
+        self.user_metadata = {}
+        self.group_metadata = {}
+        self.permissions_metadata = {}
 
     @property
     def nodes(self):
@@ -64,6 +71,8 @@ class GroupGraph(object):
                 groups.add(node_name)
 
         user_metadata = self._get_user_metadata(session)
+        permissions_metadata = self._get_permissions_metadata(session)
+        group_metadata = self._get_group_metadata(session, permissions_metadata)
 
         with self.lock:
             self._graph = new_graph
@@ -73,6 +82,8 @@ class GroupGraph(object):
             self.users = users
             self.groups = groups
             self.user_metadata = user_metadata
+            self.group_metadata = group_metadata
+            self.permissions_metadata = permissions_metadata
 
     @staticmethod
     def _get_checkpoint(session):
@@ -99,6 +110,45 @@ class GroupGraph(object):
                         "fingerprint": key.fingerprint,
                         "created_on": str(key.created_on),
                     } for key in user.my_public_keys()
+                ],
+            }
+        return out
+
+    @staticmethod
+    def _get_permissions_metadata(session):
+        '''
+        Returns a dict of groupname: { list of permissions }.
+        '''
+        out = defaultdict(list)  # groupid -> [ ... ]
+        permissions = session.query(Permission, PermissionMap).filter(
+            Permission.id == PermissionMap.permission_id
+        )
+        for permission in permissions:
+            out[permission[1].group.name].append(MappedPermission(
+                permission=permission[0].name,
+                argument=permission[1].argument,
+                groupname=permission[1].group.name,
+                granted_on=permission[1].granted_on,
+            ))
+        return out
+
+    @staticmethod
+    def _get_group_metadata(session, permissions_metadata):
+        '''
+        Returns a dict of groupname: { dict of metadata }.
+        '''
+        groups = session.query(Group).filter(
+            Group.enabled == True
+        )
+
+        out = {}
+        for group in groups:
+            out[group.groupname] = {
+                "permissions": [
+                    {
+                        "permission": permission.permission,
+                        "argument": permission.argument,
+                    } for permission in permissions_metadata[group.id]
                 ],
             }
         return out
@@ -223,6 +273,8 @@ class GroupGraph(object):
             user = ("User", username)
             rpaths = single_source_shortest_path(self._rgraph, user, cutoff)
 
+            permissions = []
+
             for parent, path in rpaths.iteritems():
                 if parent == user:
                     continue
@@ -236,4 +288,16 @@ class GroupGraph(object):
                     "rolename": GROUP_EDGE_ROLES[role],
                 }
 
-            return {"groups": groups}
+                for permission in self.permissions_metadata[parent_name]:
+                    permissions.append(permission)
+
+            return {
+                "groups": groups,
+                "permissions": [
+                    {
+                        "permission": permission.permission,
+                        "argument": permission.argument,
+                        "groupname": permission.groupname,
+                    } for permission in permissions
+                ],
+            }

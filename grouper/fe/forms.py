@@ -92,7 +92,7 @@ class GroupJoinForm(Form):
     member = SelectField("Member", [
         validators.Length(min=3, max=32),
         validators.Required(),
-        ValidateRegex(r"(?:User|Member): {}".format(constants.GROUP_VALIDATION)),
+        ValidateRegex(r"(?:User|Member|Group): {}".format(constants.GROUP_VALIDATION)),
     ])
     role = SelectField("Role", [
         validators.Length(min=3, max=32),

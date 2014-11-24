@@ -5,7 +5,7 @@ USER_VALIDATION = r"(?P<username>[\-\w\.]+)"
 GROUP_VALIDATION = r"(?P<groupname>[\-\w\.]+)"
 # TODO: probably need a PERMISSION_WILDCARD which allows 'foo.*' and PERMISSION shouldn't
 PERMISSION_VALIDATION = r"(?P<name>(?:[a-z0-9]+[_\-\.]?)*[a-z0-9]+(?:\.\*)?)"
-ARGUMENT_VALIDATION = r"(?P<argument>|\*|(?:[a-z0-9]+[_\-\.]?)*[a-z0-9]+(?:\.\*)?)"
+ARGUMENT_VALIDATION = r"(?P<argument>|\*|(?:[a-z0-9]+[=_\-\.]?)*[a-z0-9]+(?:\.\*)?)"
 
 # Permissions that are always created and are reserved.
 SYSTEM_PERMISSIONS = [

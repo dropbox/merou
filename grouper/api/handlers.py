@@ -80,6 +80,7 @@ class Groups(GraphHandler):
             details = self.graph.get_group_details(groupname, cutoff)
 
             out = {"group": {"name": groupname}}
+            out["group"].update(self.graph.group_metadata.get(groupname, {}))
             out.update(details)
             return self.success(out)
 

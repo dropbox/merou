@@ -1,5 +1,5 @@
 
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from datetime import datetime
 import functools
 import json
@@ -939,6 +939,10 @@ class PermissionMap(Model):
         super(PermissionMap, self).delete(session)
         Counter.incr(session, "updates")
         return self
+
+
+MappedPermission = namedtuple('MappedPermission',
+                              ['permission', 'argument', 'groupname', 'granted_on'])
 
 
 class AuditLogFailure(Exception):

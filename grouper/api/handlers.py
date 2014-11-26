@@ -1,6 +1,8 @@
 from expvar.stats import stats
 from tornado.web import RequestHandler
 
+from ..util import try_update
+
 
 class GraphHandler(RequestHandler):
     def initialize(self):
@@ -56,8 +58,8 @@ class Users(GraphHandler):
             details = self.graph.get_user_details(username, cutoff)
 
             out = {"user": {"name": username}}
-            out["user"].update(self.graph.user_metadata.get(username, {}))
-            out.update(details)
+            try_update(out["user"], self.graph.user_metadata.get(username, {}))
+            try_update(out, details)
             return self.success(out)
 
 
@@ -80,8 +82,30 @@ class Groups(GraphHandler):
             details = self.graph.get_group_details(groupname, cutoff)
 
             out = {"group": {"name": groupname}}
-            out["group"].update(self.graph.group_metadata.get(groupname, {}))
-            out.update(details)
+            try_update(out["group"], self.graph.group_metadata.get(groupname, {}))
+            try_update(out, details)
+            return self.success(out)
+
+
+class Permissions(GraphHandler):
+    def get(self, name=None):
+        with self.graph.lock:
+            if not name:
+                return self.success({
+                    "permissions": [
+                        permission
+                        for permission in self.graph.permissions
+                    ],
+                })
+
+            if name not in self.graph.permissions:
+                return self.notfound("Permission (%s) not found." % name)
+
+            details = self.graph.get_permission_details(name)
+
+            out = {"permission": {"name": name}}
+            try_update(out["permission"], self.graph.permission_metadata.get(name, {}))
+            try_update(out, details)
             return self.success(out)
 
 

@@ -9,7 +9,7 @@ HANDLERS = [
     (r"/permissions/create", handlers.PermissionsCreate),
     (r"/permissions/grant/{}".format(GROUP_VALIDATION), handlers.PermissionsGrant),
     (
-        r"/permissions/{}/revoke/(?P<mapping_id>[0-9+])".format(PERMISSION_VALIDATION),
+        r"/permissions/{}/revoke/(?P<mapping_id>[0-9]+)".format(PERMISSION_VALIDATION),
         handlers.PermissionsRevoke
     ),
     (r"/search", handlers.Search),

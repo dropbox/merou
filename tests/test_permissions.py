@@ -16,12 +16,12 @@ def test_basic_permission(standard_graph, session, users, groups, permissions):
     session.commit()
     graph.update_from_db(session)
 
-    assert get_group_permissions(graph, "team-sre") == set(["ssh:*", "sudo:shell"])
-    assert get_group_permissions(graph, "tech-ops") == set(["ssh:shell", "sudo:shell"])
-    assert get_group_permissions(graph, "team-infra") == set(["sudo:shell"])
-    assert get_group_permissions(graph, "all-teams") == set()
+    assert sorted(get_group_permissions(graph, "team-sre")) == ["ssh:*", "sudo:shell"]
+    assert sorted(get_group_permissions(graph, "tech-ops")) == ["ssh:shell", "sudo:shell"]
+    assert sorted(get_group_permissions(graph, "team-infra")) == ["sudo:shell"]
+    assert sorted(get_group_permissions(graph, "all-teams")) == []
 
-    assert get_user_permissions(graph, "gary") == set(["ssh:*", "ssh:shell", "sudo:shell"])
-    assert get_user_permissions(graph, "zay") == set(["ssh:*", "ssh:shell", "sudo:shell"])
-    assert get_user_permissions(graph, "zorkian") == set(["ssh:*", "sudo:shell"])
-    assert get_user_permissions(graph, "testuser") == set()
+    assert sorted(get_user_permissions(graph, "gary")) == ["ssh:*", "ssh:shell", "sudo:shell"]
+    assert sorted(get_user_permissions(graph, "zay")) == ["ssh:*", "ssh:shell", "sudo:shell"]
+    assert sorted(get_user_permissions(graph, "zorkian")) == ["ssh:*", "sudo:shell"]
+    assert sorted(get_user_permissions(graph, "testuser")) == []

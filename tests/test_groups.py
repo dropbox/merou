@@ -1,66 +1,6 @@
-import json
-import os
-import pytest
+from fixtures import *  # noqa
 
-from grouper import exc
-from grouper import models
-from grouper.models import get_db_engine, User, Group, Session, Request, GroupEdge
-from grouper.graph import GroupGraph
-
-
-@pytest.fixture
-def session(request, tmpdir):
-    db_path = tmpdir.join("grouper.sqlite")
-    db_engine = get_db_engine("sqlite:///%s" % db_path)
-
-    models.Model.metadata.create_all(db_engine)
-    Session.configure(bind=db_engine)
-    session = Session()
-
-    def fin():
-        session.close()
-        # Useful if testing against MySQL
-        #models.Model.metadata.drop_all(db_engine)
-    request.addfinalizer(fin)
-
-    return session
-
-@pytest.fixture
-def graph(session):
-    return GroupGraph.from_db(session)
-
-
-@pytest.fixture
-def users(session):
-    users = {}
-    users["gary"] = User.get_or_create(session, username="gary")[0]
-    users["zay"] = User.get_or_create(session, username="zay")[0]
-    users["testuser"] = User.get_or_create(session, username="testuser")[0]
-    session.commit()
-    return users
-
-
-@pytest.fixture
-def groups(session):
-    groups = {}
-    groups["team-sre"] = Group.get_or_create(session, groupname="team-sre")[0]
-    groups["tech-ops"] = Group.get_or_create(session, groupname="tech-ops")[0]
-    groups["team-infra"] = Group.get_or_create(session, groupname="team-infra")[0]
-    groups["all-teams"] = Group.get_or_create(session, groupname="all-teams")[0]
-    session.commit()
-    return groups
-
-
-def add_member(parent, member, role="member"):
-    return parent.add_member(member, member, "Unit Testing", "actioned", role=role)
-
-
-def get_users(graph, groupname, cutoff=None):
-    return set(graph.get_group_details(groupname, cutoff)["users"])
-
-
-def get_groups(graph, username, cutoff=None):
-    return set(graph.get_user_details(username, cutoff)["groups"])
+from util import get_users, get_groups, add_member
 
 
 def setup_desc_to_ances(session, users, groups):

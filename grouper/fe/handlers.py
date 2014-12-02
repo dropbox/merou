@@ -191,13 +191,9 @@ class PermissionsGrant(GrouperHandler):
         if permission.name not in [perm.name for perm in grantable]:
             return self.forbidden()
 
-        mapping = PermissionMap(permission_id=permission.id, group_id=group.id,
-                                argument=form.data["argument"])
         try:
-            mapping.add(self.session)
-            self.session.flush()
+            group.grant_permission(permission, argument=form.data["argument"])
         except IntegrityError:
-            self.session.rollback()
             form.argument.errors.append(
                 "Permission and Argument already mapped to this group."
             )

@@ -4,6 +4,7 @@ from datetime import datetime
 import functools
 import json
 import logging
+import re
 
 from sqlalchemy import create_engine
 from sqlalchemy import (
@@ -20,6 +21,7 @@ from sqlalchemy.orm import sessionmaker, Session as _Session
 from sqlalchemy.sql import func, label, literal
 
 from .capabilities import Capabilities
+from .constants import ARGUMENT_VALIDATION
 
 
 OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange")
@@ -368,6 +370,25 @@ class Group(Model):
 
         edge.apply_changes(request)
         self.session.flush()
+
+        Counter.incr(self.session, "updates")
+
+    @flush_transaction
+    def grant_permission(self, permission, argument=''):
+        """
+        Grant a permission to this group. This will fail if the (permission, argument) has already
+        been granted to this group.
+
+        Arguments:
+            permission: a Permission object being granted
+            argument: must match constants.ARGUMENT_VALIDATION
+        """
+        if not re.match(ARGUMENT_VALIDATION, argument):
+            raise ValueError('Permission argument does not match regex.')
+
+        mapping = PermissionMap(permission_id=permission.id, group_id=self.id,
+                                argument=argument)
+        mapping.add(self.session)
 
         Counter.incr(self.session, "updates")
 

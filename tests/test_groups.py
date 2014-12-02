@@ -1,4 +1,4 @@
-from fixtures import *  # noqa
+from fixtures import users, graph, groups, session, permissions  # noqa
 
 from util import get_users, get_groups, add_member
 

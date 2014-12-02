@@ -1,29 +1,13 @@
-from fixtures import *  # noqa
+from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 
-from util import add_member, grant_permission, get_group_permissions, get_user_permissions
-
-
-def setup_standard_groups(users, groups):
-    add_member(groups["team-sre"], users["gary"], role="owner")
-    add_member(groups["team-sre"], users["zay"])
-    add_member(groups["team-sre"], users["zorkian"])
-
-    add_member(groups["tech-ops"], users["zay"], role="owner")
-    add_member(groups["tech-ops"], users["gary"])
-
-    add_member(groups["team-infra"], users["gary"], role="owner")
-    add_member(groups["team-infra"], groups["team-sre"])
-    add_member(groups["team-infra"], groups["tech-ops"])
-
-    add_member(groups["all-teams"], users["testuser"], role="owner")
-    add_member(groups["all-teams"], groups["team-infra"])
+from util import grant_permission, get_group_permissions, get_user_permissions
 
 
-def test_basic_permission(session, graph, users, groups, permissions):
+def test_basic_permission(standard_graph, session, users, groups, permissions):
     """ Test adding some permissions to various groups and ensuring that the permissions are all
         implemented as expected. This also tests permissions inheritance in the graph. """
 
-    setup_standard_groups(users, groups)
+    graph = standard_graph  # noqa
 
     grant_permission(groups["team-sre"], permissions["ssh"], argument="*")
     grant_permission(groups["tech-ops"], permissions["ssh"], argument="shell")

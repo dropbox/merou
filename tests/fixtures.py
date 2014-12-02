@@ -4,6 +4,30 @@ from grouper import models
 from grouper.models import get_db_engine, User, Group, Permission, Session
 from grouper.graph import GroupGraph
 
+from util import add_member
+
+
+@pytest.fixture
+def standard_graph(session, graph, users, groups):
+    add_member(groups["team-sre"], users["gary"], role="owner")
+    add_member(groups["team-sre"], users["zay"])
+    add_member(groups["team-sre"], users["zorkian"])
+
+    add_member(groups["tech-ops"], users["zay"], role="owner")
+    add_member(groups["tech-ops"], users["gary"])
+
+    add_member(groups["team-infra"], users["gary"], role="owner")
+    add_member(groups["team-infra"], groups["team-sre"])
+    add_member(groups["team-infra"], groups["tech-ops"])
+
+    add_member(groups["all-teams"], users["testuser"], role="owner")
+    add_member(groups["all-teams"], groups["team-infra"])
+
+    session.commit()
+    graph.update_from_db(session)
+
+    return graph
+
 
 @pytest.fixture
 def session(request, tmpdir):
@@ -30,32 +54,30 @@ def graph(session):
 
 @pytest.fixture
 def users(session):
-    users = {}
-    users["gary"] = User.get_or_create(session, username="gary")[0]
-    users["zay"] = User.get_or_create(session, username="zay")[0]
-    users["zorkian"] = User.get_or_create(session, username="zorkian")[0]
-    users["testuser"] = User.get_or_create(session, username="testuser")[0]
+    users = {
+        username: User.get_or_create(session, username=username)[0]
+        for username in ("gary", "zay", "zorkian", "testuser")
+    }
     session.commit()
     return users
 
 
 @pytest.fixture
 def groups(session):
-    groups = {}
-    groups["team-sre"] = Group.get_or_create(session, groupname="team-sre")[0]
-    groups["tech-ops"] = Group.get_or_create(session, groupname="tech-ops")[0]
-    groups["team-infra"] = Group.get_or_create(session, groupname="team-infra")[0]
-    groups["all-teams"] = Group.get_or_create(session, groupname="all-teams")[0]
+    groups = {
+        groupname: Group.get_or_create(session, groupname=groupname)[0]
+        for groupname in ("team-sre", "tech-ops", "team-infra", "all-teams")
+    }
     session.commit()
     return groups
 
 
 @pytest.fixture
 def permissions(session):
-    permissions = {}
-    permissions["ssh"] = Permission.get_or_create(
-        session, name="ssh", description="ssh permission")[0]
-    permissions["sudo"] = Permission.get_or_create(
-        session, name="sudo", description="sudo permission")[0]
+    permissions = {
+        permission: Permission.get_or_create(
+            session, name=permission, description="{} permission".format(permission))[0]
+        for permission in ("ssh", "sudo")
+    }
     session.commit()
     return permissions

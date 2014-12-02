@@ -18,6 +18,7 @@ MEMBER_TYPE_MAP = {
     "User": "users",
     "Group": "subgroups",
 }
+EPOCH = datetime(1970, 1, 1)
 
 
 class GroupGraph(object):
@@ -27,11 +28,12 @@ class GroupGraph(object):
         self.lock = RLock()
         self.users = set()
         self.groups = set()
+        self.permissions = set()
         self.checkpoint = 0
         self.checkpoint_time = 0
         self.user_metadata = {}
         self.group_metadata = {}
-        self.permissions_metadata = {}
+        self.permission_metadata = {}
 
     @property
     def nodes(self):
@@ -71,8 +73,8 @@ class GroupGraph(object):
                 groups.add(node_name)
 
         user_metadata = self._get_user_metadata(session)
-        permissions_metadata = self._get_permissions_metadata(session)
-        group_metadata = self._get_group_metadata(session, permissions_metadata)
+        permission_metadata = self._get_permission_metadata(session)
+        group_metadata = self._get_group_metadata(session, permission_metadata)
 
         with self.lock:
             self._graph = new_graph
@@ -81,9 +83,12 @@ class GroupGraph(object):
             self.checkpoint_time = checkpoint_time
             self.users = users
             self.groups = groups
+            self.permissions = {perm.permission
+                                for perm_list in permission_metadata.values()
+                                for perm in perm_list}
             self.user_metadata = user_metadata
             self.group_metadata = group_metadata
-            self.permissions_metadata = permissions_metadata
+            self.permission_metadata = permission_metadata
 
     @staticmethod
     def _get_checkpoint(session):
@@ -115,7 +120,7 @@ class GroupGraph(object):
         return out
 
     @staticmethod
-    def _get_permissions_metadata(session):
+    def _get_permission_metadata(session):
         '''
         Returns a dict of groupname: { list of permissions }.
         '''
@@ -133,7 +138,7 @@ class GroupGraph(object):
         return out
 
     @staticmethod
-    def _get_group_metadata(session, permissions_metadata):
+    def _get_group_metadata(session, permission_metadata):
         '''
         Returns a dict of groupname: { dict of metadata }.
         '''
@@ -148,7 +153,7 @@ class GroupGraph(object):
                     {
                         "permission": permission.permission,
                         "argument": permission.argument,
-                    } for permission in permissions_metadata[group.id]
+                    } for permission in permission_metadata[group.id]
                 ],
             }
         return out
@@ -220,15 +225,48 @@ class GroupGraph(object):
 
         return edges
 
+    def get_permission_details(self, name):
+        """ Get a permission and what groups it's assigned to. """
+
+        with self.lock:
+            data = {
+                "groups": {},
+            }
+
+            # Get all mapped versions of the permission. This is only direct relationships.
+            direct_groups = set()
+            for groupname, permissions in self.permission_metadata.iteritems():
+                for permission in permissions:
+                    if permission.permission == name:
+                        direct_groups.add(groupname)
+
+            # Now find all members of these groups going down the tree.
+            checked_groups = set()
+            for groupname in direct_groups:
+                group = ("Group", groupname)
+                paths = single_source_shortest_path(self._graph, group, None)
+                for member, path in paths.iteritems():
+                    if member == group:
+                        continue
+                    member_type, member_name = member
+                    if member_type != 'Group':
+                        continue
+                    if member_name in checked_groups:
+                        continue
+                    checked_groups.add(member_name)
+                    data["groups"][member_name] = self.get_group_details(member_name)
+
+            return data
+
     def get_group_details(self, groupname, cutoff=None):
         """ Get users that belong to a group."""
 
         with self.lock:
-
             data = {
                 "users": {},
                 "groups": {},
                 "subgroups": {},
+                "permissions": [],
             }
 
             group = ("Group", groupname)
@@ -260,6 +298,23 @@ class GroupGraph(object):
                     "role": role,
                     "rolename": GROUP_EDGE_ROLES[role],
                 }
+                for permission in self.permission_metadata.get(parent_name, []):
+                    data["permissions"].append({
+                        "permission": permission.permission,
+                        "argument": permission.argument,
+                        "granted_on": (permission.granted_on - EPOCH).total_seconds(),
+                        "distance": len(path) - 1,
+                        "path": [elem[1] for elem in path],
+                    })
+
+            for permission in self.permission_metadata.get(groupname, []):
+                data["permissions"].append({
+                    "permission": permission.permission,
+                    "argument": permission.argument,
+                    "granted_on": (permission.granted_on - EPOCH).total_seconds(),
+                    "distance": 0,
+                    "path": [groupname],
+                })
 
             return data
 
@@ -267,7 +322,6 @@ class GroupGraph(object):
         """ Get groups that a user belongs to."""
 
         with self.lock:
-
             groups = {}
 
             user = ("User", username)
@@ -288,16 +342,16 @@ class GroupGraph(object):
                     "rolename": GROUP_EDGE_ROLES[role],
                 }
 
-                for permission in self.permissions_metadata[parent_name]:
-                    permissions.append(permission)
+                for permission in self.permission_metadata[parent_name]:
+                    permissions.append({
+                        "permission": permission.permission,
+                        "argument": permission.argument,
+                        "granted_on": (permission.granted_on - EPOCH).total_seconds(),
+                        "path": [elem[1] for elem in path],
+                        "distance": len(path) - 1,
+                    })
 
             return {
                 "groups": groups,
-                "permissions": [
-                    {
-                        "permission": permission.permission,
-                        "argument": permission.argument,
-                        "groupname": permission.groupname,
-                    } for permission in permissions
-                ],
+                "permissions": permissions,
             }

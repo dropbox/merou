@@ -1,5 +1,5 @@
-from .handlers import Users, Groups, Stats, NotFound
-from ..constants import USER_VALIDATION, GROUP_VALIDATION
+from .handlers import Users, Groups, Permissions, Stats, NotFound
+from ..constants import USER_VALIDATION, GROUP_VALIDATION, PERMISSION_VALIDATION
 
 HANDLERS = [
 
@@ -8,6 +8,9 @@ HANDLERS = [
 
     (r"/groups", Groups),
     (r"/groups/{}".format(GROUP_VALIDATION), Groups),
+
+    (r"/permissions", Permissions),
+    (r"/permissions/{}".format(PERMISSION_VALIDATION), Permissions),
 
     (r"/debug/stats", Stats),
 

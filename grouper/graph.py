@@ -238,6 +238,7 @@ class GroupGraph(object):
             for groupname, permissions in self.permission_metadata.iteritems():
                 for permission in permissions:
                     if permission.permission == name:
+                        data["groups"][groupname] = self.get_group_details(groupname)
                         direct_groups.add(groupname)
 
             # Now find all members of these groups going down the tree.

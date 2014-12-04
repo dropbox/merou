@@ -238,7 +238,8 @@ class GroupGraph(object):
             for groupname, permissions in self.permission_metadata.iteritems():
                 for permission in permissions:
                     if permission.permission == name:
-                        data["groups"][groupname] = self.get_group_details(groupname)
+                        data["groups"][groupname] = self.get_group_details(
+                            groupname, show_permission=name)
                         direct_groups.add(groupname)
 
             # Now find all members of these groups going down the tree.
@@ -255,12 +256,13 @@ class GroupGraph(object):
                     if member_name in checked_groups:
                         continue
                     checked_groups.add(member_name)
-                    data["groups"][member_name] = self.get_group_details(member_name)
+                    data["groups"][member_name] = self.get_group_details(
+                        member_name, show_permission=name)
 
             return data
 
-    def get_group_details(self, groupname, cutoff=None):
-        """ Get users that belong to a group."""
+    def get_group_details(self, groupname, cutoff=None, show_permission=None):
+        """ Get users and permissions that belong to a group. """
 
         with self.lock:
             data = {
@@ -300,6 +302,8 @@ class GroupGraph(object):
                     "rolename": GROUP_EDGE_ROLES[role],
                 }
                 for permission in self.permission_metadata.get(parent_name, []):
+                    if show_permission is not None and permission.permission != show_permission:
+                        continue
                     data["permissions"].append({
                         "permission": permission.permission,
                         "argument": permission.argument,
@@ -309,6 +313,8 @@ class GroupGraph(object):
                     })
 
             for permission in self.permission_metadata.get(groupname, []):
+                if show_permission is not None and permission.permission != show_permission:
+                    continue
                 data["permissions"].append({
                     "permission": permission.permission,
                     "argument": permission.argument,

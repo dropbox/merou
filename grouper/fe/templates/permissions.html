@@ -32,7 +32,7 @@
             {% for permission in permissions %}
                 <tr>
                     <td><a href="/permission/{{permission.name}}">{{permission.name}}</a></td>
-                    <td>{{permission.description|default("", True)}}</td>
+                    <td>{{permission.description|default("", True)|escape}}</td>
                 </tr>
             {% endfor %}
             </tbody>

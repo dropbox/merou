@@ -31,7 +31,7 @@
             {% for group in groups %}
                 <tr>
                     <td><a href="/groups/{{group.name}}">{{group.groupname}}</a></td>
-                    <td>{{group.description|default("", True)}}</td>
+                    <td>{{group.description|default("", True)|escape}}</td>
                     <td>
                         {% if group.canjoin == "canjoin" %}
                             Anyone

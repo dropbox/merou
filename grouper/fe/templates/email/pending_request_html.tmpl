@@ -1,2 +1,9 @@
+{% extends "email/base_html.tmpl" %}
 
-<b>{{ requester }}</b> has requested membership to <b>{{ requested }}</b>{% if requester != requested_by %}<i> by {% requested_by %}</i>{% endif %}.
+{% block subject %}Membership Request{% endblock %}
+
+{% block content %}
+
+<b>{{ requester }}</b> has requested membership to <b>{{ requested }}</b>{% if requester != requested_by %}<i> by {{ requested_by }}</i>{% endif %}.
+
+{% endblock %}

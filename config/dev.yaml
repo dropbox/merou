@@ -43,7 +43,7 @@ fe:
 
     # Domain name for users for sending e-mail.
     # Type: str
-    domain: "locahost"
+    domain: "localhost"
 
     # Header to check for Authenticated Username
     # Type: str
@@ -52,6 +52,10 @@ fe:
     # Whether to send notification e-mails.
     # Type: bool
     send_emails: false
+
+    # Address to send email from
+    # Type: str
+    from_addr: "no-reply@grouper.local"
 
     # Server to use to send notification e-mails.
     # Type: str

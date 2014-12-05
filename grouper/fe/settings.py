@@ -25,4 +25,5 @@ settings = FeSettings.from_settings(base_settings, {
     "domain": "localhost",
     "send_emails": True,
     "smtp_server": "localhost",
+    "from_addr": "no-reply@grouper.local",
 })

@@ -1,7 +1,10 @@
 from datetime import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from expvar.stats import stats
 from jinja2 import Environment, PackageLoader
 import pytz
+import smtplib
 import tornado.web
 import urllib
 
@@ -80,8 +83,9 @@ class GrouperHandler(tornado.web.RequestHandler):
         context.update(kwargs)
         self.write(self.render_template(template_name, **context))
 
-    def send_email(recipients, sender, subject, template, context):
+    def send_email(self, recipients, subject, template, context):
         template_env = self.application.my_settings["template_env"]
+        sender = settings["from_addr"]
 
         text_template = template_env.get_template(
             "email/{}_text.tmpl".format(template)
@@ -102,6 +106,10 @@ class GrouperHandler(tornado.web.RequestHandler):
         msg["To"] = ", ".join(recipients)
         msg.attach(text)
         msg.attach(html)
+
+        if not settings["send_emails"]:
+            print msg.as_string()
+            return
 
         smtp = smtplib.SMTP(settings["smtp_server"])
         smtp.sendmail(sender, recipients, msg.as_string())

@@ -16,8 +16,9 @@ from .forms import (
 )
 from ..models import (
     User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog,
-    GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES,
+    GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES,
 )
+from .settings import settings
 from .util import GrouperHandler, Alert
 
 
@@ -568,6 +569,19 @@ class GroupJoin(GrouperHandler):
             AuditLog.log(self.session, self.current_user.id, 'join_group',
                          'Requested to join with role: {}'.format(form.data["role"]),
                          on_group_id=group.id, on_user_id=self.current_user.id)
+
+            mail_to = [
+                "{}@{}".format(user.name, settings["domain"])
+                for user in group.my_users()
+                if GROUP_EDGE_ROLES[user.role] in ('manager', 'owner')
+            ]
+
+            self.send_email(mail_to, 'Request to join: {}'.format(group.name), 'pending_request', {
+                "requester": member.name,
+                "requested_by": self.current_user.name,
+                "requested": group.name,
+            })
+
         elif group.canjoin == 'canjoin':
             AuditLog.log(self.session, self.current_user.id, 'join_group',
                          'Auto-approved join with role: {}'.format(form.data["role"]),

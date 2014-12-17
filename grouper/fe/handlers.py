@@ -567,8 +567,9 @@ class GroupJoin(GrouperHandler):
 
         if group.canjoin == 'canask':
             AuditLog.log(self.session, self.current_user.id, 'join_group',
-                         'Requested to join with role: {}'.format(form.data["role"]),
-                         on_group_id=group.id, on_user_id=self.current_user.id)
+                         '{} requested to join with role: {}'.format(
+                             member.name, form.data["role"]),
+                         on_group_id=group.id)
 
             mail_to = [
                 "{}@{}".format(user.name, settings["domain"])
@@ -584,8 +585,9 @@ class GroupJoin(GrouperHandler):
 
         elif group.canjoin == 'canjoin':
             AuditLog.log(self.session, self.current_user.id, 'join_group',
-                         'Auto-approved join with role: {}'.format(form.data["role"]),
-                         on_group_id=group.id, on_user_id=self.current_user.id)
+                         '{} auto-approved to join with role: {}'.format(
+                             member.name, form.data["role"]),
+                         on_group_id=group.id)
         else:
             raise Exception('Need to update the GroupJoin.post audit logging')
 

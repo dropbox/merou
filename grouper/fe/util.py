@@ -5,11 +5,14 @@ from expvar.stats import stats
 from jinja2 import Environment, PackageLoader
 import pytz
 import smtplib
+import sqlalchemy.exc
 import tornado.web
+import traceback
 import urllib
 
 from .settings import settings
-from ..models import User, GROUP_EDGE_ROLES, OBJ_TYPES_IDX
+from ..models import User, GROUP_EDGE_ROLES, OBJ_TYPES_IDX, get_db_engine, Session
+from ..util import get_database_url
 
 
 class Alert(object):
@@ -22,11 +25,25 @@ class Alert(object):
             self.heading = heading
 
 
+class DatabaseFailure(Exception):
+    pass
+
+
 class GrouperHandler(tornado.web.RequestHandler):
 
     def initialize(self):
         self.session = self.application.my_settings.get("db_session")()
         stats.incr("requests")
+
+    def _handle_request_exception(self, e):
+        traceback.print_exc()
+
+        # We can't just self.render because that invokes get_current_user which tries to make a
+        # db call, and if we're handling a db exception, that breaks.
+        self.set_status(500)
+        template = self.application.my_settings["template_env"].get_template("errors/5xx.html")
+        self.write(template.render({"is_active": self.is_active}))
+        self.finish()
 
     def get_current_user(self):
         username = self.request.headers.get(settings.user_auth_header)
@@ -35,10 +52,16 @@ class GrouperHandler(tornado.web.RequestHandler):
 
         username = username.split("@")[0]
 
-        user = self.session.query(User).filter_by(username=username).first()
-        if not user:
-            user = User(username=username).add(self.session)
-            self.session.commit()
+        try:
+            user = self.session.query(User).filter_by(username=username).first()
+            if not user:
+                user = User(username=username).add(self.session)
+                self.session.commit()
+        except sqlalchemy.exc.OperationalError:
+            # Failed to connect to database or create user, try to reconfigure the db. This invokes
+            # the fetcher to try to see if our URL string has changed.
+            Session.configure(bind=get_db_engine(get_database_url(settings)))
+            raise DatabaseFailure()
 
         return user
 

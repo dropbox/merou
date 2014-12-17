@@ -46,5 +46,6 @@ class Settings(object):
 
 settings = Settings({
     "database": None,
+    "database_source": None,
     "log_format": "%(asctime)-15s\t%(levelname)s\t%(message)s",
 })

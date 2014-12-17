@@ -6,6 +6,12 @@ common:
     # Type: str
     database: "sqlite:///grouper.sqlite"
 
+    # If this exists, it should be the path to an executable that Grouper will run. This program
+    # should print a single SqlAlchemy URL and exit 0.
+    #
+    # Type: str
+    database_source: ""
+
     # Format for logging output.
     # See https://docs.python.org/2/library/logging.html#logrecord-attributes
     # Type: str

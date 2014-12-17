@@ -4,6 +4,22 @@
 
 {% block content %}
 
-<b>{{ requester }}</b> has requested membership to <b>{{ requested }}</b>{% if requester != requested_by %}<i> by {{ requested_by }}</i>{% endif %}.
+<p><strong><a href="{{url}}/users/{{requester}}">{{ requester }}</a></strong> has requested
+to join <strong><a href="{{url}}/groups/{{requested}}">{{ requested }}</a></strong>. To action
+this request, please visit the <a href="{{url}}/groups/{{requested}}/requests?status=pending">
+pending requests</a> queue.</p>
+
+<p>More details about the request:</p>
+
+<ul>
+    <li><strong>Role:</strong> {{ role }}</li>
+    <li><strong>Expiration:</strong> {{ expiration|delta_str }}</li>
+    <li><strong>Reason:</strong> {{ reason|escape }}</li>
+</ul>
+
+{% if requester != requested_by %}
+    <p>This request was made by
+    <a href="{{url}}/users/{{requested_by}}">{{ requested_by }}</a>.</p>
+{% endif %}
 
 {% endblock %}

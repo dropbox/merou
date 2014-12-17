@@ -1,18 +1,51 @@
 <!DOCTYPE html>
 <html>
 
+<head>
+<style type="text/css">
+
+body {
+    background-color: #eee;
+    padding: 0.5em;
+    font-family: Verdana, sans-serif;
+}
+
+#email {
+    border: solid 1px #bbb;
+    padding: 0.4em;
+    background-color: #fff;
+}
+
+#heading {
+    padding-bottom: 1em;
+    font-size: larger;
+}
+
+#content {
+
+}
+
+#footer {
+    padding-top: 1em;
+}
+
+</style>
+</head>
+
 <body>
-<div>
-    <strong>Grouper - {% block subject %}Notification{% endblock %}</strong>
+
+<div id="email">
+    <div id="heading">
+        <strong>Grouper - {% block subject %}Notification{% endblock %}</strong>
+    </div>
+    <div id="content">
+        {% block content %}{% endblock %}
+    </div>
+    <div id="footer">
+        --<br />
+        Your friendly <a href="{{url}}/">Grouper</a> robot
+    </div>
 </div>
 
-<div>
-    {% block content %}{% endblock %}
-</div>
-
-<div>
-    --<br />
-    Your friendly Grouper robot
-</div>
 </body>
 </html>

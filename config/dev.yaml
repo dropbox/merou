@@ -45,6 +45,11 @@ fe:
     # Type: str
     domain: "localhost"
 
+    # Url is the location of the Grouper homepage, no trailing slash. This should include a
+    # port if one is needed.
+    # Type: str
+    url: "http://127.0.0.1:8888"
+
     # Header to check for Authenticated Username
     # Type: str
     user_auth_header: "X-Grouper-User"

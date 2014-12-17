@@ -581,6 +581,9 @@ class GroupJoin(GrouperHandler):
                 "requester": member.name,
                 "requested_by": self.current_user.name,
                 "requested": group.name,
+                "reason": form.data["reason"],
+                "expiration": expiration,
+                "role": form.data["role"],
             })
 
         elif group.canjoin == 'canjoin':

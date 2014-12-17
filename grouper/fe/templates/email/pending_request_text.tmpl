@@ -3,7 +3,16 @@
 {% block subject %}Membership Request{% endblock %}
 
 {% block content %}
+{{ requester }} has requested to join {{ requested }}. To action this request, please visit the
+pending requests queue:
 
-{{ requester }} has requested membership to {{ requested }}{% if requester != requested_by %} by {{ requested_by }}{% endif %}.
+    {{url}}/groups/{{requested}}/requests?status=pending
 
+More details about the request:
+
+    Role: {{ role }}
+    Expiration: {{ expiration|delta_str }}
+    Reason: {{ reason|escape }}
+
+{% if requester != requested_by %}This request was made by {{ requested_by }}.{% endif %}
 {% endblock %}

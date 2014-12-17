@@ -87,6 +87,8 @@ class GrouperHandler(tornado.web.RequestHandler):
         template_env = self.application.my_settings["template_env"]
         sender = settings["from_addr"]
 
+        context["url"] = settings["url"]
+
         text_template = template_env.get_template(
             "email/{}_text.tmpl".format(template)
         ).render(**context)

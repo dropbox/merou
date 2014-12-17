@@ -55,9 +55,10 @@
                             <td>&nbsp;</td>
                         {% endif %}
                         <td colspan="5">
-                            <span style="padding-left: 10px;">
+                            <div style="padding-left: 10px;">
+                                <strong>Role:</strong> {{ROLES[request.role]}}<br />
                                 <strong>Reason:</strong> <em>{{request.reason}}</em>
-                            </span>
+                            </div>
                         </td>
                     </tr>
                 {% endfor %}

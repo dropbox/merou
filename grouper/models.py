@@ -599,6 +599,7 @@ class Group(Model):
             Request.id,
             Request.requested_at,
             GroupEdge.expiration,
+            label("role", GroupEdge._role),
             Request.status,
             label("requester", User.username),
             label("type", members.c.type),

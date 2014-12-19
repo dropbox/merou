@@ -1,8 +1,12 @@
 
 # These regexes must not include line anchors ('^', '$'). Those will be added by the
 # ValidateRegex library function and anybody else who needs them.
-USER_VALIDATION = r"(?P<username>[\-\w\.]+)"
-GROUP_VALIDATION = r"(?P<groupname>[\-\w\.]+)"
+NAME_VALIDATION = r"(?P<name>[\-\w\.]+)"
+
+# This regex needs to exactly match the above, EXCEPT that the name should be "name2". So if the
+# above regex changes, change this one. This is kind of gross. :\
+NAME2_VALIDATION = r"(?P<name2>[\-\w\.]+)"
+
 # TODO: probably need a PERMISSION_WILDCARD which allows 'foo.*' and PERMISSION shouldn't
 PERMISSION_VALIDATION = r"(?P<name>(?:[a-z0-9]+[_\-\.]?)*[a-z0-9]+(?:\.\*)?)"
 ARGUMENT_VALIDATION = r"(?P<argument>|\*|(?:[a-z0-9]+[=_\-\.]?)*[a-z0-9]+(?:\.\*)?)"

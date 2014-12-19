@@ -85,6 +85,13 @@ class Model(object):
         return OBJ_TYPES[obj_name]
 
     @classmethod
+    def get(cls, session, **kwargs):
+        instance = session.query(cls).filter_by(**kwargs).scalar()
+        if instance:
+            return instance
+        return None
+
+    @classmethod
     def get_or_create(cls, session, **kwargs):
         instance = session.query(cls).filter_by(**kwargs).scalar()
         if instance:
@@ -294,8 +301,17 @@ def build_changes(edge, **updates):
         if key not in ("role", "expiration", "active"):
             continue
         if getattr(edge, key) != value:
-            changes[key] = value
+            if key == "expiration":
+                changes[key] = value.strftime("%m/%d/%Y") if value else ""
+            else:
+                changes[key] = value
     return json.dumps(changes)
+
+
+class MemberNotFound(Exception):
+    """This exception is raised when trying to perform a group operation on an account that is
+       not a member of the group."""
+    pass
 
 
 class Group(Model):
@@ -322,7 +338,6 @@ class Group(Model):
                 reason: A comment on why this member should exist
         """
         now = datetime.utcnow()
-        member_type = user_or_group.member_type
 
         logging.debug(
             "Revoking member (%s) from %s", user_or_group.name, self.groupname
@@ -341,7 +356,7 @@ class Group(Model):
         request = Request(
             requester_id=requester.id,
             requesting_id=self.id,
-            on_behalf_obj_type=member_type,
+            on_behalf_obj_type=user_or_group.member_type,
             on_behalf_obj_pk=user_or_group.id,
             requested_at=now,
             edge_id=edge.id,
@@ -389,6 +404,78 @@ class Group(Model):
         mapping = PermissionMap(permission_id=permission.id, group_id=self.id,
                                 argument=argument)
         mapping.add(self.session)
+
+        Counter.incr(self.session, "updates")
+
+    @flush_transaction
+    def edit_member(self, requester, user_or_group, reason, **kwargs):
+        """ Edit an existing member (User or Group) of a group.
+
+            This takes the same parameters as add_member, except that we do not allow you to set
+            a status: this only works on existing members.
+
+            Any option that is not passed is not updated, and instead, the existing value for this
+            user is kept.
+        """
+        now = datetime.utcnow()
+        member_type = user_or_group.member_type
+
+        # Force role to member when member is a group. Just in case.
+        if member_type == 1 and "role" in kwargs:
+            kwargs["role"] = "member"
+
+        logging.debug(
+            "Editing member (%s) in %s", user_or_group.name, self.groupname
+        )
+
+        edge = GroupEdge.get(
+            self.session,
+            group_id=self.id,
+            member_type=member_type,
+            member_pk=user_or_group.id,
+        )
+        self.session.flush()
+
+        if not edge:
+            raise MemberNotFound()
+
+        request = Request(
+            requester_id=requester.id,
+            requesting_id=self.id,
+            on_behalf_obj_type=member_type,
+            on_behalf_obj_pk=user_or_group.id,
+            requested_at=now,
+            edge_id=edge.id,
+            status="actioned",
+            changes=build_changes(
+                edge, **kwargs
+            ),
+        ).add(self.session)
+        self.session.flush()
+
+        request_status_change = RequestStatusChange(
+            request=request,
+            user_id=requester.id,
+            to_status="actioned",
+            change_at=now,
+        ).add(self.session)
+        self.session.flush()
+
+        Comment(
+            obj_type=3,
+            obj_pk=request_status_change.id,
+            user_id=requester.id,
+            comment=reason,
+            created_on=now,
+        ).add(self.session)
+
+        edge.apply_changes(request)
+        self.session.flush()
+
+        message = "Edit member {} {}: {}".format(
+            OBJ_TYPES_IDX[member_type].lower(), user_or_group.name, reason)
+        AuditLog.log(self.session, requester.id, 'edit_member',
+                     message, on_group_id=self.id)
 
         Counter.incr(self.session, "updates")
 
@@ -510,6 +597,7 @@ class Group(Model):
         now = datetime.utcnow()
 
         users = self.session.query(
+            label("id", user_member.id),
             label("type", literal("User")),
             label("membername", user_member.username),
             label("role", GroupEdge._role),
@@ -531,6 +619,7 @@ class Group(Model):
         ).subquery()
 
         groups = self.session.query(
+            label("id", group_member.id),
             label("type", literal("Group")),
             label("membername", group_member.groupname),
             label("role", GroupEdge._role),
@@ -550,7 +639,7 @@ class Group(Model):
         ).subquery()
 
         query = self.session.query(
-            "type", "membername", "role", "expiration"
+            "id", "type", "membername", "role", "expiration"
         ).select_entity_from(
             union_all(users.select(), groups.select())
         ).order_by(
@@ -802,7 +891,13 @@ class GroupEdge(Model):
     def apply_changes(self, request):
         changes = json.loads(request.changes)
         for key, value in changes.items():
-            setattr(self, key, value)
+            if key == 'expiration':
+                if value:
+                    setattr(self, key, datetime.strptime(value, "%m/%d/%Y"))
+                else:
+                    setattr(self, key, None)
+            else:
+                setattr(self, key, value)
 
     def __repr__(self):
         return "%s(group_id=%s, member_type=%s, member_pk=%s)" % (

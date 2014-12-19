@@ -40,11 +40,11 @@ class GraphHandler(RequestHandler):
 
 
 class Users(GraphHandler):
-    def get(self, username=None):
+    def get(self, name=None):
         cutoff = int(self.get_argument("cutoff", 100))
 
         with self.graph.lock:
-            if not username:
+            if not name:
                 return self.success({
                     "users": [
                         user
@@ -52,23 +52,23 @@ class Users(GraphHandler):
                     ],
                 })
 
-            if username not in self.graph.users:
-                return self.notfound("User (%s) not found." % username)
+            if name not in self.graph.users:
+                return self.notfound("User (%s) not found." % name)
 
-            details = self.graph.get_user_details(username, cutoff)
+            details = self.graph.get_user_details(name, cutoff)
 
-            out = {"user": {"name": username}}
-            try_update(out["user"], self.graph.user_metadata.get(username, {}))
+            out = {"user": {"name": name}}
+            try_update(out["user"], self.graph.user_metadata.get(name, {}))
             try_update(out, details)
             return self.success(out)
 
 
 class Groups(GraphHandler):
-    def get(self, groupname=None):
+    def get(self, name=None):
         cutoff = int(self.get_argument("cutoff", 100))
 
         with self.graph.lock:
-            if not groupname:
+            if not name:
                 return self.success({
                     "groups": [
                         group
@@ -76,13 +76,13 @@ class Groups(GraphHandler):
                     ],
                 })
 
-            if groupname not in self.graph.groups:
-                return self.notfound("Group (%s) not found." % groupname)
+            if name not in self.graph.groups:
+                return self.notfound("Group (%s) not found." % name)
 
-            details = self.graph.get_group_details(groupname, cutoff)
+            details = self.graph.get_group_details(name, cutoff)
 
-            out = {"group": {"name": groupname}}
-            try_update(out["group"], self.graph.group_metadata.get(groupname, {}))
+            out = {"group": {"name": name}}
+            try_update(out["group"], self.graph.group_metadata.get(name, {}))
             try_update(out, details)
             return self.success(out)
 

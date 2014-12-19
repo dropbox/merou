@@ -71,7 +71,7 @@ class GroupForm(Form):
     groupname = TextField("Name", [
         validators.Length(min=3, max=32),
         validators.Required(),
-        ValidateRegex(constants.GROUP_VALIDATION),
+        ValidateRegex(constants.NAME_VALIDATION),
     ])
     description = TextAreaField("Description")
     canjoin = SelectField("Who Can Join?", choices=[
@@ -92,7 +92,7 @@ class GroupJoinForm(Form):
     member = SelectField("Member", [
         validators.Length(min=3, max=32),
         validators.Required(),
-        ValidateRegex(r"(?:User|Member|Group): {}".format(constants.GROUP_VALIDATION)),
+        ValidateRegex(r"(?:User|Member|Group): {}".format(constants.NAME_VALIDATION)),
     ])
     role = SelectField("Role", [
         validators.Length(min=3, max=32),
@@ -107,3 +107,16 @@ class GroupJoinForm(Form):
     expiration = TextField("Expiration", [
         ValidateDate(),
     ], id="join-form-expiration")
+
+
+class GroupEditMemberForm(Form):
+    role = SelectField("Role", [
+        validators.Length(min=3, max=32),
+        validators.Required(),
+    ])
+    reason = TextAreaField("Reason", [
+        validators.Required(),
+    ])
+    expiration = TextField("Expiration", [
+        ValidateDate(),
+    ], id="edit-form-expiration")

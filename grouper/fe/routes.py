@@ -1,5 +1,5 @@
 from . import handlers
-from ..constants import USER_VALIDATION, GROUP_VALIDATION, PERMISSION_VALIDATION
+from ..constants import NAME_VALIDATION, NAME2_VALIDATION, PERMISSION_VALIDATION
 
 HANDLERS = [
     (r"/", handlers.Index),
@@ -7,7 +7,7 @@ HANDLERS = [
     (r"/permission/{}".format(PERMISSION_VALIDATION), handlers.PermissionView),
     (r"/permissions", handlers.PermissionsView),
     (r"/permissions/create", handlers.PermissionsCreate),
-    (r"/permissions/grant/{}".format(GROUP_VALIDATION), handlers.PermissionsGrant),
+    (r"/permissions/grant/{}".format(NAME_VALIDATION), handlers.PermissionsGrant),
     (
         r"/permissions/{}/revoke/(?P<mapping_id>[0-9]+)".format(PERMISSION_VALIDATION),
         handlers.PermissionsRevoke
@@ -16,7 +16,7 @@ HANDLERS = [
     (r"/users", handlers.UsersView),
 ]
 
-for regex in (r"(?P<user_id>[0-9]+)", USER_VALIDATION):
+for regex in (r"(?P<user_id>[0-9]+)", NAME_VALIDATION):
     HANDLERS.extend([
         (r"/users/{}".format(regex), handlers.UserView),
         (r"/users/{}/disable".format(regex), handlers.UserDisable),
@@ -28,7 +28,7 @@ for regex in (r"(?P<user_id>[0-9]+)", USER_VALIDATION):
         ),
     ])
 
-for regex in (r"(?P<group_id>[0-9]+)", GROUP_VALIDATION):
+for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
     HANDLERS.extend([
         (r"/groups/{}".format(regex), handlers.GroupView),
         (r"/groups/{}/edit".format(regex), handlers.GroupEdit),
@@ -39,6 +39,10 @@ for regex in (r"(?P<group_id>[0-9]+)", GROUP_VALIDATION):
         (
             r"/groups/{}/requests/(?P<request_id>[0-9]+)".format(regex),
             handlers.GroupRequestUpdate
+        ),
+        (
+            r"/groups/{}/edit/(?P<member_type>user|group)/{}".format(regex, NAME2_VALIDATION),
+            handlers.GroupEditMember
         ),
     ])
 

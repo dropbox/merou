@@ -87,7 +87,7 @@
     </div>
 {%- endmacro %}
 
-{% macro member_panel(max_height, members) -%}
+{% macro member_panel(max_height, group, members, current_user) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Members</h3>
@@ -109,9 +109,22 @@
                 <tbody>
                 {% for member in members.itervalues() %}
                     <tr>
-                        <td>{{ member.type }}</td>
                         <td>
-                            <a href="/{{member.type|lower}}s/{{member.membername}}">{{ member.membername }}</a>
+                            {{ member.type }}
+                        </td>
+                        <td>
+                            {% if member.membername != current_user.name and
+                                (current_user.my_role(members) == "owner" or
+                                 (current_user.my_role(members) == "manager" and
+                                  ROLES[member.role] == "member"))
+                            %}
+                                <a href="/groups/{{group.name}}/edit/{{member.type|lower}}/{{member.membername}}" class="btn btn-default btn-xs">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                            {% endif %}
+                            <a href="/{{member.type|lower}}s/{{member.membername}}">
+                                {{ member.membername }}
+                            </a>
                         </td>
                         <td>{{ ROLES[member.role] }}</td>
                         <td>{{ member.expiration|delta_str }}</td>

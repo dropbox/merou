@@ -12,11 +12,11 @@ import sshpubkey
 from ..constants import RESERVED_NAMES
 from .forms import (
     GroupForm, GroupJoinForm, GroupRequestModifyForm, PublicKeyForm,
-    PermissionForm, PermissionGrantForm,
+    PermissionForm, PermissionGrantForm, GroupEditMemberForm,
 )
 from ..models import (
-    User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog,
-    GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES,
+    User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog, GroupEdge,
+    GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES, OBJ_TYPES,
 )
 from .settings import settings
 from .util import GrouperHandler, Alert
@@ -72,12 +72,12 @@ class Search(GrouperHandler):
 
 
 class UserView(GrouperHandler):
-    def get(self, user_id=None, username=None):
-        user = User.get(self.session, user_id, username)
+    def get(self, user_id=None, name=None):
+        user = User.get(self.session, user_id, name)
         if user_id is not None:
             user = self.session.query(User).filter_by(id=user_id).scalar()
         else:
-            user = self.session.query(User).filter_by(username=username).scalar()
+            user = self.session.query(User).filter_by(username=name).scalar()
 
         if not user:
             return self.notfound()
@@ -104,7 +104,7 @@ class PermissionsCreate(GrouperHandler):
             "permission-create.html", form=PermissionForm(),
         )
 
-    def post(self, name=None, description=None):
+    def post(self):
         if not self.current_user.permission_admin:
             return self.forbidden()
 
@@ -148,11 +148,11 @@ class PermissionsCreate(GrouperHandler):
 
 
 class PermissionsGrant(GrouperHandler):
-    def get(self, groupname=None):
+    def get(self, name=None):
         if not self.current_user.permission_admin:
             return self.forbidden()
 
-        group = Group.get(self.session, None, groupname)
+        group = Group.get(self.session, None, name)
         if not group:
             return self.notfound()
 
@@ -165,11 +165,11 @@ class PermissionsGrant(GrouperHandler):
             "permission-grant.html", form=form, group=group,
         )
 
-    def post(self, groupname=None, permission=None, argument=None):
+    def post(self, name=None):
         if not self.current_user.permission_admin:
             return self.forbidden()
 
-        group = Group.get(self.session, None, groupname)
+        group = Group.get(self.session, None, name)
         if not group:
             return self.notfound()
 
@@ -306,11 +306,11 @@ class UsersView(GrouperHandler):
 
 
 class UserEnable(GrouperHandler):
-    def post(self, user_id=None, username=None):
+    def post(self, user_id=None, name=None):
         if not self.current_user.user_admin:
             return self.forbidden()
 
-        user = User.get(self.session, user_id, username)
+        user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
 
@@ -324,12 +324,12 @@ class UserEnable(GrouperHandler):
 
 
 class UserDisable(GrouperHandler):
-    def post(self, user_id=None, username=None):
+    def post(self, user_id=None, name=None):
 
         if not self.current_user.user_admin:
             return self.forbidden()
 
-        user = User.get(self.session, user_id, username)
+        user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
 
@@ -343,8 +343,8 @@ class UserDisable(GrouperHandler):
 
 
 class GroupView(GrouperHandler):
-    def get(self, group_id=None, groupname=None):
-        group = Group.get(self.session, group_id, groupname)
+    def get(self, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
 
@@ -367,9 +367,104 @@ class GroupView(GrouperHandler):
         )
 
 
+class GroupEditMember(GrouperHandler):
+    def get(self, group_id=None, name=None, name2=None, member_type=None):
+        group = Group.get(self.session, group_id, name)
+        if not group:
+            return self.notfound()
+
+        if self.current_user.name == name2:
+            return self.forbidden()
+
+        members = group.my_members()
+        my_role = self.current_user.my_role(members)
+        if my_role not in ("manager", "owner"):
+            return self.forbidden()
+
+        member = members.get((member_type.capitalize(), name2), None)
+        if not member:
+            return self.notfound()
+
+        edge = GroupEdge.get(
+            self.session,
+            group_id=group.id,
+            member_type=OBJ_TYPES[member.type],
+            member_pk=member.id,
+        )
+        if not edge:
+            return self.notfound()
+
+        form = GroupEditMemberForm(self.request.arguments)
+        form.role.choices = [["member", "Member"]]
+        if my_role == "owner":
+            form.role.choices.append(["manager", "Manager"])
+            form.role.choices.append(["owner", "Owner"])
+
+        form.role.data = edge.role
+        form.expiration.data = edge.expiration.strftime("%m/%d/%Y") if edge.expiration else None
+
+        self.render(
+            "group-edit-member.html", group=group, member=member, edge=edge, form=form,
+        )
+
+    def post(self, group_id=None, name=None, name2=None, member_type=None):
+        group = Group.get(self.session, group_id, name)
+        if not group:
+            return self.notfound()
+
+        if self.current_user.name == name2:
+            return self.forbidden()
+
+        members = group.my_members()
+        my_role = self.current_user.my_role(members)
+        if my_role not in ("manager", "owner"):
+            return self.forbidden()
+
+        member = members.get((member_type.capitalize(), name2), None)
+        if not member:
+            return self.notfound()
+
+        if member.type == "Group":
+            user_or_group = Group.get(self.session, member.id)
+        else:
+            user_or_group = User.get(self.session, member.id)
+        if not user_or_group:
+            return self.notfound()
+
+        edge = GroupEdge.get(
+            self.session,
+            group_id=group.id,
+            member_type=OBJ_TYPES[member.type],
+            member_pk=member.id,
+        )
+        if not edge:
+            return self.notfound()
+
+        form = GroupEditMemberForm(self.request.arguments)
+        form.role.choices = [["member", "Member"]]
+        if my_role == "owner":
+            form.role.choices.append(["manager", "Manager"])
+            form.role.choices.append(["owner", "Owner"])
+
+        if not form.validate():
+            return self.render(
+                "group-edit-member.html", group=group, member=member, edge=edge, form=form,
+                alerts=self.get_form_alerts(form.errors),
+            )
+
+        expiration = None
+        if form.data["expiration"]:
+            expiration = datetime.strptime(form.data["expiration"], "%m/%d/%Y")
+
+        group.edit_member(self.current_user, user_or_group, form.data["reason"],
+                          role=form.data["role"], expiration=expiration)
+
+        return self.redirect("/groups/{}".format(group.name))
+
+
 class GroupRequestUpdate(GrouperHandler):
-    def get(self, request_id, group_id=None, groupname=None):
-        group = Group.get(self.session, group_id, groupname)
+    def get(self, request_id, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
 
@@ -392,8 +487,8 @@ class GroupRequestUpdate(GrouperHandler):
             members=members, form=form, statuses=REQUEST_STATUS_CHOICES, updates=updates
         )
 
-    def post(self, request_id, group_id=None, groupname=None):
-        group = Group.get(self.session, group_id, groupname)
+    def post(self, request_id, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
 
@@ -439,8 +534,8 @@ class GroupRequestUpdate(GrouperHandler):
 
 
 class GroupRequests(GrouperHandler):
-    def get(self, group_id=None, groupname=None):
-        group = Group.get(self.session, group_id, groupname)
+    def get(self, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
 
@@ -525,8 +620,8 @@ class GroupsView(GrouperHandler):
 
 
 class GroupJoin(GrouperHandler):
-    def get(self, group_id=None, groupname=None):
-        group = Group.get(self.session, group_id, groupname)
+    def get(self, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
 
@@ -536,8 +631,8 @@ class GroupJoin(GrouperHandler):
             "group-join.html", form=form, group=group
         )
 
-    def post(self, group_id=None, groupname=None):
-        group = Group.get(self.session, group_id, groupname)
+    def post(self, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
 
@@ -638,8 +733,8 @@ class GroupJoin(GrouperHandler):
 
 
 class GroupEdit(GrouperHandler):
-    def get(self, group_id=None, groupname=None):
-        group = Group.get(self.session, group_id, groupname)
+    def get(self, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
 
@@ -652,8 +747,8 @@ class GroupEdit(GrouperHandler):
 
         self.render("group-edit.html", group=group, form=form)
 
-    def post(self, group_id=None, groupname=None):
-        group = Group.get(self.session, group_id, groupname)
+    def post(self, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
 
@@ -692,8 +787,8 @@ class GroupEdit(GrouperHandler):
 
 
 class GroupEnable(GrouperHandler):
-    def post(self, group_id=None, groupname=None):
-        group = Group.get(self.session, group_id, groupname)
+    def post(self, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
 
@@ -711,8 +806,8 @@ class GroupEnable(GrouperHandler):
 
 
 class GroupDisable(GrouperHandler):
-    def post(self, group_id=None, groupname=None):
-        group = Group.get(self.session, group_id, groupname)
+    def post(self, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
 
@@ -730,8 +825,8 @@ class GroupDisable(GrouperHandler):
 
 
 class PublicKeyAdd(GrouperHandler):
-    def get(self, user_id=None, username=None):
-        user = User.get(self.session, user_id, username)
+    def get(self, user_id=None, name=None):
+        user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
 
@@ -740,8 +835,8 @@ class PublicKeyAdd(GrouperHandler):
 
         self.render("public-key-add.html", form=PublicKeyForm(), user=user)
 
-    def post(self, user_id=None, username=None):
-        user = User.get(self.session, user_id, username)
+    def post(self, user_id=None, name=None):
+        user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
 
@@ -784,8 +879,8 @@ class PublicKeyAdd(GrouperHandler):
 
 
 class PublicKeyDelete(GrouperHandler):
-    def get(self, user_id=None, username=None, key_id=None):
-        user = User.get(self.session, user_id, username)
+    def get(self, user_id=None, name=None, key_id=None):
+        user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
 
@@ -799,8 +894,8 @@ class PublicKeyDelete(GrouperHandler):
 
         self.render("public-key-delete.html", user=user, key=key)
 
-    def post(self, user_id=None, username=None, key_id=None):
-        user = User.get(self.session, user_id, username)
+    def post(self, user_id=None, name=None, key_id=None):
+        user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
 

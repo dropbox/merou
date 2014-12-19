@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block heading %}
+    <a href="/groups">Groups</a>
+{% endblock %}
+
+{% block subheading %}
+    Edit Member {{member.membername}} in 
+    <a href="/groups/{{group.groupname}}">{{group.groupname}}</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="col-md-6 col-md-offset-3">
+
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Edit Member</h3>
+       </div>
+        <div class="panel-body">
+            <form class="form-horizontal" role="form"
+                  method="post" action="/groups/{{group.name}}/edit/{{member.type|lower}}/{{member.membername}}">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">
+                        Member
+                    </label>
+                    <div class="col-sm-8 control-label" style="text-align: left;">
+                        {{ member.membername }}
+                    </div>
+                </div>
+                {% include "forms/group-edit-member.html" %}
+                <div class="form-group">
+                    <div class="col-sm-offset-3 col-sm-4">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+</div>
+
+
+{% endblock %}
+
+{% block script %}
+
+<script src="{{cdnjs_prefix}}/ajax/libs/bootstrap-datetimepicker/3.0.0/js/bootstrap-datetimepicker.min.js">
+</script>
+
+<script type="text/javascript">
+    $(function () {
+        $('#edit-form-expiration').datetimepicker({
+            pickTime: false,
+            icons: {
+                time: "fa fa-clock-o",
+                date: "fa fa-calendar",
+                up: "fa fa-arrow-up",
+                down: "fa fa-arrow-down"
+            },
+            useCurrent: false,
+            minDate: moment(),
+        });
+    });
+</script>
+
+{% endblock %}

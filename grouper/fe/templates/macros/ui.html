@@ -282,7 +282,7 @@
         </button>
         <ul class="dropdown-menu" role="menu">
         {% if allow_none %}
-            <li><a href="{{ update_qs(**{key: []}) }}">None</a></li>
+            <li><a href="{{ update_qs(**{key: []}) }}">(show all)</a></li>
         {% endif %}
         {% for value in values %}
             <li><a href="{{ update_qs(**{key: value}) }}">{{value}}</a></li>

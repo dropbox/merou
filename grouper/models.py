@@ -21,7 +21,7 @@ from sqlalchemy.orm import sessionmaker, Session as _Session
 from sqlalchemy.sql import func, label, literal
 
 from .capabilities import Capabilities
-from .constants import ARGUMENT_VALIDATION
+from .constants import ARGUMENT_VALIDATION, PERMISSION_GRANT
 
 
 OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange")
@@ -264,14 +264,30 @@ class User(Model):
 
     def my_grantable_permissions(self):
         '''
-        Returns a list of permissions this user is allowed to grant. This is an expensive call,
-        potentially, as it has to walk the graph for a user.
+        Returns a list of permissions this user is allowed to grant. Presently, this only counts
+        permissions that a user has directly -- in other words, the 'grant' permissions are not
+        counted as inheritable.
 
-        TODO: actually walk the graph.
+        TODO: consider making these permissions inherited? This requires walking the graph, which
+        is expensive.
+
+        TODO: we should be able to expression that you can only grant a permission with given
+        arguments.
+
+        Returns a list of Permission objects that this user can grant to groups.
         '''
+        all_permissions = {permission.name: permission
+                           for permission in Permission.get_all(self.session)}
         if self.permission_admin:
-            return Permission.get_all(self.session)
-        return []
+            return all_permissions.values()
+
+        # Someone can grant a permission if they are a member of a group that has a permission
+        # of PERMISSION_GRANT with an argument that matches the name of a permission.
+        return [
+            all_permissions.get(permission.argument, None)
+            for permission in self.my_permissions()
+            if permission.name == PERMISSION_GRANT
+        ]
 
     def my_groups(self):
 

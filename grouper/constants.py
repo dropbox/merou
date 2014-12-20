@@ -11,10 +11,14 @@ NAME2_VALIDATION = r"(?P<name2>[\-\w\.]+)"
 PERMISSION_VALIDATION = r"(?P<name>(?:[a-z0-9]+[_\-\.]?)*[a-z0-9]+(?:\.\*)?)"
 ARGUMENT_VALIDATION = r"(?P<argument>|\*|(?:[a-z0-9]+[=_\-\.]?)*[a-z0-9]+(?:\.\*)?)"
 
+# Global permission names to prevent stringly typed things
+PERMISSION_GRANT = "grouper.permission.grant"
+PERMISSION_CREATE = "grouper.permission.create"
+
 # Permissions that are always created and are reserved.
 SYSTEM_PERMISSIONS = [
-    ('grouper.permission.create', 'Ability to create permissions within Grouper.'),
-    ('grouper.permission.grant', 'Ability to grant a permission to a group.'),
+    (PERMISSION_CREATE, "Ability to create permissions within Grouper."),
+    (PERMISSION_GRANT, "Ability to grant a permission to a group."),
 ]
 
 # A list of regular expressions that are reserved anywhere names are created. I.e., if a regex

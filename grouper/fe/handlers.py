@@ -149,7 +149,8 @@ class PermissionsCreate(GrouperHandler):
 
 class PermissionsGrant(GrouperHandler):
     def get(self, name=None):
-        if not self.current_user.permission_admin:
+        grantable = self.current_user.my_grantable_permissions()
+        if not grantable:
             return self.forbidden()
 
         group = Group.get(self.session, None, name)
@@ -158,7 +159,7 @@ class PermissionsGrant(GrouperHandler):
 
         form = PermissionGrantForm()
         form.permission.choices = [["", "(select one)"]]
-        for perm in self.current_user.my_grantable_permissions():
+        for perm in grantable:
             form.permission.choices.append([perm.name, perm.name])
 
         return self.render(
@@ -166,7 +167,8 @@ class PermissionsGrant(GrouperHandler):
         )
 
     def post(self, name=None):
-        if not self.current_user.permission_admin:
+        grantable = self.current_user.my_grantable_permissions()
+        if not grantable:
             return self.forbidden()
 
         group = Group.get(self.session, None, name)
@@ -175,7 +177,6 @@ class PermissionsGrant(GrouperHandler):
 
         form = PermissionGrantForm(self.request.arguments)
         form.permission.choices = [["", "(select one)"]]
-        grantable = self.current_user.my_grantable_permissions()
         for perm in grantable:
             form.permission.choices.append([perm.name, perm.name])
 
@@ -214,22 +215,30 @@ class PermissionsGrant(GrouperHandler):
 
 class PermissionsRevoke(GrouperHandler):
     def get(self, name=None, mapping_id=None):
-        if not self.current_user.permission_admin:
+        grantable = self.current_user.my_grantable_permissions()
+        if not grantable:
             return self.forbidden()
 
         mapping = PermissionMap.get(self.session, id=mapping_id)
         if not mapping:
             return self.notfound()
+
+        if mapping.permission.name not in [permission.name for permission in grantable]:
+            return self.forbidden()
 
         self.render("permission-revoke.html", mapping=mapping)
 
     def post(self, name=None, mapping_id=None):
-        if not self.current_user.permission_admin:
+        grantable = self.current_user.my_grantable_permissions()
+        if not grantable:
             return self.forbidden()
 
         mapping = PermissionMap.get(self.session, id=mapping_id)
         if not mapping:
             return self.notfound()
+
+        if mapping.permission.name not in [permission.name for permission in grantable]:
+            return self.forbidden()
 
         permission = mapping.permission
         group = mapping.group
@@ -348,6 +357,9 @@ class GroupView(GrouperHandler):
         if not group:
             return self.notfound()
 
+        grantable = [
+            permission.name for permission in self.current_user.my_grantable_permissions()]
+
         members = group.my_members()
         groups = group.my_groups()
         permissions = group.my_permissions()
@@ -363,7 +375,7 @@ class GroupView(GrouperHandler):
         self.render(
             "group.html", group=group, members=members, groups=groups,
             num_pending=num_pending, alerts=alerts, permissions=permissions,
-            log_entries=log_entries,
+            log_entries=log_entries, grantable=grantable,
         )
 
 

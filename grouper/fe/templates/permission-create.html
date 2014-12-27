@@ -19,7 +19,11 @@
                   method="post" action="/permissions/create">
                 {% include "forms/permission.html" %}
                 <div class="form-permission">
-                    <div class="col-sm-offset-3 col-sm-4">
+                    <div class="col-sm-offset-3 col-sm-9">
+                        <p>You are only allowed to create permissions that match the following
+                        list of patterns: <strong>
+                            {{ can_create|sort|join("</strong>, <strong>") }}
+                        </strong></p>
                         <button type="submit" class="btn btn-primary">Submit</button>
                     </div>
                 </div>

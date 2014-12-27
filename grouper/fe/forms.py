@@ -58,7 +58,7 @@ class PermissionGrantForm(Form):
     ])
 
 
-class PermissionForm(Form):
+class PermissionCreateForm(Form):
     name = TextField("Name", [
         validators.Length(min=3, max=64),
         validators.Required(),

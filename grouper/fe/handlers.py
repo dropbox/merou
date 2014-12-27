@@ -12,7 +12,7 @@ import sshpubkey
 from ..constants import RESERVED_NAMES
 from .forms import (
     GroupForm, GroupJoinForm, GroupRequestModifyForm, PublicKeyForm,
-    PermissionForm, PermissionGrantForm, GroupEditMemberForm,
+    PermissionCreateForm, PermissionGrantForm, GroupEditMemberForm,
 )
 from ..models import (
     User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog, GroupEdge,
@@ -20,6 +20,7 @@ from ..models import (
 )
 from .settings import settings
 from .util import GrouperHandler, Alert
+from ..util import matches_glob
 
 
 class Index(GrouperHandler):
@@ -97,33 +98,50 @@ class UserView(GrouperHandler):
 
 class PermissionsCreate(GrouperHandler):
     def get(self):
-        if not self.current_user.permission_admin:
+        can_create = self.current_user.my_creatable_permissions()
+        if not can_create:
             return self.forbidden()
 
         return self.render(
-            "permission-create.html", form=PermissionForm(),
+            "permission-create.html", form=PermissionCreateForm(), can_create=can_create,
         )
 
     def post(self):
-        if not self.current_user.permission_admin:
+        can_create = self.current_user.my_creatable_permissions()
+        if not can_create:
             return self.forbidden()
 
-        form = PermissionForm(self.request.arguments)
+        form = PermissionCreateForm(self.request.arguments)
         if not form.validate():
             return self.render(
                 "permission-create.html", form=form,
                 alerts=self.get_form_alerts(form.errors)
             )
 
+        # A user is allowed to create a permission if the name matches any of the globs that they
+        # are given access to via PERMISSION_CREATE, as long as the permission does not match a
+        # reserved name. (Unless specifically granted.)
+        allowed = False
+        for creatable in can_create:
+            if matches_glob(creatable, form.data["name"]):
+                allowed = True
+
         for reserved in RESERVED_NAMES:
             if re.match(reserved, form.data["name"]):
                 form.name.errors.append(
                     "Permission names must not match the pattern: %s" % (reserved, )
                 )
-                return self.render(
-                    "permission-create.html", form=form,
-                    alerts=self.get_form_alerts(form.errors),
-                )
+
+        if not allowed:
+            form.name.errors.append(
+                "Permission name does not match any of your allowed patterns."
+            )
+
+        if form.name.errors:
+            return self.render(
+                "permission-create.html", form=form,
+                alerts=self.get_form_alerts(form.errors),
+            )
 
         permission = Permission(name=form.data["name"], description=form.data["description"])
         try:
@@ -135,7 +153,7 @@ class PermissionsCreate(GrouperHandler):
                 "Name already in use. Permissions must be unique."
             )
             return self.render(
-                "permission-create.html", form=form,
+                "permission-create.html", form=form, can_create=can_create,
                 alerts=self.get_form_alerts(form.errors),
             )
 
@@ -270,7 +288,7 @@ class PermissionsView(GrouperHandler):
         )
         total = permissions.count()
         permissions = permissions.offset(offset).limit(limit).all()
-        can_create = self.current_user.permission_admin
+        can_create = self.current_user.my_creatable_permissions()
 
         self.render(
             "permissions.html", permissions=permissions, offset=offset, limit=limit, total=total,

@@ -1,3 +1,4 @@
+import fnmatch
 import logging
 import random as insecure_random
 import subprocess
@@ -43,3 +44,8 @@ def get_database_url(settings):
     except subprocess.CalledProcessError:
         return None
     return url.strip()
+
+
+def matches_glob(glob, text):
+    """Returns True/False on if text matches glob."""
+    return fnmatch.fnmatch(text, glob)

@@ -7,8 +7,9 @@ NAME_VALIDATION = r"(?P<name>[\-\w\.]+)"
 # above regex changes, change this one. This is kind of gross. :\
 NAME2_VALIDATION = r"(?P<name2>[\-\w\.]+)"
 
-# TODO: probably need a PERMISSION_WILDCARD which allows 'foo.*' and PERMISSION shouldn't
-PERMISSION_VALIDATION = r"(?P<name>(?:[a-z0-9]+[_\-\.]?)*[a-z0-9]+(?:\.\*)?)"
+# Regexes for validating permission/argument names
+PERMISSION_VALIDATION = r"(?P<name>(?:[a-z0-9]+[_\-\.]?)*[a-z0-9]+)"
+PERMISSION_WILDCARD_VALIDATION = r"(?P<name>(?:[a-z0-9]+[_\-\.]?)*[a-z0-9]+(?:\.\*)?)"
 ARGUMENT_VALIDATION = r"(?P<argument>|\*|(?:[a-z0-9]+[=_\-\.]?)*[a-z0-9]+(?:\.\*)?)"
 
 # Global permission names to prevent stringly typed things

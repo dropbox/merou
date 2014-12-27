@@ -21,7 +21,7 @@ from sqlalchemy.orm import sessionmaker, Session as _Session
 from sqlalchemy.sql import func, label, literal
 
 from .capabilities import Capabilities
-from .constants import ARGUMENT_VALIDATION, PERMISSION_GRANT
+from .constants import ARGUMENT_VALIDATION, PERMISSION_GRANT, PERMISSION_CREATE
 
 
 OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange")
@@ -261,6 +261,29 @@ class User(Model):
         ).all()
 
         return permissions
+
+    def my_creatable_permissions(self):
+        '''
+        Returns a list of permissions this user is allowed to create. Presently, this only counts
+        permissions that a user has directly -- in other words, the 'create' permissions are not
+        counted as inheritable.
+
+        TODO: consider making these permissions inherited? This requires walking the graph, which
+        is expensive.
+
+        Returns a list of strings that are to be interpreted as glob strings. You should use the
+        util function check_glob_match.
+        '''
+        if self.permission_admin:
+            return '*'
+
+        # Someone can grant a permission if they are a member of a group that has a permission
+        # of PERMISSION_GRANT with an argument that matches the name of a permission.
+        return [
+            permission.argument
+            for permission in self.my_permissions()
+            if permission.name == PERMISSION_CREATE
+        ]
 
     def my_grantable_permissions(self):
         '''

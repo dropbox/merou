@@ -178,7 +178,8 @@ class PermissionsGrant(GrouperHandler):
         form = PermissionGrantForm()
         form.permission.choices = [["", "(select one)"]]
         for perm in grantable:
-            form.permission.choices.append([perm.name, perm.name])
+            grantable = "{} ({})".format(perm[0].name, perm[1])
+            form.permission.choices.append([perm[0].name, grantable])
 
         return self.render(
             "permission-grant.html", form=form, group=group,
@@ -196,7 +197,8 @@ class PermissionsGrant(GrouperHandler):
         form = PermissionGrantForm(self.request.arguments)
         form.permission.choices = [["", "(select one)"]]
         for perm in grantable:
-            form.permission.choices.append([perm.name, perm.name])
+            grantable_str = "{} ({})".format(perm[0].name, perm[1])
+            form.permission.choices.append([perm[0].name, grantable_str])
 
         if not form.validate():
             return self.render(
@@ -208,8 +210,19 @@ class PermissionsGrant(GrouperHandler):
         if not permission:
             return self.notfound()  # Shouldn't happen.
 
-        if permission.name not in [perm.name for perm in grantable]:
-            return self.forbidden()
+        allowed = False
+        for perm in grantable:
+            if perm[0].name == permission.name:
+                if matches_glob(perm[1], form.data["argument"]):
+                    allowed = True
+        if not allowed:
+            form.argument.errors.append(
+                "You do not have grant authority over that permission/argument combination."
+            )
+            return self.render(
+                "permission-grant.html", form=form, group=group,
+                alerts=self.get_form_alerts(form.errors),
+            )
 
         try:
             group.grant_permission(permission, argument=form.data["argument"])
@@ -241,7 +254,12 @@ class PermissionsRevoke(GrouperHandler):
         if not mapping:
             return self.notfound()
 
-        if mapping.permission.name not in [permission.name for permission in grantable]:
+        allowed = False
+        for perm in grantable:
+            if perm[0].name == mapping.permission.name:
+                if matches_glob(perm[1], mapping.argument):
+                    allowed = True
+        if not allowed:
             return self.forbidden()
 
         self.render("permission-revoke.html", mapping=mapping)
@@ -255,7 +273,12 @@ class PermissionsRevoke(GrouperHandler):
         if not mapping:
             return self.notfound()
 
-        if mapping.permission.name not in [permission.name for permission in grantable]:
+        allowed = False
+        for perm in grantable:
+            if perm[0].name == mapping.permission.name:
+                if matches_glob(perm[1], mapping.argument):
+                    allowed = True
+        if not allowed:
             return self.forbidden()
 
         permission = mapping.permission
@@ -375,8 +398,7 @@ class GroupView(GrouperHandler):
         if not group:
             return self.notfound()
 
-        grantable = [
-            permission.name for permission in self.current_user.my_grantable_permissions()]
+        grantable = self.current_user.my_grantable_permissions()
 
         members = group.my_members()
         groups = group.my_groups()

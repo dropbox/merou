@@ -294,23 +294,28 @@ class User(Model):
         TODO: consider making these permissions inherited? This requires walking the graph, which
         is expensive.
 
-        TODO: we should be able to expression that you can only grant a permission with given
-        arguments.
-
-        Returns a list of Permission objects that this user can grant to groups.
+        Returns a list of tuples (Permission, argument) that the user is allowed to grant.
         '''
         all_permissions = {permission.name: permission
                            for permission in Permission.get_all(self.session)}
         if self.permission_admin:
-            return all_permissions.values()
+            result = [(perm, '*') for perm in all_permissions.values()]
+            return sorted(result, key=lambda x: x[0].name + x[1])
 
         # Someone can grant a permission if they are a member of a group that has a permission
         # of PERMISSION_GRANT with an argument that matches the name of a permission.
-        return [
-            all_permissions.get(permission.argument, None)
-            for permission in self.my_permissions()
-            if permission.name == PERMISSION_GRANT
-        ]
+        result = []
+        for permission in self.my_permissions():
+            if permission.name != PERMISSION_GRANT:
+                continue
+            grantable = permission.argument.split('/', 1)
+            if not grantable:
+                continue
+            permission_obj = all_permissions.get(grantable[0], None)
+            if not permission_obj:
+                continue
+            result.append((permission_obj, grantable[1] if len(grantable) > 1 else '*', ))
+        return sorted(result, key=lambda x: x[0].name + x[1])
 
     def my_groups(self):
 

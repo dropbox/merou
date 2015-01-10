@@ -25,11 +25,10 @@
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
                     <span class="fa fa-gear"></span>
                 </button>
-                <a class="navbar-brand" href="/"><span>GROUPER.</span></a>
+                <a class="navbar-brand" href="/" class="{{is_active('/')}}"><span>GROUPER.</span></a>
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li class="{{is_active('/')}}"><a href="/">Home</a></li>
                     <li class="{{is_active('/groups')}}"><a href="/groups">Groups</a></li>
                     <li class="{{is_active('/users')}}"><a href="/users">Users</a></li>
                     <li class="{{is_active('/permissions')}}"><a href="/permissions">Permissions</a></li>

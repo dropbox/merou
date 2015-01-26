@@ -1,5 +1,7 @@
 # grouper
 
+[![Build Status](https://travis-ci.org/dropbox/grouper.png?branch=master)](https://travis-ci.org/dropbox/grouper)
+
 ### Description
 
 Grouper is an application to allow users to create and manage memberships

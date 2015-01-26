@@ -17,7 +17,7 @@ class ValidateRegex(object):
         self._re = re.compile(self.regex)
 
     def __call__(self, form, field):
-        if not self._re.match(field.data):
+        if not self._re.match(field.data.strip()):
             raise ValidationError("Field must match '{}'".format(self.regex))
 
 

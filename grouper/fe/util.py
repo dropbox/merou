@@ -4,6 +4,7 @@ from email.mime.text import MIMEText
 from expvar.stats import stats
 from jinja2 import Environment, PackageLoader
 import pytz
+import re
 import smtplib
 import sqlalchemy.exc
 import tornado.web
@@ -29,6 +30,10 @@ class DatabaseFailure(Exception):
     pass
 
 
+class InvalidUser(Exception):
+    pass
+
+
 class GrouperHandler(tornado.web.RequestHandler):
 
     def initialize(self):
@@ -50,7 +55,9 @@ class GrouperHandler(tornado.web.RequestHandler):
         if not username:
             return
 
-        username = username.split("@")[0]
+        # Users must be fully qualified
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", username):
+            raise InvalidUser()
 
         try:
             user = self.session.query(User).filter_by(username=username).first()

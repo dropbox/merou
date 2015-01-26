@@ -1,11 +1,11 @@
 
 # These regexes must not include line anchors ('^', '$'). Those will be added by the
 # ValidateRegex library function and anybody else who needs them.
-NAME_VALIDATION = r"(?P<name>[\-\w\.]+)"
+NAME_VALIDATION = r"(?P<name>[@\-\w\.]+)"
 
 # This regex needs to exactly match the above, EXCEPT that the name should be "name2". So if the
 # above regex changes, change this one. This is kind of gross. :\
-NAME2_VALIDATION = r"(?P<name2>[\-\w\.]+)"
+NAME2_VALIDATION = r"(?P<name2>[@\-\w\.]+)"
 
 # Regexes for validating permission/argument names
 PERMISSION_VALIDATION = r"(?P<name>(?:[a-z0-9]+[_\-\.]?)*[a-z0-9]+)"

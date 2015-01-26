@@ -142,7 +142,7 @@ class User(Model):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
-    username = Column(String(length=32), unique=True, nullable=False)
+    username = Column(String(length=128), unique=True, nullable=False)
     capabilities = Column(Integer, default=0, nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
 

@@ -109,6 +109,38 @@ def capabilities_command(args):
         session.commit()
 
 
+def group_command(args):
+    session = make_session()
+    group = session.query(models.Group).filter_by(groupname=args.groupname).scalar()
+    if not group:
+        print "No such group %s" % args.groupname
+        return
+
+    user = session.query(models.User).filter_by(username=args.username).scalar()
+    if not user:
+        print "No such user %s, creating..." % args.username
+        user = models.User(username=args.username).add(session)
+        session.commit()
+
+    if args.subcommand == "add_member":
+        print "Adding %s to group %s" % (args.username, args.groupname)
+        group.add_member(user, user, "grouper-ctl join", status="actioned")
+        models.AuditLog.log(
+            session, user.id, 'join_group',
+            '{} manually joined via grouper-ctl'.format(args.username),
+            on_group_id=group.id)
+        session.commit()
+
+    elif args.subcommand == "remove_member":
+        print "Removing %s from group %s" % (args.username, args.groupname)
+        group.revoke_member(user, user, "grouper-ctl remove")
+        models.AuditLog.log(
+            session, user.id, 'leave_group',
+            '{} manually left via grouper-ctl'.format(args.username),
+            on_group_id=group.id)
+        session.commit()
+
+
 def main():
 
     description_msg = "Grouper Control"
@@ -137,6 +169,19 @@ def main():
 
     shell_parser = subparsers.add_parser("shell", help="Launch a shell with models imported.")
     shell_parser.set_defaults(func=shell_command)
+
+    group_parser = subparsers.add_parser("group", help="Edit group membership")
+    group_parser.set_defaults(func=group_command)
+    group_subparser = group_parser.add_subparsers(dest="subcommand")
+
+    group_join_parser = group_subparser.add_parser("add_member", help="Join a user to a group")
+    group_join_parser.add_argument("groupname")
+    group_join_parser.add_argument("username")
+
+    group_remove_parser = group_subparser.add_parser("remove_member",
+                                                   help="Remove a user from a group")
+    group_remove_parser.add_argument("groupname")
+    group_remove_parser.add_argument("username")
 
     capabilities_parser = subparsers.add_parser("capabilities", help="Make a user an user or group admin.")
     capabilities_parser.set_defaults(func=capabilities_command)

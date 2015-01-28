@@ -229,8 +229,8 @@
                         {% endif %}
                         {% if can_grant %}
                             <td class="col-sm-2">
-                            {% for grantable in can_grant %}
-                                {% if grantable[0].name == map.name %}
+                            {% for grantable in can_grant if grantable[0].name == map.name %}
+                                {% if loop.first %}
                                     <a class="btn btn-default btn-xs" href="/permissions/{{ map.name }}/revoke/{{ map.mapping_id }}">
                                     <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span> Revoke
                                     </a>

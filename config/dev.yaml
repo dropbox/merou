@@ -47,10 +47,6 @@ fe:
     # Type: str
     cdnjs_prefix: "//cdnjs.cloudflare.com"
 
-    # Domain name for users for sending e-mail.
-    # Type: str
-    domain: "localhost"
-
     # Url is the location of the Grouper homepage, no trailing slash. This should include a
     # port if one is needed.
     # Type: str

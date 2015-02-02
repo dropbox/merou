@@ -18,7 +18,6 @@ from ..models import (
     User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog, GroupEdge,
     GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES, OBJ_TYPES,
 )
-from .settings import settings
 from .util import GrouperHandler, Alert
 from ..util import matches_glob
 
@@ -719,7 +718,7 @@ class GroupJoin(GrouperHandler):
                          on_group_id=group.id)
 
             mail_to = [
-                "{}@{}".format(user.name, settings["domain"])
+                user.name
                 for user in group.my_users()
                 if GROUP_EDGE_ROLES[user.role] in ('manager', 'owner')
             ]

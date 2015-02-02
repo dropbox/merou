@@ -22,7 +22,6 @@ settings = FeSettings.from_settings(base_settings, {
     "date_format": "%Y-%m-%d %I:%M %p",
     "cdnjs_prefix": "//cdnjs.cloudflare.com",
     "user_auth_header": "X-Grouper-User",
-    "domain": "localhost",
     "send_emails": True,
     "smtp_server": "localhost",
     "from_addr": "no-reply@grouper.local",

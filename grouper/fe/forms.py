@@ -90,7 +90,7 @@ class GroupRequestModifyForm(Form):
 
 class GroupJoinForm(Form):
     member = SelectField("Member", [
-        validators.Length(min=3, max=32),
+        validators.Length(min=3, max=128),
         validators.Required(),
         ValidateRegex(r"(?:User|Member|Group): {}".format(constants.NAME_VALIDATION)),
     ])

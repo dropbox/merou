@@ -70,7 +70,7 @@
                 <tbody>
                 {% for group in groups %}
                     <tr>
-                        <td><a href="/groups/{{group.name}}">{{ group.name }}</a></td>
+                        <td>{{ account(group) }}</td>
                         {% if show_role %}
                             <td class="col-sm-2">{{ROLES[group.role]}}</td>
                         {% endif %}
@@ -87,6 +87,35 @@
     </div>
 {%- endmacro %}
 
+{% macro account(user) -%}
+<a href="/{{user.type|lower}}s/{{user.name}}">
+    <i class="fa fa-user{% if user.type == 'Group' %}s{% endif %}"></i> 
+    {{ user.name }}
+</a>
+{%- endmacro %}
+
+{% macro member_row(group, member, current_user) -%}
+    <tr>
+        <td>
+            {% if member.name != current_user.name and
+                (current_user.my_role(members) == "owner" or
+                 (current_user.my_role(members) == "manager" and
+                  ROLES[member.role] == "member"))
+            %}
+                <a href="/groups/{{group.name}}/edit/{{member.type|lower}}/{{member.name}}"
+                   class="btn btn-default btn-xs">
+                    <i class="fa fa-edit"></i>
+                </a>
+            {% endif %}
+        </td>
+        <td>
+            {{ account(member) }}
+        </td>
+        <td>{{ ROLES[member.role] }}</td>
+        <td>{{ member.expiration|delta_str }}</td>
+    </tr>
+{%- endmacro %}
+
 {% macro member_panel(max_height, group, members, current_user) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
@@ -100,35 +129,18 @@
             <table class="table table-striped table-condensed">
                 <thead>
                     <tr>
-                        <th class="col-sm-1">Type</th>
-                        <th class="col-sm-3">Name</th>
+                        <th class="col-sm-1"></th>
+                        <th class="col-sm-3">Member</th>
                         <th class="col-sm-1">Role</th>
                         <th class="col-sm-1">Expires</th>
                     </tr>
                 </thead>
                 <tbody>
-                {% for member in members.itervalues() %}
-                    <tr>
-                        <td>
-                            {{ member.type }}
-                        </td>
-                        <td>
-                            {% if member.membername != current_user.name and
-                                (current_user.my_role(members) == "owner" or
-                                 (current_user.my_role(members) == "manager" and
-                                  ROLES[member.role] == "member"))
-                            %}
-                                <a href="/groups/{{group.name}}/edit/{{member.type|lower}}/{{member.membername}}" class="btn btn-default btn-xs">
-                                    <i class="fa fa-edit"></i>
-                                </a>
-                            {% endif %}
-                            <a href="/{{member.type|lower}}s/{{member.membername}}">
-                                {{ member.membername }}
-                            </a>
-                        </td>
-                        <td>{{ ROLES[member.role] }}</td>
-                        <td>{{ member.expiration|delta_str }}</td>
-                    </tr>
+                {% for member in members.itervalues()|sort(attribute='name') if member.type == 'Group' %}
+                    {{ member_row(group, member, current_user) }}
+                {% endfor %}
+                {% for member in members.itervalues()|sort(attribute='name') if member.type == 'User' %}
+                    {{ member_row(group, member, current_user) }}
                 {% endfor %}
                 {% if not members %}
                     <tr>
@@ -166,19 +178,19 @@
                     <tr>
                         <td class="col-sm-2">{{ entry.log_time|print_date }}</td>
                         <td class="col-sm-2">
-                            <a href="/users/{{ entry.actor.name }}">{{ entry.actor.name }}</a>
+                            {{ account(entry.actor) }}
                         </td>
                         <td class="col-sm-2">{{ entry.action }}</td>
                         <td class="col-sm-2">{{ entry.description }}</td>
                         <td class="col-sm-2">
                             {% if entry.on_group %}
-                                Group: <a href="/groups/{{ entry.on_group.name }}">{{ entry.on_group.name }}</a><br />
+                                Group: {{ account(entry.on_group) }}<br />
                             {% endif %}
                             {% if entry.on_permission %}
                                 Permission: <a href="/permission/{{ entry.on_permission.name }}">{{ entry.on_permission.name }}</a><br />
                             {% endif %}
                             {% if entry.on_user %}
-                                User: <a href="/users/{{ entry.on_user.name }}">{{ entry.on_user.name }}</a><br />
+                                User: {{ account(entry.on_user) }}<br />
                             {% endif %}
                         </td>
                     </tr>
@@ -225,7 +237,7 @@
                         <td><a href="/permission/{{map.name}}">{{ map.name }}</a></td>
                         <td class="col-sm-2">{{map.argument|default("(unargumented)", True)}}</td>
                         {% if show_via %}
-                            <td class="col-sm-2"><a href="/groups/{{map.groupname}}">{{map.groupname}}</a></td>
+                            <td class="col-sm-2">{{ account(map.Group) }}</td>
                         {% endif %}
                         {% if can_grant %}
                             <td class="col-sm-2">

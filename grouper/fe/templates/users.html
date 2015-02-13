@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import paginator, dropdown with context %}
+{% from 'macros/ui.html' import account, paginator, dropdown with context %}
 
 {% block heading %}
     Users
@@ -25,7 +25,7 @@
             <tbody>
             {% for user in users %}
                 <tr>
-                    <td><a href="/users/{{user.name}}">{{user.username}}</a></td>
+                    <td>{{ account(user) }}</td>
                 </tr>
             {% endfor %}
             </tbody>

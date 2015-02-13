@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block subheading %}
-    Edit Member {{member.membername}} in 
+    Edit Member {{member.name}} in 
     <a href="/groups/{{group.groupname}}">{{group.groupname}}</a>
 {% endblock %}
 
@@ -19,13 +19,13 @@
        </div>
         <div class="panel-body">
             <form class="form-horizontal" role="form"
-                  method="post" action="/groups/{{group.name}}/edit/{{member.type|lower}}/{{member.membername}}">
+                  method="post" action="/groups/{{group.name}}/edit/{{member.type|lower}}/{{member.name}}">
                 <div class="form-group">
                     <label class="col-sm-3 control-label">
                         Member
                     </label>
                     <div class="col-sm-8 control-label" style="text-align: left;">
-                        {{ member.membername }}
+                        {{ member.name }}
                     </div>
                 </div>
                 {% include "forms/group-edit-member.html" %}

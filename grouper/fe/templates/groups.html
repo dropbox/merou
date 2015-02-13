@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import paginator, dropdown with context %}
+{% from 'macros/ui.html' import account, paginator, dropdown with context %}
 
 {% block heading %}
     Groups
@@ -30,7 +30,7 @@
             <tbody>
             {% for group in groups %}
                 <tr>
-                    <td><a href="/groups/{{group.name}}">{{group.groupname}}</a></td>
+                    <td>{{ account(group) }}</td>
                     <td>{{group.description|default("", True)|escape}}</td>
                     <td>
                         {% if group.canjoin == "canjoin" %}

@@ -185,7 +185,7 @@ class GroupGraph(object):
         query = session.query(
             label("groupname", parent.groupname),
             label("type", literal("Group")),
-            label("membername", group_member.groupname),
+            label("name", group_member.groupname),
             label("role", GroupEdge._role)
         ).filter(
             parent.id == GroupEdge.group_id,
@@ -201,7 +201,7 @@ class GroupGraph(object):
         ).union(session.query(
             label("groupname", parent.groupname),
             label("type", literal("User")),
-            label("membername", user_member.username),
+            label("name", user_member.username),
             label("role", GroupEdge._role)
         ).filter(
             parent.id == GroupEdge.group_id,
@@ -219,7 +219,7 @@ class GroupGraph(object):
         for record in query.all():
             edges.append((
                 ("Group", record.groupname),
-                (record.type, record.membername),
+                (record.type, record.name),
                 {"role": record.role},
             ))
 

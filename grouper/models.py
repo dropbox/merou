@@ -150,6 +150,10 @@ class User(Model):
     def name(self):
         return self.username
 
+    @property
+    def type(self):
+        return "User"
+
     def __repr__(self):
         return "<%s: id=%s username=%s>" % (
             type(self).__name__, self.id, self.username)
@@ -242,7 +246,7 @@ class User(Model):
             Permission.name,
             PermissionMap.argument,
             PermissionMap.granted_on,
-            Group.groupname,
+            Group,
         ).filter(
             PermissionMap.permission_id == Permission.id,
             PermissionMap.group_id == Group.id,
@@ -322,6 +326,7 @@ class User(Model):
         now = datetime.utcnow()
         groups = self.session.query(
             label("name", Group.groupname),
+            label("type", literal("Group")),
             label("role", GroupEdge._role)
         ).filter(
             GroupEdge.group_id == Group.id,
@@ -371,6 +376,10 @@ class Group(Model):
     @hybrid_property
     def name(self):
         return self.groupname
+
+    @property
+    def type(self):
+        return "Group"
 
     @flush_transaction
     def revoke_member(self, requester, user_or_group, reason):
@@ -643,7 +652,7 @@ class Group(Model):
         users = self.session.query(
             label("id", user_member.id),
             label("type", literal("User")),
-            label("membername", user_member.username),
+            label("name", user_member.username),
             label("role", GroupEdge._role),
             label("expiration", GroupEdge.expiration)
         ).filter(
@@ -659,13 +668,13 @@ class Group(Model):
             ),
             GroupEdge.member_type == 0
         ).group_by(
-            "type", "membername"
+            "type", "name"
         ).subquery()
 
         groups = self.session.query(
             label("id", group_member.id),
             label("type", literal("Group")),
-            label("membername", group_member.groupname),
+            label("name", group_member.groupname),
             label("role", GroupEdge._role),
             label("expiration", GroupEdge.expiration)
         ).filter(
@@ -683,7 +692,7 @@ class Group(Model):
         ).subquery()
 
         query = self.session.query(
-            "id", "type", "membername", "role", "expiration"
+            "id", "type", "name", "role", "expiration"
         ).select_entity_from(
             union_all(users.select(), groups.select())
         ).order_by(
@@ -691,7 +700,7 @@ class Group(Model):
         )
 
         return OrderedDict(
-            ((record.type, record.membername), record)
+            ((record.type, record.name), record)
             for record in query.all()
         )
 
@@ -700,6 +709,7 @@ class Group(Model):
         now = datetime.utcnow()
         groups = self.session.query(
             label("name", Group.groupname),
+            label("type", literal("Group")),
             label("role", GroupEdge._role)
         ).filter(
             GroupEdge.group_id == Group.id,
@@ -721,11 +731,11 @@ class Group(Model):
         members = self.session.query(
             label("type", literal(1)),
             label("id", Group.id),
-            label("membername", Group.groupname)
+            label("name", Group.groupname)
         ).union(self.session.query(
             label("type", literal(0)),
             label("id", User.id),
-            label("membername", User.username)
+            label("name", User.username)
         )).subquery()
 
         requests = self.session.query(
@@ -736,7 +746,7 @@ class Group(Model):
             Request.status,
             label("requester", User.username),
             label("type", members.c.type),
-            label("requesting", members.c.membername),
+            label("requesting", members.c.name),
             label("reason", Comment.comment)
         ).filter(
             Request.on_behalf_obj_pk == members.c.id,

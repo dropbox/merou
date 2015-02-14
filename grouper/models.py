@@ -216,7 +216,7 @@ class User(Model):
         #TODO(gary) Do.
         self.session.query()
 
-    def my_public_keys(self, key_id=None):
+    def my_public_keys(self):
 
         keys = self.session.query(
             PublicKey.id,
@@ -226,11 +226,6 @@ class User(Model):
         ).filter(
             PublicKey.user_id == self.id
         )
-
-        if key_id:
-            keys = keys.filter(
-                PublicKey.id == key_id
-            )
 
         return keys.all()
 

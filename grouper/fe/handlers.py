@@ -970,9 +970,8 @@ class PublicKeyDelete(GrouperHandler):
         if (user.name != self.current_user.name) and not self.current_user.user_admin:
             return self.forbidden()
 
-        try:
-            key = user.my_public_keys(key_id=key_id)[0]
-        except IndexError:
+        key = self.session.query(PublicKey).filter_by(id=key_id, user_id=user.id).scalar()
+        if not key:
             return self.notfound()
 
         self.render("public-key-delete.html", user=user, key=key)

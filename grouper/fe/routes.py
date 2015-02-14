@@ -23,7 +23,7 @@ for regex in (r"(?P<user_id>[0-9]+)", NAME_VALIDATION):
         (r"/users/{}/enable".format(regex), handlers.UserEnable),
         (r"/users/{}/public-key/add".format(regex), handlers.PublicKeyAdd),
         (
-            r"/users/{}/public-key/(?P<key_id>[0-9+])/delete".format(regex),
+            r"/users/{}/public-key/(?P<key_id>[0-9]+)/delete".format(regex),
             handlers.PublicKeyDelete
         ),
     ])

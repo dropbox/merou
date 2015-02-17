@@ -94,7 +94,7 @@
 </a>
 {%- endmacro %}
 
-{% macro member_row(group, member, current_user) -%}
+{% macro member_row(group, member, members, current_user) -%}
     <tr>
         <td>
             {% if member.name != current_user.name and
@@ -137,10 +137,10 @@
                 </thead>
                 <tbody>
                 {% for member in members.itervalues()|sort(attribute='name') if member.type == 'Group' %}
-                    {{ member_row(group, member, current_user) }}
+                    {{ member_row(group, member, members, current_user) }}
                 {% endfor %}
                 {% for member in members.itervalues()|sort(attribute='name') if member.type == 'User' %}
-                    {{ member_row(group, member, current_user) }}
+                    {{ member_row(group, member, members, current_user) }}
                 {% endfor %}
                 {% if not members %}
                     <tr>

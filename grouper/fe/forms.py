@@ -53,7 +53,7 @@ class PermissionGrantForm(Form):
         validators.Required(),
     ], choices=[["", "(select one)"]], default="")
     argument = TextField("Argument", [
-        validators.Length(min=0, max=128),
+        validators.Length(min=0, max=constants.MAX_NAME_LENGTH),
         ValidateRegex(constants.ARGUMENT_VALIDATION),
     ])
 
@@ -88,9 +88,30 @@ class GroupRequestModifyForm(Form):
     ])
 
 
+class GroupAddForm(Form):
+    member = TextField("Name", [
+        validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
+        validators.Required(),
+        ValidateRegex(constants.NAME_VALIDATION),
+    ])
+    role = SelectField("Role", [
+        validators.Length(min=3, max=32),
+        validators.Required(),
+    ], choices=[
+        (role, role.title())
+        for role in models.GROUP_EDGE_ROLES
+    ], default="member")
+    reason = TextAreaField("Reason", [
+        validators.Required(),
+    ])
+    expiration = TextField("Expiration", [
+        ValidateDate(),
+    ], id="add-form-expiration")
+
+
 class GroupJoinForm(Form):
     member = SelectField("Member", [
-        validators.Length(min=3, max=128),
+        validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
         validators.Required(),
         ValidateRegex(r"(?:User|Member|Group): {}".format(constants.NAME_VALIDATION)),
     ])

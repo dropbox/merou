@@ -30,3 +30,6 @@ RESERVED_NAMES = [
     r"^admin",
     r"^test",
 ]
+
+# Maximum length a name can be. This applies to user names and permission arguments.
+MAX_NAME_LENGTH = 128

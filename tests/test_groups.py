@@ -3,7 +3,7 @@ from fixtures import users, graph, groups, session, permissions  # noqa
 from util import get_users, get_groups, add_member
 
 
-def setup_desc_to_ances(session, users, groups):
+def setup_desc_to_ances(session, users, groups):  # noqa
     add_member(groups["team-sre"], users["gary"], role="owner")
     add_member(groups["team-sre"], users["zay"])
 
@@ -18,7 +18,7 @@ def setup_desc_to_ances(session, users, groups):
     add_member(groups["all-teams"], groups["team-infra"])
 
 
-def test_graph_desc_to_ances(session, graph, users, groups):
+def test_graph_desc_to_ances(session, graph, users, groups):  # noqa
     """ Test adding members where all descendants already exist."""
 
     setup_desc_to_ances(session, users, groups)
@@ -44,7 +44,7 @@ def test_graph_desc_to_ances(session, graph, users, groups):
     assert get_groups(graph, "testuser", cutoff=1) == set(["all-teams"])
 
 
-def test_graph_add_member_existing(session, graph, users, groups):
+def test_graph_add_member_existing(session, graph, users, groups):  # noqa
     """ Test adding members to an existing relationship."""
 
     add_member(groups["team-sre"], users["gary"], role="owner")
@@ -82,7 +82,7 @@ def test_graph_add_member_existing(session, graph, users, groups):
     assert get_groups(graph, "testuser", cutoff=1) == set(["all-teams"])
 
 
-def test_graph_with_removes(session, graph, users, groups):
+def test_graph_with_removes(session, graph, users, groups):  # noqa
     """ Test adding members where all descendants already exist."""
 
     setup_desc_to_ances(session, users, groups)
@@ -151,7 +151,7 @@ def test_graph_with_removes(session, graph, users, groups):
     assert get_groups(graph, "testuser", cutoff=1) == set(["all-teams"])
 
 
-def test_graph_cycle_direct(session, graph, users, groups):
+def test_graph_cycle_direct(session, graph, users, groups):  # noqa
     """ Test adding members where all descendants already exist."""
 
     add_member(groups["team-sre"], users["gary"])
@@ -175,7 +175,7 @@ def test_graph_cycle_direct(session, graph, users, groups):
     assert get_groups(graph, "zay", cutoff=1) == set(["tech-ops"])
 
 
-def test_graph_cycle_indirect(session, graph, users, groups):
+def test_graph_cycle_indirect(session, graph, users, groups):  # noqa
     """ Test adding a member that will create a cycle.
 
         gary         zay            testuser

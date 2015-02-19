@@ -8,7 +8,7 @@ import tornado.ioloop
 import tornado.httpserver
 import tornado.web
 
-from grouper.models import get_db_engine, Session
+from grouper.models import get_db_engine, Session, load_plugins
 from grouper.util import get_loglevel, get_database_url
 
 import grouper.fe
@@ -47,6 +47,12 @@ def main(argv):
     if settings.debug and settings.num_processes > 1:
         logging.fatal("Debug mode does not support multiple processes.")
         sys.exit(1)
+
+    if settings.plugin_dir:
+        if not os.path.exists(settings.plugin_dir):
+            logging.fatal("Plugin directory does not exist")
+            sys.exit(1)
+        load_plugins(settings.plugin_dir)
 
     log_level = get_loglevel(args)
     logging.basicConfig(

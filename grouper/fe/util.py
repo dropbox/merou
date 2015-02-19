@@ -3,6 +3,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from expvar.stats import stats
 from jinja2 import Environment, PackageLoader
+import logging
 import pytz
 import re
 import smtplib
@@ -60,9 +61,9 @@ class GrouperHandler(tornado.web.RequestHandler):
             raise InvalidUser()
 
         try:
-            user = self.session.query(User).filter_by(username=username).first()
-            if not user:
-                user = User(username=username).add(self.session)
+            user, created = User.get_or_create(self.session, username=username)
+            if created:
+                logging.info("Created new user %s", username)
                 self.session.commit()
         except sqlalchemy.exc.OperationalError:
             # Failed to connect to database or create user, try to reconfigure the db. This invokes
@@ -140,7 +141,7 @@ class GrouperHandler(tornado.web.RequestHandler):
         msg.attach(html)
 
         if not settings["send_emails"]:
-            print msg.as_string()
+            logging.debug(msg.as_string())
             return
 
         smtp = smtplib.SMTP(settings["smtp_server"])

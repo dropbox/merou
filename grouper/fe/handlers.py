@@ -11,12 +11,13 @@ import sshpubkey
 
 from ..constants import RESERVED_NAMES
 from .forms import (
-    GroupForm, GroupJoinForm, GroupRequestModifyForm, PublicKeyForm,
+    GroupForm, GroupJoinForm, GroupAddForm, GroupRequestModifyForm, PublicKeyForm,
     PermissionCreateForm, PermissionGrantForm, GroupEditMemberForm,
 )
 from ..models import (
     User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog, GroupEdge,
     GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES, OBJ_TYPES,
+    get_user_or_group,
 )
 from .util import GrouperHandler, Alert
 from ..util import matches_glob
@@ -670,6 +671,71 @@ class GroupsView(GrouperHandler):
         return self.redirect("/groups/{}".format(group.name))
 
 
+class GroupAdd(GrouperHandler):
+    def get(self, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
+        if not group:
+            return self.notfound()
+
+        if not self.current_user.can_manage(group):
+            return self.forbidden()
+
+        form = GroupAddForm()
+        return self.render(
+            "group-add.html", form=form, group=group
+        )
+
+    def post(self, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
+        if not group:
+            return self.notfound()
+
+        if not self.current_user.can_manage(group):
+            return self.forbidden()
+
+        form = GroupAddForm(self.request.arguments)
+        if not form.validate():
+            return self.render(
+                "group-add.html", form=form, group=group,
+                alerts=self.get_form_alerts(form.errors)
+            )
+
+        member = get_user_or_group(self.session, form.data["member"])
+        if not member:
+            form.member.errors.append("User or group not found.")
+        elif (member.type, member.name) in group.my_members():
+            form.member.errors.append("User or group is already a member of this group.")
+        elif group.name == member.name:
+            form.member.errors.append("By definition, this group is a member of itself already.")
+
+        if form.member.errors:
+            return self.render(
+                "group-add.html", form=form, group=group,
+                alerts=self.get_form_alerts(form.errors)
+            )
+
+        expiration = None
+        if form.data["expiration"]:
+            expiration = datetime.strptime(form.data["expiration"], "%m/%d/%Y")
+
+        group.add_member(
+            requester=self.current_user,
+            user_or_group=member,
+            reason=form.data["reason"],
+            status='actioned',
+            expiration=expiration,
+            role=form.data["role"]
+        )
+        self.session.commit()
+
+        AuditLog.log(self.session, self.current_user.id, 'join_group',
+                     '{} added to group with role: {}'.format(
+                         member.name, form.data["role"]),
+                     on_group_id=group.id)
+
+        return self.redirect("/groups/{}".format(group.name))
+
+
 class GroupJoin(GrouperHandler):
     def get(self, group_id=None, name=None):
         group = Group.get(self.session, group_id, name)
@@ -821,9 +887,7 @@ class GroupEdit(GrouperHandler):
         if not group:
             return self.notfound()
 
-        members = group.my_members()
-        my_role = self.current_user.my_role(members)
-        if my_role not in ("manager", "owner"):
+        if not self.current_user.can_manage(group):
             return self.forbidden()
 
         form = GroupForm(obj=group)
@@ -835,9 +899,7 @@ class GroupEdit(GrouperHandler):
         if not group:
             return self.notfound()
 
-        members = group.my_members()
-        my_role = self.current_user.my_role(members)
-        if my_role not in ("manager", "owner"):
+        if not self.current_user.can_manage(group):
             return self.forbidden()
 
         form = GroupForm(self.request.arguments, obj=group)

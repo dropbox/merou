@@ -36,6 +36,8 @@
        class="btn btn-success"><i class="fa fa-user"></i> Join</a>
 
     {% if current_user.my_role(members) in ("manager", "owner") %}
+        <a href="/groups/{{group.name}}/add"
+           class="btn btn-success"><i class="fa fa-plus-circle"></i> Add Member</a>
         <a href="/groups/{{group.name}}/edit"
            class="btn btn-primary"><i class="fa fa-edit"></i> Edit</a>
     {% endif %}

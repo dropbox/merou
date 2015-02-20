@@ -21,7 +21,7 @@ from sqlalchemy.orm import sessionmaker, Session as _Session
 from sqlalchemy.sql import func, label, literal
 
 from .capabilities import Capabilities
-from .constants import ARGUMENT_VALIDATION, PERMISSION_GRANT, PERMISSION_CREATE
+from .constants import ARGUMENT_VALIDATION, PERMISSION_GRANT, PERMISSION_CREATE, MAX_NAME_LENGTH
 
 
 OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange")
@@ -137,12 +137,31 @@ def flush_transaction(method):
     return wrapper
 
 
+def get_user_or_group(session, name):
+    """Given a name, fetch a user or group
+
+    Since users are defined as being email addresess, we can easily tell which one the user is
+    trying to fetch. We try to get one or the other.
+
+    Args:
+        session (Session): Session to load data on.
+        name (str): The name of the user or group.
+
+    Returns:
+        User or Group object.
+    """
+    if '@' in name:
+        return session.query(User).filter_by(username=name).scalar()
+    else:
+        return session.query(Group).filter_by(groupname=name).scalar()
+
+
 class User(Model):
 
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
-    username = Column(String(length=128), unique=True, nullable=False)
+    username = Column(String(length=MAX_NAME_LENGTH), unique=True, nullable=False)
     capabilities = Column(Integer, default=0, nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
 
@@ -169,6 +188,24 @@ class User(Model):
     def enable(self):
         self.enabled = True
         Counter.incr(self.session, "updates")
+
+    def can_manage(self, group):
+        """Determine if this user can manage the given group
+
+        This returns true if this user object is a manager or owner of the given group.
+
+        Args:
+            group (Group): Group to check permissions against.
+
+        Returns:
+            bool: True or False on whether or not they can manage.
+        """
+        if not group:
+            return False
+        members = group.my_members()
+        if self.my_role(members) in ("owner", "manager"):
+            return True
+        return False
 
     def disable(self, requester):
         for group in self.my_groups():
@@ -213,7 +250,7 @@ class User(Model):
 
     def pending_requests(self):
         """ Returns all pending requests actionable by this user. """
-        #TODO(gary) Do.
+        # TODO(gary) Do.
         self.session.query()
 
     def my_public_keys(self):

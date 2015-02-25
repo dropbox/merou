@@ -116,6 +116,13 @@ class GroupGraph(object):
                         "created_on": str(key.created_on),
                     } for key in user.my_public_keys()
                 ],
+                "metadata": [
+                    {
+                        "data_key": row.data_key,
+                        "data_value": row.data_value,
+                        "last_modified": str(row.last_modified),
+                    } for row in user.my_metadata()
+                ],
             }
         return out
 

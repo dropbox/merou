@@ -3,7 +3,7 @@ from fixtures import standard_graph, graph, users, groups, session, permissions 
 from util import grant_permission, get_group_permissions, get_user_permissions
 
 
-def test_basic_permission(standard_graph, session, users, groups, permissions):
+def test_basic_permission(standard_graph, session, users, groups, permissions):  # noqa
     """ Test adding some permissions to various groups and ensuring that the permissions are all
         implemented as expected. This also tests permissions inheritance in the graph. """
 

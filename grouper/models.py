@@ -1,4 +1,4 @@
-
+from annex import Annex
 from collections import OrderedDict, namedtuple
 from datetime import datetime
 import functools
@@ -21,7 +21,11 @@ from sqlalchemy.orm import sessionmaker, Session as _Session
 from sqlalchemy.sql import func, label, literal
 
 from .capabilities import Capabilities
-from .constants import ARGUMENT_VALIDATION, PERMISSION_GRANT, PERMISSION_CREATE, MAX_NAME_LENGTH
+from .constants import (
+    ARGUMENT_VALIDATION, PERMISSION_GRANT, PERMISSION_CREATE, MAX_NAME_LENGTH,
+    PERMISSION_VALIDATION
+)
+from .plugin import BasePlugin
 
 
 OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange")
@@ -43,6 +47,9 @@ GROUP_EDGE_ROLES = (
     "manager",  # Make changes to the group / Approve requests.
     "owner",    # Same as manager plus enable/disable group and make Users owner.
 )
+
+MappedPermission = namedtuple('MappedPermission',
+                              ['permission', 'argument', 'groupname', 'granted_on'])
 
 
 class Session(_Session):
@@ -100,7 +107,12 @@ class Model(object):
         instance = cls(**kwargs)
         instance.add(session)
 
+        cls.just_created(instance)
+
         return instance, True
+
+    def just_created(self):
+        pass
 
     def add(self, session):
         session._add(self)
@@ -116,6 +128,21 @@ Model = declarative_base(cls=Model)
 
 def get_db_engine(url):
     return create_engine(url, pool_recycle=300)
+
+
+Plugins = []
+
+
+class PluginsAlreadyLoaded(Exception):
+    pass
+
+
+def load_plugins(plugin_dir):
+    """Load plugins from a directory"""
+    global Plugins
+    if Plugins:
+        raise PluginsAlreadyLoaded("Plugins already loaded; can't load twice!")
+    Plugins = Annex(BasePlugin, [plugin_dir], raise_exceptions=True)
 
 
 def flush_transaction(method):
@@ -185,6 +212,10 @@ class User(Model):
             return session.query(User).filter_by(username=name).scalar()
         return None
 
+    def just_created(self):
+        for plugin in Plugins:
+            plugin.user_created(self)
+
     def enable(self):
         self.enabled = True
         Counter.incr(self.session, "updates")
@@ -252,6 +283,42 @@ class User(Model):
         """ Returns all pending requests actionable by this user. """
         # TODO(gary) Do.
         self.session.query()
+
+    def set_metadata(self, key, value):
+        if not re.match(PERMISSION_VALIDATION, key):
+            raise ValueError('Metadata key does not match regex.')
+
+        row = None
+        for try_row in self.my_metadata():
+            if try_row.data_key == key:
+                row = try_row
+                break
+
+        if row:
+            if value is None:
+                row.delete(self.session)
+            else:
+                row.data_value = value
+        else:
+            if value is None:
+                # Do nothing, a delete on a key that's not set
+                return
+            else:
+                row = UserMetadata(user_id=self.id, data_key=key, data_value=value)
+                row.add(self.session)
+
+        Counter.incr(self.session, "updates")
+        self.session.commit()
+
+    def my_metadata(self):
+
+        md_items = self.session.query(
+            UserMetadata
+        ).filter(
+            UserMetadata.user_id == self.id
+        )
+
+        return md_items.all()
 
     def my_public_keys(self):
 
@@ -1035,6 +1102,33 @@ class Counter(Model):
         return cls.incr(session, name, -count)
 
 
+class UserMetadata(Model):
+
+    __tablename__ = "user_metadata"
+    __table_args__ = (
+        UniqueConstraint('user_id', 'data_key', name='uidx1'),
+    )
+
+    id = Column(Integer, primary_key=True)
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user = relationship(User, foreign_keys=[user_id])
+
+    data_key = Column(String(length=64), nullable=False)
+    data_value = Column(String(length=64), nullable=False)
+    last_modified = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    def add(self, session):
+        super(UserMetadata, self).add(session)
+        Counter.incr(session, "updates")
+        return self
+
+    def delete(self, session):
+        super(UserMetadata, self).delete(session)
+        Counter.incr(session, "updates")
+        return self
+
+
 class PublicKey(Model):
 
     __tablename__ = "public_keys"
@@ -1142,10 +1236,6 @@ class PermissionMap(Model):
         super(PermissionMap, self).delete(session)
         Counter.incr(session, "updates")
         return self
-
-
-MappedPermission = namedtuple('MappedPermission',
-                              ['permission', 'argument', 'groupname', 'granted_on'])
 
 
 class AuditLogFailure(Exception):

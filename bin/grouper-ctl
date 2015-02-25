@@ -109,6 +109,21 @@ def capabilities_command(args):
         session.commit()
 
 
+def user_command(args):
+    session = make_session()
+    user = session.query(models.User).filter_by(username=args.username).scalar()
+    if not user:
+        print "No such user %s" % args.username
+        return
+
+    if args.subcommand == "set_metadata":
+        print "Setting %s metadata: %s=%s" % (args.username, args.metadata_key, args.metadata_value)
+        if args.metadata_value == "":
+            args.metadata_value = None
+        user.set_metadata(args.metadata_key, args.metadata_value)
+        session.commit()
+
+
 def group_command(args):
     session = make_session()
     group = session.query(models.Group).filter_by(groupname=args.groupname).scalar()
@@ -148,8 +163,10 @@ def main():
 
     parser.add_argument("-c", "--config", default="/etc/grouper.yaml",
                         help="Path to config file.")
-    parser.add_argument("-v", "--verbose", action="count", default=0, help="Increase logging verbosity.")
-    parser.add_argument("-q", "--quiet", action="count", default=0, help="Decrease logging verbosity.")
+    parser.add_argument("-v", "--verbose", action="count", default=0,
+                        help="Increase logging verbosity.")
+    parser.add_argument("-q", "--quiet", action="count", default=0,
+                        help="Decrease logging verbosity.")
     parser.add_argument("-V", "--version", action="version",
                         version="%%(prog)s %s" % grouper.__version__,
                         help="Display version information.")
@@ -159,7 +176,8 @@ def main():
     sync_db_parser = subparsers.add_parser("sync_db", help="Apply database schema to database.")
     sync_db_parser.set_defaults(func=sync_db_command)
 
-    user_proxy_parser = subparsers.add_parser("user_proxy", help="Start a development reverse proxy.")
+    user_proxy_parser = subparsers.add_parser("user_proxy",
+                                              help="Start a development reverse proxy.")
     user_proxy_parser.set_defaults(func=user_proxy_command)
     user_proxy_parser.add_argument("-p", "--listen-port", default=8888, type=int,
                                    help="Port to listen on.")
@@ -167,34 +185,52 @@ def main():
                                    help="Port to proxy to.")
     user_proxy_parser.add_argument("username", nargs="?", default=None)
 
-    shell_parser = subparsers.add_parser("shell", help="Launch a shell with models imported.")
+    shell_parser = subparsers.add_parser(
+        "shell", help="Launch a shell with models imported.")
     shell_parser.set_defaults(func=shell_command)
 
-    group_parser = subparsers.add_parser("group", help="Edit group membership")
+    user_parser = subparsers.add_parser(
+        "user", help="Edit user")
+    user_parser.set_defaults(func=user_command)
+    user_subparser = user_parser.add_subparsers(dest="subcommand")
+
+    user_set_metadata_parser = user_subparser.add_parser(
+        "set_metadata", help="Set metadata on user")
+    user_set_metadata_parser.add_argument("username")
+    user_set_metadata_parser.add_argument("metadata_key")
+    user_set_metadata_parser.add_argument("metadata_value")
+
+    group_parser = subparsers.add_parser(
+        "group", help="Edit groups and membership")
     group_parser.set_defaults(func=group_command)
     group_subparser = group_parser.add_subparsers(dest="subcommand")
 
-    group_join_parser = group_subparser.add_parser("add_member", help="Join a user to a group")
+    group_join_parser = group_subparser.add_parser(
+        "add_member", help="Join a user to a group")
     group_join_parser.add_argument("groupname")
     group_join_parser.add_argument("username")
 
-    group_remove_parser = group_subparser.add_parser("remove_member",
-                                                   help="Remove a user from a group")
+    group_remove_parser = group_subparser.add_parser(
+        "remove_member", help="Remove a user from a group")
     group_remove_parser.add_argument("groupname")
     group_remove_parser.add_argument("username")
 
-    capabilities_parser = subparsers.add_parser("capabilities", help="Make a user an user or group admin.")
+    capabilities_parser = subparsers.add_parser(
+        "capabilities", help="Make a user an user or group admin.")
     capabilities_parser.set_defaults(func=capabilities_command)
     capabilities_subparser = capabilities_parser.add_subparsers(dest="subcommand")
 
-    capabilities_list_parser = capabilities_subparser.add_parser("list", help="List capabilities of a user.")
+    capabilities_list_parser = capabilities_subparser.add_parser(
+        "list", help="List capabilities of a user.")
     capabilities_list_parser.add_argument("username")
 
-    capabilities_add_parser = capabilities_subparser.add_parser("add", help="Add capabilities to a user.")
+    capabilities_add_parser = capabilities_subparser.add_parser(
+        "add", help="Add capabilities to a user.")
     capabilities_add_parser.add_argument("username")
     capabilities_add_parser.add_argument("capability", choices=Capabilities.words.keys())
 
-    capabilities_rm_parser = capabilities_subparser.add_parser("rm", help="Remove capabilities from a user.")
+    capabilities_rm_parser = capabilities_subparser.add_parser(
+        "rm", help="Remove capabilities from a user.")
     capabilities_rm_parser.add_argument("username")
     capabilities_rm_parser.add_argument("capability", choices=Capabilities.words.keys())
 

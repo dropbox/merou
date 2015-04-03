@@ -18,7 +18,6 @@ from grouper.graph import GroupGraph
 from grouper.models import get_db_engine, Session, load_plugins
 from grouper.util import get_loglevel, get_database_url
 
-
 from sqlalchemy.exc import OperationalError
 
 sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")

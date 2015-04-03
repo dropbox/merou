@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 
 import argparse
+from expvar.stats import stats
 import logging
 import os
 import sys
+from threading import Thread
+from time import sleep
 import tornado.ioloop
 import tornado.httpserver
 import tornado.web
 
+from grouper.graph import GroupGraph
 from grouper.models import get_db_engine, Session, load_plugins
 from grouper.util import get_loglevel, get_database_url
 
@@ -16,6 +20,7 @@ from grouper.fe.routes import HANDLERS
 from grouper.fe.util import get_template_env
 from grouper.fe.settings import settings
 
+from sqlalchemy.exc import OperationalError
 
 sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
@@ -24,6 +29,29 @@ class Application(tornado.web.Application):
     def __init__(self, *args, **kwargs):
         self.my_settings = kwargs.pop("my_settings", {})
         super(Application, self).__init__(*args, **kwargs)
+
+
+class DbRefreshThread(Thread):
+    def __init__(self, graph, refresh_interval, *args, **kwargs):
+        self.graph = graph
+        self.refresh_interval = refresh_interval
+        Thread.__init__(self, *args, **kwargs)
+
+    def run(self):
+
+        while True:
+            sleep(self.refresh_interval)
+
+            logging.debug("Updating Graph from Database.")
+            try:
+                session = Session()
+                self.graph.update_from_db(session)
+                session.close()
+                stats.set_gauge("successful-db-update", 1)
+            except OperationalError:
+                Session.configure(bind=get_db_engine(get_database_url(settings)))
+                logging.critical("Failed to connect to database.")
+                stats.set_gauge("successful-db-update", 0)
 
 
 def main(argv):
@@ -73,12 +101,22 @@ def main(argv):
 
     Session.configure(bind=get_db_engine(get_database_url(settings)))
 
+    logging.info("Initilializing graph data.")
+    session = Session()
+    graph = GroupGraph.from_db(session)
+    session.close()
+
     my_settings = {
         "db_session": Session,
+        "graph": graph,
         "template_env": template_env,
     }
 
     application = Application(HANDLERS, my_settings=my_settings, **tornado_settings)
+
+    refresher = DbRefreshThread(graph, settings.refresh_interval)
+    refresher.daemon = True
+    refresher.start()
 
     port = args.port or settings.port
 

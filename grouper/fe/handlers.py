@@ -17,7 +17,7 @@ from .forms import (
 from ..models import (
     User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog, GroupEdge,
     GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES, OBJ_TYPES,
-    get_user_or_group,
+    get_user_or_group, Plugins,
 )
 from .util import GrouperHandler, Alert
 from ..util import matches_glob
@@ -87,9 +87,11 @@ class UserView(GrouperHandler):
         if (user.name == self.current_user.name) or self.current_user.user_admin:
             can_control = True
 
+        user_md = self.graph.get_user_details(user.name)
+
         groups = user.my_groups()
         public_keys = user.my_public_keys()
-        permissions = user.my_permissions()
+        permissions = user_md.get('permissions', [])
         log_entries = user.my_log_entries()
         self.render("user.html", user=user, groups=groups, public_keys=public_keys,
                     can_control=can_control, permissions=permissions,
@@ -400,9 +402,11 @@ class GroupView(GrouperHandler):
 
         grantable = self.current_user.my_grantable_permissions()
 
+        group_md = self.graph.get_group_details(group.name)
+
         members = group.my_members()
         groups = group.my_groups()
-        permissions = group.my_permissions()
+        permissions = group_md.get('permissions', [])
         log_entries = group.my_log_entries()
 
         num_pending = group.my_requests("pending").count()

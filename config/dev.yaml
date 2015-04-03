@@ -73,6 +73,10 @@ fe:
     # Type: str
     smtp_server: "localhost"
 
+    # How often to pull cache data from database in seconds.
+    # Type: int
+    refresh_interval: 10
+
 api:
     # The port to listen to requests on.
     # Type: int

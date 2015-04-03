@@ -36,9 +36,9 @@ class InvalidUser(Exception):
 
 
 class GrouperHandler(tornado.web.RequestHandler):
-
     def initialize(self):
         self.session = self.application.my_settings.get("db_session")()
+        self.graph = self.application.my_settings.get("graph")
         stats.incr("requests")
 
     def _handle_request_exception(self, e):

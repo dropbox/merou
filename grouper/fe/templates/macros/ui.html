@@ -94,6 +94,13 @@
 </a>
 {%- endmacro %}
 
+{% macro permission(perm) -%}
+<a href="/permission/{{perm.name}}">
+    <i class="fa fa-key"></i>
+    {{perm.name}}
+</a>
+{%- endmacro %}
+
 {% macro member_row(group, member, members, current_user) -%}
     <tr>
         <td>
@@ -187,7 +194,7 @@
                                 Group: {{ account(entry.on_group) }}<br />
                             {% endif %}
                             {% if entry.on_permission %}
-                                Permission: <a href="/permission/{{ entry.on_permission.name }}">{{ entry.on_permission.name }}</a><br />
+                                Permission: {{ permission(entry.on_permission) }}<br />
                             {% endif %}
                             {% if entry.on_user %}
                                 User: {{ account(entry.on_user) }}<br />
@@ -234,8 +241,8 @@
                 <tbody>
                 {% for map in mappings %}
                     <tr>
-                        <td><a href="/permission/{{map.name}}">{{ map.name }}</a></td>
-                        <td class="col-sm-2">{{map.argument|default("(unargumented)", True)}}</td>
+                        <td>{{ permission(map) }}</td>
+                        <td class="col-sm-2">{{ map.argument|default("(unargumented)", True) }}</td>
                         {% if show_via %}
                             <td class="col-sm-2">{{ account(map.Group) }}</td>
                         {% endif %}

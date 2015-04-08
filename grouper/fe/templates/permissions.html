@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import paginator, dropdown with context %}
+{% from 'macros/ui.html' import permission, paginator, dropdown with context %}
 
 {% block heading %}
     Permissions
@@ -29,10 +29,10 @@
                 </tr>
             </thead>
             <tbody>
-            {% for permission in permissions %}
+            {% for perm in permissions %}
                 <tr>
-                    <td><a href="/permission/{{permission.name}}">{{permission.name}}</a></td>
-                    <td>{{permission.description|default("", True)|escape}}</td>
+                    <td>{{ permission(perm) }}</td>
+                    <td>{{ perm.description|default("", True) | escape }}</td>
                 </tr>
             {% endfor %}
             </tbody>

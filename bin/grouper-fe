@@ -11,7 +11,7 @@ import tornado.ioloop
 import tornado.httpserver
 import tornado.web
 
-from grouper.graph import GroupGraph
+from grouper.graph import Graph
 from grouper.models import get_db_engine, Session, load_plugins
 from grouper.util import get_loglevel, get_database_url
 
@@ -103,12 +103,12 @@ def main(argv):
 
     logging.info("Initilializing graph data.")
     session = Session()
-    graph = GroupGraph.from_db(session)
+    graph = Graph()
+    graph.update_from_db(session)
     session.close()
 
     my_settings = {
         "db_session": Session,
-        "graph": graph,
         "template_env": template_env,
     }
 

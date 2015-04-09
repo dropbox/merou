@@ -15,11 +15,13 @@ ARGUMENT_VALIDATION = r"(?P<argument>|\*|[\w=/.:-]+\*?)"
 # Global permission names to prevent stringly typed things
 PERMISSION_GRANT = "grouper.permission.grant"
 PERMISSION_CREATE = "grouper.permission.create"
+PERMISSION_AUDITOR = "grouper.permission.auditor"
 
 # Permissions that are always created and are reserved.
 SYSTEM_PERMISSIONS = [
     (PERMISSION_CREATE, "Ability to create permissions within Grouper."),
     (PERMISSION_GRANT, "Ability to grant a permission to a group."),
+    (PERMISSION_AUDITOR, "Ability to own or manage groups with audited permissions."),
 ]
 
 # A list of regular expressions that are reserved anywhere names are created. I.e., if a regex

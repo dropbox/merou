@@ -57,6 +57,11 @@
     </div>
     <div class="col-md-6">
         <h4>
+            {% if audited %}
+                <span class="label label-warning pull-right">
+                    <i class="fa fa-gavel"></i> Auditing Enabled
+                </span>
+            {% endif %}
             {% if group.canjoin == "canjoin" %}
                 <span class="label label-success pull-right">
                     <i class="fa fa-group"></i> Open Membership

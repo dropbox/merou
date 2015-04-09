@@ -108,13 +108,6 @@
 </a>
 {%- endmacro %}
 
-{% macro permission(perm) -%}
-<a href="/permission/{{perm.name}}">
-    <i class="fa fa-key"></i>
-    {{perm.name}}
-</a>
-{%- endmacro %}
-
 {% macro member_row(group, member, members, current_user) -%}
     <tr>
         <td>

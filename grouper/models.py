@@ -49,7 +49,7 @@ GROUP_EDGE_ROLES = (
 )
 
 MappedPermission = namedtuple('MappedPermission',
-                              ['permission', 'argument', 'groupname', 'granted_on'])
+                              ['permission', 'audited', 'argument', 'groupname', 'granted_on'])
 
 
 class Session(_Session):
@@ -1166,6 +1166,7 @@ class Permission(Model):
     name = Column(String(length=64), unique=True, nullable=False)
     description = Column(Text, nullable=False)
     created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
+    audited = Column(Boolean, default=False, nullable=False)
 
     @staticmethod
     def get(session, name=None):

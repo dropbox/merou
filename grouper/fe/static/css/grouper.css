@@ -260,3 +260,8 @@ span.disabled {
 .navbar-default .navbar-link:hover {
     color: #f1eaf8;
 }
+
+#key-body {
+    word-break: break-all;
+    white-space: normal;
+}

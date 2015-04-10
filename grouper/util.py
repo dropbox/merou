@@ -1,7 +1,9 @@
 import fnmatch
+import functools
 import logging
 import random as insecure_random
 import subprocess
+import threading
 import time
 
 _TRUTHY = set([
@@ -49,3 +51,22 @@ def get_database_url(settings):
 def matches_glob(glob, text):
     """Returns True/False on if text matches glob."""
     return fnmatch.fnmatch(text, glob)
+
+
+def singleton(f):
+    """Decorator which ensures that a function (with no arguments) is only
+       called once, and then all subsequent calls return the cached return value.
+    """
+    lock = threading.Lock()
+    initialized = [False]
+    value = [None]
+
+    @functools.wraps(f)
+    def wrapped():
+        if not initialized[0]:
+            with lock:
+                if not initialized[0]:
+                    value[0] = f()
+                    initialized[0] = True
+        return value[0]
+    return wrapped

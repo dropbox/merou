@@ -13,6 +13,7 @@ import traceback
 import urllib
 
 from .settings import settings
+from ..graph import Graph
 from ..models import User, GROUP_EDGE_ROLES, OBJ_TYPES_IDX, get_db_engine, Session
 from ..util import get_database_url
 
@@ -36,9 +37,9 @@ class InvalidUser(Exception):
 
 
 class GrouperHandler(tornado.web.RequestHandler):
-
     def initialize(self):
         self.session = self.application.my_settings.get("db_session")()
+        self.graph = Graph()
         stats.incr("requests")
 
     def _handle_request_exception(self, e):

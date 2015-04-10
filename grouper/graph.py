@@ -12,6 +12,7 @@ from .models import (
     Group, User, GroupEdge, Counter, GROUP_EDGE_ROLES,
     Permission, PermissionMap, MappedPermission,
 )
+from .util import singleton
 
 
 MEMBER_TYPE_MAP = {
@@ -21,8 +22,14 @@ MEMBER_TYPE_MAP = {
 EPOCH = datetime(1970, 1, 1)
 
 
+@singleton
+def Graph():  # noqa
+    return GroupGraph()
+
+
 class GroupGraph(object):
     def __init__(self):
+        logging.info('Created graph object.')
         self._graph = None
         self._rgraph = None
         self.lock = RLock()
@@ -138,6 +145,7 @@ class GroupGraph(object):
         for permission in permissions:
             out[permission[1].group.name].append(MappedPermission(
                 permission=permission[0].name,
+                audited=permission[0].audited,
                 argument=permission[1].argument,
                 groupname=permission[1].group.name,
                 granted_on=permission[1].granted_on,
@@ -160,6 +168,7 @@ class GroupGraph(object):
                     {
                         "permission": permission.permission,
                         "argument": permission.argument,
+                        "audited": permission.audited,
                     } for permission in permission_metadata[group.id]
                 ],
             }
@@ -272,11 +281,15 @@ class GroupGraph(object):
         """ Get users and permissions that belong to a group. """
 
         with self.lock:
+            # This is calculated based on all the permissions that apply to this group. Since this
+            # is a graph walk, we calculate it here when we're getting this data.
+            group_audited = False
             data = {
                 "users": {},
                 "groups": {},
                 "subgroups": {},
                 "permissions": [],
+                "audited": group_audited,
             }
 
             group = ("Group", groupname)
@@ -311,8 +324,11 @@ class GroupGraph(object):
                 for permission in self.permission_metadata.get(parent_name, []):
                     if show_permission is not None and permission.permission != show_permission:
                         continue
+                    if permission.audited:
+                        group_audited = True
                     data["permissions"].append({
                         "permission": permission.permission,
+                        "audited": permission.audited,
                         "argument": permission.argument,
                         "granted_on": (permission.granted_on - EPOCH).total_seconds(),
                         "distance": len(path) - 1,
@@ -322,14 +338,18 @@ class GroupGraph(object):
             for permission in self.permission_metadata.get(groupname, []):
                 if show_permission is not None and permission.permission != show_permission:
                     continue
+                if permission.audited:
+                    group_audited = True
                 data["permissions"].append({
                     "permission": permission.permission,
+                    "audited": permission.audited,
                     "argument": permission.argument,
                     "granted_on": (permission.granted_on - EPOCH).total_seconds(),
                     "distance": 0,
                     "path": [groupname],
                 })
 
+            data["audited"] = group_audited
             return data
 
     def get_user_details(self, username, cutoff=None):
@@ -359,6 +379,7 @@ class GroupGraph(object):
                 for permission in self.permission_metadata[parent_name]:
                     permissions.append({
                         "permission": permission.permission,
+                        "audited": permission.audited,
                         "argument": permission.argument,
                         "granted_on": (permission.granted_on - EPOCH).total_seconds(),
                         "path": [elem[1] for elem in path],

@@ -9,6 +9,7 @@ from sqlalchemy.sql import label, literal
 import re
 import sshpubkey
 
+from ..audit import can_join, UserNotAuditor
 from ..constants import RESERVED_NAMES
 from .forms import (
     GroupForm, GroupJoinForm, GroupAddForm, GroupRequestModifyForm, PublicKeyForm,
@@ -87,9 +88,15 @@ class UserView(GrouperHandler):
         if (user.name == self.current_user.name) or self.current_user.user_admin:
             can_control = True
 
+        try:
+            user_md = self.graph.get_user_details(user.name)
+        except KeyError:
+            # User is probably very new, so they have no metadata yet.
+            user_md = {}
+
         groups = user.my_groups()
         public_keys = user.my_public_keys()
-        permissions = user.my_permissions()
+        permissions = user_md.get('permissions', [])
         log_entries = user.my_log_entries()
         self.render("user.html", user=user, groups=groups, public_keys=public_keys,
                     can_control=can_control, permissions=permissions,
@@ -400,9 +407,16 @@ class GroupView(GrouperHandler):
 
         grantable = self.current_user.my_grantable_permissions()
 
+        try:
+            group_md = self.graph.get_group_details(group.name)
+        except KeyError:
+            # New group, no metadata yet.
+            group_md = {}
+
         members = group.my_members()
         groups = group.my_groups()
-        permissions = group.my_permissions()
+        permissions = group_md.get('permissions', [])
+        audited = group_md.get('audited', False)
         log_entries = group.my_log_entries()
 
         num_pending = group.my_requests("pending").count()
@@ -415,7 +429,7 @@ class GroupView(GrouperHandler):
         self.render(
             "group.html", group=group, members=members, groups=groups,
             num_pending=num_pending, alerts=alerts, permissions=permissions,
-            log_entries=log_entries, grantable=grantable,
+            log_entries=log_entries, grantable=grantable, audited=audited,
         )
 
 
@@ -504,6 +518,20 @@ class GroupEditMember(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors),
             )
 
+        fail_message = 'This join is denied with this role at this time.'
+        try:
+            user_can_join = can_join(group, user_or_group, role=form.data["role"])
+        except UserNotAuditor as e:
+            user_can_join = False
+            fail_message = e
+        if not user_can_join:
+            return self.render(
+                "group-edit-member.html", form=form, group=group, member=member, edge=edge,
+                alerts=[
+                    Alert('danger', fail_message, 'Audit Policy Enforcement')
+                ]
+            )
+
         expiration = None
         if form.data["expiration"]:
             expiration = datetime.strptime(form.data["expiration"], "%m/%d/%Y")
@@ -564,6 +592,25 @@ class GroupRequestUpdate(GrouperHandler):
                 members=members, form=form, alerts=self.get_form_alerts(form.errors),
                 statuses=REQUEST_STATUS_CHOICES, updates=updates
             )
+
+        # We have to test this here, too, to ensure that someone can't sneak in with a pending
+        # request that used to be allowed.
+        if form.data["status"] != "cancelled":
+            fail_message = 'This join is denied with this role at this time.'
+            try:
+                user_can_join = can_join(request.requesting, request.get_on_behalf(),
+                                         role=request.edge.role)
+            except UserNotAuditor as e:
+                user_can_join = False
+                fail_message = e
+            if not user_can_join:
+                return self.render(
+                    "group-request-update.html", group=group, request=request,
+                    members=members, form=form, statuses=REQUEST_STATUS_CHOICES, updates=updates,
+                    alerts=[
+                        Alert('danger', fail_message, 'Audit Policy Enforcement')
+                    ]
+                )
 
         request.update_status(
             self.current_user,
@@ -762,6 +809,20 @@ class GroupJoin(GrouperHandler):
             )
 
         member = self._get_member(form.data["member"])
+
+        fail_message = 'This join is denied with this role at this time.'
+        try:
+            user_can_join = can_join(group, member, role=form.data["role"])
+        except UserNotAuditor as e:
+            user_can_join = False
+            fail_message = e
+        if not user_can_join:
+            return self.render(
+                "group-join.html", form=form, group=group,
+                alerts=[
+                    Alert('danger', fail_message, 'Audit Policy Enforcement')
+                ]
+            )
 
         expiration = None
         if form.data["expiration"]:

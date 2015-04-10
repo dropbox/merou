@@ -17,6 +17,12 @@
                 <h3 class="panel-title">Join Group</h3>
            </div>
             <div class="panel-body">
+                {% if audited %}
+                <div class="alert alert-warning">
+                    <strong>Membership in this group is audited.</strong> Your access to this
+                    group will be regularly reviewed according to the production access policy.
+                </div>
+                {% endif %}
                 <form class="form-horizontal" role="form"
                       method="post" action="/groups/{{group.name}}/join">
                     {% include "forms/group-join.html" %}

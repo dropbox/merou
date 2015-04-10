@@ -111,12 +111,12 @@
 
 {% macro account(user, type=None) -%}
 {% if type == None %}
-<a href="/{{ user.type | lower }}s/{{ user.name }}">
+<a class="account-link" href="/{{ user.type | lower }}s/{{ user.name }}">
     <i class="fa fa-user{% if user.type.lower() == 'group' %}s{% endif %}"></i> 
     {{ user.name }}
 </a>
 {% else %}
-<a href="/{{ type | lower }}s/{{ user }}">
+<a class="account-link" href="/{{ type | lower }}s/{{ user }}">
     <i class="fa fa-user{% if type.lower() == 'group' %}s{% endif %}"></i> 
     {{ user }}
 </a>
@@ -124,7 +124,7 @@
 {%- endmacro %}
 
 {% macro permission(perm) -%}
-<a href="/permission/{{perm.name or perm.permission}}">
+<a class="permission-link" href="/permissions/{{perm.name or perm.permission}}">
     <i class="fa fa-key"></i>
     {{perm.name or perm.permission}}
 </a>

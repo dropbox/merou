@@ -102,6 +102,6 @@ def permissions(session):
             session, name=permission, description="{} permission".format(permission))[0]
         for permission in ("ssh", "sudo", "audited", PERMISSION_AUDITOR)
     }
-    permissions["audited"].audited = True
+    permissions["audited"].enable_auditing()
     session.commit()
     return permissions

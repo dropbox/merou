@@ -1,9 +1,10 @@
 language: python
 python:
-    - "2.7"
-
+- '2.7'
 install:
-    - pip install -r requirements-dev.txt
-    - pip install .
-
+- pip install -r requirements-dev.txt
+- pip install .
 script: py.test -v tests/
+notifications:
+  slack:
+    secure: glh+QNow84MLh3SXM+5l1C0Mxz7aYWLmE+iShUixbwQzv702rneznGutyjyN8oR42T5EEg5ilN5WR0Ni0xIFVc81ZtVDJkndjNHgXp6SgizWI0qpBQj9m1/3yrXMh5SAd168ZXtc3Y5sOOYWFs/8mrBcdYEFE3k+wkX1/GwGD3A=

@@ -1166,7 +1166,7 @@ class Permission(Model):
     name = Column(String(length=64), unique=True, nullable=False)
     description = Column(Text, nullable=False)
     created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
-    audited = Column(Boolean, default=False, nullable=False)
+    _audited = Column('audited', Boolean, default=False, nullable=False)
 
     @staticmethod
     def get(session, name=None):
@@ -1177,6 +1177,18 @@ class Permission(Model):
     @staticmethod
     def get_all(session):
         return session.query(Permission).order_by(asc("name")).all()
+
+    @property
+    def audited(self):
+        return self._audited
+
+    def enable_auditing(self):
+        self._audited = True
+        Counter.incr(self.session, "updates")
+
+    def disable_auditing(self):
+        self._audited = False
+        Counter.incr(self.session, "updates")
 
     def get_mapped_groups(self):
         '''

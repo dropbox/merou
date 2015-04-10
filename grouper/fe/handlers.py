@@ -169,7 +169,43 @@ class PermissionsCreate(GrouperHandler):
         AuditLog.log(self.session, self.current_user.id, 'create_permission',
                      'Created permission.', on_permission_id=permission.id)
 
-        return self.redirect("/permission/{}".format(permission.name))
+        return self.redirect("/permissions/{}".format(permission.name))
+
+
+class PermissionDisableAuditing(GrouperHandler):
+    def post(self, user_id=None, name=None):
+        if not self.current_user.permission_admin:
+            return self.forbidden()
+
+        permission = Permission.get(self.session, name)
+        if not permission:
+            return self.notfound()
+
+        permission.disable_auditing()
+        self.session.commit()
+
+        AuditLog.log(self.session, self.current_user.id, 'disable_auditing',
+                     'Disabled auditing.', on_permission_id=permission.id)
+
+        return self.redirect("/permissions/{}".format(permission.name))
+
+
+class PermissionEnableAuditing(GrouperHandler):
+    def post(self, name=None):
+        if not self.current_user.permission_admin:
+            return self.forbidden()
+
+        permission = Permission.get(self.session, name)
+        if not permission:
+            return self.notfound()
+
+        permission.enable_auditing()
+        self.session.commit()
+
+        AuditLog.log(self.session, self.current_user.id, 'enable_auditing',
+                     'Enabled auditing.', on_permission_id=permission.id)
+
+        return self.redirect("/permissions/{}".format(permission.name))
 
 
 class PermissionsGrant(GrouperHandler):
@@ -789,10 +825,12 @@ class GroupJoin(GrouperHandler):
         if not group:
             return self.notfound()
 
+        group_md = self.graph.get_group_details(group.name)
+
         form = GroupJoinForm()
         form.member.choices = self._get_choices(group)
         return self.render(
-            "group-join.html", form=form, group=group
+            "group-join.html", form=form, group=group, audited=group_md["audited"],
         )
 
     def post(self, group_id=None, name=None):

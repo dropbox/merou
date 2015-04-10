@@ -265,3 +265,7 @@ span.disabled {
     word-break: break-all;
     white-space: normal;
 }
+
+.account-link, .permission-link {
+    white-space: nowrap;
+}

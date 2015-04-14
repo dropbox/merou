@@ -1,3 +1,5 @@
+{% from 'macros/ui.html' import help_for %}
+
 <div class="form-group {% if form.member.errors %}has-error{% endif %}">
     <label for="{{form.member.label.field_id}}"
            class="col-sm-3 control-label">
@@ -11,7 +13,7 @@
 <div class="form-group {% if form.role.errors %}has-error{% endif %}">
     <label for="{{form.role.label.field_id}}"
            class="col-sm-3 control-label">
-        {{ form.role.label.text }} {% if form.role.flags.required %}*{% endif %}
+        <span {{ help_for('role') }}>{{ form.role.label.text }}</span> {% if form.role.flags.required %}*{% endif %}
     </label>
     <div class="col-sm-7">
         {{ form.role(class_="form-control") }}

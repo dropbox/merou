@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import group_panel, member_panel, permission_panel, log_entry_panel %}
+{% from 'macros/ui.html' import group_panel, member_panel, permission_panel, log_entry_panel,
+                                help_for %}
 
 {% block heading %}
     <a href="/groups">Groups</a>
@@ -59,7 +60,9 @@
         <h4>
             {% if audited %}
                 <span class="label label-warning pull-right">
-                    <i class="fa fa-gavel"></i> Auditing Enabled
+                    <i class="fa fa-gavel"></i> <span {{ help_for("audited_group") }}>
+                        Auditing Enabled
+                    </span>
                 </span>
             {% endif %}
             {% if group.canjoin == "canjoin" %}

@@ -18,7 +18,7 @@
 
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h3 class="panel-title">My Public Keys</h3>
+            <h3 class="panel-title">Public Keys</h3>
         </div>
         <div style="
             max-height: {{max_height}}px;
@@ -70,10 +70,26 @@
     </div>
 {%- endmacro %}
 
+{% macro help_for(subj) -%}
+class="has-help"
+data-toggle="popover"
+title="Grouper Help" data-content="
+{% if subj == "role" %}
+A 'role' describes someone's ability to control the group. There are three types of roles:
+<ul><li><strong>member</strong> has no special power</li>
+<li><strong>manager</strong> is allowed to process requests to join the group</li>
+<li><strong>owner</strong> has full control of the group</li></ul>
+{% elif subj == "audited_group" %}
+One or more of the permissions that apply to this group have auditing
+enabled. Membership in this group is regularly reviewed.
+{% endif %}
+"
+{%- endmacro %}
+
 {% macro group_panel(max_height, groups, show_role=False) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h3 class="panel-title">My Groups</h3>
+            <h3 class="panel-title">Groups</h3>
         </div>
         <div style="
             max-height: {{max_height}}px;
@@ -85,7 +101,9 @@
                     <tr>
                         <th class="col-sm-2">Name</th>
                         {% if show_role %}
-                            <th class="col-sm-2">Role</th>
+                            <th class="col-sm-2">
+                                <span {{ help_for('role') }}>Role</span>
+                            </th>
                         {% endif %}
                     </tr>
                 </thead>
@@ -167,7 +185,7 @@
                     <tr>
                         <th class="col-sm-1"></th>
                         <th class="col-sm-3">Member</th>
-                        <th class="col-sm-1">Role</th>
+                        <th class="col-sm-1"><span {{ help_for('role') }}>Role</span></th>
                         <th class="col-sm-1">Expires</th>
                     </tr>
                 </thead>
@@ -247,7 +265,7 @@
 {% macro permission_panel(max_height, mappings, group=None, can_grant=None) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h3 class="panel-title">My Permissions</h3>
+            <h3 class="panel-title">Permissions</h3>
         </div>
         <div style="
             max-height: {{max_height}}px;

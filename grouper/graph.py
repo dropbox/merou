@@ -9,7 +9,7 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.sql import label, literal
 
 from .models import (
-    Group, User, GroupEdge, Counter, GROUP_EDGE_ROLES,
+    Group, User, GroupEdge, PublicKey, UserMetadata, Counter, GROUP_EDGE_ROLES,
     Permission, PermissionMap, MappedPermission,
 )
 from .util import singleton
@@ -113,6 +113,18 @@ class GroupGraph(object):
             User.enabled == True
         )
 
+        public_keys = {}
+        for key in session.query(PublicKey):
+            if key.user_id not in public_keys:
+                public_keys[key.user_id] = []
+            public_keys[key.user_id].append(key)
+
+        user_metadata = {}
+        for row in session.query(UserMetadata):
+            if row.user_id not in user_metadata:
+                user_metadata[row.user_id] = []
+            user_metadata[row.user_id].append(row)
+
         out = {}
         for user in users:
             out[user.username] = {
@@ -121,14 +133,14 @@ class GroupGraph(object):
                         "public_key": key.public_key,
                         "fingerprint": key.fingerprint,
                         "created_on": str(key.created_on),
-                    } for key in user.my_public_keys()
+                    } for key in public_keys.get(user.id, [])
                 ],
                 "metadata": [
                     {
                         "data_key": row.data_key,
                         "data_value": row.data_value,
                         "last_modified": str(row.last_modified),
-                    } for row in user.my_metadata()
+                    } for row in user_metadata.get(user.id, [])
                 ],
             }
         return out

@@ -10,13 +10,90 @@
 
 {% block content %}
 
-<!-- TODO(mildorf): make this more helpful...  -->
+<!-- TODO(mildorf): clean up the style here, it's not 1995. -->
+<!-- TODO(mildorf): keep this in sync with reality. -->
 
 <h3>What is Grouper?</h3>
-<p>This is a group membership and permission management platform. In other words, we are an
-authorization service you can use to answer such questions as: who's in what groups, and what
-permissions do they have?</p>
+<p>Grouper is a group membership and permission management platform. In other words, an
+authorization service you can use to answer such questions as: who's in what groups, and
+what permissions do they have? However, Grouper itself is just a system for permissions
+specfication. It's up to Grouper clients to actually implement things like access
+control.</p>
 
+<h3>How does group membership work?</h3>
+<p>Users and groups are the nodes of a directed acyclic graph.  The users are always leaf
+nodes and are members of all of their ancestor groups.  Groups must always have at least
+one user child and can have any number of other groups as additional children, provided
+that the graph remains acyclic.</p>
+
+<h3>What's the difference between the member, manager, and owner roles?</h3>
+<p>These are the three types of group membership for users: a member just inherits the
+group's permissions, a manager is allowed to process requests to join a group, and an
+owner has full control over the group (including the ability to change the membership type
+of other users or add/remove the group's permissions.)  Technically, groups are members of
+other groups.</p>
+
+<h3>What's the deal with permissions?</h3>
+<!-- FIXME(mildorf): is the comment about whitespace correct? -->
+<p>Grouper permissions are just enumerated strings. First, permissions are first created
+(any string without whitespace can be added to the set of available permissions.) Then
+permissions are granted to groups as (permission, argument) pairs where an argument is an
+optional second string. Finally, users inherit the union of all (permission, argument)
+pairs from the groups of which they are members.</p>
+
+<h3>Who can create groups?</h3>
+<p>Everyone.  The user creating a group automatically becomes an owner of that group,
+which begins with no permissions.</p>
+
+<h3>Who can create users?</h3>
+<!-- TODO: update language once users can be prepopulated. -->
+<p>Users are automatically populated into Grouper as they visit the web UI.  We're working
+on a manual way to pre-populate users (see user_admin below).</p>
+
+<h3>Who can create permissions?</h3>
+<p>A user with the permission (grouper.permission.create, prefix.*) can create any
+permission starting with "prefix." (We recommend namespacing using the character '.' as a
+separator.)</p>
+
+<h3>Who can grant permissions?</h3>
+<p>Generally, a user with the permission (grouper.permission.grant, prefix.*) can grant
+any permission starting with "prefix." with any argument.  As a special case, the
+permission (grouper.permission.grant, grouper.permission.grant/prefix.*) allows a user to
+grant the permission to grant (grouper.permission.grant, prefix.*).</p>
+
+<h3>How does auditing work?</h3>
+<!-- FIXME(mildorf): does the argument matter for grouper.auditor.permission? -->
+<p>Grouper permissions have a bit that defines whether they are audited or not.  Groups
+with at least one audited permission become audited groups.  Users with the
+grouper.permission.auditor permission are auditors, and only auditors can be the manager
+or owner of an audited group.</p>
+
+<!-- TODO: change once auditing tooling is ready! -->
+<p>We're working on tooling to facilitate regular monitoring of both members of audited
+groups and groups with audited permissions.</p>
+
+<h3>How do I set up Grouper?</h3>
+<p>See the README that comes with Grouper. Basically, after a pip install, you need to
+configure grouper to find a SQL-style backing database and stand up processes to serve the
+read-write web UI and read-only programmatic API.</p>
+
+<h3>How do I set up the first groups and permissions?</h3>
+<p>There are three administrative flags, corresponding to global permission to administer
+  groups, users, and permissions, which can be set for any account. These grant powers
+  independent of the usual graph-based way and are given out manually via the following
+  commands:</p>
+
+<ul><li>bin/grouper-ctl -c config/dev.yaml -vv capabilities add user@example.com group_admin</li>
+<li>bin/grouper-ctl -c config/dev.yaml -vv capabilities add user@example.com user_admin</li>
+<li>bin/grouper-ctl -c config/dev.yaml -vv capabilities add user@example.com permission_admin</li></ul>
+
+<p>A group_admin has the power to manipulate the graph structure at will.  For example,
+they can create any group, add any user to any group as any role, provided that auditing
+requirements aren't violated.  A user_admin has the power to disable/enable a user account
+but no special power with respect to group membership. Finally, a permission_admin has the
+power to create any permission.</p>
+
+<h3>What if my questions aren't answered here?</h3>
 <p>There haven't been many frequently asked questions yet, so this hasn't been filled out
 yet! Please see the admins of this site for help and links to any documentation that they
 might have already filled out.</p>

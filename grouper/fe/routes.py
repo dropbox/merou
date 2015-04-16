@@ -4,6 +4,7 @@ from ..constants import NAME_VALIDATION, NAME2_VALIDATION, PERMISSION_VALIDATION
 HANDLERS = [
     (r"/", handlers.Index),
     (r"/groups", handlers.GroupsView),
+    (r"/permissions/create", handlers.PermissionsCreate),
     (r"/permissions/{}".format(PERMISSION_VALIDATION), handlers.PermissionView),
     (r"/permissions", handlers.PermissionsView),
     (
@@ -14,7 +15,6 @@ HANDLERS = [
         r"/permissions/{}/disable-auditing".format(PERMISSION_VALIDATION),
         handlers.PermissionDisableAuditing
     ),
-    (r"/permissions/create", handlers.PermissionsCreate),
     (r"/permissions/grant/{}".format(NAME_VALIDATION), handlers.PermissionsGrant),
     (
         r"/permissions/{}/revoke/(?P<mapping_id>[0-9]+)".format(PERMISSION_VALIDATION),

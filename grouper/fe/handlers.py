@@ -10,6 +10,8 @@ import re
 import sshpubkey
 
 from ..audit import can_join, UserNotAuditor
+from ..constants import RESERVED_NAMES, PERMISSION_GRANT, PERMISSION_CREATE, PERMISSION_AUDITOR
+
 from .forms import (
     GroupForm, GroupJoinForm, GroupAddForm, GroupRequestModifyForm, PublicKeyForm,
     PermissionCreateForm, PermissionGrantForm, GroupEditMemberForm,
@@ -19,6 +21,7 @@ from ..models import (
     GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES, OBJ_TYPES,
     get_user_or_group,
 )
+from .settings import settings
 from .util import GrouperHandler, Alert, test_reserved_names
 from ..util import matches_glob
 
@@ -1157,7 +1160,18 @@ class PublicKeyDelete(GrouperHandler):
 
 class Help(GrouperHandler):
     def get(self):
-        self.render("help.html")
+        permissions = (
+            self.session.query(Permission)
+            .order_by(Permission.name)
+        )
+        d = {permission.name:permission for permission in permissions}
+
+        self.render("help.html",
+                    how_to_get_help=settings.how_to_get_help,
+                    site_docs=settings.site_docs,
+                    grant_perm=d[PERMISSION_GRANT],
+                    create_perm=d[PERMISSION_CREATE],
+                    audit_perm=d[PERMISSION_AUDITOR])
 
 
 # Don't use GraphHandler here as we don't want to count

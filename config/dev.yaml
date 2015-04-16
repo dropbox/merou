@@ -77,6 +77,14 @@ fe:
     # Type: int
     refresh_interval: 1
 
+    # How to get help from the people who run this Grouper deployment.
+    # Type: str
+    how_to_get_help: "not arranged"
+
+    # Site-specific docs.
+    # Type: list of maps giving url, name, and description strings.
+    site_docs:
+
 api:
     # The port to listen to requests on.
     # Type: int

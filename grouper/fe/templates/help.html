@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from 'macros/ui.html' import permission with context %}
 
 {% block heading %}
     Help
@@ -10,15 +11,77 @@
 
 {% block content %}
 
-<!-- TODO(mildorf): make this more helpful...  -->
-
 <h3>What is Grouper?</h3>
 <p>This is a group membership and permission management platform. In other words, we are an
 authorization service you can use to answer such questions as: who's in what groups, and what
 permissions do they have?</p>
 
-<p>There haven't been many frequently asked questions yet, so this hasn't been filled out
-yet! Please see the admins of this site for help and links to any documentation that they
-might have already filled out.</p>
+<h3>How does group membership work?</h3>
+<p>There are just three things to know: <a href="/users">users</a> are members
+of <a href="/groups">groups</a>, groups can be members of other groups, and group
+membership is transitive (if A is a member of B and B is a member of C, then A is a member
+of C.) That's all there is to it.  Technically speaking, the users and groups constitute
+the nodes of a <a href="http://en.wikipedia.org/wiki/Directed_acyclic_graph">directed
+acyclic graph</a> and a user or group is a member of any of its ancestors.</p>
+
+<h3>What's the difference between the member, manager, and owner roles?</h3>
+<p>These are the three types of group membership for users: a member just inherits the
+group's permissions, a manager is allowed to process requests to join a group, and an
+owner has full control over the group (including the ability to change the membership type
+of other users or add/remove the group's permissions.)  Technically, groups are members of
+other groups.</p>
+
+<h3>What's the deal with permissions?</h3>
+<p>Grouper <a href="/permissions">permissions</a> are just enumerated strings. First,
+permissions are first created (added to the set of available permissions.) Then
+permissions are granted to groups as (permission, argument) pairs where an argument is an
+optional second string. Finally, users inherit the union of all (permission, argument)
+pairs from the groups of which they are members.</p>
+
+<h3>Who can create groups?</h3>
+<p>Everyone.  The user creating a group automatically becomes an owner of that group,
+which begins with no permissions.</p>
+
+<h3>Who can create users?</h3>
+<!-- TODO: update language once users can be prepopulated. -->
+<p>Users are automatically populated into Grouper as they visit the web UI.  We're working
+on a manual way to pre-populate users.</p>
+
+<h3>Who can create permissions?</h3>
+<p>A user with the permission ({{permission(create_perm)}}, prefix.*) can create any
+permission starting with "prefix." We strongly encourage namespacing using the character
+'.' as a separator.</p>
+
+<h3>Who can grant permissions?</h3>
+<p>Generally, a user with the permission ({{permission(grant_perm)}}, prefix.*) can grant
+any permission starting with "prefix." with any argument.  As a special case, the
+permission ({{grant_perm.name}}, {{grant_perm.name}}/prefix.*) allows a user to
+grant the permission to grant ({{grant_perm.name}}, prefix.*).</p>
+
+<h3>How does auditing work?</h3>
+<p>Certain grouper permissions are designated as audited permissions. Groups with at least
+one audited permission become audited groups.  Users with the {{permission(audit_perm)}}
+permission (any argument) are considered auditors.  Only auditors can be the manager or
+owner of an audited group.</p>
+
+<!-- TODO: change once auditing tooling is ready! -->
+<p>We're working on tooling to facilitate regular monitoring of both members of audited
+  groups and groups with audited permissions.</p>
+
+<h3>What if my questions aren't answered here?</h3>
+<p>This list isn't comprehensive. Please contact the admins of this site ({{
+  how_to_get_help }}) for help and
+  {% if site_docs %}
+  see the documentation:
+  <ul>
+    {% for doc in site_docs %}
+    <li><a href="{{doc.url}}">{{doc.name}}</a> - {{doc.description}}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  links to any documentation that they might have already
+  filled out.
+  {% endif %}
+</p>
 
 {% endblock %}

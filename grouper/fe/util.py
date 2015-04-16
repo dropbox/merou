@@ -241,7 +241,7 @@ def get_template_env(package="grouper.fe", extra_filters=None, extra_globals=Non
     return env
 
 
-# Returns a list of strings explaining whcih reserved regexes match a proposed
+# Returns a list of strings explaining which reserved regexes match a proposed
 # permission name.
 def test_reserved_names(permission_name):
     failure_messages = []

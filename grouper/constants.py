@@ -31,6 +31,7 @@ RESERVED_NAMES = [
     r"^grouper",
     r"^admin",
     r"^test",
+    r"^[^.]*$",
 ]
 
 # Maximum length a name can be. This applies to user names and permission arguments.

@@ -10,7 +10,6 @@ import re
 import sshpubkey
 
 from ..audit import can_join, UserNotAuditor
-from ..constants import RESERVED_NAMES
 from .forms import (
     GroupForm, GroupJoinForm, GroupAddForm, GroupRequestModifyForm, PublicKeyForm,
     PermissionCreateForm, PermissionGrantForm, GroupEditMemberForm,
@@ -20,7 +19,7 @@ from ..models import (
     GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES, OBJ_TYPES,
     get_user_or_group,
 )
-from .util import GrouperHandler, Alert
+from .util import GrouperHandler, Alert, test_reserved_names
 from ..util import matches_glob
 
 
@@ -133,11 +132,8 @@ class PermissionsCreate(GrouperHandler):
             if matches_glob(creatable, form.data["name"]):
                 allowed = True
 
-        for reserved in RESERVED_NAMES:
-            if re.match(reserved, form.data["name"]):
-                form.name.errors.append(
-                    "Permission names must not match the pattern: %s" % (reserved, )
-                )
+        for failure_message in test_reserved_names(form.data["name"]):
+            form.name.errors.append(failure_message)
 
         if not allowed:
             form.name.errors.append(

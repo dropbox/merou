@@ -13,6 +13,7 @@ import traceback
 import urllib
 
 from .settings import settings
+from ..constants import RESERVED_NAMES
 from ..graph import Graph
 from ..models import User, GROUP_EDGE_ROLES, OBJ_TYPES_IDX, get_db_engine, Session
 from ..util import get_database_url
@@ -238,3 +239,15 @@ def get_template_env(package="grouper.fe", extra_filters=None, extra_globals=Non
     env.globals.update(j_globals)
 
     return env
+
+
+# Returns a list of strings explaining which reserved regexes match a proposed
+# permission name.
+def test_reserved_names(permission_name):
+    failure_messages = []
+    for reserved in RESERVED_NAMES:
+        if re.match(reserved, permission_name):
+            failure_messages.append(
+                "Permission names must not match the pattern: %s" % (reserved, )
+            )
+    return failure_messages

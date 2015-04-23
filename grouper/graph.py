@@ -180,7 +180,6 @@ class GroupGraph(object):
                     {
                         "permission": permission.permission,
                         "argument": permission.argument,
-                        "audited": permission.audited,
                     } for permission in permission_metadata[group.id]
                 ],
             }
@@ -340,7 +339,6 @@ class GroupGraph(object):
                         group_audited = True
                     data["permissions"].append({
                         "permission": permission.permission,
-                        "audited": permission.audited,
                         "argument": permission.argument,
                         "granted_on": (permission.granted_on - EPOCH).total_seconds(),
                         "distance": len(path) - 1,
@@ -354,7 +352,6 @@ class GroupGraph(object):
                     group_audited = True
                 data["permissions"].append({
                     "permission": permission.permission,
-                    "audited": permission.audited,
                     "argument": permission.argument,
                     "granted_on": (permission.granted_on - EPOCH).total_seconds(),
                     "distance": 0,
@@ -391,7 +388,6 @@ class GroupGraph(object):
                 for permission in self.permission_metadata[parent_name]:
                     permissions.append({
                         "permission": permission.permission,
-                        "audited": permission.audited,
                         "argument": permission.argument,
                         "granted_on": (permission.granted_on - EPOCH).total_seconds(),
                         "path": [elem[1] for elem in path],

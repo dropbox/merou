@@ -21,6 +21,10 @@ as:
 pip install grouper
 ```
 
+Next you need to configure grouper to find a SQL-style backing database and
+stand up processes to serve the read-write web UI and read-only programmatic
+API.
+
 Running a Test instance
 ==========================
 
@@ -43,5 +47,29 @@ PYTHONPATH=. bin/grouper-fe --config=config/dev.yaml -vv
 
 # Run the graph/api server
 PYTHONPATH=. bin/grouper-api --config=config/dev.yaml  -vv
+
+```
+
+Setting up the first groups and permissions
+===========================================
+
+There are three administrative flags, corresponding to full authority to
+administer groups, users, and permissions. These flags can be set for any
+account and grant powers independent of the usual way and are given out manually
+via the following commands:
+
+```bash
+
+# Allow user to set up groups and group-membership.
+PYTHONPATH=. bin/grouper-ctl -c config/dev.yaml -vv \
+    capabilities add user@example.com group_admin
+
+# Allow someone to enable/disable user accounts.
+PYTHONPATH=. bin/grouper-ctl -c config/dev.yaml -vv \
+    capabilities add user@example.com user_admin
+
+# Allow someone to create permissions.
+PYTHONPATH=. bin/grouper-ctl -c config/dev.yaml -vv \
+    capabilities add user@example.com permission_admin
 
 ```

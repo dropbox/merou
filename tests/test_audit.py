@@ -2,7 +2,9 @@ import pytest
 
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 
-from grouper.audit import can_join, user_is_auditor, UserNotAuditor
+from grouper.audit import (
+    assert_controllers_are_auditors, assert_can_join, user_is_auditor, UserNotAuditor
+)
 
 
 def test_group_audited(standard_graph, session, groups, permissions):  # noqa
@@ -23,34 +25,43 @@ def test_user_is_auditor(standard_graph):  # noqa
     assert not user_is_auditor("oliver")
 
 
-def test_can_join(standard_graph, session, users, groups, permissions):  # noqa
+def test_assert_can_join(users, groups):  # noqa
     """ Test various audit constraints to ensure that users can/can't join as appropriate. """
 
-    graph = standard_graph  # noqa
-
     # Non-auditor can join non-audited group as owner.
-    assert can_join(groups["team-infra"], users["zay"], role="owner")
+    assert assert_can_join(groups["team-infra"], users["zay"], role="owner")
 
     # Auditor can join non-audited group as owner.
-    assert can_join(groups["team-infra"], users["zorkian"], role="owner")
+    assert assert_can_join(groups["team-infra"], users["zorkian"], role="owner")
 
     # Non-auditor can NOT join audited group as owner.
     with pytest.raises(UserNotAuditor):
-        assert not can_join(groups["serving-team"], users["zay"], role="owner")
+        assert not assert_can_join(groups["serving-team"], users["zay"], role="owner")
 
     # Non-auditor can join audited group as member.
-    assert can_join(groups["serving-team"], users["zay"])
+    assert assert_can_join(groups["serving-team"], users["zay"])
 
     # Group with non-auditor owner can NOT join audited group.
     with pytest.raises(UserNotAuditor):
-        assert not can_join(groups["serving-team"], groups["tech-ops"])
+        assert not assert_can_join(groups["serving-team"], groups["tech-ops"])
 
     # Group with auditor owner can join audited group.
-    assert can_join(groups["serving-team"], groups["sad-team"])
+    assert assert_can_join(groups["serving-team"], groups["sad-team"])
 
     # Group with non-auditor owner can join non-audited group.
-    assert can_join(groups["team-infra"], groups["tech-ops"])
+    assert assert_can_join(groups["team-infra"], groups["tech-ops"])
 
     # Group with auditor owner, but sub-group with non-auditor owner, can NOT join audited group.
     with pytest.raises(UserNotAuditor):
-        assert not can_join(groups["audited-team"], groups["serving-team"])
+        assert not assert_can_join(groups["audited-team"], groups["serving-team"])
+
+
+def test_assert_controllers_are_auditors(groups):  # noqa
+    """ Test the method that determines if a subtree is controlled by auditors. """
+
+    # Group is safely controlled by auditors.
+    assert assert_controllers_are_auditors(groups["sad-team"])
+
+    # Group with non-auditor owner should fail this test.
+    with pytest.raises(UserNotAuditor):
+        assert not assert_controllers_are_auditors(groups["team-infra"])

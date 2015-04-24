@@ -8,7 +8,7 @@ from sqlalchemy.sql import label, literal
 
 import sshpubkey
 
-from ..audit import can_join, UserNotAuditor
+from ..audit import assert_controllers_are_auditors, assert_can_join, UserNotAuditor
 from ..constants import PERMISSION_GRANT, PERMISSION_CREATE, PERMISSION_AUDITOR
 
 from .forms import (
@@ -264,6 +264,22 @@ class PermissionsGrant(GrouperHandler):
                 "permission-grant.html", form=form, group=group,
                 alerts=self.get_form_alerts(form.errors),
             )
+
+        # If the permission is audited, then see if the subtree meets auditing requirements.
+        if permission.audited:
+            fail_message = ("Permission is audited and this group (or a subgroup) contains " +
+                            "owners or managers who have not received audit training.")
+            try:
+                permission_ok = assert_controllers_are_auditors(group)
+            except UserNotAuditor as e:
+                permission_ok = False
+                fail_message = e
+            if not permission_ok:
+                form.permission.errors.append(fail_message)
+                return self.render(
+                    "permission-grant.html", form=form, group=group,
+                    alerts=self.get_form_alerts(form.errors),
+                )
 
         try:
             group.grant_permission(permission, argument=form.data["argument"])
@@ -562,7 +578,7 @@ class GroupEditMember(GrouperHandler):
 
         fail_message = 'This join is denied with this role at this time.'
         try:
-            user_can_join = can_join(group, user_or_group, role=form.data["role"])
+            user_can_join = assert_can_join(group, user_or_group, role=form.data["role"])
         except UserNotAuditor as e:
             user_can_join = False
             fail_message = e
@@ -640,8 +656,8 @@ class GroupRequestUpdate(GrouperHandler):
         if form.data["status"] != "cancelled":
             fail_message = 'This join is denied with this role at this time.'
             try:
-                user_can_join = can_join(request.requesting, request.get_on_behalf(),
-                                         role=request.edge.role)
+                user_can_join = assert_can_join(request.requesting, request.get_on_behalf(),
+                                                role=request.edge.role)
             except UserNotAuditor as e:
                 user_can_join = False
                 fail_message = e
@@ -856,7 +872,7 @@ class GroupJoin(GrouperHandler):
 
         fail_message = 'This join is denied with this role at this time.'
         try:
-            user_can_join = can_join(group, member, role=form.data["role"])
+            user_can_join = assert_can_join(group, member, role=form.data["role"])
         except UserNotAuditor as e:
             user_can_join = False
             fail_message = e

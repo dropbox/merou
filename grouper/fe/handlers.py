@@ -6,11 +6,10 @@ from sqlalchemy import union_all
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label, literal
 
-import re
 import sshpubkey
 
 from ..audit import can_join, UserNotAuditor
-from ..constants import RESERVED_NAMES, PERMISSION_GRANT, PERMISSION_CREATE, PERMISSION_AUDITOR
+from ..constants import PERMISSION_GRANT, PERMISSION_CREATE, PERMISSION_AUDITOR
 
 from .forms import (
     GroupForm, GroupJoinForm, GroupAddForm, GroupRequestModifyForm, PublicKeyForm,
@@ -453,8 +452,16 @@ class GroupView(GrouperHandler):
         permissions = group_md.get('permissions', [])
         audited = group_md.get('audited', False)
         log_entries = group.my_log_entries()
-
         num_pending = group.my_requests("pending").count()
+
+        # Add mapping_id to permissions structure
+        my_permissions = group.my_permissions()
+        for perm_up in permissions:
+            for perm_direct in my_permissions:
+                if (perm_up['permission'] == perm_direct.name
+                        and perm_up['argument'] == perm_direct.argument):
+                    perm_up['mapping_id'] = perm_direct.mapping_id
+                    break
 
         alerts = []
         self_pending = group.my_requests("pending", user=self.current_user).count()
@@ -1164,7 +1171,7 @@ class Help(GrouperHandler):
             self.session.query(Permission)
             .order_by(Permission.name)
         )
-        d = {permission.name:permission for permission in permissions}
+        d = {permission.name: permission for permission in permissions}
 
         self.render("help.html",
                     how_to_get_help=settings.how_to_get_help,

@@ -300,7 +300,7 @@ enabled. Membership in this group is regularly reviewed.
                             {% if map.distance == 0 %}
                             {% for grantable in can_grant if grantable[0].name == map.permission %}
                                 {% if loop.first %}
-                                    <a class="btn btn-default btn-xs" href="/permissions/{{ map.name }}/revoke/{{ map.mapping_id }}">
+                                    <a class="btn btn-default btn-xs" href="/permissions/{{ map.permission }}/revoke/{{ map.mapping_id }}">
                                     <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span> Revoke
                                     </a>
                                 {% endif %}

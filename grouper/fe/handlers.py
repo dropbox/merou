@@ -1,28 +1,31 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import operator
 
 from expvar.stats import stats
 from tornado.web import RequestHandler
 
-from sqlalchemy import union_all, or_, and_
+from sqlalchemy import union_all
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label, literal
 
 import sshpubkey
 
 from ..audit import assert_controllers_are_auditors, assert_can_join, UserNotAuditor
-from ..constants import PERMISSION_GRANT, PERMISSION_CREATE, PERMISSION_AUDITOR
+from ..constants import (
+    PERMISSION_GRANT, PERMISSION_CREATE, PERMISSION_AUDITOR, AUDIT_MANAGER, AUDIT_VIEWER
+)
 
 from .forms import (
     GroupCreateForm, GroupEditForm, GroupJoinForm, GroupAddForm, GroupRemoveForm,
     GroupRequestModifyForm, PublicKeyForm, PermissionCreateForm,
-    PermissionGrantForm, GroupEditMemberForm,
+    PermissionGrantForm, GroupEditMemberForm, AuditCreateForm,
 )
 from ..graph import NoSuchUser, NoSuchGroup
 from ..models import (
     User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog, GroupEdge, Counter,
     GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES, OBJ_TYPES,
-    get_all_groups, get_all_users, get_user_or_group,
+    get_all_groups, get_all_users,
+    get_user_or_group, Audit, AuditMember, AUDIT_STATUS_CHOICES,
 )
 from .settings import settings
 from .util import GrouperHandler, Alert, test_reserved_names
@@ -370,7 +373,7 @@ class PermissionsView(GrouperHandler):
     Controller for viewing the major permissions list. There is no privacy here; the existence of
     a permission is public.
     '''
-    def get(self):
+    def get(self, audited_only=False):
         offset = int(self.get_argument("offset", 0))
         limit = int(self.get_argument("limit", 100))
         audited_only = bool(int(self.get_argument("audited", 0)))
@@ -379,7 +382,7 @@ class PermissionsView(GrouperHandler):
 
         permissions = self.graph.get_permissions(audited=audited_only)
         total = len(permissions)
-        permissions = permissions[offset:offset+limit]
+        permissions = permissions[offset:offset + limit]
 
         can_create = self.current_user.my_creatable_permissions()
 
@@ -524,6 +527,7 @@ class GroupView(GrouperHandler):
             "group.html", group=group, members=members, groups=groups,
             num_pending=num_pending, alerts=alerts, permissions=permissions,
             log_entries=log_entries, grantable=grantable, audited=audited,
+            statuses=AUDIT_STATUS_CHOICES,
         )
 
 
@@ -760,6 +764,201 @@ class GroupRequests(GrouperHandler):
         )
 
 
+class AuditsComplete(GrouperHandler):
+    def post(self, audit_id):
+        user = self.get_current_user()
+        if not user.has_permission(AUDIT_MANAGER):
+            return self.forbidden()
+
+        audit = self.session.query(Audit).filter(Audit.id == audit_id).one()
+        if audit.complete:
+            return self.redirect("/groups/{}".format(audit.group.name))
+
+        edges = {}
+        for argument in self.request.arguments:
+            if argument.startswith('audit_'):
+                edges[int(argument.split('_')[1])] = self.request.arguments[argument][0]
+
+        for member in audit.my_members():
+            if member.id in edges:
+                # You can only approve yourself (otherwise you can remove yourself
+                # from the group and leave it ownerless)
+                if member.member.id == user.id:
+                    member.status = "approved"
+                elif edges[member.id] in AUDIT_STATUS_CHOICES:
+                    member.status = edges[member.id]
+
+        self.session.commit()
+
+        # Now if it's completable (no pendings) then mark it complete, else redirect them
+        # to the group page.
+        if not audit.completable:
+            return self.redirect('/groups/{}'.format(audit.group.name))
+
+        # Complete audits have to be "enacted" now. This means anybody marked as remove has to
+        # be removed from the group now.
+        for member in audit.my_members():
+            if member.status == "remove":
+                audit.group.revoke_member(self.current_user, member.member,
+                                          "Revoked as part of audit.")
+                AuditLog.log(self.session, self.current_user.id, 'remove_member',
+                             'Removed membership in audit: {}'.format(member.member.name),
+                             on_group_id=audit.group.id)
+
+        audit.complete = True
+        self.session.commit()
+
+        # Now cancel pending emails
+        self.cancel_async_emails('audit-{}'.format(audit.group.id))
+
+        AuditLog.log(self.session, self.current_user.id, 'complete_audit',
+                     'Completed group audit.', on_group_id=audit.group.id)
+
+        return self.redirect('/groups/{}'.format(audit.group.name))
+
+
+class AuditsCreate(GrouperHandler):
+    def get(self):
+        user = self.get_current_user()
+        if not user.has_permission(AUDIT_MANAGER):
+            return self.forbidden()
+
+        self.render(
+            "audit-create.html", form=AuditCreateForm(),
+        )
+
+    def post(self):
+        form = AuditCreateForm(self.request.arguments)
+        if not form.validate():
+            return self.render(
+                "audit-create.html", form=form,
+                alerts=self.get_form_alerts(form.errors)
+            )
+
+        user = self.get_current_user()
+        if not user.has_permission(AUDIT_MANAGER):
+            return self.forbidden()
+
+        # Step 1, detect if there are non-completed audits and fail if so.
+        open_audits = self.session.query(Audit).filter(
+            Audit.complete == False).all()
+        if open_audits:
+            raise Exception("Sorry, there are audits in progress.")
+        ends_at = datetime.strptime(form.data["ends_at"], "%m/%d/%Y")
+
+        # Step 2, find all audited groups and schedule audits for each.
+        audited_groups = []
+        for groupname in self.graph.groups:
+            if not self.graph.get_group_details(groupname)["audited"]:
+                continue
+            group = Group.get(self.session, name=groupname)
+            audit = Audit(
+                group_id=group.id,
+                ends_at=ends_at,
+            )
+            try:
+                audit.add(self.session)
+                self.session.flush()
+            except IntegrityError:
+                self.session.rollback()
+                raise Exception("Failed to start the audit. Please try again.")
+
+            # Update group with new audit
+            audited_groups.append(group)
+            group.audit_id = audit.id
+
+            # Step 3, now get all members of this group and set up audit rows for those edges.
+            for member in group.my_members().values():
+                auditmember = AuditMember(
+                    audit_id=audit.id, edge_id=member.edge_id
+                )
+                try:
+                    auditmember.add(self.session)
+                except IntegrityError:
+                    self.session.rollback()
+                    raise Exception("Failed to start the audit. Please try again.")
+
+        self.session.commit()
+
+        AuditLog.log(self.session, self.current_user.id, 'start_audit',
+                     'Started global audit.')
+
+        # Calculate schedule of emails, basically we send emails at various periods in advance
+        # of the end of the audit period.
+        schedule_times = []
+        not_before = datetime.utcnow() + timedelta(1)
+        for days_prior in (28, 21, 14, 7, 3, 1):
+            email_time = ends_at - timedelta(days_prior)
+            email_time.replace(hour=17, minute=0, second=0)
+            if email_time > not_before:
+                schedule_times.append((days_prior, email_time))
+
+        # Now send some emails. We do this separately/later to ensure that the audits are all
+        # created. Email notifications are sent multiple times if group audits are still
+        # outstanding.
+        for group in audited_groups:
+            mail_to = [
+                member.name
+                for member in group.my_users()
+                if GROUP_EDGE_ROLES[member.role] in ('owner')
+            ]
+
+            self.send_email(mail_to, 'Group Audit: {}'.format(group.name), 'audit_notice', {
+                "group": group.name,
+                "ends_at": ends_at,
+            })
+
+            for days_prior, email_time in schedule_times:
+                self.send_async_email(
+                    mail_to,
+                    'Group Audit: {} - {} day(s) left'.format(group.name, days_prior),
+                    'audit_notice_reminder',
+                    {
+                        "group": group.name,
+                        "ends_at": ends_at,
+                        "days_left": days_prior,
+                    },
+                    email_time,
+                    async_key='audit-{}'.format(group.id),
+                )
+
+        return self.redirect("/audits")
+
+
+class AuditsView(GrouperHandler):
+    def get(self):
+        user = self.get_current_user()
+        if not (user.has_permission(AUDIT_VIEWER) or user.has_permission(AUDIT_MANAGER)):
+            return self.forbidden()
+
+        offset = int(self.get_argument("offset", 0))
+        limit = int(self.get_argument("limit", 50))
+        if limit > 200:
+            limit = 200
+
+        audits = (
+            self.session.query(Audit)
+            .order_by(Audit.started_at)
+        )
+
+        open_filter = self.get_argument("filter", "Open Audits")
+        if open_filter == "Open Audits":
+            audits = audits.filter(Audit.complete == False)
+
+        open_audits = any([not audit.complete for audit in audits])
+        total = audits.count()
+        audits = audits.offset(offset).limit(limit).all()
+
+        open_audits = self.session.query(Audit).filter(
+            Audit.complete == False).all()
+        can_start = user.has_permission(AUDIT_MANAGER)
+
+        self.render(
+            "audits.html", audits=audits, filter=open_filter, can_start=can_start,
+            offset=offset, limit=limit, total=total, open_audits=open_audits,
+        )
+
+
 class GroupsView(GrouperHandler):
     def get(self):
         self.handle_refresh()
@@ -781,7 +980,7 @@ class GroupsView(GrouperHandler):
             groups = self.graph.get_groups(audited=False)
             directly_audited_groups = set()
         total = len(groups)
-        groups = groups[offset:offset+limit]
+        groups = groups[offset:offset + limit]
 
         form = GroupCreateForm()
 
@@ -900,6 +1099,16 @@ class GroupAdd(GrouperHandler):
             form.member.errors.append("User or group is already a member of this group.")
         elif group.name == member.name:
             form.member.errors.append("By definition, this group is a member of itself already.")
+
+        # Ensure this doesn't violate auditing constraints
+        fail_message = 'This join is denied with this role at this time.'
+        try:
+            user_can_join = assert_can_join(group, member, role=form.data["role"])
+        except UserNotAuditor as e:
+            user_can_join = False
+            fail_message = e
+        if not user_can_join:
+            form.member.errors.append(fail_message)
 
         if form.member.errors:
             return self.render(
@@ -1321,7 +1530,6 @@ class PublicKeyDelete(GrouperHandler):
             "changed_user": user.name,
             "action": "removed",
         })
-
 
         return self.redirect("/users/{}?refresh=yes".format(user.name))
 

@@ -94,6 +94,13 @@ class GroupEditForm(Form):
     ], default="canask")
 
 
+class AuditCreateForm(Form):
+    ends_at = TextField("Ends At", [
+        ValidateDate(),
+        validators.Required(),
+    ], id="audit-form-ends-at")
+
+
 class GroupRequestModifyForm(Form):
     status = SelectField("New Status", [
         validators.Required(),

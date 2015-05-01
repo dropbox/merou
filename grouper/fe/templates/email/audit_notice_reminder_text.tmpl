@@ -1,0 +1,18 @@
+{% extends "email/base_text.tmpl" %}
+
+{% block subject %}Group Membership Audit{% endblock %}
+
+{% block content %}
+***
+This is a reminder, you have {{days_left}} day(s) left in the auditing period for your group.
+***
+
+The {{ group }} group is part of an ongoing audit. As you are an owner of this group, you must
+visit the management page and process the audit:
+
+    {{url}}/groups/{{group}}
+
+This is due by {{ ends_at }}.
+
+Thank you for your prompt attention!
+{% endblock %}

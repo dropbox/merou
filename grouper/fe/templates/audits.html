@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import account, paginator, dropdown with context %}
+
+{% block heading %}
+    Audits
+{% endblock %}
+
+{% block subheading %}
+    {{total}} audit(s)
+{% endblock %}
+
+{% block headingbuttons %}
+    {{ dropdown("filter", filter, ["Open Audits", "All Audits"])}}
+    {{ dropdown("limit", limit, [50, 100, 200]) }}
+    {{ paginator(offset, limit, total) }}
+    {% if not open_audits %}
+        {% if can_start %}
+            <a href="/audits/create" class="btn btn-success">
+                <i class="fa fa-plus"></i> Start Global Audit
+            </a>
+        {% endif %}
+    {% else %}
+        <a class="btn btn-danger">
+            <i class="fa fa-warning"></i> Global Audit In Progress
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% if not audits %}
+        There are no audits to view.
+    {% else %}
+        <div class="col-md-10 col-md-offset-1">
+            <table class="table table-elist">
+                <thead>
+                    <tr>
+                        <th class="col-sm-4">Group</th>
+                        <th class="col-sm-2">Started</th>
+                        <th class="col-sm-2">Ends</th>
+                        <th class="col-sm-1">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for audit in audits %}
+                    <tr>
+                        <td>{{ account(audit.group) }}</td>
+                        <td>{{ audit.started_at|print_date }}</td>
+                        <td>{% if audit.complete %}
+                            ---
+                        {% else %}
+                            {{ audit.ends_at|delta_str }}
+                        {% endif %}</td>
+                        <td>{% if audit.complete %}
+                            <span class="btn-xs btn-success">
+                                <i class="fa fa-check"></i> complete
+                            </span>
+                        {% else %}
+                            <span class="btn-xs btn-danger">
+                                <i class="fa fa-warning"></i> in progress
+                            </span>
+                        {% endif %}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+{% endblock %}
+
+

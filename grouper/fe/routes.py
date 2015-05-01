@@ -3,6 +3,9 @@ from ..constants import NAME_VALIDATION, NAME2_VALIDATION, PERMISSION_VALIDATION
 
 HANDLERS = [
     (r"/", handlers.Index),
+    (r"/audits", handlers.AuditsView),
+    (r"/audits/(?P<audit_id>[0-9]+)/complete", handlers.AuditsComplete),
+    (r"/audits/create", handlers.AuditsCreate),
     (r"/groups", handlers.GroupsView),
     (r"/permissions/create", handlers.PermissionsCreate),
     (r"/permissions/{}".format(PERMISSION_VALIDATION), handlers.PermissionView),

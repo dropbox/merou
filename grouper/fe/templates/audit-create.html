@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block heading %}
+    <a href="/audits">Audits</a>
+{% endblock %}
+
+{% block subheading %}
+    Start Global Audit
+{% endblock %}
+
+{% block content %}
+<div class="col-md-6 col-md-offset-3">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Start Global Audit</h3>
+       </div>
+        <div class="panel-body">
+            <form class="form-horizontal" role="form"
+                  method="post" action="/audits/create">
+                    <p>Submitting this form will create a new global audit. This will start
+                    new reviews for all audited groups.</p>
+
+                    {% include "forms/audit.html" %}
+
+                    <p>Set the above date to be the due date for the audit. Users will receive
+                    email notifications immediately, and will periodically receive updates
+                    about the state of their groups and work they need to do.</p>
+
+                    <p><strong>ONLY DO THIS IF YOU ARE VERY SURE.</strong></p>
+                <div class="form-group">
+                    <div class="col-sm-offset-3 col-sm-4">
+                        <button type="submit" class="btn btn-primary">Yes, Start Global Audit</button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script src="{{cdnjs_prefix}}/ajax/libs/bootstrap-datetimepicker/3.0.0/js/bootstrap-datetimepicker.min.js">
+</script>
+
+<script type="text/javascript">
+    $(function () {
+        $('#audit-form-ends-at').datetimepicker({
+            pickTime: false,
+            icons: {
+                time: "fa fa-clock-o",
+                date: "fa fa-calendar",
+                up: "fa fa-arrow-up",
+                down: "fa fa-arrow-down"
+            },
+            useCurrent: false,
+            minDate: moment(),
+        });
+    });
+</script>
+{% endblock %}

@@ -35,6 +35,22 @@ def test_basic_permission(standard_graph, session, users, groups, permissions): 
         "sudo:shell"]
 
 
+def test_has_permission(standard_graph, users):  # noqa
+    """ Tests the has_permission method of a user object. """
+
+    # In our setup, zorkian has 'audited' with no arguments
+    assert users["zorkian"].has_permission("audited"), "zorkian has permission audited"
+    assert not users["zorkian"].has_permission("audited", argument='foo'), \
+        "zorkian has permission audited:foo"
+    assert not users["zorkian"].has_permission("audited", argument='*'), \
+        "zorkian has permission audited:*"
+
+    # zay has ssh:*
+    assert users["zay"].has_permission("ssh"), "zay has permission ssh"
+    assert users["zay"].has_permission("ssh", argument='foo'), "zay has permission ssh:foo"
+    assert users["zay"].has_permission("ssh", argument='*'), "zay has permission ssh:*"
+
+
 class PermissionTests(unittest.TestCase):
     def test_reject_bad_permission_names(self):
         self.assertEquals(len(grouper.fe.util.test_reserved_names("permission_lacks_period")), 1)

@@ -14,6 +14,7 @@ import tornado.web
 import grouper
 from grouper.api.routes import HANDLERS
 from grouper.api.settings import settings
+from grouper.email import SendEmailThread
 from grouper.graph import GroupGraph
 from grouper.models import get_db_engine, Session, load_plugins
 from grouper.util import get_loglevel, get_database_url
@@ -103,6 +104,10 @@ def main(argv):
     refresher = DbRefreshThread(graph, settings.refresh_interval)
     refresher.daemon = True
     refresher.start()
+
+    emailer = SendEmailThread(settings)
+    emailer.daemon = True
+    emailer.start()
 
     port = args.port or settings.port
 

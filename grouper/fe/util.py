@@ -6,7 +6,6 @@ from jinja2 import Environment, PackageLoader
 import logging
 import pytz
 import re
-import smtplib
 import sqlalchemy.exc
 import tornado.web
 import traceback
@@ -15,7 +14,9 @@ import urllib
 from .settings import settings
 from ..constants import RESERVED_NAMES
 from ..graph import Graph
-from ..models import User, GROUP_EDGE_ROLES, OBJ_TYPES_IDX, get_db_engine, Session
+from ..models import (
+    User, GROUP_EDGE_ROLES, OBJ_TYPES_IDX, get_db_engine, Session, AsyncNotification
+)
 from ..util import get_database_url
 
 
@@ -117,6 +118,66 @@ class GrouperHandler(tornado.web.RequestHandler):
         self.write(self.render_template(template_name, **context))
 
     def send_email(self, recipients, subject, template, context):
+        """Construct a message object from a template and schedule
+
+        This is the main email sending method to send out a templated email. This just schedules
+        an asynchronous email to be sent "now".
+
+        Please see the method definition of `send_async_email` for usage.
+        """
+        return self.send_async_email(recipients, subject, template, context, datetime.utcnow())
+
+    def send_async_email(self, recipients, subject, template, context, send_after, async_key=None):
+        """Construct a message object from a template and schedule it
+
+        This is the main email sending method to send out a templated email. This is used to
+        asynchronously queue up the email for sending.
+
+        Args:
+            recipients (str or list(str)): Email addresses that will receive this mail. This
+                argument is either a string (which might include comma separated email addresses)
+                or it's a list of strings (email addresses).
+            subject (str): Subject of the email.
+            template (str): Name of the template to use.
+            context (dict(str: str)): Context for the template library.
+            send_after (DateTime): Schedule the email to go out after this point in time.
+            async_key (str, optional): If you set this, it will be inserted into the db so that
+                you can find this email in the future.
+
+        Returns:
+            Nothing.
+        """
+        if isinstance(recipients, basestring):
+            recipients = recipients.split(",")
+
+        msg = self.get_email_from_template(recipients, subject, template, context)
+
+        for rcpt in recipients:
+            notif = AsyncNotification(
+                key=async_key,
+                email=rcpt,
+                subject=subject,
+                body=msg.as_string(),
+                send_after=send_after,
+            )
+            notif.add(self.session)
+        self.session.commit()
+
+    def get_email_from_template(self, recipient_list, subject, template, context):
+        """Construct a message object from a template
+
+        This creates the full MIME object that can be used to send an email with mixed HTML
+        and text parts.
+
+        Args:
+            recipient_list (list(str)): Email addresses that will receive this mail.
+            subject (str): Subject of the email.
+            template (str): Name of the template to use.
+            context (dict(str: str)): Context for the template library.
+
+        Returns:
+            MIMEMultipart: Constructed object for the email message.
+        """
         template_env = self.application.my_settings["template_env"]
         sender = settings["from_addr"]
 
@@ -132,23 +193,14 @@ class GrouperHandler(tornado.web.RequestHandler):
         text = MIMEText(text_template, "plain")
         html = MIMEText(html_template, "html")
 
-        if isinstance(recipients, basestring):
-            recipients = recipients.split(",")
-
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
         msg["From"] = sender
-        msg["To"] = ", ".join(recipients)
+        msg["To"] = ", ".join(recipient_list)
         msg.attach(text)
         msg.attach(html)
 
-        if not settings["send_emails"]:
-            logging.debug(msg.as_string())
-            return
-
-        smtp = smtplib.SMTP(settings["smtp_server"])
-        smtp.sendmail(sender, recipients, msg.as_string())
-        smtp.quit()
+        return msg
 
     def get_form_alerts(self, errors):
         alerts = []

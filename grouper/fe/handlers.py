@@ -1139,7 +1139,7 @@ class PublicKeyAdd(GrouperHandler):
 
         AuditLog.log(self.session, self.current_user.id, 'add_public_key',
                      'Added public key: {}'.format(pubkey.fingerprint),
-                     on_user_id=self.current_user.id)
+                     on_user_id=user.id)
 
         return self.redirect("/users/{}".format(user.name))
 
@@ -1176,7 +1176,7 @@ class PublicKeyDelete(GrouperHandler):
 
         AuditLog.log(self.session, self.current_user.id, 'delete_public_key',
                      'Deleted public key: {}'.format(key.fingerprint),
-                     on_user_id=self.current_user.id)
+                     on_user_id=user.id)
 
         return self.redirect("/users/{}".format(user.name))
 

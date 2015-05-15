@@ -7,6 +7,7 @@ import BaseHTTPServer
 import code
 import getpass
 import logging
+import sshpubkey
 from mrproxy import UserProxyHandler
 from pprint import pprint
 from sqlalchemy.exc import IntegrityError
@@ -113,8 +114,15 @@ def user_command(args):
     session = make_session()
     user = session.query(models.User).filter_by(username=args.username).scalar()
     if not user:
-        print "No such user %s" % args.username
+        if args.subcommand == "create":
+            print "No such user %s, creating..." % args.username
+            user = models.User(username=args.username).add(session)
+            session.commit()
+        else:
+            print "No such user %s" % args.username
         return
+
+    # User must exist at this point.
 
     if args.subcommand == "set_metadata":
         print "Setting %s metadata: %s=%s" % (args.username, args.metadata_key, args.metadata_value)
@@ -122,6 +130,32 @@ def user_command(args):
             args.metadata_value = None
         user.set_metadata(args.metadata_key, args.metadata_value)
         session.commit()
+    elif args.subcommand == "add_public_key":
+        print "Adding public key for user..."
+
+        try:
+            pubkey = sshpubkey.PublicKey.from_str(args.public_key)
+        except sshpubkey.exc.PublicKeyParseError:
+            print "Public key appears to be invalid."
+            return
+
+        db_pubkey = models.PublicKey(
+            user=user,
+            public_key='%s %s %s' % (pubkey.key_type, pubkey.key, pubkey.comment),
+            fingerprint=pubkey.fingerprint,
+        )
+        try:
+            db_pubkey.add(session)
+            session.flush()
+        except IntegrityError:
+            session.rollback()
+            print "Key is already in use. Public keys must be unique."
+            return
+        session.commit()
+
+        models.AuditLog.log(session, user.id, 'add_public_key',
+                            '(Administrative) Added public key: {}'.format(pubkey.fingerprint),
+                            on_user_id=user.id)
 
 
 def group_command(args):
@@ -193,6 +227,15 @@ def main():
         "user", help="Edit user")
     user_parser.set_defaults(func=user_command)
     user_subparser = user_parser.add_subparsers(dest="subcommand")
+
+    user_create_parser = user_subparser.add_parser(
+        "create", help="Create a new user account")
+    user_create_parser.add_argument("username")
+
+    user_key_parser = user_subparser.add_parser(
+        "add_public_key", help="Add public key to user")
+    user_key_parser.add_argument("username")
+    user_key_parser.add_argument("public_key")
 
     user_set_metadata_parser = user_subparser.add_parser(
         "set_metadata", help="Set metadata on user")

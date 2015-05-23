@@ -89,7 +89,7 @@ class GroupRequestModifyForm(Form):
 
 
 class GroupAddForm(Form):
-    member = TextField("Name", [
+    member = SelectField("Name", [
         validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
         validators.Required(),
         ValidateRegex(constants.NAME_VALIDATION),

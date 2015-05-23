@@ -1,4 +1,6 @@
 from datetime import datetime
+import operator
+
 from expvar.stats import stats
 from tornado.web import RequestHandler
 
@@ -18,7 +20,7 @@ from .forms import (
 from ..models import (
     User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog, GroupEdge,
     GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES, OBJ_TYPES,
-    get_user_or_group,
+    get_all_groups, get_all_users, get_user_or_group,
 )
 from .settings import settings
 from .util import GrouperHandler, Alert, test_reserved_names
@@ -777,6 +779,33 @@ class GroupsView(GrouperHandler):
 
 
 class GroupAdd(GrouperHandler):
+    def get_form(self):
+        """Helper to create a GroupAddForm populated with all users and groups as options.
+
+        Note that the first choice is blank so the first user alphabetically
+        isn't always selected.
+
+        Returns:
+            GroupAddForm object.
+        """
+
+        form = GroupAddForm(self.request.arguments)
+
+        group_choices = [
+            (group.groupname, "Group: " + group.groupname)  # (value, label)
+            for group in get_all_groups(self.session)
+        ]
+        user_choices = [
+            (user.username, "User: " + user.username)  # (value, label)
+            for user in get_all_users(self.session)
+        ]
+
+        form.member.choices = [("", "")] + sorted(
+            group_choices + user_choices,
+            key=operator.itemgetter(1)
+        )
+        return form
+
     def get(self, group_id=None, name=None):
         group = Group.get(self.session, group_id, name)
         if not group:
@@ -785,9 +814,8 @@ class GroupAdd(GrouperHandler):
         if not self.current_user.can_manage(group):
             return self.forbidden()
 
-        form = GroupAddForm()
         return self.render(
-            "group-add.html", form=form, group=group
+            "group-add.html", form=self.get_form(), group=group
         )
 
     def post(self, group_id=None, name=None):
@@ -798,7 +826,7 @@ class GroupAdd(GrouperHandler):
         if not self.current_user.can_manage(group):
             return self.forbidden()
 
-        form = GroupAddForm(self.request.arguments)
+        form = self.get_form()
         if not form.validate():
             return self.render(
                 "group-add.html", form=form, group=group,

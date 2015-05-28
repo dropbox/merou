@@ -1,6 +1,6 @@
 from annex import Annex
 from collections import OrderedDict, namedtuple
-from datetime import datetime
+from datetime import datetime, timedelta
 import functools
 import json
 import logging
@@ -23,9 +23,10 @@ from sqlalchemy.sql import func, label, literal
 from .capabilities import Capabilities
 from .constants import (
     ARGUMENT_VALIDATION, PERMISSION_GRANT, PERMISSION_CREATE, MAX_NAME_LENGTH,
-    PERMISSION_VALIDATION
+    PERMISSION_VALIDATION, ILLEGAL_NAME_CHARACTER
 )
 from .plugin import BasePlugin
+from .settings import settings
 from .util import matches_glob
 
 
@@ -50,12 +51,17 @@ REQUEST_STATUS_CHOICES = {
     "actioned": set([]),
     "cancelled": set([]),
 }
+
+# Note: the order of the GROUP_EDGE_ROLES tuple matters! New roles must be
+# appended!  When adding a new role, be sure to update the regression test.
 GROUP_EDGE_ROLES = (
     "member",    # Belongs to the group. Nothing more.
     "manager",   # Make changes to the group / Approve requests.
     "owner",     # Same as manager plus enable/disable group and make Users owner.
     "np-owner",  # Same as owner but don't inherit permissions.
 )
+OWNER_ROLE_INDICES = set([GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.index("np-owner")])
+
 
 MappedPermission = namedtuple('MappedPermission',
                               ['permission', 'audited', 'argument', 'groupname', 'granted_on'])
@@ -498,7 +504,6 @@ class User(Model):
         return sorted(result, key=lambda x: x[0].name + x[1])
 
     def my_groups(self):
-
         now = datetime.utcnow()
         groups = self.session.query(
             label("name", Group.groupname),
@@ -877,7 +882,20 @@ class Group(Model):
 
         return AuditLog.get_entries(self.session, on_group_id=self.id, limit=20)
 
+    def my_owners_as_strings(self):
+        """Returns a list of usernames."""
+        return self.my_owners().keys()
+
+    def my_owners(self):
+        """Returns a dictionary from username to records."""
+        od = OrderedDict()
+        for (member_type, name), member in self.my_members().iteritems():
+            if member_type == "User" and member.role in OWNER_ROLE_INDICES:
+                od[name] = member
+        return od
+
     def my_members(self):
+        """Returns a dictionary from ("User"|"Group", "name") tuples to records."""
 
         parent = aliased(Group)
         group_member = aliased(Group)
@@ -943,7 +961,7 @@ class Group(Model):
         )
 
     def my_groups(self):
-
+        """Return the groups to which this group currently belongs."""
         now = datetime.utcnow()
         groups = self.session.query(
             label("name", Group.groupname),
@@ -961,7 +979,25 @@ class Group(Model):
                 GroupEdge.expiration == None
             )
         ).all()
+        return groups
 
+    def my_expiring_groups(self):
+        """Return the groups to which this group currently belongs but with an
+        expiration date.
+        """
+        now = datetime.utcnow()
+        groups = self.session.query(
+            label("name", Group.groupname),
+            label("expiration", GroupEdge.expiration)
+        ).filter(
+            GroupEdge.group_id == Group.id,
+            GroupEdge.member_pk == self.id,
+            GroupEdge.member_type == 1,
+            GroupEdge.active == True,
+            self.enabled == True,
+            Group.enabled == True,
+            GroupEdge.expiration > now
+        ).all()
         return groups
 
     def my_requests(self, status=None, user=None):
@@ -1272,14 +1308,71 @@ class GroupEdge(Model):
 
     @role.setter
     def role(self, role):
+        prev_role = self._role
         self._role = GROUP_EDGE_ROLES.index(role)
+
+        # Groups should always "member".
+        if not (OBJ_TYPES_IDX[self.member_type] == "User"):
+            return
+
+        # If ownership status is unchanged, no notices need to be adjusted.
+        if (self._role in OWNER_ROLE_INDICES) == (prev_role in OWNER_ROLE_INDICES):
+            return
+
+        recipient = User.get(self.session, pk=self.member_pk).username
+        expiring_supergroups = self.group.my_expiring_groups()
+        member_name = self.group.name
+
+        if role in ["owner", "np-owner"]:
+            # We're creating a new owner, who should find out when this group
+            # they now own loses its membership in larger groups.
+            for supergroup_name, expiration in expiring_supergroups:
+                AsyncNotification.add_expiration(self.session,
+                                                 expiration,
+                                                 group_name=supergroup_name,
+                                                 member_name=member_name,
+                                                 recipients=[recipient],
+                                                 member_is_user=False)
+        else:
+            # We're removing an owner, who should no longer find out when this
+            # group they no longer own loses its membership in larger groups.
+            for supergroup_name, _ in expiring_supergroups:
+                AsyncNotification.cancel_expiration(self.session,
+                                                    group_name=supergroup_name,
+                                                    member_name=member_name,
+                                                    recipients=[recipient])
 
     def apply_changes(self, request):
         changes = json.loads(request.changes)
         for key, value in changes.items():
             if key == 'expiration':
+                group_name = self.group.name
+                if OBJ_TYPES_IDX[self.member_type] == "User":
+                    # If affected member is a user, plan to notify that user.
+                    user = User.get(self.session, pk=self.member_pk)
+                    member_name = user.username
+                    recipients = [member_name]
+                    member_is_user = True
+                else:
+                    # Otherwise, affected member is a group, notify its owners.
+                    subgroup = Group.get(self.session, pk=self.member_pk)
+                    member_name = subgroup.groupname
+                    recipients = subgroup.my_owners_as_strings()
+                    member_is_user = False
+                if getattr(self, key, None) is not None:
+                    # Check for and remove pending expiration notification.
+                    AsyncNotification.cancel_expiration(self.session,
+                                                        group_name,
+                                                        member_name)
                 if value:
-                    setattr(self, key, datetime.strptime(value, "%m/%d/%Y"))
+                    expiration = datetime.strptime(value, "%m/%d/%Y")
+                    setattr(self, key, expiration)
+                    AsyncNotification.add_expiration(self.session,
+                                                     expiration,
+                                                     group_name,
+                                                     member_name,
+                                                     recipients=recipients,
+                                                     member_is_user=member_is_user)
                 else:
                     setattr(self, key, None)
             else:
@@ -1456,6 +1549,98 @@ class AsyncNotification(Model):
     send_after = Column(DateTime, nullable=False)
     sent = Column(Boolean, default=False, nullable=False)
 
+    @staticmethod
+    def _get_unsent_expirations(session, now_ts):
+        """Get upcoming group membership expiration notifications as a list of (group_name,
+        member_name, email address) tuples.
+        """
+        tuples = []
+        emails = session.query(AsyncNotification).filter(
+            AsyncNotification.key.like("EXPIRATION%"),
+            AsyncNotification.sent == False,
+            AsyncNotification.send_after < now_ts,
+        ).all()
+        for email in emails:
+            group_name, member_name = AsyncNotification._expiration_key_data(email.key)
+            user = email.email
+            tuples.append((group_name, member_name, user))
+        return tuples
+
+    @staticmethod
+    def _expiration_key_data(key):
+        expiration_token, group_name, member_name = key.split(ILLEGAL_NAME_CHARACTER)
+        assert expiration_token == 'EXPIRATION'
+        return group_name, member_name
+
+    @staticmethod
+    def _expiration_key(group_name, member_name):
+        async_key = ILLEGAL_NAME_CHARACTER.join(['EXPIRATION', group_name, member_name])
+        return async_key
+
+    @staticmethod
+    def add_expiration(session, expiration, group_name, member_name, recipients, member_is_user):
+        async_key = AsyncNotification._expiration_key(group_name, member_name)
+        subject = "%s's membership in %s is expiring at %s UTC" % (member_name, group_name, expiration)
+        send_after = expiration - timedelta(settings.expiration_notice_days)
+        if member_is_user:
+            body = "Your membership is set to expire."
+        else:
+            body = "You are an owner of %s." % member_name
+        AsyncNotification.send_async_email(
+            session=session,
+            recipients=recipients,
+            subject=subject,
+            body=body,
+            send_after=send_after,
+            async_key=async_key)
+
+    @staticmethod
+    def cancel_expiration(session, group_name, member_name, recipients=None):
+        async_key = AsyncNotification._expiration_key(group_name, member_name)
+        opt_arg = []
+        if not recipients is None:
+            exprs = [AsyncNotification.email == recipient for recipient in recipients]
+            opt_arg.append(or_(*exprs))
+        session.query(AsyncNotification).filter(
+            AsyncNotification.key == async_key,
+            AsyncNotification.sent == False,
+            *opt_arg
+        ).delete()
+        session.commit()
+
+    @staticmethod
+    def send_async_email(session, recipients, subject, body, send_after, async_key=None):
+        """Construct a message object and schedule it
+
+        This is the main email sending method to send out a templated email. This is used to
+        asynchronously queue up the email for sending.
+
+        Args:
+        recipients (str or list(str)): Email addresses that will receive this mail. This
+            argument is either a string (which might include comma separated email addresses)
+            or it's a list of strings (email addresses).
+        subject (str): Subject of the email.
+        body (str): Text of body.
+        send_after (DateTime): Schedule the email to go out after this point in time.
+        async_key (str, optional): If you set this, it will be inserted into the db so that
+            you can find this email in the future.
+
+        Returns:
+            Nothing.
+        """
+        if isinstance(recipients, basestring):
+            recipients = recipients.split(",")
+
+        for rcpt in recipients:
+            notif = AsyncNotification(
+                key=async_key,
+                email=rcpt,
+                subject=subject,
+                body=body,
+                send_after=send_after,
+            )
+            notif.add(session)
+        session.commit()
 
 class PermissionMap(Model):
     '''

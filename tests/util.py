@@ -1,7 +1,14 @@
+# These functions operate on and return instrumented Grouper.models.Model instances.
+def add_member(parent, member, role="member", expiration=None):
+    return parent.add_member(member, member, "Unit Testing", "actioned", role=role,
+                             expiration=expiration)
 
-def add_member(parent, member, role="member"):
-    return parent.add_member(member, member, "Unit Testing", "actioned", role=role)
+def edit_member(parent, member, role="member", expiration=None):
+    return parent.edit_member(member, member, "Unit Testing", role=role,
+                              expiration=expiration)
 
+def revoke_member(parent, member):
+    return parent.revoke_member(member, member, "Unit Testing")
 
 def grant_permission(group, permission, argument=""):
     return group.grant_permission(permission, argument=argument)

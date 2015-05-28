@@ -8,7 +8,9 @@ from sqlalchemy import or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import label, literal
 
+from .constants import ILLEGAL_NAME_CHARACTER
 from .models import (
+    AsyncNotification,
     Group, User, GroupEdge, PublicKey, UserMetadata, Counter, GROUP_EDGE_ROLES,
     Permission, PermissionMap, MappedPermission,
 )

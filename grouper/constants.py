@@ -28,6 +28,9 @@ SYSTEM_PERMISSIONS = [
     (AUDIT_VIEWER, "Ability to view audit results and status."),
 ]
 
+# Used to construct name tuples in notification engine.
+ILLEGAL_NAME_CHARACTER = '|'
+
 # A list of regular expressions that are reserved anywhere names are created. I.e., if a regex
 # in this list is matched, a permission cannot be created in the UI. Same with group names.
 # These are case insensitive.
@@ -37,6 +40,7 @@ RESERVED_NAMES = [
     r"^test",
     r"^[^.]*$",
     r"^[0-9]+$", # Reserved in order to select user or group by id.
+    r".*\|.*",
 ]
 
 # Maximum length a name can be. This applies to user names and permission arguments.

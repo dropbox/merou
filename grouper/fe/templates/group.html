@@ -154,4 +154,61 @@
     </div>
 </div>
 
+<div class="modal fade" id="removeUserModal" tabindex="-1" role="dialog"
+      aria-labelledby="removeUserModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                    <span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">Remove User</h4>
+           </div>
+            <div class="modal-body">
+                <p>
+                    Are you sure you want to remove <span class="member-name"></span> from {{group.name}}?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default"
+                        data-dismiss="modal">Close</button>
+                <form class="remove-member-form"
+                      {# action is set dynamically in on("show.bs.modal") #}
+                      action="#" method="post"
+                      style="display: inline;">
+                    <input type="hidden" name="member"></input>
+                    <input type="hidden" name="member_type"></input>
+                    {{ xsrf_form() }}
+                    <button type="submit" class="btn btn-primary">Remove</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+{# The removeUserModal is generated once per page but could be used for any
+member being removed. So, when the modal shows up, make sure to populate its
+text and set its form actions to correspond to the selected user. #}
+<script type="text/javascript">
+    $(function () {
+        $("#removeUserModal").on("show.bs.modal", function(e) {
+            var button = $(e.relatedTarget);
+            var memberName = button.data("member-name");
+            var memberType = button.data("member-type");
+
+            var modal = $(e.currentTarget);
+            modal.find(".member-name").html(memberName);
+
+            var form = modal.find(".remove-member-form")
+            form.attr("action", "/groups/{{ group.id }}/remove");
+            form.find("input[name=member]").val(memberName);
+            form.find("input[name=member_type]").val(memberType);
+        });
+    });
+</script>
+
 {% endblock %}

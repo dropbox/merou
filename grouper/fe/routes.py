@@ -44,6 +44,7 @@ for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
         (r"/groups/{}/enable".format(regex), handlers.GroupEnable),
         (r"/groups/{}/join".format(regex), handlers.GroupJoin),
         (r"/groups/{}/add".format(regex), handlers.GroupAdd),
+        (r"/groups/{}/remove".format(regex), handlers.GroupRemove),
         (r"/groups/{}/leave".format(regex), handlers.GroupLeave),
         (r"/groups/{}/requests".format(regex), handlers.GroupRequests),
         (

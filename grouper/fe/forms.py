@@ -109,6 +109,19 @@ class GroupAddForm(Form):
     ], id="add-form-expiration")
 
 
+class GroupRemoveForm(Form):
+    member = TextField("Member", [
+        validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
+        validators.Required(),
+        ValidateRegex(constants.NAME_VALIDATION),
+    ])
+    member_type = SelectField("Member Type", [
+        validators.Required(),
+    ], choices=[
+        ("user", "User"), ("group", "Group"),
+    ])
+
+
 class GroupJoinForm(Form):
     member = SelectField("Member", [
         validators.Length(min=3, max=constants.MAX_NAME_LENGTH),

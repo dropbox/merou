@@ -160,6 +160,14 @@ enabled. Membership in this group is regularly reviewed.
                    class="btn btn-default btn-xs">
                     <i class="fa fa-edit"></i>
                 </a>
+
+                <button class="btn btn-danger btn-xs"
+                        data-toggle="modal"
+                        data-target="#removeUserModal"
+                        data-member-name="{{member.name}}"
+                        data-member-type="{{member.type|lower}}">
+                    <i class="fa fa-times"></i>
+                </a>
             {% endif %}
         </td>
         <td>

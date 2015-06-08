@@ -194,20 +194,28 @@ def get_all_users(session):
     return session.query(User).all()
 
 
-def get_user_or_group(session, name):
+def get_user_or_group(session, name, user_or_group=None):
     """Given a name, fetch a user or group
 
-    Since users are defined as being email addresess, we can easily tell which one the user is
-    trying to fetch. We try to get one or the other.
+    If user_or_group is not defined, we determine whether a the name refers to
+    a user or group by checking whether the name is an email address, since
+    that's how users are specified.
 
     Args:
         session (Session): Session to load data on.
         name (str): The name of the user or group.
+        user_or_group(str): "user" or "group" to specify the type explicitly
 
     Returns:
         User or Group object.
     """
-    if '@' in name:
+    if user_or_group is not None:
+        assert (user_or_group in ["user", "group"], "%s not in ['user', 'group']" % user_or_group)
+        is_user = (user_or_group == "user")
+    else:
+        is_user = '@' in name
+
+    if is_user:
         return session.query(User).filter_by(username=name).scalar()
     else:
         return session.query(Group).filter_by(groupname=name).scalar()

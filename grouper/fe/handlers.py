@@ -6,7 +6,7 @@ import operator
 from expvar.stats import stats
 from tornado.web import RequestHandler
 
-from sqlalchemy import union_all
+from sqlalchemy import union_all, or_, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label, literal
 
@@ -21,7 +21,7 @@ from .forms import (
     PermissionGrantForm, GroupEditMemberForm,
 )
 from ..models import (
-    User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog, GroupEdge,
+    User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog, GroupEdge, Counter,
     GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES, OBJ_TYPES,
     get_all_groups, get_all_users, get_user_or_group,
 )
@@ -361,24 +361,31 @@ class PermissionsView(GrouperHandler):
     Controller for viewing the major permissions list. There is no privacy here; the existence of
     a permission is public.
     '''
-    def get(self):
+    def get(self,audited_only=False):
         offset = int(self.get_argument("offset", 0))
         limit = int(self.get_argument("limit", 10))
         if limit > 50:
             limit = 50
 
-        permissions = (
-            self.session.query(Permission)
-            .order_by(Permission.name)
-        )
-        total = permissions.count()
-        permissions = permissions.offset(offset).limit(limit).all()
+        permissions = self.graph.get_permissions(audited=audited_only)
+        total = len(permissions)
+        permissions = permissions[offset:offset+limit]
+
         can_create = self.current_user.my_creatable_permissions()
 
         self.render(
             "permissions.html", permissions=permissions, offset=offset, limit=limit, total=total,
-            can_create=can_create,
+            can_create=can_create, audited_permissions=audited_only
         )
+
+
+class AuditedPermissionsView(PermissionsView):
+    '''
+    Controller for viewing the audited permissions list. There is no privacy here; the existence of
+    an audited permission is public.
+    '''
+    def get(self):
+        PermissionsView.get(self, audited_only=True)
 
 
 class PermissionView(GrouperHandler):
@@ -725,25 +732,28 @@ class GroupRequests(GrouperHandler):
 
 
 class GroupsView(GrouperHandler):
-    def get(self):
+    def get(self, audited_only=False):
         offset = int(self.get_argument("offset", 0))
         limit = int(self.get_argument("limit", 10))
         if limit > 50:
             limit = 50
 
-        groups = (
-            self.session.query(Group)
-            .filter(Group.enabled == True)
-            .order_by(Group.groupname)
-        )
+        if audited_only:
+            groups = self.graph.get_groups(audited=True, directly_audited=False)
+            directly_audited_groups = set([g.groupname for g in self.graph.get_groups(
+                audited=True, directly_audited=True)])
+        else:
+            groups = self.graph.get_groups(audited=False)
+            directly_audited_groups = set()
+        total = len(groups)
+        groups = groups[offset:offset+limit]
 
-        total = groups.count()
-        groups = groups.offset(offset).limit(limit).all()
         form = GroupForm()
 
         self.render(
             "groups.html", groups=groups, form=form,
-            offset=offset, limit=limit, total=total
+            offset=offset, limit=limit, total=total, audited_groups=audited_only,
+            directly_audited_groups=directly_audited_groups
         )
 
     def post(self):
@@ -782,6 +792,11 @@ class GroupsView(GrouperHandler):
                      'Created new group.', on_group_id=group.id)
 
         return self.redirect("/groups/{}".format(group.name))
+
+
+class AuditedGroupsView(GroupsView):
+    def get(self):
+        GroupsView.get(self, audited_only=True)
 
 
 class GroupAdd(GrouperHandler):
@@ -1111,6 +1126,7 @@ class GroupEdit(GrouperHandler):
         group.groupname = form.data["groupname"]
         group.description = form.data["description"]
         group.canjoin = form.data["canjoin"]
+        Counter.incr(self.session, "updates")
 
         try:
             self.session.commit()

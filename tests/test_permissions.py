@@ -1,13 +1,16 @@
+from collections import namedtuple
 import re
 import unittest
+
+from wtforms.validators import ValidationError
 
 import grouper.fe.util
 
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from util import get_group_permissions, get_user_permissions
 
-from grouper.constants import PERMISSION_AUDITOR, PERMISSION_VALIDATION
-
+from grouper.constants import PERMISSION_AUDITOR, PERMISSION_VALIDATION, ARGUMENT_VALIDATION
+from grouper.fe.forms import ValidateRegex
 
 def test_basic_permission(standard_graph, session, users, groups, permissions):  # noqa
     """ Test adding some permissions to various groups and ensuring that the permissions are all
@@ -37,12 +40,31 @@ class PermissionTests(unittest.TestCase):
         self.assertEquals(len(grouper.fe.util.test_reserved_names("admin.prefix.reserved")), 1)
         self.assertEquals(len(grouper.fe.util.test_reserved_names("test.prefix.reserved")), 1)
 
-        def eval_permission(perm):
-            return re.match(r'^' + PERMISSION_VALIDATION + r'$', perm)
+        Field = namedtuple("field", "data")
 
-        self.assertIsNotNone(eval_permission('foo.bar'))
-        self.assertIsNotNone(eval_permission('foobar'))
-        self.assertIsNotNone(eval_permission('foo.bar_baz'))
-        self.assertIsNone(eval_permission('foo__bar'))
-        self.assertIsNone(eval_permission('foo.bar.'))
-        self.assertIsNone(eval_permission('foo._bar'))
+        def eval_permission(perm):
+            ValidateRegex(PERMISSION_VALIDATION)(form=None, field=Field(data=perm))
+
+        self.assertIsNone(eval_permission('foo.bar'))
+        self.assertIsNone(eval_permission('foobar'))
+        self.assertIsNone(eval_permission('foo.bar_baz'))
+        self.assertRaises(ValidationError, eval_permission, 'foo__bar')
+        self.assertRaises(ValidationError, eval_permission, 'foo.bar.')
+        self.assertRaises(ValidationError, eval_permission, 'foo._bar')
+
+        def eval_argument(arg):
+            ValidateRegex(ARGUMENT_VALIDATION)(form=None, field=Field(data=arg))
+
+        self.assertIsNone(eval_argument('foo.bar'))
+        self.assertIsNone(eval_argument('foobar'))
+        self.assertIsNone(eval_argument('underscore_'))
+        self.assertIsNone(eval_argument('equals='))
+        self.assertIsNone(eval_argument('plus+'))
+        self.assertIsNone(eval_argument('slash/'))
+        self.assertIsNone(eval_argument('dot.'))
+        self.assertIsNone(eval_argument('colon:'))
+        self.assertIsNone(eval_argument('hyphen-'))
+        self.assertIsNone(eval_argument('underscore_equals=plus+slash/dot.color:hyphen-ok'))
+        self.assertRaises(ValidationError, eval_argument, 'whitespace invalid')
+        self.assertRaises(ValidationError, eval_argument, 'question?mark')
+        self.assertRaises(ValidationError, eval_argument, 'exclaimation!point')

@@ -68,6 +68,10 @@ class GrouperHandler(tornado.web.RequestHandler):
             if created:
                 logging.info("Created new user %s", username)
                 self.session.commit()
+                # Because the graph doesn't initialize until the updates table
+                # is populated, we need to refresh the graph here in case this
+                # is the first update.
+                self.graph.update_from_db(self.session)
         except sqlalchemy.exc.OperationalError:
             # Failed to connect to database or create user, try to reconfigure the db. This invokes
             # the fetcher to try to see if our URL string has changed.

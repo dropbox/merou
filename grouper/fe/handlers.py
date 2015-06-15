@@ -1,3 +1,5 @@
+# TODO(mildorf): we should refresh the graph after every write operation so that
+# redirects at the end of posts will include their effects.
 from datetime import datetime
 import operator
 

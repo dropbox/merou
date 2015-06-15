@@ -210,7 +210,7 @@ def get_user_or_group(session, name, user_or_group=None):
         User or Group object.
     """
     if user_or_group is not None:
-        assert (user_or_group in ["user", "group"], "%s not in ['user', 'group']" % user_or_group)
+        assert (user_or_group in ["user", "group"]), ("%s not in ['user', 'group']" % user_or_group)
         is_user = (user_or_group == "user")
     else:
         is_user = '@' in name

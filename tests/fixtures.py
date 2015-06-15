@@ -22,9 +22,11 @@ def standard_graph(session, graph, users, groups, permissions):
 
     add_member(groups["tech-ops"], users["zay"], role="owner")
     add_member(groups["tech-ops"], users["gary"])
+    add_member(groups["tech-ops"], users["figurehead"], role="np-owner")
     grant_permission(groups["tech-ops"], permissions["ssh"], argument="shell")
 
     add_member(groups["security-team"], users["oliver"], role="owner")
+    add_member(groups["security-team"], users["figurehead"], role="member")
 
     add_member(groups["sad-team"], users["zorkian"], role="owner")
     add_member(groups["sad-team"], users["oliver"])
@@ -78,7 +80,7 @@ def graph(session):
 def users(session):
     users = {
         username: User.get_or_create(session, username=username)[0]
-        for username in ("gary", "zay", "zorkian", "oliver", "testuser")
+        for username in ("gary", "zay", "zorkian", "oliver", "testuser", "figurehead")
     }
     session.commit()
     return users

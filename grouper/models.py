@@ -43,9 +43,10 @@ REQUEST_STATUS_CHOICES = {
     "cancelled": set([]),
 }
 GROUP_EDGE_ROLES = (
-    "member",   # Belongs to the group. Nothing more.
-    "manager",  # Make changes to the group / Approve requests.
-    "owner",    # Same as manager plus enable/disable group and make Users owner.
+    "member",    # Belongs to the group. Nothing more.
+    "manager",   # Make changes to the group / Approve requests.
+    "owner",     # Same as manager plus enable/disable group and make Users owner.
+    "np-owner",  # Same as owner but don't inherit permissions.
 )
 
 MappedPermission = namedtuple('MappedPermission',
@@ -261,7 +262,7 @@ class User(Model):
     def can_manage(self, group):
         """Determine if this user can manage the given group
 
-        This returns true if this user object is a manager or owner of the given group.
+        This returns true if this user object is a manager, owner, or np-owner of the given group.
 
         Args:
             group (Group): Group to check permissions against.
@@ -272,7 +273,7 @@ class User(Model):
         if not group:
             return False
         members = group.my_members()
-        if self.my_role(members) in ("owner", "manager"):
+        if self.my_role(members) in ("owner", "np-owner", "manager"):
             return True
         return False
 
@@ -681,7 +682,7 @@ class Group(Model):
                 status: pending/actioned, whether the request needs approval
                         or should be immediate
                 expiration: datetime object when membership should expire.
-                role: member/manager/owner of the Group.
+                role: member/manager/owner/np-owner of the Group.
         """
         now = datetime.utcnow()
         member_type = user_or_group.member_type

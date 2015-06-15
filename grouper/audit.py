@@ -26,9 +26,9 @@ def user_is_auditor(username):
 
 
 def assert_controllers_are_auditors(group):
-    """Return whether not all owners/managers in a group (and below) are auditors
+    """Return whether not all owners/np-owners/managers in a group (and below) are auditors
 
-    This is used to ensure that all of the people who can control a group (owners, managers)
+    This is used to ensure that all of the people who can control a group (owners, np-owners, managers)
     and all subgroups (all the way down the tree) have audit permissions.
 
     Raises:
@@ -105,8 +105,8 @@ def assert_can_join(group, user_or_group, role="member"):
                 user_or_group.name))
 
     # No, this is a group-joining-group case. In this situation we must walk the entire group
-    # subtree and ensure that all owners/managers are considered auditors. This data is contained
-    # in the group metadetails, which contains all eventual members.
+    # subtree and ensure that all owners/np-owners/managers are considered auditors. This data
+    # is contained in the group metadetails, which contains all eventual members.
     #
     # We have to fetch each group's details individually though to figure out what someone's role
     # is in that particular group.

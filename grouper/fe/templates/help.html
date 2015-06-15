@@ -24,12 +24,12 @@ of C.) That's all there is to it.  Technically speaking, the users and groups co
 the nodes of a <a href="http://en.wikipedia.org/wiki/Directed_acyclic_graph">directed
 acyclic graph</a> and a user or group is a member of any of its ancestors.</p>
 
-<h3>What's the difference between the member, manager, and owner roles?</h3>
-<p>These are the three types of group membership for users: a member just inherits the
-group's permissions, a manager is allowed to process requests to join a group, and an
-owner has full control over the group (including the ability to change the membership type
-of other users or add/remove the group's permissions.)  Technically, groups are members of
-other groups.</p>
+<h3>What's the difference between the member, manager, owner, and np-owner roles?</h3>
+<p>These are the types of group membership for users: a member just inherits the group's
+permissions, a manager is allowed to process requests to join a group, and an owner has
+full control over the group (including the ability to change the membership type of other
+users or add/remove the group's permissions.)  An np-owner is like an owner but does not
+inherit permissions from the group. Technically, groups are members of other groups.</p>
 
 <h3>What's the deal with permissions?</h3>
 <p>Grouper <a href="/permissions">permissions</a> are just enumerated strings. First,
@@ -61,8 +61,8 @@ grant the permission to grant ({{grant_perm.name}}, prefix.*).</p>
 <h3>How does auditing work?</h3>
 <p>Certain grouper permissions are designated as audited permissions. Groups with at least
 one audited permission become audited groups.  Users with the {{permission(audit_perm)}}
-permission (any argument) are considered auditors.  Only auditors can be the manager or
-owner of an audited group.</p>
+permission (any argument) are considered auditors.  Only auditors can be the manager,
+owner, or np-owner of an audited group.</p>
 
 <!-- TODO: change once auditing tooling is ready! -->
 <p>We're working on tooling to facilitate regular monitoring of both members of audited

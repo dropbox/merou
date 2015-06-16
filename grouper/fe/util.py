@@ -274,13 +274,14 @@ def delta_str(date_obj):
     return "Expired"
 
 
-def get_template_env(package="grouper.fe", extra_filters=None, extra_globals=None):
+def get_template_env(package="grouper.fe", deployment_name="", extra_filters=None, extra_globals=None):
     filters = {
         "print_date": print_date,
         "delta_str": delta_str,
     }
     j_globals = {
         "cdnjs_prefix": settings["cdnjs_prefix"],
+        "deployment_name": deployment_name,
         "ROLES": GROUP_EDGE_ROLES,
         "TYPES": OBJ_TYPES_IDX,
     }

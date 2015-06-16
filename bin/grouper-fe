@@ -68,6 +68,8 @@ def main(argv):
                         help="Display version information.")
     parser.add_argument("-p", "--port", type=int, default=None,
                         help="Override port in config.")
+    parser.add_argument("-n", "--deployment-name", type=str, default="",
+                        help="Name of the deployment.")
 
     args = parser.parse_args()
     settings.update_from_config(args.config, "fe")
@@ -97,7 +99,7 @@ def main(argv):
         "xsrf_cookies": True,
     }
 
-    template_env = get_template_env()
+    template_env = get_template_env(deployment_name=args.deployment_name)
 
     Session.configure(bind=get_db_engine(get_database_url(settings)))
 

@@ -97,9 +97,6 @@ class GroupAddForm(Form):
     role = SelectField("Role", [
         validators.Length(min=3, max=32),
         validators.Required(),
-    ], choices=[
-        (role, role.title())
-        for role in models.GROUP_EDGE_ROLES
     ], default="member")
     reason = TextAreaField("Reason", [
         validators.Required(),

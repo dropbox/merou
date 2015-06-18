@@ -31,6 +31,8 @@ def test_basic_permission(standard_graph, session, users, groups, permissions): 
     assert sorted(get_user_permissions(graph, "zorkian")) == [
         "audited:", PERMISSION_AUDITOR + ":", "ssh:*", "sudo:shell"]
     assert sorted(get_user_permissions(graph, "testuser")) == []
+    assert sorted(get_user_permissions(graph, "figurehead")) == [
+        "sudo:shell"]
 
 
 class PermissionTests(unittest.TestCase):

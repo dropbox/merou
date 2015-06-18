@@ -11,7 +11,8 @@
 {% endblock %}
 
 {% block headingbuttons %}
-    {% if current_user.my_role(members) == "owner" %}
+    <!-- Enable/Disable button. -->
+    {% if current_user.my_role(members) in ("owner", "np-owner") %}
         {% if group.enabled %}
             <button class="btn btn-danger" data-toggle="modal" data-target="#disableModal">
                 <i class="fa fa-minus"></i> Disable
@@ -23,10 +24,11 @@
         {% endif %}
     {% endif %}
 
+    <!-- Approve members. -->
     <div class="btn-group">
         <a href="/groups/{{group.name}}/requests"
            class="btn btn-default"><i class="fa fa-list"></i> Requests</a>
-        {% if current_user.my_role(members) in ("manager", "owner") and num_pending %}
+        {% if current_user.my_role(members) in ("manager", "owner", "np-owner") and num_pending %}
             <a href="/groups/{{group.name}}/requests?status=pending"
                title="Pending Requests"
                class="btn btn-default btn-pending">{{ num_pending }}</a>
@@ -36,13 +38,15 @@
     <a href="/groups/{{group.name}}/join"
        class="btn btn-success"><i class="fa fa-user"></i> Join</a>
 
-    {% if current_user.my_role(members) in ("manager", "owner") %}
+    <!-- Add member or edit group -->
+    {% if current_user.my_role(members) in ("manager", "owner", "np-owner") %}
         <a href="/groups/{{group.name}}/add"
            class="btn btn-success"><i class="fa fa-plus-circle"></i> Add Member</a>
         <a href="/groups/{{group.name}}/edit"
            class="btn btn-primary"><i class="fa fa-edit"></i> Edit</a>
     {% endif %}
 
+    <!-- Owners can't leave a group. -->
     {% if current_user.my_role(members) in ("member", "manager") %}
         <a href="/groups/{{group.name}}/leave"
            class="btn btn-danger"><i class="fa fa-sign-out"></i> Leave</a>

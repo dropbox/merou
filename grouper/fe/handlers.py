@@ -273,7 +273,7 @@ class PermissionsGrant(GrouperHandler):
         # If the permission is audited, then see if the subtree meets auditing requirements.
         if permission.audited:
             fail_message = ("Permission is audited and this group (or a subgroup) contains " +
-                            "owners or managers who have not received audit training.")
+                            "owners, np-owners, or managers who have not received audit training.")
             try:
                 permission_ok = assert_controllers_are_auditors(group)
             except UserNotAuditor as e:
@@ -507,7 +507,7 @@ class GroupEditMember(GrouperHandler):
 
         members = group.my_members()
         my_role = self.current_user.my_role(members)
-        if my_role not in ("manager", "owner"):
+        if my_role not in ("manager", "owner", "np-owner"):
             return self.forbidden()
 
         member = members.get((member_type.capitalize(), name2), None)
@@ -525,9 +525,10 @@ class GroupEditMember(GrouperHandler):
 
         form = GroupEditMemberForm(self.request.arguments)
         form.role.choices = [["member", "Member"]]
-        if my_role == "owner":
+        if my_role in ("owner", "np-owner"):
             form.role.choices.append(["manager", "Manager"])
             form.role.choices.append(["owner", "Owner"])
+            form.role.choices.append(["np-owner", "No-Permissions Owner"])
 
         form.role.data = edge.role
         form.expiration.data = edge.expiration.strftime("%m/%d/%Y") if edge.expiration else None
@@ -546,7 +547,7 @@ class GroupEditMember(GrouperHandler):
 
         members = group.my_members()
         my_role = self.current_user.my_role(members)
-        if my_role not in ("manager", "owner"):
+        if my_role not in ("manager", "owner", "np-owner"):
             return self.forbidden()
 
         member = members.get((member_type.capitalize(), name2), None)
@@ -571,9 +572,10 @@ class GroupEditMember(GrouperHandler):
 
         form = GroupEditMemberForm(self.request.arguments)
         form.role.choices = [["member", "Member"]]
-        if my_role == "owner":
+        if my_role in ("owner", "np-owner"):
             form.role.choices.append(["manager", "Manager"])
             form.role.choices.append(["owner", "Owner"])
+            form.role.choices.append(["np-owner", "No-Permissions Owner"])
 
         if not form.validate():
             return self.render(
@@ -613,7 +615,7 @@ class GroupRequestUpdate(GrouperHandler):
 
         members = group.my_members()
         my_role = self.current_user.my_role(members)
-        if my_role not in ("manager", "owner"):
+        if my_role not in ("manager", "owner", "np-owner"):
             return self.forbidden()
 
         request = self.session.query(Request).filter_by(id=request_id).scalar()
@@ -637,7 +639,7 @@ class GroupRequestUpdate(GrouperHandler):
 
         members = group.my_members()
         my_role = self.current_user.my_role(members)
-        if my_role not in ("manager", "owner"):
+        if my_role not in ("manager", "owner", "np-owner"):
             return self.forbidden()
 
         request = self.session.query(Request).filter_by(id=request_id).scalar()
@@ -772,6 +774,7 @@ class GroupsView(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors)
             )
 
+        # TODO: add option create group with role owner or np-owner.
         group.add_member(user, user, "Group Creator", "actioned", None, "owner")
         self.session.commit()
 
@@ -782,7 +785,7 @@ class GroupsView(GrouperHandler):
 
 
 class GroupAdd(GrouperHandler):
-    def get_form(self):
+    def get_form(self, role=None):
         """Helper to create a GroupAddForm populated with all users and groups as options.
 
         Note that the first choice is blank so the first user alphabetically
@@ -793,6 +796,12 @@ class GroupAdd(GrouperHandler):
         """
 
         form = GroupAddForm(self.request.arguments)
+
+        form.role.choices = [["member", "Member"]]
+        if role in ("owner", "np-owner"):
+            form.role.choices.append(["manager", "Manager"])
+            form.role.choices.append(["owner", "Owner"])
+            form.role.choices.append(["np-owner", "No-Permissions Owner"])
 
         group_choices = [
             (group.groupname, "Group: " + group.groupname)  # (value, label)
@@ -817,8 +826,10 @@ class GroupAdd(GrouperHandler):
         if not self.current_user.can_manage(group):
             return self.forbidden()
 
+        members = group.my_members()
+        my_role = self.current_user.my_role(members)
         return self.render(
-            "group-add.html", form=self.get_form(), group=group
+            "group-add.html", form=self.get_form(role=my_role), group=group
         )
 
     def post(self, group_id=None, name=None):
@@ -829,7 +840,9 @@ class GroupAdd(GrouperHandler):
         if not self.current_user.can_manage(group):
             return self.forbidden()
 
-        form = self.get_form()
+        members = group.my_members()
+        my_role = self.current_user.my_role(members)
+        form = self.get_form(role=my_role)
         if not form.validate():
             return self.render(
                 "group-add.html", form=form, group=group,
@@ -899,10 +912,10 @@ class GroupRemove(GrouperHandler):
                 reason="Can't remove yourself. Leave group instead."
             )
 
-        group.revoke_member(self.current_user, removed_member, "Removed by owner/manager")
+        group.revoke_member(self.current_user, removed_member, "Removed by owner/np-owner/manager")
         AuditLog.log(self.session, self.current_user.id, 'remove_from_group',
                      '{} was removed from the group.'.format(removed_member.name),
-                     on_group_id=group.id)
+                     on_group_id=group.id, on_user_id=removed_member.id)
         return self.redirect("/groups/{}".format(group.name))
 
 
@@ -972,7 +985,7 @@ class GroupJoin(GrouperHandler):
             mail_to = [
                 user.name
                 for user in group.my_users()
-                if GROUP_EDGE_ROLES[user.role] in ('manager', 'owner')
+                if GROUP_EDGE_ROLES[user.role] in ('manager', 'owner', 'np-owner')
             ]
 
             self.send_email(mail_to, 'Request to join: {}'.format(group.name), 'pending_request', {
@@ -1023,7 +1036,7 @@ class GroupJoin(GrouperHandler):
         for _group in self.current_user.my_groups():
             if group.name == _group.name:  # Don't add self.
                 continue
-            if _group.role < 1:  # manager and owner only.
+            if _group.role < 1:  # manager, owner, and np-owner only.
                 continue
             if ("Group", _group.name) in members:
                 continue
@@ -1124,7 +1137,7 @@ class GroupEnable(GrouperHandler):
             return self.notfound()
 
         members = group.my_members()
-        if self.current_user.my_role(members) != "owner":
+        if not self.current_user.my_role(members) in ("owner", "np-owner"):
             return self.forbidden()
 
         group.enable()
@@ -1143,7 +1156,7 @@ class GroupDisable(GrouperHandler):
             return self.notfound()
 
         members = group.my_members()
-        if self.current_user.my_role(members) != "owner":
+        if not self.current_user.my_role(members) in ("owner", "np-owner"):
             return self.forbidden()
 
         group.disable()

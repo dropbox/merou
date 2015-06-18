@@ -362,13 +362,36 @@ class GroupGraph(object):
             return data
 
     def get_user_details(self, username, cutoff=None):
-        """ Get groups that a user belongs to."""
+        """ Get a user's groups and permissions."""
+        max_dist = cutoff-1 if (cutoff is not None) else None
 
         with self.lock:
             groups = {}
 
             user = ("User", username)
-            rpaths = single_source_shortest_path(self._rgraph, user, cutoff)
+
+            # User permissions are inherited from all groups for which their
+            # role is not "np-owner".  User groups are all groups in which a
+            # user is a member by inheritance, except for ancestors of groups
+            # where their role is "np-owner", unless the user is a member of
+            # such an ancestor via a non-"np-owner" role in another group.
+            rpaths = {}
+            for group in self._rgraph.neighbors(user):
+                role = self._rgraph[user][group]["role"]
+                if GROUP_EDGE_ROLES[role] == "np-owner":
+                    group_name = group[1]
+                    groups[group_name] = {
+                        "name": group_name,
+                        "path": [username, group_name],
+                        "distance": 1,
+                        "role": role,
+                        "rolename": GROUP_EDGE_ROLES[role],
+                    }
+                    continue
+                new_rpaths = single_source_shortest_path(self._rgraph, group, max_dist)
+                for parent, path in new_rpaths.iteritems():
+                    if not parent in rpaths or 1+len(path) < len(rpaths[parent]):
+                        rpaths[parent] = [user] + path
 
             permissions = []
 

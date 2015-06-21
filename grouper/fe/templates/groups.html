@@ -2,11 +2,18 @@
 {% from 'macros/ui.html' import account, paginator, dropdown with context %}
 
 {% block heading %}
+    {% if audited_groups %}
+      Audited
+    {% endif %}
     Groups
 {% endblock %}
 
 {% block subheading %}
-    {{total}} group(s)
+    {{total}}
+    {% if audited_groups %}
+      audited
+    {% endif %}
+    group(s)
 {% endblock %}
 
 {% block headingbuttons %}
@@ -15,6 +22,15 @@
     <button class="btn btn-success" data-toggle="modal" data-target="#createModal">
         <i class="fa fa-plus"></i> Create
     </button>
+    {% if audited_groups %}
+    <a class="btn btn-warning" href="/groups?limit={{limit}}">
+        <i class="fa"></i> Show all groups
+    </a>
+    {% else %}
+    <a class="btn btn-warning" href="/audited-groups?limit={{limit}}">
+        <i class="fa"></i> Show audited groups only
+    </a>
+    {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -25,6 +41,9 @@
                     <th class="col-sm-2">Groupname</th>
                     <th class="col-sm-4">Description</th>
                     <th class="col-sm-1">Can join?</th>
+		    {% if audited_groups %}
+		    <th class="col-sm-1">Why audited?</th>
+		    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -39,6 +58,15 @@
                             Must Ask
                         {% endif %}
                     </td>
+		    {% if audited_groups %}
+		    <td>
+		      {% if group.groupname in directly_audited_groups %}
+		      Direct
+		      {% else %}
+		      Inherited
+		      {% endif %}
+		    </td>
+		    {% endif %}
                 </tr>
             {% endfor %}
             </tbody>

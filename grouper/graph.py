@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from datetime import datetime
 from networkx import DiGraph, single_source_shortest_path
 from threading import RLock
@@ -26,6 +26,14 @@ EPOCH = datetime(1970, 1, 1)
 def Graph():  # noqa
     return GroupGraph()
 
+# A GroupGraph caches permissions and groups as these objects which are intended
+# to behave like the corresponding models but without any connection to SQL
+# backend.
+PermissionTuple = namedtuple("PermissionTuple",
+                              ["id", "name", "description", "created_on", "audited"])
+GroupTuple = namedtuple("GroupTuple",
+                        ["id", "groupname", "name", "description", "canjoin", "enabled", "type"])
+
 
 class GroupGraph(object):
     def __init__(self):
@@ -35,12 +43,14 @@ class GroupGraph(object):
         self.lock = RLock()
         self.users = set()
         self.groups = set()
-        self.permissions = set()
+        self.permissions = set() # As strings.
         self.checkpoint = 0
         self.checkpoint_time = 0
         self.user_metadata = {}
         self.group_metadata = {}
-        self.permission_metadata = {}
+        self.permission_metadata = {} # TODO: rename.  This is about permission grants.
+        self.permission_tuples = set() # Mock Permission instances.
+        self.group_tuples = {} # groupname -> Mock Group instance.
 
     @property
     def nodes(self):
@@ -82,6 +92,8 @@ class GroupGraph(object):
         user_metadata = self._get_user_metadata(session)
         permission_metadata = self._get_permission_metadata(session)
         group_metadata = self._get_group_metadata(session, permission_metadata)
+        permission_tuples = self._get_permission_tuples(session)
+        group_tuples = self._get_group_tuples(session)
 
         with self.lock:
             self._graph = new_graph
@@ -96,6 +108,8 @@ class GroupGraph(object):
             self.user_metadata = user_metadata
             self.group_metadata = group_metadata
             self.permission_metadata = permission_metadata
+            self.permission_tuples = permission_tuples
+            self.group_tuples = group_tuples
 
     @staticmethod
     def _get_checkpoint(session):
@@ -145,6 +159,8 @@ class GroupGraph(object):
             }
         return out
 
+    # This describes how permissions are assigned to groups, NOT the intrinsic
+    # metadata for a permission.
     @staticmethod
     def _get_permission_metadata(session):
         '''
@@ -161,6 +177,26 @@ class GroupGraph(object):
                 argument=permission[1].argument,
                 groupname=permission[1].group.name,
                 granted_on=permission[1].granted_on,
+            ))
+        return out
+
+    @staticmethod
+    def _get_permission_tuples(session):
+        '''
+        Returns a set of PermissionTuple instances.
+        '''
+        out = set()
+        permissions = (
+            session.query(Permission)
+            .order_by(Permission.name)
+        )
+        for permission in permissions:
+            out.add(PermissionTuple(
+                id=permission.id,
+                name=permission.name,
+                description=permission.description,
+                created_on=permission.created_on,
+                audited=permission._audited,
             ))
         return out
 
@@ -183,6 +219,28 @@ class GroupGraph(object):
                     } for permission in permission_metadata[group.id]
                 ],
             }
+        return out
+
+    @staticmethod
+    def _get_group_tuples(session):
+        '''
+        Returns a dict of groupname: GroupTuple.
+        '''
+        out = {}
+        groups = (
+            session.query(Group)
+            .order_by(Group.groupname)
+        )
+        for group in groups:
+            out[group.groupname] = GroupTuple(
+                id=group.id,
+                groupname=group.groupname,
+                name=group.groupname,
+                description=group.description,
+                canjoin=group.canjoin,
+                enabled=group.enabled,
+                type="Group"
+            )
         return out
 
     @staticmethod
@@ -252,6 +310,14 @@ class GroupGraph(object):
 
         return edges
 
+    def get_permissions(self, audited=False):
+        """ Get the list of permissions as PermissionTuple instances sorted by name. """
+        with self.lock:
+            permissions = sorted(self.permission_tuples, key=lambda p: p.name)
+        if audited:
+            permissions = filter(lambda p: p.audited, permissions)
+        return permissions
+
     def get_permission_details(self, name):
         """ Get a permission and what groups it's assigned to. """
 
@@ -287,6 +353,34 @@ class GroupGraph(object):
                         member_name, show_permission=name)
 
             return data
+
+    def get_groups(self, audited=False, directly_audited=False):
+        """ Get the list of groups as GroupTuples instances sorted by groupname. """
+        if directly_audited:
+            audited = True
+        with self.lock:
+            groups = sorted(self.group_tuples.values(), key=lambda g: g.groupname)
+            if audited:
+                def is_directly_audited(group):
+                    for mp in self.permission_metadata[group.groupname]:
+                        if mp.audited:
+                            return True
+                    return False
+                directly_audited_groups = filter(is_directly_audited, groups)
+                if directly_audited:
+                    return directly_audited_groups
+                queue = [("Group", group.groupname) for group in directly_audited_groups]
+                audited_group_nodes = set()
+                while len(queue):
+                    g = queue.pop()
+                    if not g in audited_group_nodes:
+                        audited_group_nodes.add(g)
+                        for nhbr in self._graph.neighbors(g): # Members of g.
+                            if nhbr[0] == 'Group':
+                                queue.append(nhbr)
+                groups = sorted([self.group_tuples[g[1]] for g in audited_group_nodes],
+                                key=lambda g: g.groupname)
+        return groups
 
     def get_group_details(self, groupname, cutoff=None, show_permission=None):
         """ Get users and permissions that belong to a group. """

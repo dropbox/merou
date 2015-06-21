@@ -2,6 +2,9 @@
 {% from 'macros/ui.html' import permission, paginator, dropdown with context %}
 
 {% block heading %}
+    {% if audited_permissions %}
+      Audited
+    {% endif %}
     Permissions
 {% endblock %}
 
@@ -15,6 +18,15 @@
     {% if can_create %}
     <a class="btn btn-success" href="/permissions/create">
         <i class="fa fa-plus"></i> Create
+    </a>
+    {% endif %}
+    {% if audited_permissions %}
+    <a class="btn btn-warning" href="/permissions?limit={{limit}}">
+        <i class="fa"></i> Show all permissions
+    </a>
+    {% else %}
+    <a class="btn btn-warning" href="/audited-permissions?limit={{limit}}">
+        <i class="fa"></i> Show audited permissions only
     </a>
     {% endif %}
 {% endblock %}

@@ -16,7 +16,7 @@ from ..audit import assert_controllers_are_auditors, assert_can_join, UserNotAud
 from ..constants import PERMISSION_GRANT, PERMISSION_CREATE, PERMISSION_AUDITOR
 
 from .forms import (
-    GroupForm, GroupJoinForm, GroupAddForm, GroupRemoveForm,
+    GroupCreateForm, GroupEditForm, GroupJoinForm, GroupAddForm, GroupRemoveForm,
     GroupRequestModifyForm, PublicKeyForm, PermissionCreateForm,
     PermissionGrantForm, GroupEditMemberForm,
 )
@@ -748,7 +748,7 @@ class GroupsView(GrouperHandler):
         total = len(groups)
         groups = groups[offset:offset+limit]
 
-        form = GroupForm()
+        form = GroupCreateForm()
 
         self.render(
             "groups.html", groups=groups, form=form,
@@ -757,7 +757,7 @@ class GroupsView(GrouperHandler):
         )
 
     def post(self):
-        form = GroupForm(self.request.arguments)
+        form = GroupCreateForm(self.request.arguments)
         if not form.validate():
             return self.render(
                 "group-create.html", form=form,
@@ -784,8 +784,7 @@ class GroupsView(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors)
             )
 
-        # TODO: add option create group with role owner or np-owner.
-        group.add_member(user, user, "Group Creator", "actioned", None, "owner")
+        group.add_member(user, user, "Group Creator", "actioned", None, form.data["creatorrole"])
         self.session.commit()
 
         AuditLog.log(self.session, self.current_user.id, 'create_group',
@@ -1104,7 +1103,7 @@ class GroupEdit(GrouperHandler):
         if not self.current_user.can_manage(group):
             return self.forbidden()
 
-        form = GroupForm(obj=group)
+        form = GroupEditForm(obj=group)
 
         self.render("group-edit.html", group=group, form=form)
 
@@ -1116,7 +1115,7 @@ class GroupEdit(GrouperHandler):
         if not self.current_user.can_manage(group):
             return self.forbidden()
 
-        form = GroupForm(self.request.arguments, obj=group)
+        form = GroupEditForm(self.request.arguments, obj=group)
         if not form.validate():
             return self.render(
                 "group-edit.html", group=group, form=form,

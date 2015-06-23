@@ -66,8 +66,21 @@ class PermissionCreateForm(Form):
     ])
     description = TextAreaField("Description")
 
+class GroupCreateForm(Form):
+    creatorrole = SelectField("Creator role", choices=[
+        ("owner", "Owner"), ("np-owner", "No-Permissions Owner"),
+    ], default="owner")
+    groupname = TextField("Name", [
+        validators.Length(min=3, max=32),
+        validators.Required(),
+        ValidateRegex(constants.NAME_VALIDATION),
+    ])
+    description = TextAreaField("Description")
+    canjoin = SelectField("Who Can Join?", choices=[
+        ("canjoin", "Anyone"), ("canask", "Must Ask"),
+    ], default="canask")
 
-class GroupForm(Form):
+class GroupEditForm(Form):
     groupname = TextField("Name", [
         validators.Length(min=3, max=32),
         validators.Required(),

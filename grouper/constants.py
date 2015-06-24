@@ -32,6 +32,7 @@ RESERVED_NAMES = [
     r"^admin",
     r"^test",
     r"^[^.]*$",
+    r"^[0-9]+$", # Reserved in order to select user or group by id.
 ]
 
 # Maximum length a name can be. This applies to user names and permission arguments.

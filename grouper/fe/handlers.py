@@ -20,6 +20,7 @@ from .forms import (
     GroupRequestModifyForm, PublicKeyForm, PermissionCreateForm,
     PermissionGrantForm, GroupEditMemberForm,
 )
+from ..graph import NoSuchUser, NoSuchGroup
 from ..models import (
     User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog, GroupEdge, Counter,
     GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES, OBJ_TYPES,
@@ -96,8 +97,9 @@ class UserView(GrouperHandler):
 
         try:
             user_md = self.graph.get_user_details(user.name)
-        except KeyError:
-            # User is probably very new, so they have no metadata yet.
+        except NoSuchUser:
+            # Either user is probably very new, so they have no metadata yet, or
+            # they're disabled, so we've excluded them from the in-memory graph.
             user_md = {}
 
         groups = user.my_groups()
@@ -471,8 +473,9 @@ class GroupView(GrouperHandler):
 
         try:
             group_md = self.graph.get_group_details(group.name)
-        except KeyError:
-            # New group, no metadata yet.
+        except NoSuchGroup:
+            # Very new group with no metadata yet, or it has been disabled and
+            # excluded from in-memory cache.
             group_md = {}
 
         members = group.my_members()

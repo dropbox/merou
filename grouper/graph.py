@@ -34,6 +34,11 @@ PermissionTuple = namedtuple("PermissionTuple",
 GroupTuple = namedtuple("GroupTuple",
                         ["id", "groupname", "name", "description", "canjoin", "enabled", "type"])
 
+# Raise these exceptions when asking about users or groups that are not cached.
+class NoSuchUser(Exception):
+    pass
+class NoSuchGroup(Exception):
+    pass
 
 class GroupGraph(object):
     def __init__(self):
@@ -230,6 +235,8 @@ class GroupGraph(object):
         groups = (
             session.query(Group)
             .order_by(Group.groupname)
+        ).filter(
+            Group.enabled == True
         )
         for group in groups:
             out[group.groupname] = GroupTuple(
@@ -248,9 +255,13 @@ class GroupGraph(object):
         return session.query(
             label("type", literal("User")),
             label("name", User.username)
+        ).filter(
+            User.enabled == True
         ).union(session.query(
             label("type", literal("Group")),
             label("name", Group.groupname))
+        ).filter(
+            Group.enabled == True
         ).all()
 
     @staticmethod
@@ -379,7 +390,7 @@ class GroupGraph(object):
         return groups
 
     def get_group_details(self, groupname, cutoff=None, show_permission=None):
-        """ Get users and permissions that belong to a group. """
+        """ Get users and permissions that belong to a group. Raise NoSuchGroup for missing groups. """
 
         with self.lock:
             # This is calculated based on all the permissions that apply to this group. Since this
@@ -394,6 +405,8 @@ class GroupGraph(object):
             }
 
             group = ("Group", groupname)
+            if not self._graph.has_node(group):
+                raise NoSuchGroup("Group %s is either missing or disabled." % groupname)
             paths = single_source_shortest_path(self._graph, group, cutoff)
             rpaths = single_source_shortest_path(self._rgraph, group, cutoff)
 
@@ -452,13 +465,16 @@ class GroupGraph(object):
             return data
 
     def get_user_details(self, username, cutoff=None):
-        """ Get a user's groups and permissions."""
+        """ Get a user's groups and permissions.  Raise NoSuchUser for missing users."""
         max_dist = cutoff-1 if (cutoff is not None) else None
 
         with self.lock:
             groups = {}
 
             user = ("User", username)
+
+            if not self._rgraph.has_node(user):
+                raise NoSuchUser("User %s is either missing or disabled." % username)
 
             # User permissions are inherited from all groups for which their
             # role is not "np-owner".  User groups are all groups in which a

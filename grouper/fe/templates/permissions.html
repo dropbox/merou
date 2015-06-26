@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block headingbuttons %}
-    {{ dropdown("limit", limit, [10, 25, 50]) }}
+    {{ dropdown("limit", limit, [100, 250, 500]) }}
     {{ paginator(offset, limit, total) }}
     {% if can_create %}
     <a class="btn btn-success" href="/permissions/create">

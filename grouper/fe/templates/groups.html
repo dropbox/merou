@@ -17,7 +17,7 @@
 {% endblock %}
 
 {% block headingbuttons %}
-    {{ dropdown("limit", limit, [10, 25, 50]) }}
+    {{ dropdown("limit", limit, [100, 250, 500]) }}
     {{ paginator(offset, limit, total) }}
     <button class="btn btn-success" data-toggle="modal" data-target="#createModal">
         <i class="fa fa-plus"></i> Create

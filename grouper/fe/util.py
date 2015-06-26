@@ -110,10 +110,6 @@ class GrouperHandler(tornado.web.RequestHandler):
         })
         return namespace
 
-    def redirect(self, route):
-        self.graph.update_from_db(self.session)
-        tornado.web.RequestHandler.redirect(self, route)
-
     def render_template(self, template_name, **kwargs):
         template = self.application.my_settings["template_env"].get_template(template_name)
         content = template.render(kwargs)

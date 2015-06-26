@@ -1,5 +1,3 @@
-# TODO(mildorf): we should refresh the graph after every write operation so that
-# redirects at the end of posts will include their effects.
 from datetime import datetime
 import operator
 
@@ -42,9 +40,9 @@ class Search(GrouperHandler):
     def get(self):
         query = self.get_argument("query", "")
         offset = int(self.get_argument("offset", 0))
-        limit = int(self.get_argument("limit", 10))
-        if limit > 50:
-            limit = 50
+        limit = int(self.get_argument("limit", 100))
+        if limit > 9000:
+            limit = 9000
 
         groups = self.session.query(
             label("type", literal("Group")),
@@ -365,9 +363,9 @@ class PermissionsView(GrouperHandler):
     '''
     def get(self,audited_only=False):
         offset = int(self.get_argument("offset", 0))
-        limit = int(self.get_argument("limit", 10))
-        if limit > 50:
-            limit = 50
+        limit = int(self.get_argument("limit", 100))
+        if limit > 9000:
+            limit = 9000
 
         permissions = self.graph.get_permissions(audited=audited_only)
         total = len(permissions)
@@ -409,9 +407,9 @@ class PermissionView(GrouperHandler):
 class UsersView(GrouperHandler):
     def get(self):
         offset = int(self.get_argument("offset", 0))
-        limit = int(self.get_argument("limit", 10))
-        if limit > 50:
-            limit = 50
+        limit = int(self.get_argument("limit", 100))
+        if limit > 9000:
+            limit = 9000
 
         users = (
             self.session.query(User)
@@ -715,9 +713,9 @@ class GroupRequests(GrouperHandler):
 
         status = self.get_argument("status", None)
         offset = int(self.get_argument("offset", 0))
-        limit = int(self.get_argument("limit", 10))
-        if limit > 50:
-            limit = 50
+        limit = int(self.get_argument("limit", 100))
+        if limit > 9000:
+            limit = 9000
 
         requests = group.my_requests(status).order_by(
             Request.requested_at.desc()
@@ -737,9 +735,9 @@ class GroupRequests(GrouperHandler):
 class GroupsView(GrouperHandler):
     def get(self, audited_only=False):
         offset = int(self.get_argument("offset", 0))
-        limit = int(self.get_argument("limit", 10))
-        if limit > 50:
-            limit = 50
+        limit = int(self.get_argument("limit", 100))
+        if limit > 9000:
+            limit = 9000
 
         if audited_only:
             groups = self.graph.get_groups(audited=True, directly_audited=False)

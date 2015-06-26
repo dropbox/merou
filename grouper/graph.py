@@ -46,9 +46,10 @@ class GroupGraph(object):
         self._graph = None
         self._rgraph = None
         self.lock = RLock()
-        self.users = set()
-        self.groups = set()
-        self.permissions = set() # As strings.
+        self.disabled_users = {} # Disabled username -> public_keys.
+        self.users = set() # Enabled user names.
+        self.groups = set() # Group names.
+        self.permissions = set() # Permission names.
         self.checkpoint = 0
         self.checkpoint_time = 0
         self.user_metadata = {}
@@ -94,6 +95,7 @@ class GroupGraph(object):
             elif node_type == "Group":
                 groups.add(node_name)
 
+        disabled_users = self._get_disabled_users(session)
         user_metadata = self._get_user_metadata(session)
         permission_metadata = self._get_permission_metadata(session)
         group_metadata = self._get_group_metadata(session, permission_metadata)
@@ -105,6 +107,7 @@ class GroupGraph(object):
             self._rgraph = rgraph
             self.checkpoint = checkpoint
             self.checkpoint_time = checkpoint_time
+            self.disabled_users = disabled_users
             self.users = users
             self.groups = groups
             self.permissions = {perm.permission
@@ -122,6 +125,23 @@ class GroupGraph(object):
         if counter is None:
             return 0, 0
         return counter.count, int(counter.last_modified.strftime("%s"))
+
+    @staticmethod
+    def _get_disabled_users(session):
+        '''
+        Returns a dict of username: [ list of public keys ].
+        '''
+        out = {}
+        users = session.query(User).filter(
+            User.enabled == False
+        )
+        for user in users:
+            out[user.username] = [{
+                "public_key": key.public_key,
+                "fingerprint": key.fingerprint,
+                "created_on": str(key.created_on),
+            } for key in user.my_public_keys()]
+        return out
 
     @staticmethod
     def _get_user_metadata(session):

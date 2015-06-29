@@ -57,6 +57,7 @@ class GroupGraph(object):
         self.permission_metadata = {} # TODO: rename.  This is about permission grants.
         self.permission_tuples = set() # Mock Permission instances.
         self.group_tuples = {} # groupname -> Mock Group instance.
+        self.disabled_group_tuples = {} # groupname -> Mock Group instance.
 
     @property
     def nodes(self):
@@ -101,6 +102,7 @@ class GroupGraph(object):
         group_metadata = self._get_group_metadata(session, permission_metadata)
         permission_tuples = self._get_permission_tuples(session)
         group_tuples = self._get_group_tuples(session)
+        disabled_group_tuples = self._get_group_tuples(session, enabled=False)
 
         with self.lock:
             self._graph = new_graph
@@ -118,6 +120,7 @@ class GroupGraph(object):
             self.permission_metadata = permission_metadata
             self.permission_tuples = permission_tuples
             self.group_tuples = group_tuples
+            self.disabled_group_tuples = disabled_group_tuples
 
     @staticmethod
     def _get_checkpoint(session):
@@ -247,7 +250,7 @@ class GroupGraph(object):
         return out
 
     @staticmethod
-    def _get_group_tuples(session):
+    def _get_group_tuples(session, enabled=True):
         '''
         Returns a dict of groupname: GroupTuple.
         '''
@@ -256,7 +259,7 @@ class GroupGraph(object):
             session.query(Group)
             .order_by(Group.groupname)
         ).filter(
-            Group.enabled == True
+            Group.enabled == enabled
         )
         for group in groups:
             out[group.groupname] = GroupTuple(
@@ -381,8 +384,13 @@ class GroupGraph(object):
 
             return data
 
+    def get_disabled_groups(self):
+        """ Get the list of disabled groups as GroupTuple instances sorted by groupname. """
+        with self.lock:
+            return sorted(self.disabled_group_tuples.values(), key=lambda g: g.groupname)
+
     def get_groups(self, audited=False, directly_audited=False):
-        """ Get the list of groups as GroupTuples instances sorted by groupname. """
+        """ Get the list of groups as GroupTuple instances sorted by groupname. """
         if directly_audited:
             audited = True
         with self.lock:

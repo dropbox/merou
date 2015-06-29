@@ -361,9 +361,10 @@ class PermissionsView(GrouperHandler):
     Controller for viewing the major permissions list. There is no privacy here; the existence of
     a permission is public.
     '''
-    def get(self,audited_only=False):
+    def get(self):
         offset = int(self.get_argument("offset", 0))
         limit = int(self.get_argument("limit", 100))
+        audited_only = bool(int(self.get_argument("audited", 0)))
         if limit > 9000:
             limit = 9000
 
@@ -377,15 +378,6 @@ class PermissionsView(GrouperHandler):
             "permissions.html", permissions=permissions, offset=offset, limit=limit, total=total,
             can_create=can_create, audited_permissions=audited_only
         )
-
-
-class AuditedPermissionsView(PermissionsView):
-    '''
-    Controller for viewing the audited permissions list. There is no privacy here; the existence of
-    an audited permission is public.
-    '''
-    def get(self):
-        PermissionsView.get(self, audited_only=True)
 
 
 class PermissionView(GrouperHandler):
@@ -408,19 +400,21 @@ class UsersView(GrouperHandler):
     def get(self):
         offset = int(self.get_argument("offset", 0))
         limit = int(self.get_argument("limit", 100))
+        enabled = bool(int(self.get_argument("enabled", 1)))
         if limit > 9000:
             limit = 9000
 
         users = (
             self.session.query(User)
-            .filter(User.enabled == True)
+            .filter(User.enabled == enabled)
             .order_by(User.username)
         )
         total = users.count()
         users = users.offset(offset).limit(limit).all()
 
         self.render(
-            "users.html", users=users, offset=offset, limit=limit, total=total
+            "users.html", users=users, offset=offset, limit=limit, total=total,
+            enabled=enabled,
         )
 
 
@@ -733,13 +727,18 @@ class GroupRequests(GrouperHandler):
 
 
 class GroupsView(GrouperHandler):
-    def get(self, audited_only=False):
+    def get(self):
         offset = int(self.get_argument("offset", 0))
         limit = int(self.get_argument("limit", 100))
+        enabled = bool(int(self.get_argument("enabled", 1)))
+        audited_only = bool(int(self.get_argument("audited", 0)))
         if limit > 9000:
             limit = 9000
 
-        if audited_only:
+        if not enabled:
+            groups = self.graph.get_disabled_groups()
+            directly_audited_groups = None
+        elif audited_only:
             groups = self.graph.get_groups(audited=True, directly_audited=False)
             directly_audited_groups = set([g.groupname for g in self.graph.get_groups(
                 audited=True, directly_audited=True)])
@@ -754,7 +753,7 @@ class GroupsView(GrouperHandler):
         self.render(
             "groups.html", groups=groups, form=form,
             offset=offset, limit=limit, total=total, audited_groups=audited_only,
-            directly_audited_groups=directly_audited_groups
+            directly_audited_groups=directly_audited_groups, enabled=enabled,
         )
 
     def post(self):
@@ -792,11 +791,6 @@ class GroupsView(GrouperHandler):
                      'Created new group.', on_group_id=group.id)
 
         return self.redirect("/groups/{}".format(group.name))
-
-
-class AuditedGroupsView(GroupsView):
-    def get(self):
-        GroupsView.get(self, audited_only=True)
 
 
 class GroupAdd(GrouperHandler):

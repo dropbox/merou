@@ -15,17 +15,17 @@
 {% block headingbuttons %}
     {{ dropdown("limit", limit, [100, 250, 500]) }}
     {{ paginator(offset, limit, total) }}
+    {% if audited_permissions %}
+    <a class="btn btn-warning" href="/permissions?limit={{limit}}&audited=0">
+        <i class="fa"></i> Show all permissions
+    </a>
+    {% else %}
     {% if can_create %}
     <a class="btn btn-success" href="/permissions/create">
         <i class="fa fa-plus"></i> Create
     </a>
     {% endif %}
-    {% if audited_permissions %}
-    <a class="btn btn-warning" href="/permissions?limit={{limit}}">
-        <i class="fa"></i> Show all permissions
-    </a>
-    {% else %}
-    <a class="btn btn-warning" href="/audited-permissions?limit={{limit}}">
+    <a class="btn btn-warning" href="/permissions?limit={{limit}}&audited=1">
         <i class="fa"></i> Show audited permissions only
     </a>
     {% endif %}

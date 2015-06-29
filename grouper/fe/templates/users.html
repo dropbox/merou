@@ -2,6 +2,9 @@
 {% from 'macros/ui.html' import account, paginator, dropdown with context %}
 
 {% block heading %}
+    {% if not enabled %}
+      Disabled
+    {% endif %}
     Users
 {% endblock %}
 
@@ -12,6 +15,16 @@
 {% block headingbuttons %}
     {{ dropdown("limit", limit, [100, 250, 500]) }}
     {{ paginator(offset, limit, total) }}
+    {% if enabled %}
+      <a class="btn btn-default" href="/users?limit={{limit}}&enabled=0">
+          <i class="fa"></i> Show disabled users
+      </a>
+    {% else %}
+      <a class="btn btn-default" href="/users?limit={{limit}}&enabled=1">
+          <i class="fa"></i> Show enabled users
+      </a>
+    {% endif %}
+
 {% endblock %}
 
 {% block content %}

@@ -1229,6 +1229,12 @@ class PublicKeyAdd(GrouperHandler):
                      'Added public key: {}'.format(pubkey.fingerprint),
                      on_user_id=user.id)
 
+        self.send_email([user.name], 'Public SSH key added', 'ssh_keys_changed', {
+            "actioner": self.current_user.name,
+            "changed_user": user.name,
+            "action": "added",
+        })
+
         return self.redirect("/users/{}".format(user.name))
 
 
@@ -1265,6 +1271,13 @@ class PublicKeyDelete(GrouperHandler):
         AuditLog.log(self.session, self.current_user.id, 'delete_public_key',
                      'Deleted public key: {}'.format(key.fingerprint),
                      on_user_id=user.id)
+
+        self.send_email([user.name], 'Public SSH key removed', 'ssh_keys_changed', {
+            "actioner": self.current_user.name,
+            "changed_user": user.name,
+            "action": "removed",
+        })
+
 
         return self.redirect("/users/{}".format(user.name))
 

@@ -46,22 +46,16 @@ class Users(GraphHandler):
         with self.graph.lock:
             if not name:
                 return self.success({
-                    "users": sorted(list(self.graph.users) + list(self.graph.disabled_users.keys())),
+                    "users": sorted(self.graph.user_metadata.keys()),
                 })
 
-            if name not in self.graph.users and name not in self.graph.disabled_users:
-                return self.notfound("User (%s) not found." % name)
-
-            out = {"user": {"name": name, "enabled": not name in self.graph.disabled_users}}
-            try_update(out["user"], self.graph.user_metadata.get(name, {
-                "public_keys": self.graph.disabled_users.get(name, []),
-                "metadata": [],
-            }))
-
-            if name in self.graph.users:
+            if name in self.graph.user_metadata:
+                md = self.graph.user_metadata[name]
                 details = self.graph.get_user_details(name, cutoff)
             else:
-                details = {"groups": {}, "permissions": []}
+                return self.notfound("User (%s) not found." % name)
+            out = {"user": {"name": name}}
+            try_update(out["user"], md)
             try_update(out, details)
             return self.success(out)
 

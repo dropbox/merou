@@ -64,6 +64,7 @@ span.disabled {
     display: inline-block;
     vertical-align: middle;
     float: right;
+    margin-bottom: 20px;
 }
 
 .header h3 small {

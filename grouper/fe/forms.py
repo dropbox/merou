@@ -78,6 +78,7 @@ class GroupCreateForm(Form):
     description = TextAreaField("Description")
     canjoin = SelectField("Who Can Join?", choices=[
         ("canjoin", "Anyone"), ("canask", "Must Ask"),
+        ("nobody", "Nobody"),
     ], default="canask")
 
 class GroupEditForm(Form):
@@ -89,6 +90,7 @@ class GroupEditForm(Form):
     description = TextAreaField("Description")
     canjoin = SelectField("Who Can Join?", choices=[
         ("canjoin", "Anyone"), ("canask", "Must Ask"),
+        ("nobody", "Nobody"),
     ], default="canask")
 
 

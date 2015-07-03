@@ -971,6 +971,15 @@ class GroupJoin(GrouperHandler):
                 ]
             )
 
+        if group.canjoin == "nobody":
+            fail_message = 'This group cannot be joined at this time.'
+            return self.render(
+                "group-join.html", form=form, group=group,
+                alerts=[
+                    Alert('danger', fail_message)
+                ]
+            )
+
         expiration = None
         if form.data["expiration"]:
             expiration = datetime.strptime(form.data["expiration"], "%m/%d/%Y")

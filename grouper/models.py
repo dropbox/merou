@@ -32,8 +32,13 @@ OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange")
 OBJ_TYPES = {obj_type: idx for idx, obj_type in enumerate(OBJ_TYPES_IDX)}
 
 GROUP_JOIN_CHOICES = {
-    "canjoin": "actioned",  # Anyone can join with automatic approval
-    "canask": "pending",   # Anyone can ask to join this group
+    # Anyone can join with automatic approval
+    "canjoin": "actioned",
+    # Anyone can ask to join this group
+    "canask": "pending",
+    # Only those invited may join (should never be a valid status because no
+    # join request should be generated for such groups!)
+    "nobody": "<integrityerror>",
 }
 
 REQUEST_STATUS_CHOICES = {

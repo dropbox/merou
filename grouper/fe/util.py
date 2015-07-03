@@ -54,6 +54,13 @@ class GrouperHandler(tornado.web.RequestHandler):
         self.write(template.render({"is_active": self.is_active}))
         self.finish()
 
+    # The refresh argument can be added to any page.  If the handler for that
+    # route calls this function, it will sync its graph from the database if
+    # requested.
+    def handle_refresh(self):
+        if self.get_argument("refresh", "no").lower() == "yes":
+            self.graph.update_from_db(self.session)
+
     def get_current_user(self):
         username = self.request.headers.get(settings.user_auth_header)
         if not username:

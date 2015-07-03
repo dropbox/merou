@@ -80,6 +80,7 @@ class Search(GrouperHandler):
 
 class UserView(GrouperHandler):
     def get(self, user_id=None, name=None):
+        self.handle_refresh()
         user = User.get(self.session, user_id, name)
         if user_id is not None:
             user = self.session.query(User).filter_by(id=user_id).scalar()
@@ -172,6 +173,7 @@ class PermissionsCreate(GrouperHandler):
         AuditLog.log(self.session, self.current_user.id, 'create_permission',
                      'Created permission.', on_permission_id=permission.id)
 
+        # No explicit refresh because handler queries SQL.
         return self.redirect("/permissions/{}".format(permission.name))
 
 
@@ -190,6 +192,7 @@ class PermissionDisableAuditing(GrouperHandler):
         AuditLog.log(self.session, self.current_user.id, 'disable_auditing',
                      'Disabled auditing.', on_permission_id=permission.id)
 
+        # No explicit refresh because handler queries SQL.
         return self.redirect("/permissions/{}".format(permission.name))
 
 
@@ -208,6 +211,7 @@ class PermissionEnableAuditing(GrouperHandler):
         AuditLog.log(self.session, self.current_user.id, 'enable_auditing',
                      'Enabled auditing.', on_permission_id=permission.id)
 
+        # No explicit refresh because handler queries SQL.
         return self.redirect("/permissions/{}".format(permission.name))
 
 
@@ -303,7 +307,7 @@ class PermissionsGrant(GrouperHandler):
                      'Granted permission with argument: {}'.format(form.data["argument"]),
                      on_permission_id=permission.id, on_group_id=group.id)
 
-        return self.redirect("/groups/{}".format(group.name))
+        return self.redirect("/groups/{}?refresh=yes".format(group.name))
 
 
 class PermissionsRevoke(GrouperHandler):
@@ -353,7 +357,7 @@ class PermissionsRevoke(GrouperHandler):
                      'Revoked permission with argument: {}'.format(mapping.argument),
                      on_group_id=group.id, on_permission_id=permission.id)
 
-        return self.redirect('/groups/{}'.format(group.name))
+        return self.redirect('/groups/{}?refresh=yes'.format(group.name))
 
 
 class PermissionsView(GrouperHandler):
@@ -382,6 +386,7 @@ class PermissionsView(GrouperHandler):
 
 class PermissionView(GrouperHandler):
     def get(self, name=None):
+        # TODO: use cached data instead, add refresh to appropriate redirects.
         permission = Permission.get(self.session, name)
         if not permission:
             return self.notfound()
@@ -398,6 +403,7 @@ class PermissionView(GrouperHandler):
 
 class UsersView(GrouperHandler):
     def get(self):
+        # TODO: use cached users instead.
         offset = int(self.get_argument("offset", 0))
         limit = int(self.get_argument("limit", 100))
         enabled = bool(int(self.get_argument("enabled", 1)))
@@ -433,7 +439,7 @@ class UserEnable(GrouperHandler):
         AuditLog.log(self.session, self.current_user.id, 'enable_user',
                      'Enabled user.', on_user_id=user.id)
 
-        return self.redirect("/users/{}".format(user.name))
+        return self.redirect("/users/{}?refresh=yes".format(user.name))
 
 
 class UserDisable(GrouperHandler):
@@ -452,11 +458,12 @@ class UserDisable(GrouperHandler):
         AuditLog.log(self.session, self.current_user.id, 'disable_user',
                      'Disabled user.', on_user_id=user.id)
 
-        return self.redirect("/users/{}".format(user.name))
+        return self.redirect("/users/{}?refresh=yes".format(user.name))
 
 
 class GroupView(GrouperHandler):
     def get(self, group_id=None, name=None):
+        self.handle_refresh()
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -606,7 +613,7 @@ class GroupEditMember(GrouperHandler):
         group.edit_member(self.current_user, user_or_group, form.data["reason"],
                           role=form.data["role"], expiration=expiration)
 
-        return self.redirect("/groups/{}".format(group.name))
+        return self.redirect("/groups/{}?refresh=yes".format(group.name))
 
 
 class GroupRequestUpdate(GrouperHandler):
@@ -690,6 +697,7 @@ class GroupRequestUpdate(GrouperHandler):
                      'Updated request to status: {}'.format(form.data["status"]),
                      on_group_id=group.id, on_user_id=request.requester.id)
 
+        # No explicit refresh because handler queries SQL.
         return self.redirect("/groups/{}/requests".format(group.name))
 
     def _get_choices(self, current_status):
@@ -728,6 +736,7 @@ class GroupRequests(GrouperHandler):
 
 class GroupsView(GrouperHandler):
     def get(self):
+        self.handle_refresh()
         offset = int(self.get_argument("offset", 0))
         limit = int(self.get_argument("limit", 100))
         enabled = bool(int(self.get_argument("enabled", 1)))
@@ -790,7 +799,7 @@ class GroupsView(GrouperHandler):
         AuditLog.log(self.session, self.current_user.id, 'create_group',
                      'Created new group.', on_group_id=group.id)
 
-        return self.redirect("/groups/{}".format(group.name))
+        return self.redirect("/groups/{}?refresh=yes".format(group.name))
 
 
 class GroupAdd(GrouperHandler):
@@ -891,7 +900,7 @@ class GroupAdd(GrouperHandler):
                          member.name, form.data["role"]),
                      on_group_id=group.id)
 
-        return self.redirect("/groups/{}".format(group.name))
+        return self.redirect("/groups/{}?refresh=yes".format(group.name))
 
 
 class GroupRemove(GrouperHandler):
@@ -925,7 +934,7 @@ class GroupRemove(GrouperHandler):
         AuditLog.log(self.session, self.current_user.id, 'remove_from_group',
                      '{} was removed from the group.'.format(removed_member.name),
                      on_group_id=group.id, on_user_id=removed_member.id)
-        return self.redirect("/groups/{}".format(group.name))
+        return self.redirect("/groups/{}?refresh=yes".format(group.name))
 
 
 class GroupJoin(GrouperHandler):
@@ -1014,7 +1023,7 @@ class GroupJoin(GrouperHandler):
         else:
             raise Exception('Need to update the GroupJoin.post audit logging')
 
-        return self.redirect("/groups/{}".format(group.name))
+        return self.redirect("/groups/{}?refresh=yes".format(group.name))
 
     def _get_member(self, member_choice):
         member_type, member_name = member_choice.split(": ", 1)
@@ -1086,7 +1095,7 @@ class GroupLeave(GrouperHandler):
                      '{} left the group.'.format(self.current_user.name),
                      on_group_id=group.id)
 
-        return self.redirect("/groups/{}".format(group.name))
+        return self.redirect("/groups/{}?refresh=yes".format(group.name))
 
 
 class GroupEdit(GrouperHandler):
@@ -1156,7 +1165,7 @@ class GroupEnable(GrouperHandler):
         AuditLog.log(self.session, self.current_user.id, 'enable_group',
                      'Enabled group.', on_group_id=group.id)
 
-        return self.redirect("/groups/{}".format(group.name))
+        return self.redirect("/groups/{}?refresh=yes".format(group.name))
 
 
 class GroupDisable(GrouperHandler):
@@ -1175,7 +1184,7 @@ class GroupDisable(GrouperHandler):
         AuditLog.log(self.session, self.current_user.id, 'disable_group',
                      'Disabled group.', on_group_id=group.id)
 
-        return self.redirect("/groups/{}".format(group.name))
+        return self.redirect("/groups/{}?refresh=yes".format(group.name))
 
 
 class PublicKeyAdd(GrouperHandler):
@@ -1235,7 +1244,7 @@ class PublicKeyAdd(GrouperHandler):
             "action": "added",
         })
 
-        return self.redirect("/users/{}".format(user.name))
+        return self.redirect("/users/{}?refresh=yes".format(user.name))
 
 
 class PublicKeyDelete(GrouperHandler):
@@ -1279,7 +1288,7 @@ class PublicKeyDelete(GrouperHandler):
         })
 
 
-        return self.redirect("/users/{}".format(user.name))
+        return self.redirect("/users/{}?refresh=yes".format(user.name))
 
 
 class Help(GrouperHandler):

@@ -72,7 +72,7 @@ def main(argv):
                         help="Name of the deployment.")
 
     args = parser.parse_args()
-    settings.update_from_config(args.config, "fe")
+    settings.start_config_thread(args.config, "fe")
 
     if settings.debug and settings.num_processes > 1:
         logging.fatal("Debug mode does not support multiple processes.")

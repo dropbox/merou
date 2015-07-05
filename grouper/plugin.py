@@ -20,3 +20,10 @@ class BasePlugin(object):
             The return code of this method is ignored.
         """
         pass
+
+    def configure(self, service_name):
+        """
+        Called once the plugin is instantiated to identify the executable
+        (grouper-api or grouper-fe).
+        """
+        pass

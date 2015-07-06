@@ -278,7 +278,7 @@ def main():
     capabilities_rm_parser.add_argument("capability", choices=Capabilities.words.keys())
 
     args = parser.parse_args()
-    settings.update_from_config(args.config)
+    settings.start_config_thread(args.config)
 
     log_level = get_loglevel(args)
     logging.basicConfig(

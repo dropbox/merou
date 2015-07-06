@@ -67,7 +67,7 @@ def main(argv):
                         help="Display version information.")
     parser.add_argument("-p", "--port", type=int, default=None, help="Override port in config.")
     args = parser.parse_args()
-    settings.update_from_config(args.config, "api")
+    settings.start_config_thread(args.config, "api")
 
     log_level = get_loglevel(args)
     logging.basicConfig(

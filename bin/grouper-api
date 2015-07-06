@@ -82,7 +82,7 @@ def main(argv):
         if not os.path.exists(settings.plugin_dir):
             logging.fatal("Plugin directory does not exist")
             sys.exit(1)
-        load_plugins(settings.plugin_dir)
+        load_plugins(settings.plugin_dir, service_name="grouper-api")
 
     tornado_settings = {
         "debug": settings.debug,

@@ -138,12 +138,14 @@ class PluginsAlreadyLoaded(Exception):
     pass
 
 
-def load_plugins(plugin_dir):
+def load_plugins(plugin_dir, service_name):
     """Load plugins from a directory"""
     global Plugins
     if Plugins:
         raise PluginsAlreadyLoaded("Plugins already loaded; can't load twice!")
     Plugins = Annex(BasePlugin, [plugin_dir], raise_exceptions=True)
+    for plugin in Plugins:
+        plugin.configure(service_name)
 
 
 def flush_transaction(method):

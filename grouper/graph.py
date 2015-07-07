@@ -45,7 +45,8 @@ class GroupGraph(object):
         logging.info('Created graph object.')
         self._graph = None
         self._rgraph = None
-        self.lock = RLock()
+        self.lock = RLock() # Graph structure.
+        self.update_lock = RLock() # Limit to 1 updating thread at a time.
         self.disabled_users = {} # Disabled username -> public_keys.
         self.users = set() # Enabled user names.
         self.groups = set() # Group names.
@@ -77,50 +78,54 @@ class GroupGraph(object):
 
     def update_from_db(self, session):
 
-        checkpoint, checkpoint_time = self._get_checkpoint(session)
-        if checkpoint == self.checkpoint:
-            logging.debug("Checkpoint hasn't changed. Not Updating.")
-            return
-        logging.debug("Checkpoint changed; updating!")
+        # Only allow one thread at a time to construct a fresh graph.
+        with self.update_lock:
+            checkpoint, checkpoint_time = self._get_checkpoint(session)
+            if checkpoint == self.checkpoint:
+                logging.debug("Checkpoint hasn't changed. Not Updating.")
+                return
+            logging.debug("Checkpoint changed; updating!")
 
-        new_graph = DiGraph()
-        new_graph.add_nodes_from(self._get_nodes_from_db(session))
-        new_graph.add_edges_from(self._get_edges_from_db(session))
-        rgraph = new_graph.reverse()
+            new_graph = DiGraph()
+            new_graph.add_nodes_from(self._get_nodes_from_db(session))
+            new_graph.add_edges_from(self._get_edges_from_db(session))
+            rgraph = new_graph.reverse()
 
-        users = set()
-        groups = set()
-        for (node_type, node_name) in new_graph.nodes():
-            if node_type == "User":
-                users.add(node_name)
-            elif node_type == "Group":
-                groups.add(node_name)
+            users = set()
+            groups = set()
+            for (node_type, node_name) in new_graph.nodes():
+                if node_type == "User":
+                    users.add(node_name)
+                elif node_type == "Group":
+                    groups.add(node_name)
 
-        disabled_users = self._get_disabled_users(session)
-        user_metadata = self._get_user_metadata(session)
-        permission_metadata = self._get_permission_metadata(session)
-        group_metadata = self._get_group_metadata(session, permission_metadata)
-        permission_tuples = self._get_permission_tuples(session)
-        group_tuples = self._get_group_tuples(session)
-        disabled_group_tuples = self._get_group_tuples(session, enabled=False)
+            disabled_users = self._get_disabled_users(session)
+            user_metadata = self._get_user_metadata(session)
+            permission_metadata = self._get_permission_metadata(session)
+            group_metadata = self._get_group_metadata(session, permission_metadata)
+            permission_tuples = self._get_permission_tuples(session)
+            group_tuples = self._get_group_tuples(session)
+            disabled_group_tuples = self._get_group_tuples(session, enabled=False)
 
-        with self.lock:
-            self._graph = new_graph
-            self._rgraph = rgraph
-            self.checkpoint = checkpoint
-            self.checkpoint_time = checkpoint_time
-            self.disabled_users = disabled_users
-            self.users = users
-            self.groups = groups
-            self.permissions = {perm.permission
-                                for perm_list in permission_metadata.values()
-                                for perm in perm_list}
-            self.user_metadata = user_metadata
-            self.group_metadata = group_metadata
-            self.permission_metadata = permission_metadata
-            self.permission_tuples = permission_tuples
-            self.group_tuples = group_tuples
-            self.disabled_group_tuples = disabled_group_tuples
+            # Lock access to the graph.  Another thread can read the previous
+            # graph while the replacement is being constructed.
+            with self.lock:
+                self._graph = new_graph
+                self._rgraph = rgraph
+                self.checkpoint = checkpoint
+                self.checkpoint_time = checkpoint_time
+                self.disabled_users = disabled_users
+                self.users = users
+                self.groups = groups
+                self.permissions = {perm.permission
+                                    for perm_list in permission_metadata.values()
+                                    for perm in perm_list}
+                self.user_metadata = user_metadata
+                self.group_metadata = group_metadata
+                self.permission_metadata = permission_metadata
+                self.permission_tuples = permission_tuples
+                self.group_tuples = group_tuples
+                self.disabled_group_tuples = disabled_group_tuples
 
     @staticmethod
     def _get_checkpoint(session):

@@ -26,6 +26,7 @@ from .constants import (
     PERMISSION_VALIDATION
 )
 from .plugin import BasePlugin
+from .util import matches_glob
 
 
 OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange")
@@ -416,7 +417,7 @@ class User(Model):
         is expensive.
 
         Returns a list of strings that are to be interpreted as glob strings. You should use the
-        util function check_glob_match.
+        util function matches_glob.
         '''
         if self.permission_admin:
             return '*'
@@ -455,10 +456,10 @@ class User(Model):
             grantable = permission.argument.split('/', 1)
             if not grantable:
                 continue
-            permission_obj = all_permissions.get(grantable[0], None)
-            if not permission_obj:
-                continue
-            result.append((permission_obj, grantable[1] if len(grantable) > 1 else '*', ))
+            for name, permission_obj in all_permissions.iteritems():
+                if matches_glob(grantable[0], name):
+                    result.append((permission_obj,
+                                   grantable[1] if len(grantable) > 1 else '*', ))
         return sorted(result, key=lambda x: x[0].name + x[1])
 
     def my_groups(self):

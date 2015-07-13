@@ -26,7 +26,7 @@ EPOCH = datetime(1970, 1, 1)
 def Graph():  # noqa
     return GroupGraph()
 
-# A GroupGraph caches permissions and groups as these objects which are intended
+# A GroupGraph caches users, permissions, and groups as objects which are intended
 # to behave like the corresponding models but without any connection to SQL
 # backend.
 PermissionTuple = namedtuple("PermissionTuple",
@@ -47,13 +47,12 @@ class GroupGraph(object):
         self._rgraph = None
         self.lock = RLock() # Graph structure.
         self.update_lock = RLock() # Limit to 1 updating thread at a time.
-        self.disabled_users = {} # Disabled username -> public_keys.
         self.users = set() # Enabled user names.
         self.groups = set() # Group names.
         self.permissions = set() # Permission names.
         self.checkpoint = 0
         self.checkpoint_time = 0
-        self.user_metadata = {}
+        self.user_metadata = {} # username -> {metaddata:[{}] public_keys:[{}]}.
         self.group_metadata = {}
         self.permission_metadata = {} # TODO: rename.  This is about permission grants.
         self.permission_tuples = set() # Mock Permission instances.
@@ -77,7 +76,6 @@ class GroupGraph(object):
         return inst
 
     def update_from_db(self, session):
-
         # Only allow one thread at a time to construct a fresh graph.
         with self.update_lock:
             checkpoint, checkpoint_time = self._get_checkpoint(session)
@@ -99,7 +97,6 @@ class GroupGraph(object):
                 elif node_type == "Group":
                     groups.add(node_name)
 
-            disabled_users = self._get_disabled_users(session)
             user_metadata = self._get_user_metadata(session)
             permission_metadata = self._get_permission_metadata(session)
             group_metadata = self._get_group_metadata(session, permission_metadata)
@@ -107,14 +104,11 @@ class GroupGraph(object):
             group_tuples = self._get_group_tuples(session)
             disabled_group_tuples = self._get_group_tuples(session, enabled=False)
 
-            # Lock access to the graph.  Another thread can read the previous
-            # graph while the replacement is being constructed.
             with self.lock:
                 self._graph = new_graph
                 self._rgraph = rgraph
                 self.checkpoint = checkpoint
                 self.checkpoint_time = checkpoint_time
-                self.disabled_users = disabled_users
                 self.users = users
                 self.groups = groups
                 self.permissions = {perm.permission
@@ -135,30 +129,11 @@ class GroupGraph(object):
         return counter.count, int(counter.last_modified.strftime("%s"))
 
     @staticmethod
-    def _get_disabled_users(session):
-        '''
-        Returns a dict of username: [ list of public keys ].
-        '''
-        out = {}
-        users = session.query(User).filter(
-            User.enabled == False
-        )
-        for user in users:
-            out[user.username] = [{
-                "public_key": key.public_key,
-                "fingerprint": key.fingerprint,
-                "created_on": str(key.created_on),
-            } for key in user.my_public_keys()]
-        return out
-
-    @staticmethod
     def _get_user_metadata(session):
         '''
         Returns a dict of username: { dict of metadata }.
         '''
-        users = session.query(User).filter(
-            User.enabled == True
-        )
+        users = session.query(User)
 
         public_keys = {}
         for key in session.query(PublicKey):
@@ -175,6 +150,7 @@ class GroupGraph(object):
         out = {}
         for user in users:
             out[user.username] = {
+                "enabled": user.enabled,
                 "public_keys": [
                     {
                         "public_key": key.public_key,
@@ -501,13 +477,23 @@ class GroupGraph(object):
         """ Get a user's groups and permissions.  Raise NoSuchUser for missing users."""
         max_dist = cutoff-1 if (cutoff is not None) else None
 
+        groups = {}
+        permissions = []
+        user_details = {
+            "groups": groups,
+            "permissions": permissions,
+        }
+
         with self.lock:
-            groups = {}
+            if not username in self.user_metadata:
+                raise NoSuchUser(username)
 
             user = ("User", username)
 
+            # For disabled users or users introduced between SQL queries, just
+            # return empty details.
             if not self._rgraph.has_node(user):
-                raise NoSuchUser("User %s is either missing or disabled." % username)
+                return user_details
 
             # User permissions are inherited from all groups for which their
             # role is not "np-owner".  User groups are all groups in which a
@@ -532,8 +518,6 @@ class GroupGraph(object):
                     if not parent in rpaths or 1+len(path) < len(rpaths[parent]):
                         rpaths[parent] = [user] + path
 
-            permissions = []
-
             for parent, path in rpaths.iteritems():
                 if parent == user:
                     continue
@@ -556,7 +540,4 @@ class GroupGraph(object):
                         "distance": len(path) - 1,
                     })
 
-            return {
-                "groups": groups,
-                "permissions": permissions,
-            }
+            return user_details

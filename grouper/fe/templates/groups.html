@@ -62,8 +62,10 @@
                     <td>
                         {% if group.canjoin == "canjoin" %}
                             Anyone
-                        {% else %}
+                        {% elif group.canjoin == "canask" %}
                             Must Ask
+                        {% else %}
+                            Nobody
                         {% endif %}
                     </td>
 		    {% if audited_groups %}

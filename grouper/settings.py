@@ -46,7 +46,7 @@ class Settings(object):
 
     def start_config_thread(self, filename, section=None, refresh_config_seconds=10):
         """
-        Start a thread to reload the given config file and section periodically.
+        Start a daemon thread to reload the given config file and section periodically.
         Load the config once before returning.  This function must be called at
         most once.
         """
@@ -60,7 +60,9 @@ class Settings(object):
                     stats.set_gauge("successful-config-update", 1)
                 except (IOError, yaml.parser.ParserError):
                     stats.set_gauge("successful-config-update", 0)
-        threading.Thread(target=refresh_config_loop).start()
+        thread = threading.Thread(target=refresh_config_loop)
+        thread.daemon = True
+        thread.start()
         self._loading_thread_started = True
 
     def __setitem__(self, key, value):

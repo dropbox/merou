@@ -42,11 +42,14 @@ class GraphHandler(RequestHandler):
 class Users(GraphHandler):
     def get(self, name=None):
         cutoff = int(self.get_argument("cutoff", 100))
+        include_role_users = self.get_argument("include_role_users", "no") == "yes"
 
         with self.graph.lock:
             if not name:
                 return self.success({
-                    "users": sorted(self.graph.user_metadata.keys()),
+                    "users": sorted([k
+                                     for k,v in self.graph.user_metadata.iteritems()
+                                     if include_role_users or (not v["role_user"])]),
                 })
 
             if name in self.graph.user_metadata:

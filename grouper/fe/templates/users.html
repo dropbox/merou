@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block headingbuttons %}
-    {{ dropdown("limit", limit, [100, 250, 500]) }}
+    {{ dropdown("limit", limit, [100, 250, 500, 1000]) }}
     {{ paginator(offset, limit, total) }}
     {% if enabled %}
       <a class="btn btn-default" href="/users?limit={{limit}}&enabled=0">

@@ -238,6 +238,7 @@ class User(Model):
     username = Column(String(length=MAX_NAME_LENGTH), unique=True, nullable=False)
     capabilities = Column(Integer, default=0, nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
+    role_user = Column(Boolean, default=False, nullable=False)
 
     @hybrid_property
     def name(self):

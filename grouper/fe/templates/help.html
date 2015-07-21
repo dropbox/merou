@@ -38,6 +38,13 @@ permissions are granted to groups as (permission, argument) pairs where an argum
 optional second string. Finally, users inherit the union of all (permission, argument)
 pairs from the groups of which they are members.</p>
 
+<h3>How do I request a permission?</h3>
+<p>First, make sure you're a member of an appropriate group.  We don't grant permissions
+directly to users because that approach is not scalable.  Once you're a member of a group
+that should have a particular permission but doesn't, check the {{permission(grant_perm)}}
+page for a list of which groups can grant which permissions and reach out to the group(s)
+that control(s) the permission you need.</p>
+
 <h3>Who can create groups?</h3>
 <p>Everyone.  The user creating a group automatically becomes an owner of that group,
 which begins with no permissions.</p>

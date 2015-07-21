@@ -6,7 +6,9 @@
 {% endblock %}
 
 {% block subheading %}
-    {{user.username}} {% if not user.enabled %}<small>(disabled)</small>{% endif %}
+    {{user.username}}
+    {% if user.role_user %}<small>(role)</small>{% endif %}
+    {% if not user.enabled %}<small>(disabled)</small>{% endif %}
 {% endblock %}
 
 {% block headingbuttons %}

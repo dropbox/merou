@@ -151,6 +151,7 @@ class GroupGraph(object):
         for user in users:
             out[user.username] = {
                 "enabled": user.enabled,
+                "role_user": user.role_user,
                 "public_keys": [
                     {
                         "public_key": key.public_key,

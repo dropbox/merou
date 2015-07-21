@@ -116,7 +116,7 @@ def user_command(args):
     if not user:
         if args.subcommand == "create":
             print "No such user %s, creating..." % args.username
-            user = models.User(username=args.username).add(session)
+            user = models.User(username=args.username, role_user=args.role_user).add(session)
             session.commit()
         else:
             print "No such user %s" % args.username
@@ -231,6 +231,8 @@ def main():
     user_create_parser = user_subparser.add_parser(
         "create", help="Create a new user account")
     user_create_parser.add_argument("username")
+    user_create_parser.add_argument("--role-user", default=False, action="store_true",
+                                    help="If given, identifies user as a role user.")
 
     user_key_parser = user_subparser.add_parser(
         "add_public_key", help="Add public key to user")

@@ -132,7 +132,13 @@ enabled. Membership in this group is regularly reviewed.
 {% if type == None %}
 <a class="account-link" href="/{{ user.type | lower }}s/{{ user.name }}">
     <i class="fa fa-user{% if user.type.lower() == 'group' %}s{% endif %}"></i> 
+    {% if user.role_user %}
+    <i>
+    {% endif %}
     {{ user.name }}
+    {% if user.role_user %}
+    (role)</i>
+    {% endif %}
 </a>
 {% else %}
 <a class="account-link" href="/{{ type | lower }}s/{{ user }}">

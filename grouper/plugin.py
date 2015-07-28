@@ -27,3 +27,18 @@ class BasePlugin(object):
         (grouper-api or grouper-fe).
         """
         pass
+
+    def log_exception(self, request, status, exception, stack):
+        """
+        Called when responding with statuses 400, 403, 404, and 500.
+
+        Args:
+            request (tornado.httputil.HTTPServerRequest): the request being handled.
+            status (int): the response status.
+            exception (Exception): either a tornado.web.HTTPError or an unexpected exception.
+            stack (list): "pre-processed" stack trace entries for traceback.format_list.
+
+        Returns:
+            The return code of this method is ignored.
+        """
+        pass

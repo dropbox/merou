@@ -1,6 +1,9 @@
-from expvar.stats import stats
-from tornado.web import RequestHandler
+import traceback
 
+from expvar.stats import stats
+from tornado.web import RequestHandler, HTTPError
+
+from ..models import get_plugins
 from ..util import try_update
 
 
@@ -36,7 +39,25 @@ class GraphHandler(RequestHandler):
 
     def notfound(self, message):
         self.set_status(404)
+        self.log_error(HTTPError(404))
         self.error([(404, message)])
+
+    # Overrides tornado's uncaught exception handler.
+    def log_exception(self, typ, value, tb):
+        self.set_status(500)
+        self.log_error(value, tb)
+        self.error([(500, traceback.format_exception_only(typ, value))])
+        self.finish()
+
+    # Give plugins a chance to provide site-specific error handling.
+    def log_error(self, exception, tb=None):
+        if tb is None:
+            stack = traceback.extract_stack()
+        else:
+            stack = traceback.extract_tb(tb)
+        status = self.get_status()
+        for plugin in get_plugins():
+            plugin.log_exception(self.request, status, exception, stack)
 
 
 class Users(GraphHandler):

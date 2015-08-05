@@ -7,6 +7,7 @@ import logging
 import pytz
 import re
 import sqlalchemy.exc
+import sys
 import tornado.web
 import traceback
 import urllib
@@ -15,7 +16,7 @@ from .settings import settings
 from ..constants import RESERVED_NAMES
 from ..graph import Graph
 from ..models import (
-    User, GROUP_EDGE_ROLES, OBJ_TYPES_IDX, get_db_engine, Session, AsyncNotification
+    User, GROUP_EDGE_ROLES, OBJ_TYPES_IDX, get_db_engine, Session, AsyncNotification, get_plugins,
 )
 from ..util import get_database_url
 
@@ -44,12 +45,15 @@ class GrouperHandler(tornado.web.RequestHandler):
         self.graph = Graph()
         stats.incr("requests")
 
+    # TODO(mildorf): why not just override self.log_exception(typ, value, tb)?
     def _handle_request_exception(self, e):
         traceback.print_exc()
+        _, _, tb = sys.exc_info()
 
         # We can't just self.render because that invokes get_current_user which tries to make a
         # db call, and if we're handling a db exception, that breaks.
         self.set_status(500)
+        self.log_error(e, tb=tb)
         template = self.application.my_settings["template_env"].get_template("errors/5xx.html")
         self.write(template.render({"is_active": self.is_active}))
         self.finish()
@@ -223,16 +227,28 @@ class GrouperHandler(tornado.web.RequestHandler):
     # TODO(gary): Add json error responses.
     def badrequest(self, format_type=None):
         self.set_status(400)
+        self.log_error(tornado.web.HTTPError(400))
         self.render("errors/badrequest.html")
 
     def forbidden(self, format_type=None):
         self.set_status(403)
+        self.log_error(tornado.web.HTTPError(403))
         self.render("errors/forbidden.html")
 
     def notfound(self, format_type=None):
         self.set_status(404)
+        self.log_error(tornado.web.HTTPError(404))
         self.render("errors/notfound.html")
 
+    # Give plugins a chance to provide site-specific error handling.
+    def log_error(self, exception, tb=None):
+        if tb is None:
+            stack = traceback.extract_stack()
+        else:
+            stack = traceback.extract_tb(tb)
+        status = self.get_status()
+        for plugin in get_plugins():
+            plugin.log_exception(self.request, status, exception, stack)
 
 def print_date(date_obj):
     if date_obj is None:

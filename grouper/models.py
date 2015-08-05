@@ -153,6 +153,10 @@ def load_plugins(plugin_dir, service_name):
     for plugin in Plugins:
         plugin.configure(service_name)
 
+def get_plugins():
+    """Get a list of loaded plugins."""
+    global Plugins
+    return list(Plugins)
 
 def flush_transaction(method):
     @functools.wraps(method)

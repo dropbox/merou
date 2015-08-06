@@ -282,3 +282,7 @@ span.disabled {
 .account-link, .permission-link {
     white-space: nowrap;
 }
+
+.center {
+    text-align: center;
+}

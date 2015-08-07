@@ -1,0 +1,11 @@
+<div class="form-group {% if form.ends_at.errors %}has-error{% endif %}">
+    <label for="{{form.ends_at.label.field_id}}"
+           class="col-sm-3 control-label">
+        {{ form.ends_at.label.text }} *
+    </label>
+    <div class="col-sm-7">
+        {{ form.ends_at(class_="form-control", placeholder="MM/DD/YYYY") }}
+    </div>
+</div>
+
+{{ xsrf_form() }}

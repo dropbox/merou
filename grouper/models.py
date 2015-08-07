@@ -42,6 +42,8 @@ GROUP_JOIN_CHOICES = {
     "nobody": "<integrityerror>",
 }
 
+AUDIT_STATUS_CHOICES = {"pending", "approved", "remove"}
+
 REQUEST_STATUS_CHOICES = {
     # Request has been made and awaiting action.
     "pending": set(["actioned", "cancelled"]),
@@ -389,6 +391,29 @@ class User(Model):
 
         return AuditLog.get_entries(self.session, involve_user_id=self.id, limit=20)
 
+    def has_permission(self, permission, argument=None):
+        """See if this user has a given permission/argument
+
+        This walks a user's permissions (local/direct only) and determines if they have the given
+        permission. If an argument is specified, we validate if they have exactly that argument
+        or if they have the wildcard ('*') argument.
+
+        Args:
+            permission (str): Name of permission to check for.
+            argument (str, Optional): Name of argument to check for.
+
+        Returns:
+            bool: Whether or not this user fulfills the permission.
+        """
+        for perm in self.my_permissions():
+            if perm.name != permission:
+                continue
+            if perm.argument == '*' or argument is None:
+                return True
+            if perm.argument == argument:
+                return True
+        return False
+
     def my_permissions(self):
 
         # TODO: Make this walk the tree, so we can get a user's entire set of permissions.
@@ -523,6 +548,10 @@ class Group(Model):
     description = Column(Text)
     canjoin = Column(Enum(*GROUP_JOIN_CHOICES), default="canask")
     enabled = Column(Boolean, default=True, nullable=False)
+
+    audit_id = Column(Integer, nullable=True)
+    audit = relationship("Audit", foreign_keys=[audit_id],
+                         primaryjoin=lambda: Audit.id == Group.audit_id)
 
     @hybrid_property
     def name(self):
@@ -805,6 +834,7 @@ class Group(Model):
             label("type", literal("User")),
             label("name", user_member.username),
             label("role", GroupEdge._role),
+            label("edge_id", GroupEdge.id),
             label("expiration", GroupEdge.expiration)
         ).filter(
             parent.id == self.id,
@@ -827,6 +857,7 @@ class Group(Model):
             label("type", literal("Group")),
             label("name", group_member.groupname),
             label("role", GroupEdge._role),
+            label("edge_id", GroupEdge.id),
             label("expiration", GroupEdge.expiration)
         ).filter(
             parent.id == self.id,
@@ -843,7 +874,7 @@ class Group(Model):
         ).subquery()
 
         query = self.session.query(
-            "id", "type", "name", "role", "expiration"
+            "id", "type", "name", "role", "edge_id", "expiration"
         ).select_entity_from(
             union_all(users.select(), groups.select())
         ).order_by(
@@ -948,6 +979,100 @@ class Group(Model):
     def __repr__(self):
         return "<%s: id=%s groupname=%s>" % (
             type(self).__name__, self.id, self.groupname)
+
+
+class AuditMember(Model):
+    """An AuditMember is a single instantiation of a user in an audit
+
+    Tracks the status of the member within the audit. I.e., have they been reviewed, should they
+    be removed, etc.
+    """
+
+    __tablename__ = "audit_members"
+
+    id = Column(Integer, primary_key=True)
+
+    audit_id = Column(Integer, ForeignKey("audits.id"), nullable=False)
+    audit = relationship("Audit", backref="members", foreign_keys=[audit_id])
+
+    edge_id = Column(Integer, ForeignKey("group_edges.id"), nullable=False)
+    edge = relationship("GroupEdge", backref="audits", foreign_keys=[edge_id])
+
+    status = Column(Enum(*AUDIT_STATUS_CHOICES), default="pending", nullable=False)
+
+    @hybrid_property
+    def member(self):
+        if self.edge.member_type == 0:  # User
+            return User.get(self.session, pk=self.edge.member_pk)
+        elif self.edge.member_type == 1:  # Group
+            return Group.get(self.session, pk=self.edge.member_pk)
+        raise Exception("invalid member_type in AuditMember!")
+
+
+class Audit(Model):
+    """An Audit is applied to a group for a particular audit period
+
+    This contains all of the state of a given audit including each of the members who were
+    present in the group at the beginning of the audit period.
+    """
+
+    __tablename__ = "audits"
+
+    id = Column(Integer, primary_key=True)
+
+    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
+    group = relationship("Group", foreign_keys=[group_id])
+
+    # If this audit is complete and when it started/ended
+    complete = Column(Boolean, default=False, nullable=False)
+    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    ends_at = Column(DateTime, nullable=False)
+
+    # Tracks the last time we emailed the responsible parties of this audit
+    last_reminder_at = Column(DateTime, nullable=True)
+
+    def my_members(self):
+        """Return all members of this audit
+
+        Only currently valid members (haven't since left the group and haven't joined since the
+        audit started).
+
+        Returns:
+            list(AuditMember): the members of the audit.
+        """
+
+        # Get all members of the audit. Note that this list might change since people can
+        # join or leave the group.
+        auditmembers = self.session.query(AuditMember).filter(
+            AuditMember.audit_id == self.id
+        ).all()
+
+        edges = {}
+        for member in auditmembers:
+            edges[member.edge_id] = [member, False]
+
+        # Now get current members of the group. If someone has left the group, we don't include
+        # them in the audit anymore. If someone new joins (or rejoins) then we also don't want
+        # to audit them since they had to get approved into the group.
+        for member in self.group.my_members().values():
+            if member.edge_id in edges:
+                edges[member.edge_id][1] = True
+
+        # Now return the list of members.
+        return [member[0] for member in edges.values() if member[1]]
+
+    @property
+    def completable(self):
+        """Whether or not this audit is completable
+
+        This is defined as "when all members have been assigned a non-pending status". I.e., at
+        that point, we can hit the Complete button which will perform any actions necessary to
+        the membership.
+
+        Returns:
+            bool: Whether or not this audit can be marked as completed.
+        """
+        return all([member.status != "pending" for member in self.my_members()])
 
 
 class Request(Model):

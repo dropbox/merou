@@ -142,6 +142,20 @@ class GrouperHandler(tornado.web.RequestHandler):
         """
         return self.send_async_email(recipients, subject, template, context, datetime.utcnow())
 
+    def cancel_async_emails(self, async_key):
+        """Cancel pending async emails by key
+
+        If you scheduled an asynchronous email with an async_key previously, this method can be
+        used to cancel any unsent emails.
+
+        Args:
+            async_key (str): The async_key previously provided for your emails.
+        """
+        self.session.query(AsyncNotification).filter(
+            AsyncNotification.key == async_key,
+            AsyncNotification.sent == False
+        ).update({"sent": True})
+
     def send_async_email(self, recipients, subject, template, context, send_after, async_key=None):
         """Construct a message object from a template and schedule it
 
@@ -297,7 +311,8 @@ def delta_str(date_obj):
     return "Expired"
 
 
-def get_template_env(package="grouper.fe", deployment_name="", extra_filters=None, extra_globals=None):
+def get_template_env(package="grouper.fe", deployment_name="",
+                     extra_filters=None, extra_globals=None):
     filters = {
         "print_date": print_date,
         "delta_str": delta_str,

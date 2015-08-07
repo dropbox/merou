@@ -32,7 +32,7 @@
                 {% for request in requests %}
                     <tr>
                         <td>
-                            <a href="/groups/{{request.groupname}}/requests/{{request.id}}"
+                            <a href="/groups/{{request.groupname}}/requests/{{request.id}}?redirect_aggregate=true"
                                class="btn btn-default btn-xs">
                                 <i class="fa fa-edit"></i>
                             </a>
@@ -60,7 +60,7 @@
             </tbody>
         </table>
         {% else %}
-        <div class="center">nothing pending</div>
+        <div class="center">Nothing pending</div>
         {% endif %}
     </div></div>
 {% endblock %}

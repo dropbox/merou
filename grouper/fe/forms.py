@@ -2,7 +2,7 @@ from datetime import datetime
 import re
 import sshpubkey
 
-from wtforms import SelectField, TextField, TextAreaField, validators
+from wtforms import HiddenField, SelectField, TextField, TextAreaField, validators
 from wtforms.validators import ValidationError
 from wtforms_tornado import Form
 
@@ -101,6 +101,7 @@ class GroupRequestModifyForm(Form):
     reason = TextAreaField("Reason", [
         validators.Required(),
     ])
+    redirect_aggregate = HiddenField()
 
 
 class GroupAddForm(Form):

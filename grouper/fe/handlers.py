@@ -97,6 +97,11 @@ class UserView(GrouperHandler):
         if (user.name == self.current_user.name) or self.current_user.user_admin:
             can_control = True
 
+        if user.id == self.current_user.id:
+            num_pending_requests = self.current_user.my_requests_aggregate().count()
+        else:
+            num_pending_requests = None
+
         try:
             user_md = self.graph.get_user_details(user.name)
         except NoSuchUser:
@@ -110,7 +115,7 @@ class UserView(GrouperHandler):
         log_entries = user.my_log_entries()
         self.render("user.html", user=user, groups=groups, public_keys=public_keys,
                     can_control=can_control, permissions=permissions,
-                    log_entries=log_entries)
+                    log_entries=log_entries, num_pending_requests=num_pending_requests)
 
 
 class PermissionsCreate(GrouperHandler):
@@ -464,6 +469,23 @@ class UserDisable(GrouperHandler):
         return self.redirect("/users/{}?refresh=yes".format(user.name))
 
 
+class UserRequests(GrouperHandler):
+    """Handle list all pending requests for a single user."""
+    def get(self):
+        offset = int(self.get_argument("offset", 0))
+        limit = int(self.get_argument("limit", 100))
+        if limit > 9000:
+            limit = 9000
+
+        requests = self.current_user.my_requests_aggregate().order_by(Request.requested_at.desc())
+
+        total = requests.count()
+        requests = requests.offset(offset).limit(limit)
+
+        self.render("user-requests.html", requests=requests, offset=offset, limit=limit,
+                total=total)
+
+
 class GroupView(GrouperHandler):
     def get(self, group_id=None, name=None):
         self.handle_refresh()
@@ -635,8 +657,9 @@ class GroupRequestUpdate(GrouperHandler):
         if not request:
             return self.notfound()
 
-        form = GroupRequestModifyForm()
+        form = GroupRequestModifyForm(self.request.arguments)
         form.status.choices = self._get_choices(request.status)
+
 
         updates = request.my_status_updates()
 
@@ -702,7 +725,10 @@ class GroupRequestUpdate(GrouperHandler):
                      on_group_id=group.id, on_user_id=request.requester.id)
 
         # No explicit refresh because handler queries SQL.
-        return self.redirect("/groups/{}/requests".format(group.name))
+        if form.data['redirect_aggregate']:
+            return self.redirect("/user/requests")
+        else:
+            return self.redirect("/groups/{}/requests".format(group.name))
 
     def _get_choices(self, current_status):
         return [["", ""]] + [

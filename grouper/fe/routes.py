@@ -25,6 +25,7 @@ HANDLERS = [
     ),
     (r"/search", handlers.Search),
     (r"/users", handlers.UsersView),
+    (r"/user/requests", handlers.UserRequests),
 ]
 
 for regex in (r"(?P<user_id>[0-9]+)", NAME_VALIDATION):

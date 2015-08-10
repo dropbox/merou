@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import paginator, dropdown with context %}
+
+{% block heading %}
+    <a href="/Users">Users</a>
+{% endblock %}
+
+{% block subheading %}
+    Pending Requests
+{% endblock %}
+
+{% block headingbuttons %}
+    {{ dropdown("limit", limit, [100, 250, 500]) }}
+    {{ paginator(offset, limit, total) }}
+{% endblock %}
+
+
+{% block content %}
+    <div class="row"><div class="col-sm-10 col-sm-offset-1">
+        {% if total > 0 %}
+        <table class="table table-elist">
+            <thead>
+                    <th class="col-sm-1">Modify</th>
+                    <th class="col-sm-2">Requested</th>
+                    <th class="col-sm-2">Requester</th>
+                    <th class="col-sm-2">Status</th>
+                    <th class="col-sm-2">Requested At</th>
+                    <th class="col-sm-2">Expiration</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in requests %}
+                    <tr>
+                        <td>
+                            <a href="/groups/{{request.groupname}}/requests/{{request.id}}?redirect_aggregate=true"
+                               class="btn btn-default btn-xs">
+                                <i class="fa fa-edit"></i>
+                            </a>
+                        </td>
+                        <td>
+                            {{ TYPES[request.type] }}: {{ request.requesting }}
+                        </td>
+                        <td>{{ request.requester }}</td>
+                        <td>{{ request.status }}</td>
+                        <td>{{ request.requested_at|print_date }}</td>
+                        <td>{{ request.expiration|print_date }}</td>
+                    </tr>
+                    <tr>
+                        <td>&nbsp;</td>
+                        <td colspan="5">
+                            <div style="padding-left: 10px;">
+                                <strong>Group:</strong> <a href="/groups/{{request.groupname}}">
+                                    {{request.groupname}}</a> <br />
+                                <strong>Role:</strong> {{ROLES[request.role]}}<br />
+                                <strong>Reason:</strong> <em>{{request.reason}}</em>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="center">Nothing pending</div>
+        {% endif %}
+    </div></div>
+{% endblock %}

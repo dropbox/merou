@@ -23,6 +23,14 @@
             </button>
         {% endif %}
     {% endif %}
+    {% if current_user.id == user.id %}
+    <div class="btn-group">
+        <a href="/user/requests" title="Pending Requests"
+           class="btn btn-default"><i class="fa fa-list"></i> Requests</a>
+        <a href="/user/requests" title="Pending Requests"
+           class="btn btn-default btn-pending">{{ num_pending_requests }}</a>
+    </div>
+    {% endif %}
 {% endblock %}
 
 {% block content %}

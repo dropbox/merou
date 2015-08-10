@@ -77,13 +77,22 @@ def user_proxy_command(args):
 
 def shell_command(args):
     session = make_session()
-    code.interact(local={
-        "session": session,
-        "graph": GroupGraph.from_db(session),
-        "m": models,
-        "models": models,
-        "pp": pprint,
-    })
+    graph = GroupGraph.from_db(session)
+    m = models
+    pp = pprint
+
+    try:
+        from IPython import embed
+    except ImportError:
+        code.interact(local={
+            "session": session,
+            "graph": graph,
+            "m": m,
+            "models": models,
+            "pp": pp,
+        })
+    else:
+        embed()
 
 
 def capabilities_command(args):

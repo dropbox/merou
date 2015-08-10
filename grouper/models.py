@@ -494,7 +494,7 @@ class User(Model):
         return groups
 
     def my_requests_aggregate(self):
-        """Returns all requests for this user to approve across groups."""
+        """Returns all pending requests for this user to approve across groups."""
         members = self.session.query(
             label("type", literal(1)),
             label("id", Group.id),

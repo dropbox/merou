@@ -11,7 +11,7 @@ pending requests queue:
 More details about the request:
 
     Role: {{ role }}
-    Expiration: {{ expiration|delta_str }}
+    Expiration: {{ expiration|expires_when_str }}
     Reason: {{ reason|escape }}
 
 {% if requester != requested_by %}This request was made by {{ requested_by }}.{% endif %}

@@ -524,6 +524,62 @@ class User(Model):
 
         return groups
 
+    def my_requests_aggregate(self):
+        """Returns all pending requests for this user to approve across groups."""
+        members = self.session.query(
+            label("type", literal(1)),
+            label("id", Group.id),
+            label("name", Group.groupname),
+        ).union(self.session.query(
+            label("type", literal(0)),
+            label("id", User.id),
+            label("name", User.username),
+        )).subquery()
+
+        now = datetime.utcnow()
+        groups = self.session.query(
+            label("id", Group.id),
+            label("name", Group.groupname),
+        ).filter(
+            GroupEdge.group_id == Group.id,
+            GroupEdge.member_pk == self.id,
+            GroupEdge.active == True,
+            GroupEdge._role.in_([1, 2]),
+            self.enabled == True,
+            Group.enabled == True,
+            or_(
+                GroupEdge.expiration > now,
+                GroupEdge.expiration == None,
+            )
+        ).subquery()
+
+        requests = self.session.query(
+            Request.id,
+            Request.requested_at,
+            GroupEdge.expiration,
+            label("role", GroupEdge._role),
+            Request.status,
+            label("requester", User.username),
+            label("type", members.c.type),
+            label("requesting", members.c.name),
+            label("reason", Comment.comment),
+            label("group_id", groups.c.id),
+            label("groupname", groups.c.name),
+        ).filter(
+            Request.on_behalf_obj_pk == members.c.id,
+            Request.on_behalf_obj_type == members.c.type,
+            Request.requesting_id == groups.c.id,
+            Request.requester_id == User.id,
+            Request.status == "pending",
+            Request.id == RequestStatusChange.request_id,
+            RequestStatusChange.from_status == None,
+            GroupEdge.id == Request.edge_id,
+            Comment.obj_type == 3,
+            Comment.obj_pk == RequestStatusChange.id,
+        )
+
+        return requests
+
 
 def build_changes(edge, **updates):
     changes = {}

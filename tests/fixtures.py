@@ -82,7 +82,7 @@ def users(session):
         username: User.get_or_create(session, username=username)[0]
         for username in ("gary", "zay", "zorkian", "oliver", "testuser", "figurehead", "zebu")
     }
-    users["role"] = User.get_or_create(session, username="role", role_user=True)
+    users["role"] = User.get_or_create(session, username="role", role_user=True)[0]
     session.commit()
     return users
 

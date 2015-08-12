@@ -13,7 +13,7 @@ pending requests</a> queue.</p>
 
 <ul>
     <li><strong>Role:</strong> {{ role }}</li>
-    <li><strong>Expiration:</strong> {{ expiration|delta_str }}</li>
+    <li><strong>Expiration:</strong> {{ expiration|expires_when_str }}</li>
     <li><strong>Reason:</strong> {{ reason|escape }}</li>
 </ul>
 

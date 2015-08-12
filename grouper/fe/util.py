@@ -1,4 +1,5 @@
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from expvar.stats import stats
@@ -276,46 +277,61 @@ def print_date(date_obj):
     return date_obj.strftime(settings["date_format"])
 
 
-_DELTA_COMPONENTS = [
-    ("year", 31536000),
-    ("month", 2592000),
-    ("day", 86400),
-    ("hour", 3600),
-    ("minute", 60),
-    ("second", 1),
-]
+_DELTA_COMPONENTS = ["year", "month", "day", "hour", "minute", "second"]
 
-
-def delta_str(date_obj):
+def expires_when_str(date_obj, utcnow_fn=datetime.utcnow):
     if date_obj is None:
         return "Never"
 
     if isinstance(date_obj, basestring):
         date_obj = datetime.strptime(date_obj, "%Y-%m-%d %H:%M:%S.%f")
 
-    delta = date_obj - datetime.utcnow()
-    total_seconds = int(delta.total_seconds())
+    now = utcnow_fn()
 
-    if total_seconds < 0:
+    if now > date_obj:
         return "Expired"
 
-    for name, seconds in _DELTA_COMPONENTS:
-        if total_seconds <= seconds:
-            continue
+    delta = relativedelta(date_obj, now)
+    str_ = highest_period_delta_str(delta)
+    if str_ is None:
+        return "Expired"
+    else:
+        return str_
 
-        value, total_seconds = divmod(total_seconds, seconds)
+def long_ago_str(date_obj, utcnow_fn=datetime.utcnow):
+    if isinstance(date_obj, basestring):
+        date_obj = datetime.strptime(date_obj, "%Y-%m-%d %H:%M:%S.%f")
 
-        # Only want the highest period so return.
-        return "{} {}(s)".format(value, name)
+    now = utcnow_fn()
+    if date_obj > now:
+        return "in the future"
 
-    return "Expired"
+    delta = relativedelta(now, date_obj)
+    str_ = highest_period_delta_str(delta)
+    print 'date_obj={}, now={}, str_={}'.format(date_obj, now, str_)
+    if str_ is None:
+        return "now"
+    else:
+        return "{} ago".format(str_)
+
+
+def highest_period_delta_str(delta):
+    for name in _DELTA_COMPONENTS:
+        value = getattr(delta, "{}s".format(name))
+        if value > 0:
+            # Only want the highest period so return.
+            ret = "{} {}{}".format(value, name, "s" if value > 1 else "")
+            return ret
+
+    return None
 
 
 def get_template_env(package="grouper.fe", deployment_name="",
                      extra_filters=None, extra_globals=None):
     filters = {
         "print_date": print_date,
-        "delta_str": delta_str,
+        "expires_when_str": expires_when_str,
+        "long_ago_str": long_ago_str,
     }
     j_globals = {
         "cdnjs_prefix": settings["cdnjs_prefix"],

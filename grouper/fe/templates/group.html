@@ -230,7 +230,7 @@
                 <p>
                     Your group has an outstanding audit that needs to be completed before
                     <strong>{{ group.audit.ends_at|print_date }}</strong>, giving you
-                    {{ group.audit.ends_at|delta_str }} to complete the audit.
+                    {{ group.audit.ends_at|expires_when_str }} to complete the audit.
                 </p>
                 <table class="table table-striped table-condensed">
                     <thead>

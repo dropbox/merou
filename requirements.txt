@@ -10,6 +10,7 @@ backports.ssl-match-hostname==3.4.0.2
 bittle==0.2.1
 expvar==0.0.2
 networkx==1.8.1
+python-dateutil==2.4.2
 pytz==2014.2
 sshpubkey==0.1.2
 tornado==3.2

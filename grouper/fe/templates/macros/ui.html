@@ -181,7 +181,7 @@ enabled. Membership in this group is regularly reviewed.
             {{ account(member) }}
         </td>
         <td>{{ ROLES[member.role] }}</td>
-        <td>{{ member.expiration|delta_str }}</td>
+        <td>{{ member.expiration|expires_when_str }}</td>
     </tr>
 {%- endmacro %}
 

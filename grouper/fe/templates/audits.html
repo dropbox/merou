@@ -48,7 +48,7 @@
                         <td>{% if audit.complete %}
                             ---
                         {% else %}
-                            {{ audit.ends_at|delta_str }}
+                            {{ audit.ends_at|expires_when_str }}
                         {% endif %}</td>
                         <td>{% if audit.complete %}
                             <span class="btn-xs btn-success">

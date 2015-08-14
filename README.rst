@@ -22,7 +22,7 @@ Installation
 New versions will be updated to PyPI pretty regularly so it should be as
 easy as:
 
-::
+.. code:: bash
 
     pip install grouper
 
@@ -40,8 +40,7 @@ for running on development instances.
 
 Creating a development instance:
 
-::
-
+.. code:: bash
 
     # Setup the database.
     PYTHONPATH=. bin/grouper-ctl -vvvc config/dev.yaml sync_db
@@ -64,7 +63,7 @@ administer groups, users, and permissions. These flags can be set for any
 account and grant powers independent of the usual way and are given out manually
 via the following commands:
 
-::
+.. code:: bash
 
     # Allow user to set up groups and group-membership.
     PYTHONPATH=. bin/grouper-ctl -c config/dev.yaml -vv \

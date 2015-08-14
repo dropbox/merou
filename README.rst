@@ -1,20 +1,23 @@
+=======
 grouper
 =======
 
+.. image:: https://travis-ci.org/dropbox/grouper.png?branch=master
+    :alt: Build Status
+    :target: https://travis-ci.org/dropbox/grouper
+
+
 Description
-~~~~~~~~~~~
+-----------
 
 Grouper is an application to allow users to create and manage
 memberships to their own groups.
 
-Warning
-'''''''
-
-This project is still very much in flux and likely to have database
-changes migration support for the time being.
+**Warning**: This project is still very much in flux and likely
+to have database changes migration support for the time being.
 
 Installation
-~~~~~~~~~~~~
+------------
 
 New versions will be updated to PyPI pretty regularly so it should be as
 easy as:
@@ -29,7 +32,7 @@ API.
 
 
 Running a Test instance
-=======================
+-----------------------
 
 Grouper runs behind a reverse proxy that handles Authentication and so
 expects a valid, authenticated, user account. I've included a test proxy
@@ -54,7 +57,7 @@ Creating a development instance:
 
 
 Setting up the first groups and permissions
-===========================================
+-------------------------------------------
 
 There are three administrative flags, corresponding to full authority to
 administer groups, users, and permissions. These flags can be set for any

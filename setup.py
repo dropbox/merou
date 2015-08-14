@@ -29,9 +29,8 @@ kwargs = {
     "package_data": package_data,
     "scripts": ["bin/grouper-api", "bin/grouper-fe", "bin/grouper-ctl"],
     "description": "Self-service Nested Group Management Server.",
-    # PyPi, despite not parsing markdown, will prefer the README.md to the
-    # standard README. Explicitly read it here.
-    "long_description": open("README").read(),
+    # TODO(lfaraone): Check whether this is still needed for PyPI.  
+    "long_description": open("README.rst").read(),
     "author": "Gary M. Josack",
     "maintainer": "Gary M. Josack",
     "author_email": "gary@dropbox.com",

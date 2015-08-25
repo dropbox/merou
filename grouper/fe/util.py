@@ -3,6 +3,7 @@ from dateutil.relativedelta import relativedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from expvar.stats import stats
+from functools import wraps
 from jinja2 import Environment, PackageLoader
 import logging
 import pytz
@@ -14,7 +15,7 @@ import traceback
 import urllib
 
 from .settings import settings
-from ..constants import RESERVED_NAMES
+from ..constants import AUDIT_SECURITY, RESERVED_NAMES
 from ..graph import Graph
 from ..models import (
     User, GROUP_EDGE_ROLES, OBJ_TYPES_IDX, get_db_engine, Session, AsyncNotification, get_plugins,
@@ -308,7 +309,6 @@ def long_ago_str(date_obj, utcnow_fn=datetime.utcnow):
 
     delta = relativedelta(now, date_obj)
     str_ = highest_period_delta_str(delta)
-    print 'date_obj={}, now={}, str_={}'.format(date_obj, now, str_)
     if str_ is None:
         return "now"
     else:
@@ -362,3 +362,23 @@ def test_reserved_names(permission_name):
                 "Permission names must not match the pattern: %s" % (reserved, )
             )
     return failure_messages
+
+
+def ensure_audit_security(perm_arg):
+    """Decorator for web handler methods to ensure the current_user has the
+    AUDIT_SECURITY permission with the specified argument.
+
+    Args:
+        perm_arg: the argument required for the audit permission. only 'public_keys' at this point.
+    """
+    def _wrapper(f):
+        def _decorator(self, *args, **kwargs):
+            if not any([name == AUDIT_SECURITY and argument == perm_arg for name, argument, _, _
+                    in self.current_user.my_permissions()]):
+                return self.forbidden()
+
+            return f(self, *args, **kwargs)
+
+        return wraps(f)(_decorator)
+
+    return _wrapper

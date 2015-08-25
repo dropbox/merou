@@ -1,3 +1,23 @@
+{% macro one_public_key_row(key, username, can_control) -%}
+    <td><span class="has-help" data-toggle="popover" data-content="{{ key.created_on|print_date }}">
+        {{ key.created_on|long_ago_str }}</span></td>
+    <td>{% if key.key_type %}{{ key.key_type }}{% endif %}</td>
+    <td>{% if key.key_size %}{{ key.key_size }}{% endif %}</td>
+    <td>
+        <button class="btn-xs public-key" key-body="{{ key.public_key|escape }}">
+            <i class="fa fa-search"></i>
+        </button>
+        <code>{{ key.fingerprint }}</code>
+    </td>
+    <td>
+    {% if can_control %}
+        <a class="btn btn-default btn-xs" href="/users/{{ username }}/public-key/{{ key.id }}/delete">
+        <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span> Delete
+        </a>
+    {% endif %}
+    </td>
+{%- endmacro %}
+
 {% macro public_key_panel(max_height, user, public_keys, can_control=False) -%}
     <div id="key-modal" class="modal fade">
         <div class="modal-dialog">
@@ -38,23 +58,7 @@
                 <tbody>
                 {% for key in public_keys %}
                     <tr>
-                        <td><span title="{{ key.created_on|print_date }}">
-                            {{ key.created_on|long_ago_str }}</span></td>
-                        <td>{% if key.key_type %}{{ key.key_type }}{% endif %}</td>
-                        <td>{% if key.key_size %}{{ key.key_size }}{% endif %}</td>
-                        <td>
-                            <button class="btn-xs public-key" key-body="{{ key.public_key|escape }}">
-                                <i class="fa fa-search"></i>
-                            </button>
-                            <code>{{ key.fingerprint }}</code>
-                        </td>
-                        <td>
-                        {% if can_control %}
-                            <a class="btn btn-default btn-xs" href="/users/{{ user.name }}/public-key/{{ key.id }}/delete">
-                            <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span> Delete
-                            </a>
-                        {% endif %}
-                        </td>
+                        {{ one_public_key_row(key, user.name, can_control) }}
                     </tr>
                 {% endfor %}
                 {% if not public_keys %}

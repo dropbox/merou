@@ -16,6 +16,7 @@ ARGUMENT_VALIDATION = r"(?P<argument>|\*|[\w=+/.:-]+\*?)"
 PERMISSION_GRANT = "grouper.permission.grant"
 PERMISSION_CREATE = "grouper.permission.create"
 PERMISSION_AUDITOR = "grouper.permission.auditor"
+AUDIT_SECURITY = "grouper.audit.security"
 AUDIT_MANAGER = "grouper.audit.manage"
 AUDIT_VIEWER = "grouper.audit.view"
 
@@ -24,6 +25,7 @@ SYSTEM_PERMISSIONS = [
     (PERMISSION_CREATE, "Ability to create permissions within Grouper."),
     (PERMISSION_GRANT, "Ability to grant a permission to a group."),
     (PERMISSION_AUDITOR, "Ability to own or manage groups with audited permissions."),
+    (AUDIT_SECURITY, "Ability to audit security related activity on the system."),
     (AUDIT_MANAGER, "Ability to start global audits and view audit status."),
     (AUDIT_VIEWER, "Ability to view audit results and status."),
 ]

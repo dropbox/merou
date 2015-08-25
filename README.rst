@@ -46,7 +46,7 @@ Creating a development instance:
     PYTHONPATH=. bin/grouper-ctl -vvvc config/dev.yaml sync_db
 
     # Run the development reverse proxy
-    PYTHONPATH=. bin/grouper-ctl -vvc config/dev.yaml user_proxy $USER
+    PYTHONPATH=. bin/grouper-ctl -vvc config/dev.yaml user_proxy $USER@example.com
 
     # Run the frontend server
     PYTHONPATH=. bin/grouper-fe --config=config/dev.yaml -vv
@@ -67,12 +67,12 @@ via the following commands:
 
     # Allow user to set up groups and group-membership.
     PYTHONPATH=. bin/grouper-ctl -c config/dev.yaml -vv \
-        capabilities add user@example.com group_admin
+        capabilities add $USER@example.com group_admin
 
     # Allow someone to enable/disable user accounts.
     PYTHONPATH=. bin/grouper-ctl -c config/dev.yaml -vv \
-        capabilities add user@example.com user_admin
+        capabilities add $USER@example.com user_admin
 
     # Allow someone to create permissions.
     PYTHONPATH=. bin/grouper-ctl -c config/dev.yaml -vv \
-        capabilities add user@example.com permission_admin
+        capabilities add $USER@example.com permission_admin

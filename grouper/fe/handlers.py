@@ -1462,6 +1462,8 @@ class PublicKeyAdd(GrouperHandler):
             user=user,
             public_key='%s %s %s' % (pubkey.key_type, pubkey.key, pubkey.comment),
             fingerprint=pubkey.fingerprint,
+            key_size=pubkey.key_size,
+            key_type=pubkey.key_type,
         )
         try:
             db_pubkey.add(self.session)

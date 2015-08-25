@@ -14,7 +14,7 @@ Grouper is an application to allow users to create and manage
 memberships to their own groups.
 
 **Warning**: This project is still very much in flux and likely
-to have database changes migration support for the time being.
+to have schema changes that will need to be manually applied.
 
 Installation
 ------------
@@ -34,7 +34,7 @@ API.
 Running a Test instance
 -----------------------
 
-Grouper runs behind a reverse proxy that handles Authentication and so
+Grouper runs behind a reverse proxy that handles authentication and so
 expects a valid, authenticated, user account. I've included a test proxy
 for running on development instances.
 

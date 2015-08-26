@@ -14,7 +14,7 @@ Grouper is an application to allow users to create and manage
 memberships to their own groups.
 
 **Warning**: This project is still very much in flux and likely
-to have database changes migration support for the time being.
+to have schema changes that will need to be manually applied.
 
 Installation
 ------------
@@ -34,7 +34,7 @@ API.
 Running a Test instance
 -----------------------
 
-Grouper runs behind a reverse proxy that handles Authentication and so
+Grouper runs behind a reverse proxy that handles authentication and so
 expects a valid, authenticated, user account. I've included a test proxy
 for running on development instances.
 
@@ -46,7 +46,7 @@ Creating a development instance:
     PYTHONPATH=. bin/grouper-ctl -vvvc config/dev.yaml sync_db
 
     # Run the development reverse proxy
-    PYTHONPATH=. bin/grouper-ctl -vvc config/dev.yaml user_proxy $USER
+    PYTHONPATH=. bin/grouper-ctl -vvc config/dev.yaml user_proxy $USER@example.com
 
     # Run the frontend server
     PYTHONPATH=. bin/grouper-fe --config=config/dev.yaml -vv
@@ -67,12 +67,12 @@ via the following commands:
 
     # Allow user to set up groups and group-membership.
     PYTHONPATH=. bin/grouper-ctl -c config/dev.yaml -vv \
-        capabilities add user@example.com group_admin
+        capabilities add $USER@example.com group_admin
 
     # Allow someone to enable/disable user accounts.
     PYTHONPATH=. bin/grouper-ctl -c config/dev.yaml -vv \
-        capabilities add user@example.com user_admin
+        capabilities add $USER@example.com user_admin
 
     # Allow someone to create permissions.
     PYTHONPATH=. bin/grouper-ctl -c config/dev.yaml -vv \
-        capabilities add user@example.com permission_admin
+        capabilities add $USER@example.com permission_admin

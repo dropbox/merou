@@ -2,6 +2,7 @@
 
 """ Command-line interface to various grouper administrative commands."""
 
+from annex import Annex
 import argparse
 import BaseHTTPServer
 import code
@@ -17,6 +18,7 @@ from grouper import models
 from grouper.capabilities import Capabilities
 from grouper.constants import SYSTEM_PERMISSIONS
 from grouper.graph import GroupGraph
+from grouper.oneoff import BaseOneOff
 from grouper.settings import settings
 from grouper.util import get_loglevel
 
@@ -199,6 +201,23 @@ def group_command(args):
         session.commit()
 
 
+def oneoff_command(args):
+    session = make_session()
+    models.load_plugins(settings["plugin_dir"], service_name="grouper-ctl")
+
+    oneoffs = Annex(BaseOneOff, [settings["oneoff_dir"]], raise_exceptions=True)
+    for oneoff in oneoffs:
+        oneoff.configure(service_name="grouper-ctl")
+
+    if args.subcommand == "run":
+        for oneoff in oneoffs:
+            if oneoff.__class__.__name__ == args.classname:
+                params = args.oneoff_arguments or []
+                oneoff.run(session, *params)
+    elif args.subcommand == "list":
+        for oneoff in oneoffs:
+            logging.info(oneoff.__class__.__name__)
+
 def main():
 
     description_msg = "Grouper Control"
@@ -287,6 +306,17 @@ def main():
         "rm", help="Remove capabilities from a user.")
     capabilities_rm_parser.add_argument("username")
     capabilities_rm_parser.add_argument("capability", choices=Capabilities.words.keys())
+
+    oneoff_parser = subparsers.add_parser("oneoff", help="run/list one off external scripts")
+    oneoff_parser.set_defaults(func=oneoff_command)
+    oneoff_subparser = oneoff_parser.add_subparsers(dest="subcommand")
+
+    oneoff_list_parser = oneoff_subparser.add_parser("list", help="list available one-offs")
+
+    oneoff_run_parser = oneoff_subparser.add_parser("run", help="run specific one-off")
+    oneoff_run_parser.add_argument("classname", help="class name of the one-off to run")
+    oneoff_run_parser.add_argument("oneoff_arguments", nargs="?",
+            help="arguments to pass to one-off")
 
     args = parser.parse_args()
     settings.start_config_thread(args.config)

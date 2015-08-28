@@ -176,9 +176,8 @@ def group_command(args):
 
     user = session.query(models.User).filter_by(username=args.username).scalar()
     if not user:
-        print "No such user %s, creating..." % args.username
-        user = models.User(username=args.username).add(session)
-        session.commit()
+        print "no such user '{}'".format(args.username)
+        return
 
     if args.subcommand == "add_member":
         print "Adding %s to group %s" % (args.username, args.groupname)

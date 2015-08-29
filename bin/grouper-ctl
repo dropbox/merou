@@ -19,7 +19,7 @@ from grouper.capabilities import Capabilities
 from grouper.constants import SYSTEM_PERMISSIONS
 from grouper.graph import GroupGraph
 from grouper.oneoff import BaseOneOff
-from grouper.settings import settings
+from grouper.settings import settings, default_settings_path
 from grouper.util import get_loglevel
 
 
@@ -222,7 +222,7 @@ def main():
     description_msg = "Grouper Control"
     parser = argparse.ArgumentParser(description=description_msg)
 
-    parser.add_argument("-c", "--config", default="/etc/grouper.yaml",
+    parser.add_argument("-c", "--config", default=default_settings_path(),
                         help="Path to config file.")
     parser.add_argument("-v", "--verbose", action="count", default=0,
                         help="Increase logging verbosity.")

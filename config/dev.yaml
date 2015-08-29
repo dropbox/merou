@@ -22,6 +22,10 @@ common:
     # Type: str
     plugin_dir: ""
 
+    # Directory for one-offs. If set, load oneoffs from this directory which
+    # are run via grouper-ctl.
+    oneoff_dir: ""
+
     # Whether to send notification e-mails.
     # Type: bool
     send_emails: false

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import account, paginator, one_public_key_row, dropdown with context %}
+
+{% block heading %}
+    {% if not form.enabled.data %}
+      Disabled
+    {% endif %}
+    User Public Keys
+{% endblock %}
+
+{% block subheading %}
+    {{ total }} user{% if total > 1 %}s{% endif %}
+{% endblock %}
+
+{% block headingbuttons %}
+    {{ dropdown("limit", form.limit.data, [100, 250, 500, 1000]) }}
+    {{ paginator(form.offset.data, form.limit.data, total) }}
+    {% if form.enabled.data %}
+    <a class="btn btn-default" href="/users/public-keys?limit={{form.limit.data}}&enabled=0" role="button">
+          <i class="fa"></i> Show disabled users
+      </a>
+    {% else %}
+    <a class="btn btn-default" href="/users/public-keys?limit={{form.limit.data}}&enabled=1" role="button">
+          <i class="fa"></i> Show enabled users
+      </a>
+    {% endif %}
+
+{% endblock %}
+
+{% macro sort_header(label, sort_by) -%}
+{% if form.sort_by.data == sort_by %}
+{{ label }}
+{% else %}
+<a class="white" href="?sort_by={{ sort_by }}">{{ label }}</a>
+{% endif %}
+{%- endmacro %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div style="padding: 15px 0px;">
+        <form class="form-inline" method="get">
+            <div class="form-group">
+                <label class="sr-only" for="fingerprint">Fingerprint</label>
+                {{ form.fingerprint(class="form-control", placeholder="fingerprint",
+                        size=48) }}
+                <button class="btn btn-default" type="submit"><i class="fa fa-search"></i></button>
+            </div>
+        </form>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <table class="table table-elist">
+            <thead>
+                <tr>
+                    <th class="col-sm-2">{{ sort_header("Username", "user") }}</th>
+                    <th class="col-sm-2">{{ sort_header("Age", "age") }}</th>
+                    <th class="col-sm-1">{{ sort_header("Type", "type") }}</th>
+                    <th class="col-sm-1">{{ sort_header("Size", "size") }}</th>
+                    <th class="col-sm-5">Fingerprint</th>
+                    <th class="col-sm-1">&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for key, user in user_key_list %}
+                <tr>
+                    <td>{{ account(user) }}</td>
+                    {{ one_public_key_row(key, user.name, True) }}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

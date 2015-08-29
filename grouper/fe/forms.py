@@ -2,7 +2,15 @@ from datetime import datetime
 import re
 import sshpubkey
 
-from wtforms import HiddenField, SelectField, TextField, TextAreaField, validators
+from wtforms import (
+        BooleanField,
+        HiddenField,
+        IntegerField,
+        SelectField,
+        TextField,
+        TextAreaField,
+        validators,
+        )
 from wtforms.validators import ValidationError
 from wtforms_tornado import Form
 
@@ -174,3 +182,18 @@ class GroupEditMemberForm(Form):
     expiration = TextField("Expiration", [
         ValidateDate(),
     ], id="edit-form-expiration")
+
+
+class UsersPublicKeyForm(Form):
+    offset = IntegerField(default=0)
+    limit = IntegerField(default=100, validators=[validators.NumberRange(min=100, max=1000)])
+    enabled = IntegerField(default=1, validators=[validators.NumberRange(min=0, max=1)])
+    sort_by = TextField(validators=[
+            validators.Optional(),
+            validators.AnyOf(["age", "size", "type", "user"]),
+            ])
+    fingerprint = TextField(label="fingerprint", validators=[
+            validators.Optional(),
+            validators.Regexp("^[\w:]+$"),
+            ],
+            default=None)

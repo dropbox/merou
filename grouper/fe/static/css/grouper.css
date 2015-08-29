@@ -286,3 +286,7 @@ span.disabled {
 .center {
     text-align: center;
 }
+
+a.white {
+    color: #fff;
+}

@@ -47,6 +47,11 @@ Creating a development instance:
     # Setup the database.
     bin/grouper-ctl sync_db
 
+    ## You can either run all the various servers and the reverse-proxy
+    ## via a helper script:
+    tools/run-dev --user $USER@example.com
+
+    ## Or separately:
     # Run the development reverse proxy
     bin/grouper-ctl -vv user_proxy $USER@example.com
 

@@ -2,6 +2,9 @@ language: python
 python:
 - '2.7'
 sudo: false
+cache:
+  directories:
+    - $HOME/.cache/pip
 install:
 - pip install -r requirements-dev.txt
 - pip install .

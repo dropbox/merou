@@ -41,18 +41,25 @@ for running on development instances.
 Creating a development instance:
 
 .. code:: bash
+    export PYTHONPATH=$(pwd)
+    export GROUPER_SETTINGS=$(pwd)/config/dev.yaml
 
     # Setup the database.
-    PYTHONPATH=. bin/grouper-ctl -vvvc config/dev.yaml sync_db
+    bin/grouper-ctl sync_db
 
+    ## You can either run all the various servers and the reverse-proxy
+    ## via a helper script:
+    tools/run-dev --user $USER@example.com
+
+    ## Or separately:
     # Run the development reverse proxy
-    PYTHONPATH=. bin/grouper-ctl -vvc config/dev.yaml user_proxy $USER@example.com
+    bin/grouper-ctl -vv user_proxy $USER@example.com
 
     # Run the frontend server
-    PYTHONPATH=. bin/grouper-fe --config=config/dev.yaml -vv
+    bin/grouper-fe -vv
 
     # Run the graph/api server
-    PYTHONPATH=. bin/grouper-api --config=config/dev.yaml  -vv
+    bin/grouper-api -vv
 
 
 Setting up the first groups and permissions
@@ -64,15 +71,17 @@ account and grant powers independent of the usual way and are given out manually
 via the following commands:
 
 .. code:: bash
+    export PYTHONPATH=$(pwd)
+    export GROUPER_SETTINGS=$(pwd)/config/dev.yaml
 
     # Allow user to set up groups and group-membership.
-    PYTHONPATH=. bin/grouper-ctl -c config/dev.yaml -vv \
+    bin/grouper-ctl -vv \
         capabilities add $USER@example.com group_admin
 
     # Allow someone to enable/disable user accounts.
-    PYTHONPATH=. bin/grouper-ctl -c config/dev.yaml -vv \
+    bin/grouper-ctl -vv \
         capabilities add $USER@example.com user_admin
 
     # Allow someone to create permissions.
-    PYTHONPATH=. bin/grouper-ctl -c config/dev.yaml -vv \
+    bin/grouper-ctl -vv \
         capabilities add $USER@example.com permission_admin

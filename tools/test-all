@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pushd "$(dirname "$(dirname "$(readlink "$0")")")"
+
+PYTHONPATH=. exec py.test -v "$@"
+popd

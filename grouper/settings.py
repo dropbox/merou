@@ -1,3 +1,4 @@
+import os
 import logging
 import threading
 import time
@@ -80,6 +81,8 @@ class Settings(object):
             except KeyError as err:
                 raise AttributeError(err)
 
+def default_settings_path():
+    return os.environ.get("GROUPER_SETTINGS", "/etc/grouper.yaml")
 
 settings = Settings({
     "database": None,

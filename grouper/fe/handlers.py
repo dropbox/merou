@@ -817,7 +817,7 @@ class GroupRequests(GrouperHandler):
 class AuditsComplete(GrouperHandler):
     def post(self, audit_id):
         user = self.get_current_user()
-        if not user.has_permission(AUDIT_MANAGER):
+        if not user.has_permission(PERMISSION_AUDITOR):
             return self.forbidden()
 
         audit = self.session.query(Audit).filter(Audit.id == audit_id).one()

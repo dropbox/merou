@@ -41,6 +41,7 @@ for running on development instances.
 Creating a development instance:
 
 .. code:: bash
+
     export PYTHONPATH=$(pwd)
     export GROUPER_SETTINGS=$(pwd)/config/dev.yaml
 
@@ -71,6 +72,7 @@ account and grant powers independent of the usual way and are given out manually
 via the following commands:
 
 .. code:: bash
+
     export PYTHONPATH=$(pwd)
     export GROUPER_SETTINGS=$(pwd)/config/dev.yaml
 

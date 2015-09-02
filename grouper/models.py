@@ -1141,19 +1141,19 @@ class Audit(Model):
             AuditMember.audit_id == self.id
         ).all()
 
-        edges = {}
-        for member in auditmembers:
-            edges[member.edge_id] = [member, False]
+        auditmember_by_edge_id = {am.edge_id: am for am in auditmembers}
 
         # Now get current members of the group. If someone has left the group, we don't include
         # them in the audit anymore. If someone new joins (or rejoins) then we also don't want
         # to audit them since they had to get approved into the group.
+        auditmember_name_pairs = []
         for member in self.group.my_members().values():
-            if member.edge_id in edges:
-                edges[member.edge_id][1] = True
+            if member.edge_id in auditmember_by_edge_id:
+                auditmember_name_pairs.append((member.name, auditmember_by_edge_id[member.edge_id]))
 
-        # Now return the list of members.
-        return sorted([member[0] for member in edges.values() if member[1]])
+        # Sort by name and return members
+        return [auditmember for _, auditmember in sorted(auditmember_name_pairs)]
+
 
     @property
     def completable(self):

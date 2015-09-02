@@ -20,7 +20,7 @@
     </td>
 {%- endmacro %}
 
-{% macro public_key_panel(max_height, user, public_keys, can_control=False) -%}
+{% macro public_key_modal() -%}
     <div id="key-modal" class="modal fade">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -37,7 +37,10 @@
             </div>
         </div>
     </div>
+{%- endmacro %}
 
+{% macro public_key_panel(max_height, user, public_keys, can_control=False) -%}
+    {{ public_key_modal() }}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Public Keys</h3>

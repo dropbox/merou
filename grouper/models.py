@@ -1153,7 +1153,7 @@ class Audit(Model):
                 edges[member.edge_id][1] = True
 
         # Now return the list of members.
-        return [member[0] for member in edges.values() if member[1]]
+        return sorted([member[0] for member in edges.values() if member[1]])
 
     @property
     def completable(self):

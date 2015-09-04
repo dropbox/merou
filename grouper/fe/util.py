@@ -45,7 +45,10 @@ class GrouperHandler(tornado.web.RequestHandler):
     def initialize(self):
         self.session = self.application.my_settings.get("db_session")()
         self.graph = Graph()
+
+        self._request_start_time = datetime.utcnow()
         stats.incr("requests")
+        stats.incr("requests_{}".format(self.__class__.__name__))
 
     # TODO(mildorf): why not just override self.log_exception(typ, value, tb)?
     def _handle_request_exception(self, e):
@@ -101,6 +104,17 @@ class GrouperHandler(tornado.web.RequestHandler):
 
     def on_finish(self):
         self.session.close()
+
+        # log request duration
+        duration = datetime.utcnow() - self._request_start_time
+        duration_ms = int(duration.total_seconds() * 1000)
+        stats.incr("duration_ms", duration_ms)
+        stats.incr("duration_ms_{}".format(self.__class__.__name__), duration_ms)
+
+        # log response status code
+        response_status = self.get_status()
+        stats.incr("response_status_{}".format(response_status))
+        stats.incr("response_status_{}_{}".format(self.__class__.__name__, response_status))
 
     def update_qs(self, **kwargs):
         qs = self.request.arguments.copy()

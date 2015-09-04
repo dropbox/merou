@@ -1,3 +1,4 @@
+from datetime import datetime
 import traceback
 
 from expvar.stats import stats
@@ -10,7 +11,22 @@ from ..util import try_update
 class GraphHandler(RequestHandler):
     def initialize(self):
         self.graph = self.application.my_settings.get("graph")
+
+        self._request_start_time = datetime.utcnow()
         stats.incr("requests")
+        stats.incr("requests_{}".format(self.__class__.__name__))
+
+    def on_finish(self):
+        # log request duration
+        duration = datetime.utcnow() - self._request_start_time
+        duration_ms = int(duration.total_seconds() * 1000)
+        stats.incr("duration_ms", duration_ms)
+        stats.incr("duration_ms_{}".format(self.__class__.__name__), duration_ms)
+
+        # log response status code
+        response_status = self.get_status()
+        stats.incr("response_status_{}".format(response_status))
+        stats.incr("response_status_{}_{}".format(self.__class__.__name__, response_status))
 
     def error(self, errors):
         errors = [

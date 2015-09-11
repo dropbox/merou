@@ -950,7 +950,7 @@ class AuditsCreate(GrouperHandler):
             mail_to = [
                 member.name
                 for member in group.my_users()
-                if GROUP_EDGE_ROLES[member.role] in ('owner')
+                if GROUP_EDGE_ROLES[member.role] in ('owner', 'np-owner')
             ]
 
             self.send_email(mail_to, 'Group Audit: {}'.format(group.name), 'audit_notice', {

@@ -339,11 +339,6 @@ class User(Model):
             return None
         return GROUP_EDGE_ROLES[member.role]
 
-    def pending_requests(self):
-        """ Returns all pending requests actionable by this user. """
-        # TODO(gary) Do.
-        self.session.query()
-
     def set_metadata(self, key, value):
         if not re.match(PERMISSION_VALIDATION, key):
             raise ValueError('Metadata key does not match regex.')
@@ -581,6 +576,29 @@ class User(Model):
         )
 
         return requests
+
+    def my_open_audits(self):
+        self.session.query(Audit).filter(Audit.complete == False)
+        now = datetime.utcnow()
+        return self.session.query(
+            label("groupname", Group.groupname),
+            label("started_at", Audit.started_at),
+            label("ends_at", Audit.ends_at),
+        ).filter(
+            Audit.group_id == Group.id,
+            Audit.complete == False,
+            GroupEdge.group_id == Group.id,
+            GroupEdge.member_pk == self.id,
+            GroupEdge.member_type == 0,
+            GroupEdge.active == True,
+            GroupEdge._role.in_(OWNER_ROLE_INDICES),
+            self.enabled == True,
+            Group.enabled == True,
+            or_(
+                GroupEdge.expiration > now,
+                GroupEdge.expiration == None,
+            )
+        ).all()
 
 
 def build_changes(edge, **updates):

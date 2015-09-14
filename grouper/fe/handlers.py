@@ -118,13 +118,15 @@ class UserView(GrouperHandler):
             # they're disabled, so we've excluded them from the in-memory graph.
             user_md = {}
 
+        open_audits = user.my_open_audits()
         groups = user.my_groups()
         public_keys = user.my_public_keys()
         permissions = user_md.get('permissions', [])
         log_entries = user.my_log_entries()
         self.render("user.html", user=user, groups=groups, public_keys=public_keys,
                     can_control=can_control, permissions=permissions,
-                    log_entries=log_entries, num_pending_requests=num_pending_requests)
+                    log_entries=log_entries, num_pending_requests=num_pending_requests,
+                    open_audits=open_audits)
 
 
 class PermissionsCreate(GrouperHandler):

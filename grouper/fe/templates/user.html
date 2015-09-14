@@ -33,13 +33,58 @@
     {% endif %}
 {% endblock %}
 
+{% macro open_audits_panel(max_height, open_audits) -%}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Open Audits</h3>
+        </div>
+        <div style="max-height: {{max_height}}px; overflow-y: auto">
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th class="col-sm-2">Group</th>
+                        <th class="col-sm-2">Begun At</th>
+                        <th class="col-sm-3">Due Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for open_audit in open_audits %}
+                    <tr>
+                        <td><a href="/groups/{{ open_audit.groupname }}">
+                                {{ open_audit.groupname }}</a></td>
+                        <td>{{ open_audit.started_at|print_date }}</td>
+                        <td>
+                            {{ open_audit.ends_at }} ({{ open_audit.ends_at|expires_when_str }})
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if group and can_grant %}
+        <div class='panel-footer'>
+            <a class="btn btn-default btn-sm" href="/permissions/grant/{{ group.name }}">
+            <span class="glyphicon glyphicon-plus"></span> Add Permission
+            </a>
+        </div>
+        {% endif %}
+    </div>
+{%- endmacro %}
+
 {% block content %}
 
 <div class="row">
     <div class="col-md-5">
         {{ group_panel(400, groups, True) }}
     </div>
+    {% if open_audits and current_user.id == user.id %}
     <div class="col-md-7">
+        {{ open_audits_panel(400, open_audits) }}
+    </div>
+    {% endif %}
+</div>
+<div class="row">
+    <div class="col-md-12">
         {{ public_key_panel(400, user, public_keys, can_control) }}
     </div>
 </div>

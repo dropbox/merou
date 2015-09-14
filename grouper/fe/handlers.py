@@ -823,7 +823,7 @@ class AuditsComplete(GrouperHandler):
         audit = self.session.query(Audit).filter(Audit.id == audit_id).one()
 
         # only owners can complete
-        owner_ids = {member.id for n,member in audit.group.my_owners().items()}
+        owner_ids = {member.id for member in audit.group.my_owners().values()}
         if user.id not in owner_ids:
             return self.forbidden()
 

@@ -1,10 +1,12 @@
+from cStringIO import StringIO
+import csv
 from datetime import datetime
 import traceback
 
 from expvar.stats import stats
 from tornado.web import RequestHandler, HTTPError
 
-from ..models import get_plugins
+from ..models import get_plugins, PublicKey, Session, User
 from ..util import try_update
 
 
@@ -98,6 +100,24 @@ class Users(GraphHandler):
             try_update(out["user"], md)
             try_update(out, details)
             return self.success(out)
+
+
+class UsersPublicKeys(GraphHandler):
+    def get(self):
+        fh = StringIO()
+        w_csv = csv.writer(fh, lineterminator="\n")
+        user_key_list = Session().query(PublicKey, User).filter(User.id == PublicKey.user_id)
+        for key, user in user_key_list:
+            w_csv.writerow([
+                user.name,
+                key.created_on.isoformat(),
+                key.key_type,
+                key.key_size,
+                key.fingerprint,
+                ])
+
+        self.set_header("Content-Type", "text/csv")
+        self.write(fh.getvalue())
 
 
 class Groups(GraphHandler):

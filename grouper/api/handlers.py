@@ -6,8 +6,19 @@ import traceback
 from expvar.stats import stats
 from tornado.web import RequestHandler, HTTPError
 
-from ..models import get_plugins, PublicKey, Session, User
+from ..models import PublicKey, Session, User
 from ..util import try_update
+
+
+# if raven library around, pull in SentryMixin
+try:
+    from raven.contrib.tornado import SentryMixin
+except ImportError:
+    pass
+else:
+    class SentryHandler(SentryMixin, RequestHandler):
+        pass
+    RequestHandler = SentryHandler
 
 
 class GraphHandler(RequestHandler):
@@ -63,19 +74,8 @@ class GraphHandler(RequestHandler):
     # Overrides tornado's uncaught exception handler.
     def log_exception(self, typ, value, tb):
         self.set_status(500)
-        self.log_error(value, tb)
         self.error([(500, traceback.format_exception_only(typ, value))])
         self.finish()
-
-    # Give plugins a chance to provide site-specific error handling.
-    def log_error(self, exception, tb=None):
-        if tb is None:
-            stack = traceback.extract_stack()
-        else:
-            stack = traceback.extract_tb(tb)
-        status = self.get_status()
-        for plugin in get_plugins():
-            plugin.log_exception(self.request, status, exception, stack)
 
 
 class Users(GraphHandler):

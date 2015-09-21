@@ -25,6 +25,13 @@ from sqlalchemy.exc import OperationalError
 sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
 
+try:
+    from raven.contrib.tornado import AsyncSentryClient
+    raven_installed = True
+except ImportError:
+    raven_installed = False
+
+
 class Application(tornado.web.Application):
     def __init__(self, *args, **kwargs):
         self.my_settings = kwargs.pop("my_settings", {})
@@ -101,6 +108,14 @@ def main(argv):
     }
 
     application = Application(HANDLERS, my_settings=my_settings, **tornado_settings)
+
+    if settings.sentry_dsn:
+        logging.info("sentry DSN set")
+        if not raven_installed:
+            logging.warning("raven not installed, not enabling sentry")
+        else:
+            logging.info("enabling sentry")
+            application.sentry_client = AsyncSentryClient(settings.sentry_dsn)
 
     refresher = DbRefreshThread(graph, settings.refresh_interval)
     refresher.daemon = True

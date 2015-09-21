@@ -89,6 +89,10 @@ fe:
     # Type: list of maps giving url, name, and description strings.
     site_docs:
 
+    # Sentry DSN for logging exceptions
+    # Type: str
+    sentry_dsn:
+
 api:
     # The port to listen to requests on.
     # Type: int
@@ -102,3 +106,7 @@ api:
     # How often to pull cache data from database in seconds.
     # Type: int
     refresh_interval: 10
+
+    # Sentry DSN for logging exceptions
+    # Type: str
+    sentry_dsn:

@@ -11,6 +11,7 @@ import re
 import sqlalchemy.exc
 import sys
 import tornado.web
+from tornado.web import RequestHandler
 import traceback
 import urllib
 
@@ -18,8 +19,13 @@ from .settings import settings
 from ..constants import AUDIT_SECURITY, RESERVED_NAMES
 from ..graph import Graph
 from ..models import (
-    User, GROUP_EDGE_ROLES, OBJ_TYPES_IDX, get_db_engine, Session, AsyncNotification, get_plugins,
-)
+        AsyncNotification,
+        get_db_engine,
+        GROUP_EDGE_ROLES,
+        OBJ_TYPES_IDX,
+        Session,
+        User,
+        )
 from ..util import get_database_url
 
 
@@ -41,7 +47,18 @@ class InvalidUser(Exception):
     pass
 
 
-class GrouperHandler(tornado.web.RequestHandler):
+# if raven library around, pull in SentryMixin
+try:
+    from raven.contrib.tornado import SentryMixin
+except ImportError:
+    pass
+else:
+    class SentryHandler(SentryMixin, RequestHandler):
+        pass
+    RequestHandler = SentryHandler
+
+
+class GrouperHandler(RequestHandler):
     def initialize(self):
         self.session = self.application.my_settings.get("db_session")()
         self.graph = Graph()
@@ -50,15 +67,8 @@ class GrouperHandler(tornado.web.RequestHandler):
         stats.incr("requests")
         stats.incr("requests_{}".format(self.__class__.__name__))
 
-    # TODO(mildorf): why not just override self.log_exception(typ, value, tb)?
-    def _handle_request_exception(self, e):
-        traceback.print_exc()
-        _, _, tb = sys.exc_info()
-
-        # We can't just self.render because that invokes get_current_user which tries to make a
-        # db call, and if we're handling a db exception, that breaks.
-        self.set_status(500)
-        self.log_error(e, tb=tb)
+    def write_error(self, status_code, **kwargs):
+        """Override for custom error page."""
         template = self.application.my_settings["template_env"].get_template("errors/5xx.html")
         self.write(template.render({"is_active": self.is_active}))
         self.finish()
@@ -270,15 +280,11 @@ class GrouperHandler(tornado.web.RequestHandler):
         self.log_error(tornado.web.HTTPError(404))
         self.render("errors/notfound.html")
 
-    # Give plugins a chance to provide site-specific error handling.
-    def log_error(self, exception, tb=None):
-        if tb is None:
-            stack = traceback.extract_stack()
-        else:
-            stack = traceback.extract_tb(tb)
-        status = self.get_status()
-        for plugin in get_plugins():
-            plugin.log_exception(self.request, status, exception, stack)
+    def get_sentry_user_info(self):
+        user = self.get_current_user()
+        return {
+                'username': user.name,
+                }
 
 def print_date(date_obj):
     if date_obj is None:

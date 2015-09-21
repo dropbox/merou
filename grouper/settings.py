@@ -94,4 +94,5 @@ settings = Settings({
     "smtp_server": "localhost",
     "from_addr": "no-reply@grouper.local",
     "expiration_notice_days": 7,
+    "sentry_dsn": None,
 })

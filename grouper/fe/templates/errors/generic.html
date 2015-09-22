@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block heading %}
+    Error
+{% endblock %}
+
+{% block subheading %}
+{{ status_code }}: {{ message }}
+{% endblock %}
+
+{% block content %}
+<p class="lead">{{ status_code }}</p>
+    <p>{{ message }}</p>
+{% endblock %}

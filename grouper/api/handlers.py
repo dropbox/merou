@@ -4,6 +4,7 @@ from datetime import datetime
 import traceback
 
 from expvar.stats import stats
+import sshpubkey
 from tornado.web import RequestHandler, HTTPError
 
 from ..models import PublicKey, Session, User
@@ -114,6 +115,7 @@ class UsersPublicKeys(GraphHandler):
                 key.key_type,
                 key.key_size,
                 key.fingerprint,
+                sshpubkey.PublicKey.from_str(key.public_key).comment,
                 ])
 
         self.set_header("Content-Type", "text/csv")

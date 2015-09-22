@@ -69,8 +69,17 @@ class GrouperHandler(RequestHandler):
 
     def write_error(self, status_code, **kwargs):
         """Override for custom error page."""
-        template = self.application.my_settings["template_env"].get_template("errors/5xx.html")
-        self.write(template.render({"is_active": self.is_active}))
+        if status_code >= 500 and status_code < 600:
+            template = self.application.my_settings["template_env"].get_template("errors/5xx.html")
+            self.write(template.render({"is_active": self.is_active}))
+        else:
+            template = self.application.my_settings["template_env"].get_template(
+                    "errors/generic.html")
+            self.write(template.render({
+                    "status_code": status_code,
+                    "message": self._reason,
+                    "is_active": self.is_active,
+                    }))
         self.finish()
 
     # The refresh argument can be added to any page.  If the handler for that
@@ -264,20 +273,26 @@ class GrouperHandler(RequestHandler):
                 alerts.append(Alert("danger", error, field))
         return alerts
 
+    def raise_and_log_exception(self, exc):
+        try:
+            raise exc
+        except Exception:
+            self.log_exception(*sys.exc_info())
+
     # TODO(gary): Add json error responses.
     def badrequest(self, format_type=None):
         self.set_status(400)
-        self.log_error(tornado.web.HTTPError(400))
+        self.raise_and_log_exception(tornado.web.HTTPError(400))
         self.render("errors/badrequest.html")
 
     def forbidden(self, format_type=None):
         self.set_status(403)
-        self.log_error(tornado.web.HTTPError(403))
+        self.raise_and_log_exception(tornado.web.HTTPError(403))
         self.render("errors/forbidden.html")
 
     def notfound(self, format_type=None):
         self.set_status(404)
-        self.log_error(tornado.web.HTTPError(404))
+        self.raise_and_log_exception(tornado.web.HTTPError(404))
         self.render("errors/notfound.html")
 
     def get_sentry_user_info(self):

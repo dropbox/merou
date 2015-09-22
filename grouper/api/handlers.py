@@ -1,6 +1,7 @@
 from cStringIO import StringIO
 import csv
 from datetime import datetime
+import sys
 import traceback
 
 from expvar.stats import stats
@@ -67,16 +68,24 @@ class GraphHandler(RequestHandler):
                 "checkpoint_time": checkpoint_time,
             })
 
+    def raise_and_log_exception(self, exc):
+        try:
+            raise exc
+        except Exception:
+            self.log_exception(*sys.exc_info())
+
     def notfound(self, message):
         self.set_status(404)
-        self.log_error(HTTPError(404))
+        self.raise_and_log_exception(HTTPError(404))
         self.error([(404, message)])
 
-    # Overrides tornado's uncaught exception handler.
-    def log_exception(self, typ, value, tb):
-        self.set_status(500)
-        self.error([(500, traceback.format_exception_only(typ, value))])
-        self.finish()
+    def write_error(self, status_code, **kwargs):
+        """Overrides tornado's uncaught exception handler to return JSON results."""
+        if "exc_info" in kwargs:
+            typ, value, _ = kwargs["exc_info"]
+            self.error([(status_code, traceback.format_exception_only(typ, value))])
+        else:
+            self.error([(status_code, None)])
 
 
 class Users(GraphHandler):

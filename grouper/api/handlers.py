@@ -116,6 +116,17 @@ class UsersPublicKeys(GraphHandler):
     def get(self):
         fh = StringIO()
         w_csv = csv.writer(fh, lineterminator="\n")
+
+        # header
+        w_csv.writerow([
+            'username',
+            'created_at',
+            'type',
+            'size',
+            'fingerprint',
+            'comment',
+            ])
+
         user_key_list = Session().query(PublicKey, User).filter(User.id == PublicKey.user_id)
         for key, user in user_key_list:
             w_csv.writerow([

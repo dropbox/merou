@@ -9,8 +9,7 @@ from threading import Thread
 from time import sleep
 import tornado.ioloop
 import tornado.httpserver
-import tornado.web
-
+from grouper.app import Application
 from grouper.graph import Graph
 from grouper.models import get_db_engine, Session, load_plugins
 from grouper.util import get_loglevel, get_database_url
@@ -30,12 +29,6 @@ except ImportError:
     raven_installed = False
 
 sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
-
-
-class Application(tornado.web.Application):
-    def __init__(self, *args, **kwargs):
-        self.my_settings = kwargs.pop("my_settings", {})
-        super(Application, self).__init__(*args, **kwargs)
 
 
 class DbRefreshThread(Thread):

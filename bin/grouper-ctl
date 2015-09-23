@@ -314,7 +314,7 @@ def main():
 
     oneoff_run_parser = oneoff_subparser.add_parser("run", help="run specific one-off")
     oneoff_run_parser.add_argument("classname", help="class name of the one-off to run")
-    oneoff_run_parser.add_argument("oneoff_arguments", nargs="?",
+    oneoff_run_parser.add_argument("oneoff_arguments", nargs="*",
             help="arguments to pass to one-off")
 
     args = parser.parse_args()

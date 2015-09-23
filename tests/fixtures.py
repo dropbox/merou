@@ -14,39 +14,39 @@ from util import add_member, grant_permission
 
 @pytest.fixture
 def standard_graph(session, graph, users, groups, permissions):
-    add_member(groups["team-sre"], users["gary"], role="owner")
-    add_member(groups["team-sre"], users["zay"])
-    add_member(groups["team-sre"], users["zorkian"])
+    add_member(groups["team-sre"], users["gary@a.co"], role="owner")
+    add_member(groups["team-sre"], users["zay@a.co"])
+    add_member(groups["team-sre"], users["zorkian@a.co"])
     grant_permission(groups["team-sre"], permissions["ssh"], argument="*")
 
-    add_member(groups["serving-team"], users["zorkian"], role="owner")
+    add_member(groups["serving-team"], users["zorkian@a.co"], role="owner")
     add_member(groups["serving-team"], groups["team-sre"])
     add_member(groups["serving-team"], groups["tech-ops"])
     grant_permission(groups["serving-team"], permissions["audited"])
 
-    add_member(groups["tech-ops"], users["zay"], role="owner")
-    add_member(groups["tech-ops"], users["gary"])
-    add_member(groups["tech-ops"], users["figurehead"], role="np-owner")
+    add_member(groups["tech-ops"], users["zay@a.co"], role="owner")
+    add_member(groups["tech-ops"], users["gary@a.co"])
+    add_member(groups["tech-ops"], users["figurehead@a.co"], role="np-owner")
     grant_permission(groups["tech-ops"], permissions["ssh"], argument="shell")
 
-    add_member(groups["security-team"], users["oliver"], role="owner")
-    add_member(groups["security-team"], users["figurehead"], role="member")
+    add_member(groups["security-team"], users["oliver@a.co"], role="owner")
+    add_member(groups["security-team"], users["figurehead@a.co"], role="member")
 
-    add_member(groups["sad-team"], users["zorkian"], role="owner")
-    add_member(groups["sad-team"], users["oliver"])
+    add_member(groups["sad-team"], users["zorkian@a.co"], role="owner")
+    add_member(groups["sad-team"], users["oliver@a.co"])
 
-    add_member(groups["audited-team"], users["zorkian"], role="owner")
+    add_member(groups["audited-team"], users["zorkian@a.co"], role="owner")
     grant_permission(groups["audited-team"], permissions["audited"])
 
-    add_member(groups["team-infra"], users["gary"], role="owner")
+    add_member(groups["team-infra"], users["gary@a.co"], role="owner")
     add_member(groups["team-infra"], groups["serving-team"])
     add_member(groups["team-infra"], groups["security-team"])
     grant_permission(groups["team-infra"], permissions["sudo"], argument="shell")
 
-    add_member(groups["auditors"], users["zorkian"], role="owner")
+    add_member(groups["auditors"], users["zorkian@a.co"], role="owner")
     grant_permission(groups["auditors"], permissions[PERMISSION_AUDITOR])
 
-    add_member(groups["all-teams"], users["testuser"], role="owner")
+    add_member(groups["all-teams"], users["testuser@a.co"], role="owner")
     add_member(groups["all-teams"], groups["team-infra"])
 
     session.commit()
@@ -84,9 +84,10 @@ def graph(session):
 def users(session):
     users = {
         username: User.get_or_create(session, username=username)[0]
-        for username in ("gary", "zay", "zorkian", "oliver", "testuser", "figurehead", "zebu")
+        for username in ("gary@a.co", "zay@a.co", "zorkian@a.co", "oliver@a.co", "testuser@a.co",
+                "figurehead@a.co", "zebu@a.co")
     }
-    users["role"] = User.get_or_create(session, username="role", role_user=True)[0]
+    users["role@a.co"] = User.get_or_create(session, username="role@a.co", role_user=True)[0]
     session.commit()
     return users
 

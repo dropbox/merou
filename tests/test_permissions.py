@@ -24,14 +24,14 @@ def test_basic_permission(standard_graph, session, users, groups, permissions): 
     assert sorted(get_group_permissions(graph, "team-infra")) == ["sudo:shell"]
     assert sorted(get_group_permissions(graph, "all-teams")) == []
 
-    assert sorted(get_user_permissions(graph, "gary")) == [
+    assert sorted(get_user_permissions(graph, "gary@a.co")) == [
         "audited:", "ssh:*", "ssh:shell", "sudo:shell"]
-    assert sorted(get_user_permissions(graph, "zay")) == [
+    assert sorted(get_user_permissions(graph, "zay@a.co")) == [
         "audited:", "ssh:*", "ssh:shell", "sudo:shell"]
-    assert sorted(get_user_permissions(graph, "zorkian")) == [
+    assert sorted(get_user_permissions(graph, "zorkian@a.co")) == [
         "audited:", PERMISSION_AUDITOR + ":", "ssh:*", "sudo:shell"]
-    assert sorted(get_user_permissions(graph, "testuser")) == []
-    assert sorted(get_user_permissions(graph, "figurehead")) == [
+    assert sorted(get_user_permissions(graph, "testuser@a.co")) == []
+    assert sorted(get_user_permissions(graph, "figurehead@a.co")) == [
         "sudo:shell"]
 
 
@@ -39,16 +39,16 @@ def test_has_permission(standard_graph, users):  # noqa
     """ Tests the has_permission method of a user object. """
 
     # In our setup, zorkian has 'audited' with no arguments
-    assert users["zorkian"].has_permission("audited"), "zorkian has permission audited"
-    assert not users["zorkian"].has_permission("audited", argument='foo'), \
+    assert users["zorkian@a.co"].has_permission("audited"), "zorkian has permission audited"
+    assert not users["zorkian@a.co"].has_permission("audited", argument='foo'), \
         "zorkian has permission audited:foo"
-    assert not users["zorkian"].has_permission("audited", argument='*'), \
+    assert not users["zorkian@a.co"].has_permission("audited", argument='*'), \
         "zorkian has permission audited:*"
 
     # zay has ssh:*
-    assert users["zay"].has_permission("ssh"), "zay has permission ssh"
-    assert users["zay"].has_permission("ssh", argument='foo'), "zay has permission ssh:foo"
-    assert users["zay"].has_permission("ssh", argument='*'), "zay has permission ssh:*"
+    assert users["zay@a.co"].has_permission("ssh"), "zay has permission ssh"
+    assert users["zay@a.co"].has_permission("ssh", argument='foo'), "zay has permission ssh:foo"
+    assert users["zay@a.co"].has_permission("ssh", argument='*'), "zay has permission ssh:*"
 
 
 class PermissionTests(unittest.TestCase):

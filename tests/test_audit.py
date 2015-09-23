@@ -21,25 +21,25 @@ def test_group_audited(standard_graph, session, groups, permissions):  # noqa
 def test_user_is_auditor(standard_graph):  # noqa
     """ Ensure users get the ability to audit. """
 
-    assert user_is_auditor("zorkian")
-    assert not user_is_auditor("oliver")
+    assert user_is_auditor("zorkian@a.co")
+    assert not user_is_auditor("oliver@a.co")
 
 
 def test_assert_can_join(users, groups):  # noqa
     """ Test various audit constraints to ensure that users can/can't join as appropriate. """
 
     # Non-auditor can join non-audited group as owner.
-    assert assert_can_join(groups["team-infra"], users["zay"], role="owner")
+    assert assert_can_join(groups["team-infra"], users["zay@a.co"], role="owner")
 
     # Auditor can join non-audited group as owner.
-    assert assert_can_join(groups["team-infra"], users["zorkian"], role="owner")
+    assert assert_can_join(groups["team-infra"], users["zorkian@a.co"], role="owner")
 
     # Non-auditor can NOT join audited group as owner.
     with pytest.raises(UserNotAuditor):
-        assert not assert_can_join(groups["serving-team"], users["zay"], role="owner")
+        assert not assert_can_join(groups["serving-team"], users["zay@a.co"], role="owner")
 
     # Non-auditor can join audited group as member.
-    assert assert_can_join(groups["serving-team"], users["zay"])
+    assert assert_can_join(groups["serving-team"], users["zay@a.co"])
 
     # Group with non-auditor owner can NOT join audited group.
     with pytest.raises(UserNotAuditor):

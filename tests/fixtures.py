@@ -1,7 +1,11 @@
 import pytest
 
 from grouper import models
+from grouper.api.routes import HANDLERS as API_HANDLERS
+from grouper.app import Application
 from grouper.constants import PERMISSION_AUDITOR
+from grouper.fe.routes import HANDLERS as FE_HANDLERS
+from grouper.fe.util import get_template_env
 from grouper.models import get_db_engine, User, Group, Permission, Session
 from grouper.graph import Graph
 
@@ -108,3 +112,20 @@ def permissions(session):
     permissions["audited"].enable_auditing()
     session.commit()
     return permissions
+
+
+@pytest.fixture
+def api_app(standard_graph):
+    my_settings = {
+            "graph": standard_graph,
+            }
+    return Application(API_HANDLERS, my_settings=my_settings)
+
+
+@pytest.fixture
+def fe_app(session, standard_graph):
+    my_settings = {
+            "db_session": Session,
+            "template_env": get_template_env(),
+            }
+    return Application(FE_HANDLERS, my_settings=my_settings)

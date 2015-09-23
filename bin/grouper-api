@@ -9,9 +9,8 @@ from threading import Thread
 from time import sleep
 import tornado.ioloop
 import tornado.httpserver
-import tornado.web
-
 import grouper
+from grouper.app import Application
 from grouper.api.routes import HANDLERS
 from grouper.api.settings import settings
 from grouper.email import SendEmailThread
@@ -30,12 +29,6 @@ try:
     raven_installed = True
 except ImportError:
     raven_installed = False
-
-
-class Application(tornado.web.Application):
-    def __init__(self, *args, **kwargs):
-        self.my_settings = kwargs.pop("my_settings", {})
-        super(Application, self).__init__(*args, **kwargs)
 
 
 class DbRefreshThread(Thread):

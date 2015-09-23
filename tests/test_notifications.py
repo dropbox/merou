@@ -19,21 +19,21 @@ def expiring_graph(session, graph, users, groups, permissions):
     note_exp_now = now + timedelta(settings.expiration_notice_days)
     week = timedelta(7)
 
-    add_member(groups["team-sre"], users["oliver"], role="owner")
-    add_member(groups["team-sre"], users["gary"], role="owner")
-    add_member(groups["team-sre"], users["zay"], expiration=note_exp_now+week)
-    add_member(groups["team-sre"], users["zorkian"])
-    add_member(groups["team-sre"], users["zebu"], role="owner", expiration=note_exp_now+week)
-    revoke_member(groups["team-sre"], users["zebu"])
+    add_member(groups["team-sre"], users["oliver@a.co"], role="owner")
+    add_member(groups["team-sre"], users["gary@a.co"], role="owner")
+    add_member(groups["team-sre"], users["zay@a.co"], expiration=note_exp_now+week)
+    add_member(groups["team-sre"], users["zorkian@a.co"])
+    add_member(groups["team-sre"], users["zebu@a.co"], role="owner", expiration=note_exp_now+week)
+    revoke_member(groups["team-sre"], users["zebu@a.co"])
     grant_permission(groups["team-sre"], permissions["ssh"], argument="*")
 
-    add_member(groups["serving-team"], users["zorkian"], role="owner")
+    add_member(groups["serving-team"], users["zorkian@a.co"], role="owner")
     add_member(groups["serving-team"], groups["team-sre"], expiration=note_exp_now+week)
     add_member(groups["serving-team"], groups["tech-ops"])
     grant_permission(groups["serving-team"], permissions["audited"])
 
-    add_member(groups["tech-ops"], users["zay"], role="owner")
-    add_member(groups["tech-ops"], users["gary"], expiration=note_exp_now+2*week)
+    add_member(groups["tech-ops"], users["zay@a.co"], role="owner")
+    add_member(groups["tech-ops"], users["gary@a.co"], expiration=note_exp_now+2*week)
     grant_permission(groups["tech-ops"], permissions["ssh"], argument="shell")
 
     return graph
@@ -52,56 +52,56 @@ def test_expiration_notifications(expiring_graph, session, users, groups, permis
     upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+week)
     assert sorted(upcoming_expirations) == [
         # Group, subgroup, subgroup owners.
-        ("serving-team", "team-sre", "gary"),
-        ("serving-team", "team-sre", "oliver"),
+        ("serving-team", "team-sre", "gary@a.co"),
+        ("serving-team", "team-sre", "oliver@a.co"),
         # Group, user, user.
-        ("team-sre", "zay", "zay"),
+        ("team-sre", "zay@a.co", "zay@a.co"),
     ]
 
     # Make someone expire a week from now.
-    edit_member(groups["team-sre"], users["zorkian"], expiration=note_exp_now+week)
+    edit_member(groups["team-sre"], users["zorkian@a.co"], expiration=note_exp_now+week)
     upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+week)
     assert sorted(upcoming_expirations) == [
         # Group, subgroup, subgroup owners.
-        ("serving-team", "team-sre", "gary"),
-        ("serving-team", "team-sre", "oliver"),
+        ("serving-team", "team-sre", "gary@a.co"),
+        ("serving-team", "team-sre", "oliver@a.co"),
         # Group, user, user.
-        ("team-sre", "zay", "zay"),
-        ("team-sre", "zorkian", "zorkian"),
+        ("team-sre", "zay@a.co", "zay@a.co"),
+        ("team-sre", "zorkian@a.co", "zorkian@a.co"),
     ]
 
     # Now cancel that expiration.
-    edit_member(groups["team-sre"], users["zorkian"], expiration=None)
+    edit_member(groups["team-sre"], users["zorkian@a.co"], expiration=None)
     upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+week)
     assert sorted(upcoming_expirations) == [
         # Group, subgroup, subgroup owners.
-        ("serving-team", "team-sre", "gary"),
-        ("serving-team", "team-sre", "oliver"),
+        ("serving-team", "team-sre", "gary@a.co"),
+        ("serving-team", "team-sre", "oliver@a.co"),
         # Group, user, user.
-        ("team-sre", "zay", "zay"),
+        ("team-sre", "zay@a.co", "zay@a.co"),
     ]
 
     # Make an ordinary member an owner.
-    edit_member(groups["team-sre"], users["zorkian"], role="owner")
+    edit_member(groups["team-sre"], users["zorkian@a.co"], role="owner")
     upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+week)
     assert sorted(upcoming_expirations) == [
         # Group, subgroup, subgroup owners.
-        ("serving-team", "team-sre", "gary"),
-        ("serving-team", "team-sre", "oliver"),
-        ("serving-team", "team-sre", "zorkian"),
+        ("serving-team", "team-sre", "gary@a.co"),
+        ("serving-team", "team-sre", "oliver@a.co"),
+        ("serving-team", "team-sre", "zorkian@a.co"),
         # Group, user, user.
-        ("team-sre", "zay", "zay"),
+        ("team-sre", "zay@a.co", "zay@a.co"),
     ]
 
     # Make an owner an ordinary member.
-    edit_member(groups["team-sre"], users["zorkian"], role="member")
+    edit_member(groups["team-sre"], users["zorkian@a.co"], role="member")
     upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+week)
     assert sorted(upcoming_expirations) == [
         # Group, subgroup, subgroup owners.
-        ("serving-team", "team-sre", "gary"),
-        ("serving-team", "team-sre", "oliver"),
+        ("serving-team", "team-sre", "gary@a.co"),
+        ("serving-team", "team-sre", "oliver@a.co"),
         # Group, user, user.
-        ("team-sre", "zay", "zay"),
+        ("team-sre", "zay@a.co", "zay@a.co"),
     ]
 
     # Send notices about expirations coming up in the next day, next week.
@@ -110,9 +110,9 @@ def test_expiration_notifications(expiring_graph, session, users, groups, permis
 
     notices_sent = async.send_emails(session, now+week, dry_run=True)
     assert notices_sent == 3
-    # ("serving-team", "team-sre", "gary")
-    # ("serving-team", "team-sre", "oliver")
-    # ("team-sre", "zay", "zay")
+    # ("serving-team", "team-sre", "gary@a.co")
+    # ("serving-team", "team-sre", "oliver@a.co")
+    # ("team-sre", "zay@a.co", "zay@a.co")
 
     # Notices in the upcoming week have already been sent, but there's another
     # two weeks from now.
@@ -121,7 +121,7 @@ def test_expiration_notifications(expiring_graph, session, users, groups, permis
 
     upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+2*week)
     assert upcoming_expirations == [
-        ("tech-ops", "gary", "gary"),
+        ("tech-ops", "gary@a.co", "gary@a.co"),
     ]
 
     # We already sent these notices.
@@ -129,7 +129,7 @@ def test_expiration_notifications(expiring_graph, session, users, groups, permis
     assert notices_sent == 0
 
     # Extend gary's membership to beyond worth mentioning expiration in two weeks.
-    add_member(groups["tech-ops"], users["gary"], expiration=note_exp_now+3*week)
+    add_member(groups["tech-ops"], users["gary@a.co"], expiration=note_exp_now+3*week)
 
     upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+2*week)
     assert upcoming_expirations == []

@@ -3,7 +3,7 @@ import pytest
 from grouper import models
 from grouper.api.routes import HANDLERS as API_HANDLERS
 from grouper.app import Application
-from grouper.constants import PERMISSION_AUDITOR
+from grouper.constants import AUDIT_MANAGER, PERMISSION_AUDITOR
 from grouper.fe.routes import HANDLERS as FE_HANDLERS
 from grouper.fe.util import get_template_env
 from grouper.models import get_db_engine, User, Group, Permission, Session
@@ -44,6 +44,7 @@ def standard_graph(session, graph, users, groups, permissions):
     grant_permission(groups["team-infra"], permissions["sudo"], argument="shell")
 
     add_member(groups["auditors"], users["zorkian@a.co"], role="owner")
+    grant_permission(groups["auditors"], permissions[AUDIT_MANAGER])
     grant_permission(groups["auditors"], permissions[PERMISSION_AUDITOR])
 
     add_member(groups["all-teams"], users["testuser@a.co"], role="owner")
@@ -108,7 +109,7 @@ def permissions(session):
     permissions = {
         permission: Permission.get_or_create(
             session, name=permission, description="{} permission".format(permission))[0]
-        for permission in ("ssh", "sudo", "audited", PERMISSION_AUDITOR)
+        for permission in ("ssh", "sudo", "audited", AUDIT_MANAGER, PERMISSION_AUDITOR)
     }
     permissions["audited"].enable_auditing()
     session.commit()
@@ -126,7 +127,7 @@ def api_app(standard_graph):
 @pytest.fixture
 def fe_app(session, standard_graph):
     my_settings = {
-            "db_session": Session,
+            "db_session": lambda: session,
             "template_env": get_template_env(),
             }
     return Application(FE_HANDLERS, my_settings=my_settings)

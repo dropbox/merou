@@ -1487,6 +1487,14 @@ class GroupDisable(GrouperHandler):
         AuditLog.log(self.session, self.current_user.id, 'disable_group',
                      'Disabled group.', on_group_id=group.id)
 
+        if group.audit:
+            # complete the audit
+            group.audit.complete = True
+            self.session.commit()
+
+            AuditLog.log(self.session, self.current_user.id, 'complete_audit',
+                         'Disabling group completes group audit.', on_group_id=group.id)
+
         return self.redirect("/groups/{}?refresh=yes".format(group.name))
 
 

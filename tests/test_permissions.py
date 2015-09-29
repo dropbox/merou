@@ -4,13 +4,17 @@ import unittest
 
 from wtforms.validators import ValidationError
 
-import grouper.fe.util
-
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from util import get_group_permissions, get_user_permissions
-
-from grouper.constants import PERMISSION_AUDITOR, PERMISSION_VALIDATION, ARGUMENT_VALIDATION
+from grouper.constants import (
+        ARGUMENT_VALIDATION,
+        AUDIT_MANAGER,
+        PERMISSION_AUDITOR,
+        PERMISSION_VALIDATION,
+        )
 from grouper.fe.forms import ValidateRegex
+import grouper.fe.util
+
 
 def test_basic_permission(standard_graph, session, users, groups, permissions):  # noqa
     """ Test adding some permissions to various groups and ensuring that the permissions are all
@@ -29,7 +33,7 @@ def test_basic_permission(standard_graph, session, users, groups, permissions): 
     assert sorted(get_user_permissions(graph, "zay@a.co")) == [
         "audited:", "ssh:*", "ssh:shell", "sudo:shell"]
     assert sorted(get_user_permissions(graph, "zorkian@a.co")) == [
-        "audited:", PERMISSION_AUDITOR + ":", "ssh:*", "sudo:shell"]
+        "audited:", AUDIT_MANAGER + ":", PERMISSION_AUDITOR + ":", "ssh:*", "sudo:shell"]
     assert sorted(get_user_permissions(graph, "testuser@a.co")) == []
     assert sorted(get_user_permissions(graph, "figurehead@a.co")) == [
         "sudo:shell"]

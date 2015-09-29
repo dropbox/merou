@@ -1,5 +1,13 @@
-from fixtures import users, graph, groups, session, permissions  # noqa
+from datetime import date, timedelta
+from urllib import urlencode
 
+import pytest
+from tornado.httpclient import HTTPError
+
+from fixtures import fe_app as app
+from fixtures import standard_graph, users, graph, groups, session, permissions  # noqa
+from grouper.models import Group
+from url_util import url
 from util import get_users, get_groups, add_member
 
 
@@ -225,3 +233,36 @@ def test_graph_cycle_indirect(session, graph, users, groups):  # noqa
 
     assert get_groups(graph, "testuser@a.co") == all_groups
     assert get_groups(graph, "testuser@a.co", cutoff=1) == set(["team-infra"])
+
+
+@pytest.mark.gen_test
+def test_group_disable(session, groups, http_client, base_url):
+    # create global audit
+    fe_url = url(base_url, '/audits/create')
+    ends_at = date.today() + timedelta(days=7)
+    resp = yield http_client.fetch(fe_url, method="POST",
+            headers={"X-Grouper-User": "zorkian@a.co"},
+            body=urlencode({"ends_at": ends_at.strftime("%m/%d/%Y")}))
+    assert resp.code == 200
+
+    serving_team, just_created = Group.get_or_create(session, groupname="serving-team")
+    assert not just_created
+    assert serving_team.audit
+    assert not serving_team.audit.complete
+
+    # disable with insufficient permissions
+    fe_url = url(base_url, '/groups/serving-team/disable')
+    with pytest.raises(HTTPError):
+        resp = yield http_client.fetch(fe_url, method="POST",
+                headers={"X-Grouper-User": "gary@a.co"}, body=urlencode({"name": "serving-team"}))
+
+    # disable
+    fe_url = url(base_url, '/groups/serving-team/disable')
+    resp = yield http_client.fetch(fe_url, method="POST",
+            headers={"X-Grouper-User": "zorkian@a.co"}, body=urlencode({"name": "serving-team"}))
+    assert resp.code == 200
+
+    serving_team, just_created = Group.get_or_create(session, groupname="serving-team")
+    assert not just_created
+    assert serving_team.audit
+    assert serving_team.audit.complete, "disabling group should complete any outstanding audit"

@@ -777,6 +777,36 @@ class GroupRequestUpdate(GrouperHandler):
                      'Updated request to status: {}'.format(form.data["status"]),
                      on_group_id=group.id, on_user_id=request.requester.id)
 
+        edge = self.session.query(GroupEdge).filter_by(
+            id=request.edge_id
+        ).one()
+        if form.data['status'] == 'actioned':
+            self.send_email(
+                [request.requester.name],
+                'Added to group: {}'.format(group.groupname),
+                'request_actioned',
+                {
+                    'group': group.name,
+                    'actioned_by': self.current_user.name,
+                    'reason': form.data['reason'],
+                    'expiration': edge.expiration,
+                    'role': edge.role,
+                }
+            )
+        elif form.data['status'] == 'cancelled':
+            self.send_email(
+                [request.requester.name],
+                'Request to join cancelled: {}'.format(group.groupname),
+                'request_cancelled',
+                {
+                    'group': group.name,
+                    'cancelled_by': self.current_user.name,
+                    'reason': form.data['reason'],
+                    'expiration': edge.expiration,
+                    'role': edge.role,
+                }
+            )
+
         # No explicit refresh because handler queries SQL.
         if form.data['redirect_aggregate']:
             return self.redirect("/user/requests")

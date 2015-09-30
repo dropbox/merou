@@ -3,11 +3,11 @@ import operator
 
 from expvar.stats import stats
 from tornado.web import RequestHandler
-
 from sqlalchemy import union_all
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label, literal
 
+from .. import perf_profile
 from .. import public_key
 from ..audit import assert_controllers_are_auditors, assert_can_join, UserNotAuditor
 from ..constants import (
@@ -1657,6 +1657,11 @@ class Help(GrouperHandler):
                     audit_perm=d[PERMISSION_AUDITOR])
 
 
+class NotFound(GrouperHandler):
+    def get(self):
+        return self.notfound()
+
+
 # Don't use GraphHandler here as we don't want to count
 # these as requests.
 class Stats(RequestHandler):
@@ -1664,6 +1669,13 @@ class Stats(RequestHandler):
         return self.write(stats.to_dict())
 
 
-class NotFound(GrouperHandler):
-    def get(self):
-        return self.notfound()
+class PerfProfile(RequestHandler):
+    def get(self, trace_uuid):
+        from grouper.models import Session
+        try:
+            flamegraph_svg = perf_profile.get_flamegraph_svg(Session(), trace_uuid)
+        except perf_profile.InvalidUUID:
+            pass
+        else:
+            self.set_header("Content-Type", "image/svg+xml")
+            self.write(flamegraph_svg)

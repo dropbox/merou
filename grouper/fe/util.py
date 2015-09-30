@@ -2,20 +2,24 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from expvar.stats import stats
 from functools import wraps
-from jinja2 import Environment, PackageLoader
 import logging
-import pytz
 import re
-import sqlalchemy.exc
 import sys
-import tornado.web
-from tornado.web import RequestHandler
 import traceback
 import urllib
+from uuid import uuid4
+
+from expvar.stats import stats
+from jinja2 import Environment, PackageLoader
+from plop.collector import Collector, FlamegraphFormatter
+import pytz
+import sqlalchemy.exc
+import tornado.web
+from tornado.web import RequestHandler
 
 from .settings import settings
+from .. import perf_profile
 from ..constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATION
 from ..graph import Graph
 from ..models import (
@@ -63,6 +67,14 @@ class GrouperHandler(RequestHandler):
         self.session = self.application.my_settings.get("db_session")()
         self.graph = Graph()
 
+        if self.get_argument("_profile", False):
+            self.perf_collector = Collector()
+            self.perf_trace_uuid = str(uuid4())
+            self.perf_collector.start()
+        else:
+            self.perf_collector = None
+            self.perf_trace_uuid = None
+
         self._request_start_time = datetime.utcnow()
         stats.incr("requests")
         stats.incr("requests_{}".format(self.__class__.__name__))
@@ -79,6 +91,7 @@ class GrouperHandler(RequestHandler):
                     "status_code": status_code,
                     "message": self._reason,
                     "is_active": self.is_active,
+                    "trace_uuid": self.perf_trace_uuid,
                     }))
         self.finish()
 
@@ -122,6 +135,10 @@ class GrouperHandler(RequestHandler):
             return
 
     def on_finish(self):
+        if self.perf_collector:
+            self.perf_collector.stop()
+            perf_profile.record_trace(self.session, self.perf_collector, self.perf_trace_uuid)
+
         self.session.close()
 
         # log request duration
@@ -151,6 +168,7 @@ class GrouperHandler(RequestHandler):
         namespace.update({
             "update_qs": self.update_qs,
             "is_active": self.is_active,
+            "perf_trace_uuid": self.perf_trace_uuid,
             "xsrf_form": self.xsrf_form_html,
             "alerts": [],
         })

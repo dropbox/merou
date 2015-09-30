@@ -1224,6 +1224,20 @@ class GroupAdd(GrouperHandler):
                          member.name, form.data["role"]),
                      on_group_id=group.id)
 
+        if member.type == "User":
+            self.send_email(
+                [member.name],
+                'Added to group: {}'.format(group.name),
+                'request_actioned',
+                {
+                    'group': group.name,
+                    'actioned_by': self.current_user.name,
+                    'reason': form.data['reason'],
+                    'expiration': expiration,
+                    'role': form.data['role'],
+                }
+            )
+
         return self.redirect("/groups/{}?refresh=yes".format(group.name))
 
 

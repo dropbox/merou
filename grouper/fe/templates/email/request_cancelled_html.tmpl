@@ -1,0 +1,20 @@
+{% extends "email/base_html.tmpl" %}
+
+{% block subject %}Request Cancelled{% endblock %}
+
+{% block content %}
+
+<p>Your request to join the group
+<strong><a href="{{url}}/groups/{{requested}}">{{ group }}</a></strong>
+has been cancelled by {{ actioned_by }}.  The reason they gave was:</p>
+
+<blockquote><p>{{ reason|escape }}</p></blockquote>
+
+<p>More details about the request:</p>
+
+<ul>
+    <li><strong>Role:</strong> {{ role }}</li>
+    <li><strong>Expiration:</strong> {{ expiration|expires_when_str }}</li>
+</ul>
+
+{% endblock %}

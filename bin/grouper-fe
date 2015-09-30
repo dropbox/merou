@@ -66,6 +66,8 @@ def main(argv):
     parser.add_argument("-V", "--version", action="version",
                         version="%%(prog)s %s" % grouper.__version__,
                         help="Display version information.")
+    parser.add_argument("-a", "--address", type=str, default=None,
+                        help="Override address in config.")
     parser.add_argument("-p", "--port", type=int, default=None,
                         help="Override port in config.")
     parser.add_argument("-n", "--deployment-name", type=str, default="",
@@ -128,6 +130,7 @@ def main(argv):
     refresher.daemon = True
     refresher.start()
 
+    address = args.address or settings.address
     port = args.port or settings.port
 
     logging.info(
@@ -135,7 +138,7 @@ def main(argv):
         settings.num_processes, port
     )
     server = tornado.httpserver.HTTPServer(application)
-    server.bind(port)
+    server.bind(port, address=address)
     server.start(settings.num_processes)
     try:
         tornado.ioloop.IOLoop.instance().start()

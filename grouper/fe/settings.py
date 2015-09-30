@@ -18,6 +18,7 @@ settings = FeSettings.from_settings(base_settings, {
     "debug": False,
     "num_processes": 1,
     "port": 8989,
+    "address": None,
     "timezone": FeSettings.default_timezone,
     "date_format": "%Y-%m-%d %I:%M %p",
     "cdnjs_prefix": "//cdnjs.cloudflare.com",

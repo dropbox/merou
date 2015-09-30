@@ -48,6 +48,11 @@ fe:
     # Type: int
     port: 8989
 
+    # The IP address to listen to requests on, or leave empty to listen to
+    # all addresses.
+    # Type: str
+    address: "127.0.0.1"
+
     # All traps are stored in the database in UTC. This option chooses the
     # timezone for displaying datetime values.
     # Type: str
@@ -97,6 +102,11 @@ api:
     # The port to listen to requests on.
     # Type: int
     port: 8990
+
+    # The IP address to listen to requests on, or leave empty to listen to
+    # all addresses.
+    # Type: str
+    address: "127.0.0.1"
 
     # Passing debug option down tornado. Useful for development to
     # automatically reload code.

@@ -48,8 +48,8 @@ fe:
     # Type: int
     port: 8989
 
-    # The IP address to listen to requests on, or "" to listen on all
-    # addresses.
+    # The IP address to listen to requests on, or leave empty to listen to
+    # all addresses.
     # Type: str
     address: "127.0.0.1"
 
@@ -103,8 +103,8 @@ api:
     # Type: int
     port: 8990
 
-    # The IP address to listen to requests on, or "" to listen on all
-    # addresses.
+    # The IP address to listen to requests on, or leave empty to listen to
+    # all addresses.
     # Type: str
     address: "127.0.0.1"
 

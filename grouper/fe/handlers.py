@@ -446,7 +446,6 @@ class UsersView(GrouperHandler):
 class UsersPublicKey(GrouperHandler):
     @ensure_audit_security(u'public_keys')
     def get(self):
-        raise Exception()
         form = UsersPublicKeyForm(self.request.arguments)
 
         user_key_list = self.session.query(

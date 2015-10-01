@@ -75,27 +75,27 @@
 
 <div class="row">
     <div class="col-md-5">
-        {{ group_panel(400, groups, True) }}
+        {{ group_panel(390, groups, True) }}
     </div>
     {% if open_audits and current_user.id == user.id %}
     <div class="col-md-7">
-        {{ open_audits_panel(400, open_audits) }}
+        {{ open_audits_panel(390, open_audits) }}
     </div>
     {% endif %}
 </div>
 <div class="row">
     <div class="col-md-12">
-        {{ public_key_panel(400, user, public_keys, can_control) }}
+        {{ public_key_panel(390, user, public_keys, can_control) }}
     </div>
 </div>
 <div class="row">
     <div class="col-md-12">
-        {{ permission_panel(400, permissions) }}
+        {{ permission_panel(390, permissions) }}
     </div>
 </div>
 <div class="row">
     <div class="col-md-12">
-        {{ log_entry_panel(400, log_entries) }}
+        {{ log_entry_panel(390, log_entries) }}
     </div>
 </div>
 

@@ -91,20 +91,20 @@
 
 <div class="row">
     <div class="col-md-7">
-        {{ member_panel(400, group, members, current_user) }}
+        {{ member_panel(390, group, members, current_user) }}
     </div>
     <div class="col-md-5">
-        {{ group_panel(400, groups, current_user.my_role(members)) }}
+        {{ group_panel(390, groups, current_user.my_role(members)) }}
     </div>
 </div>
 <div class="row">
     <div class="col-md-12">
-        {{ permission_panel(400, permissions, group=group, can_grant=grantable) }}
+        {{ permission_panel(390, permissions, group=group, can_grant=grantable) }}
     </div>
 </div>
 <div class="row">
     <div class="col-md-12">
-        {{ log_entry_panel(400, log_entries) }}
+        {{ log_entry_panel(390, log_entries) }}
     </div>
 </div>
 

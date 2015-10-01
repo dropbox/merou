@@ -8,8 +8,7 @@ from sqlalchemy import union_all
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label, literal
 
-import sshpubkey
-
+from .. import public_key
 from ..audit import assert_controllers_are_auditors, assert_can_join, UserNotAuditor
 from ..constants import (
     PERMISSION_GRANT, PERMISSION_CREATE, PERMISSION_AUDITOR, AUDIT_MANAGER, AUDIT_VIEWER
@@ -1567,19 +1566,17 @@ class PublicKeyAdd(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors),
             )
 
-        pubkey = sshpubkey.PublicKey.from_str(form.data["public_key"])
-        db_pubkey = PublicKey(
-            user=user,
-            public_key='%s %s %s' % (pubkey.key_type, pubkey.key, pubkey.comment),
-            fingerprint=pubkey.fingerprint,
-            key_size=pubkey.key_size,
-            key_type=pubkey.key_type,
-        )
         try:
-            db_pubkey.add(self.session)
-            self.session.flush()
-        except IntegrityError:
-            self.session.rollback()
+            pubkey = public_key.add_public_key(self.session, user, form.data["public_key"])
+        except public_key.PublicKeyParseError:
+            form.public_key.errors.append(
+                "Key failed to parse and is invalid."
+            )
+            return self.render(
+                "public-key-add.html", form=form, user=user,
+                alerts=self.get_form_alerts(form.errors),
+            )
+        except public_key.DuplicateKey:
             form.public_key.errors.append(
                 "Key already in use. Public keys must be unique."
             )
@@ -1587,8 +1584,6 @@ class PublicKeyAdd(GrouperHandler):
                 "public-key-add.html", form=form, user=user,
                 alerts=self.get_form_alerts(form.errors),
             )
-
-        self.session.commit()
 
         AuditLog.log(self.session, self.current_user.id, 'add_public_key',
                      'Added public key: {}'.format(pubkey.fingerprint),

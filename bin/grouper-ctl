@@ -8,13 +8,13 @@ import BaseHTTPServer
 import code
 import getpass
 import logging
-import sshpubkey
 from mrproxy import UserProxyHandler
 from pprint import pprint
 from sqlalchemy.exc import IntegrityError
 
 import grouper
 from grouper import models
+from grouper import public_key
 from grouper.capabilities import Capabilities
 from grouper.constants import SYSTEM_PERMISSIONS
 from grouper.graph import GroupGraph
@@ -145,24 +145,13 @@ def user_command(args):
         print "Adding public key for user..."
 
         try:
-            pubkey = sshpubkey.PublicKey.from_str(args.public_key)
-        except sshpubkey.exc.PublicKeyParseError:
+            pubkey = public_key.add_public_key(session, user, args.public_key)
+        except public_key.DuplicateKey:
+            print "Key already in use."
+            return
+        except public_key.PublicKeyParseError:
             print "Public key appears to be invalid."
             return
-
-        db_pubkey = models.PublicKey(
-            user=user,
-            public_key='%s %s %s' % (pubkey.key_type, pubkey.key, pubkey.comment),
-            fingerprint=pubkey.fingerprint,
-        )
-        try:
-            db_pubkey.add(session)
-            session.flush()
-        except IntegrityError:
-            session.rollback()
-            print "Key is already in use. Public keys must be unique."
-            return
-        session.commit()
 
         models.AuditLog.log(session, user.id, 'add_public_key',
                             '(Administrative) Added public key: {}'.format(pubkey.fingerprint),

@@ -11,7 +11,7 @@ load('/build_tools/bazel/pip', 'py_pip', 'py_pip_bin', 'py_pip_par')
 #)
 
 py_pip_par(
-    name = 'grouper-ctl.par',
+    name = 'grouper-ctl',
     main = 'bin/grouper-ctl',
     deps = [
         ':grouper_lib',

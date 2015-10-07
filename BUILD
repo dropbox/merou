@@ -126,6 +126,16 @@ py_pip(
 )
 
 py_pip(
+    name = 'plop',
+    pip_deps = ['plop==0.3.0'],
+)
+
+py_pip(
+    name = 'pyflamegraph',
+    pip_deps = ['pyflamegraph==0.0.2'],
+)
+
+py_pip(
     name = 'python-dateutil',
     pip_deps = ['python-dateutil==2.4.2'],
 )

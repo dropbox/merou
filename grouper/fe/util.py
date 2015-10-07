@@ -16,7 +16,7 @@ import traceback
 import urllib
 
 from .settings import settings
-from ..constants import AUDIT_SECURITY, RESERVED_NAMES
+from ..constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATION
 from ..graph import Graph
 from ..models import (
         AsyncNotification,
@@ -95,7 +95,7 @@ class GrouperHandler(RequestHandler):
             return
 
         # Users must be fully qualified
-        if not re.match(r"[^@]+@[^@]+\.[^@]+", username):
+        if not re.match("^{}$".format(USERNAME_VALIDATION), username):
             raise InvalidUser()
 
         try:

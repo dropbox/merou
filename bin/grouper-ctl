@@ -6,17 +6,20 @@ from annex import Annex
 import argparse
 import BaseHTTPServer
 import code
+from functools import wraps
 import getpass
 import logging
 from mrproxy import UserProxyHandler
 from pprint import pprint
+import re
 from sqlalchemy.exc import IntegrityError
+import sys
 
 import grouper
 from grouper import models
 from grouper import public_key
 from grouper.capabilities import Capabilities
-from grouper.constants import SYSTEM_PERMISSIONS
+from grouper.constants import NAME_VALIDATION, SYSTEM_PERMISSIONS, USERNAME_VALIDATION
 from grouper.graph import GroupGraph
 from grouper.oneoff import BaseOneOff
 from grouper.settings import settings, default_settings_path
@@ -30,6 +33,30 @@ def make_session():
     db_engine = models.get_db_engine(get_database_url(settings))
     models.Session.configure(bind=db_engine)
     return models.Session()
+
+
+def ensure_valid_username(f):
+    @wraps(f)
+    def wrapper(args):
+        if not re.match("^{}$".format(USERNAME_VALIDATION), args.username):
+            print "Invalid username {}".format(args.username)
+            return
+
+        return f(args)
+
+    return wrapper
+
+
+def ensure_valid_groupname(f):
+    @wraps(f)
+    def wrapper(args):
+        if not re.match("^{}$".format(NAME_VALIDATION), args.groupname):
+            print "Invalid group name {}".format(args.groupname)
+            return
+
+        return f(args)
+
+    return wrapper
 
 
 def sync_db_command(args):
@@ -97,12 +124,14 @@ def shell_command(args):
         embed()
 
 
+@ensure_valid_username
 def capabilities_command(args):
     session = make_session()
-    user = session.query(models.User).filter_by(username=args.username).scalar()
+    user = models.User.get(session, name=args.username)
     if not user:
         print "No such user %s" % args.username
         return
+
     capabilities = Capabilities(user.capabilities)
 
     if args.subcommand == "list":
@@ -121,13 +150,14 @@ def capabilities_command(args):
         session.commit()
 
 
+@ensure_valid_username
 def user_command(args):
     session = make_session()
-    user = session.query(models.User).filter_by(username=args.username).scalar()
+    user = models.User.get(session, name=args.username)
     if not user:
         if args.subcommand == "create":
             print "No such user %s, creating..." % args.username
-            user = models.User(username=args.username, role_user=args.role_user).add(session)
+            user = models.User.get_or_create(session, username=args.username)
             session.commit()
         else:
             print "No such user %s" % args.username
@@ -158,6 +188,8 @@ def user_command(args):
                             on_user_id=user.id)
 
 
+@ensure_valid_username
+@ensure_valid_groupname
 def group_command(args):
     session = make_session()
     group = session.query(models.Group).filter_by(groupname=args.groupname).scalar()
@@ -165,7 +197,7 @@ def group_command(args):
         print "No such group %s" % args.groupname
         return
 
-    user = session.query(models.User).filter_by(username=args.username).scalar()
+    user = models.User.get(session, name=args.username)
     if not user:
         print "no such user '{}'".format(args.username)
         return
@@ -206,7 +238,7 @@ def oneoff_command(args):
         for oneoff in oneoffs:
             logging.info(oneoff.__class__.__name__)
 
-def main():
+def main(sys_argv=sys.argv):
 
     description_msg = "Grouper Control"
     parser = argparse.ArgumentParser(description=description_msg)
@@ -306,7 +338,7 @@ def main():
     oneoff_run_parser.add_argument("oneoff_arguments", nargs="*",
             help="arguments to pass to one-off")
 
-    args = parser.parse_args()
+    args = parser.parse_args(sys_argv[1:])
     settings.start_config_thread(args.config)
 
     log_level = get_loglevel(args)

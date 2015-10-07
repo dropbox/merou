@@ -12,6 +12,7 @@ import tornado.httpserver
 from grouper.app import Application
 from grouper.graph import Graph
 from grouper.models import get_db_engine, Session, load_plugins
+from grouper import perf_profile
 from grouper.util import get_loglevel, get_database_url
 
 import grouper.fe
@@ -46,6 +47,7 @@ class DbRefreshThread(Thread):
             try:
                 session = Session()
                 self.graph.update_from_db(session)
+                perf_profile.prune_old_traces(session)
                 session.close()
                 stats.set_gauge("successful-db-update", 1)
             except OperationalError:

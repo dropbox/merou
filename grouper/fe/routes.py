@@ -71,6 +71,7 @@ for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
 HANDLERS += [
     (r"/help", handlers.Help),
     (r"/debug/stats", handlers.Stats),
+    (r"/debug/profile/(?P<trace_uuid>[\-\w]+)", handlers.PerfProfile),
 
     (r"/.*", handlers.NotFound),
 ]

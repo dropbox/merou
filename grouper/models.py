@@ -9,7 +9,7 @@ import re
 from sqlalchemy import create_engine
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, UniqueConstraint,
-    ForeignKey, Enum, DateTime, SmallInteger, Index
+    ForeignKey, Enum, DateTime, SmallInteger, Index, LargeBinary
 )
 from sqlalchemy import or_, union_all, asc, desc
 from sqlalchemy.exc import IntegrityError
@@ -1796,3 +1796,18 @@ class AuditLog(Model):
             results = results.limit(limit)
 
         return results.all()
+
+
+class PerfTrace(Model):
+    __tablename__ = "perf_traces"
+    __table_args__ = (
+            Index(
+                "perf_trace_created_on_idx",
+                "created_on",
+            ),
+    )
+
+    uuid = Column(String(length=36), primary_key=True)
+    plop_input = Column(LargeBinary(length=1000000), nullable=False)
+    flamegraph_input = Column(LargeBinary(length=1000000), nullable=False)
+    created_on = Column(DateTime, default=datetime.utcnow, nullable=False)

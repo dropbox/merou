@@ -1,5 +1,11 @@
 from . import handlers
-from ..constants import NAME_VALIDATION, NAME2_VALIDATION, PERMISSION_VALIDATION
+from ..constants import (
+        NAME_VALIDATION,
+        NAME2_VALIDATION,
+        USERNAME_VALIDATION,
+        PERMISSION_VALIDATION,
+        )
+
 
 HANDLERS = [
     (r"/", handlers.Index),
@@ -29,7 +35,7 @@ HANDLERS = [
     (r"/user/requests", handlers.UserRequests),
 ]
 
-for regex in (r"(?P<user_id>[0-9]+)", NAME_VALIDATION):
+for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
     HANDLERS.extend([
         (r"/users/{}".format(regex), handlers.UserView),
         (r"/users/{}/disable".format(regex), handlers.UserDisable),

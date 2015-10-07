@@ -7,6 +7,9 @@ NAME_VALIDATION = r"(?P<name>[@\-\w\.]+)"
 # above regex changes, change this one. This is kind of gross. :\
 NAME2_VALIDATION = r"(?P<name2>[@\-\w\.]+)"
 
+# This regex is specifically to validate usernames.
+USERNAME_VALIDATION = r"(?P<name>\w+@\w+\.\w+)"
+
 # Regexes for validating permission/argument names
 PERMISSION_VALIDATION = r"(?P<name>(?:[a-z0-9]+[_\-\.])*[a-z0-9]+)"
 PERMISSION_WILDCARD_VALIDATION = r"(?P<name>(?:[a-z0-9]+[_\-\.])*[a-z0-9]+(?:\.\*)?)"

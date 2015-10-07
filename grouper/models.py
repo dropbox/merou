@@ -1798,8 +1798,8 @@ class AuditLog(Model):
         return results.all()
 
 
-class PerfTrace(Model):
-    __tablename__ = "perf_traces"
+class PerfProfile(Model):
+    __tablename__ = "perf_profiles"
     __table_args__ = (
             Index(
                 "perf_trace_created_on_idx",

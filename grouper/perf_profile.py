@@ -4,7 +4,7 @@ from tempfile import NamedTemporaryFile
 from plop.collector import FlamegraphFormatter, PlopFormatter
 from pyflamegraph import generate
 
-from grouper.models import PerfTrace
+from grouper.models import PerfProfile
 
 
 ONE_WEEK = timedelta(days=7)
@@ -22,7 +22,7 @@ def prune_old_traces(session, delta=ONE_WEEK):
         delta (timedelta): time in past beyond which to delete
     """
     cutoff = datetime.utcnow() - delta
-    session.query(PerfTrace).filter(PerfTrace.created_on < cutoff).delete()
+    session.query(PerfProfile).filter(PerfProfile.created_on < cutoff).delete()
     session.commit()
 
 
@@ -35,7 +35,7 @@ def record_trace(session, collector, trace_uuid):
     """
     flamegraph_input = FlamegraphFormatter().format(collector)
     plop_input = PlopFormatter().format(collector)
-    perf_trace = PerfTrace(uuid=trace_uuid, flamegraph_input=flamegraph_input,
+    perf_trace = PerfProfile(uuid=trace_uuid, flamegraph_input=flamegraph_input,
             plop_input=plop_input)
     perf_trace.add(session)
     session.commit()
@@ -51,7 +51,7 @@ def get_trace(session, trace_uuid):
     Returns 2-tuple of plop, flamegraph input or None if trace doesn't exist
     (or was garbage collected.
     """
-    trace = session.query(PerfTrace).filter(PerfTrace.uuid == trace_uuid).first()
+    trace = session.query(PerfProfile).filter(PerfProfile.uuid == trace_uuid).first()
     if not trace:
         raise InvalidUUID()
 

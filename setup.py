@@ -25,7 +25,7 @@ get_package_data("grouper", "grouper/fe/templates")
 kwargs = {
     "name": "grouper",
     "version": str(__version__),
-    "packages": ["grouper", "grouper.fe", "grouper.api"],
+    "packages": ["grouper", "grouper.fe", "grouper.api", "grouper.ctl"],
     "package_data": package_data,
     "scripts": ["bin/grouper-api", "bin/grouper-fe", "bin/grouper-ctl"],
     "description": "Self-service Nested Group Management Server.",

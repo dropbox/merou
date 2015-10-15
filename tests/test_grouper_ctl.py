@@ -2,7 +2,7 @@ from mock import patch
 
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from grouper.ctl.main import main
-from grouper.models import User
+from grouper.models import Group, User
 
 
 def call_main(*args):
@@ -52,3 +52,28 @@ def test_user_public_key(make_session, session, users):
     keys = user.my_public_keys()
     assert len(keys) == 1
     assert keys[0].public_key == good_key
+
+
+@patch('grouper.ctl.group.make_session')
+def test_group_add_remove_member(make_session, session, users, groups):
+    make_session.return_value = session
+
+    username = 'oliver@a.co'
+    groupname = 'team-sre'
+
+    # add
+    assert (u'User', username) not in groups[groupname].my_members()
+    call_main('group', 'add_member', groupname, username)
+    assert (u'User', username) in Group.get(session, name=groupname).my_members()
+
+    # remove
+    call_main('group', 'remove_member', groupname, username)
+    assert (u'User', username) not in Group.get(session, name=groupname).my_members()
+
+    # check user/group name
+    call_main('group', 'add_member', 'invalid group name', username)
+    assert (u'User', username) not in Group.get(session, name=groupname).my_members()
+
+    bad_username = 'not_a_valid_username'
+    call_main('group', 'add_member', groupname , bad_username)
+    assert (u'User', bad_username) not in Group.get(session, name=groupname).my_members()

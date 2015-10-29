@@ -23,6 +23,17 @@ def test_user_create(make_session, session, users):
     call_main('user', 'create', bad_username)
     assert not User.get(session, name=bad_username), 'bad user should not be created'
 
+    # bulk
+    usernames = ['mary@a.co', 'sam@a.co', 'tina@a.co']
+    call_main('user', 'create', *usernames)
+    users = [User.get(session, name=u) for u in usernames]
+    assert all(users), 'all users created'
+
+    usernames_with_one_bad = ['kelly@a.co', 'brad@a.co', 'not_valid_user']
+    call_main('user', 'create', *usernames_with_one_bad)
+    users = [User.get(session, name=u) for u in usernames_with_one_bad]
+    assert not any(users), 'one bad seed means no users created'
+
 
 @patch('grouper.ctl.user.make_session')
 def test_user_public_key(make_session, session, users):
@@ -69,6 +80,17 @@ def test_group_add_remove_member(make_session, session, users, groups):
     # remove
     call_main('group', 'remove_member', groupname, username)
     assert (u'User', username) not in Group.get(session, name=groupname).my_members()
+
+    # bulk add
+    usernames = {'oliver@a.co', 'testuser@a.co', 'zebu@a.co'}
+    call_main('group', 'add_member', groupname, *usernames)
+    members = {u for _, u in Group.get(session, name=groupname).my_members().keys()}
+    assert usernames.issubset(members)
+
+    # bulk remove
+    call_main('group', 'remove_member', groupname, *usernames)
+    members = {u for _, u in Group.get(session, name=groupname).my_members().keys()}
+    assert not members.intersection(usernames)
 
     # check user/group name
     call_main('group', 'add_member', 'invalid group name', username)

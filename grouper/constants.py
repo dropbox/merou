@@ -8,7 +8,7 @@ NAME_VALIDATION = r"(?P<name>[@\-\w\.]+)"
 NAME2_VALIDATION = r"(?P<name2>[@\-\w\.]+)"
 
 # This regex is specifically to validate usernames.
-USERNAME_VALIDATION = r"(?P<name>\w+@\w+\.\w+)"
+USERNAME_VALIDATION = r"(?P<name>[\w_+\%\.]+@[\w\.\-]+\.\w{2,})"
 
 # Regexes for validating permission/argument names
 PERMISSION_VALIDATION = r"(?P<name>(?:[a-z0-9]+[_\-\.])*[a-z0-9]+)"

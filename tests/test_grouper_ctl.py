@@ -18,6 +18,17 @@ def test_user_create(make_session, session, users):
     call_main('user', 'create', username)
     assert User.get(session, name=username), 'non-existent user should be created'
 
+    # odd usernames
+    usernames = [
+            'johnny.appleseed@a.co',    # period in username
+            'jane@a.b.c.d.co',          # subdomains
+            'jack.brown+new@a.co',      # gmail style aliases
+            'bobby@yahoo-inc.com',      # dashes in domains
+            ]
+    call_main('user', 'create', *usernames)
+    users = [User.get(session, name=u) for u in usernames]
+    assert all(users), 'all odd username users created'
+
     # check username
     bad_username = 'not_a_valid_username'
     call_main('user', 'create', bad_username)

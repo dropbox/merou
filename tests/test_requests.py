@@ -31,7 +31,6 @@ def test_aggregate_request(graph, groups, permissions, session, standard_graph, 
     not_involved = [user for name,user in users.items() if name not in ("gary@a.co",
             "testuser@a.co")]
 
-    print "users! {}".format(users.values())
     assert not any([u.my_requests_aggregate().all() for u in users.values()]), \
             "should have no pending requests to begin with"
 

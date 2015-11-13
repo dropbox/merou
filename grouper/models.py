@@ -25,6 +25,7 @@ from .constants import (
     ARGUMENT_VALIDATION, PERMISSION_GRANT, PERMISSION_CREATE, MAX_NAME_LENGTH,
     PERMISSION_VALIDATION, ILLEGAL_NAME_CHARACTER
 )
+from .email_util import send_async_email
 from .plugin import BasePlugin
 from .settings import settings
 from .util import matches_glob
@@ -1604,17 +1605,22 @@ class AsyncNotification(Model):
         async_key = AsyncNotification._expiration_key(group_name, member_name)
         subject = "%s's membership in %s is expiring at %s UTC" % (member_name, group_name, expiration)
         send_after = expiration - timedelta(settings.expiration_notice_days)
-        if member_is_user:
-            body = "Your membership is set to expire."
-        else:
-            body = "You are an owner of %s." % member_name
-        AsyncNotification.send_async_email(
-            session=session,
-            recipients=recipients,
-            subject=subject,
-            body=body,
-            send_after=send_after,
-            async_key=async_key)
+        email_context = {
+                'expiration': expiration,
+                'group_name': group_name,
+                'member_name': member_name,
+                'member_is_user': member_is_user,
+                }
+        from grouper.fe.settings import settings as fe_settings
+        send_async_email(
+                session=session,
+                recipients=recipients,
+                subject="expiration warning for membership in group '{}'".format(group_name),
+                template='expiration_warning',
+                settings=fe_settings,
+                context=email_context,
+                send_after=send_after,
+                async_key=async_key)
 
     @staticmethod
     def cancel_expiration(session, group_name, member_name, recipients=None):
@@ -1628,40 +1634,6 @@ class AsyncNotification(Model):
             AsyncNotification.sent == False,
             *opt_arg
         ).delete()
-        session.commit()
-
-    @staticmethod
-    def send_async_email(session, recipients, subject, body, send_after, async_key=None):
-        """Construct a message object and schedule it
-
-        This is the main email sending method to send out a templated email. This is used to
-        asynchronously queue up the email for sending.
-
-        Args:
-        recipients (str or list(str)): Email addresses that will receive this mail. This
-            argument is either a string (which might include comma separated email addresses)
-            or it's a list of strings (email addresses).
-        subject (str): Subject of the email.
-        body (str): Text of body.
-        send_after (DateTime): Schedule the email to go out after this point in time.
-        async_key (str, optional): If you set this, it will be inserted into the db so that
-            you can find this email in the future.
-
-        Returns:
-            Nothing.
-        """
-        if isinstance(recipients, basestring):
-            recipients = recipients.split(",")
-
-        for rcpt in recipients:
-            notif = AsyncNotification(
-                key=async_key,
-                email=rcpt,
-                subject=subject,
-                body=body,
-                send_after=send_after,
-            )
-            notif.add(session)
         session.commit()
 
 class PermissionMap(Model):

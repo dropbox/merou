@@ -10,7 +10,6 @@ from sqlalchemy.exc import OperationalError
 
 from grouper.fe.settings import settings as fe_settings
 from grouper.fe.template_util import get_template_env
-from grouper.models import AsyncNotification, get_db_engine, Session
 from grouper.util import get_database_url
 
 
@@ -44,6 +43,10 @@ class SendEmailThread(Thread):
         Returns:
             int: Number of emails that were sent.
         """
+        # TODO(herb): get around circular depdendencies; long term remove call to
+        # send_async_email() from grouper.models
+        from grouper.models import AsyncNotification
+
         emails = session.query(AsyncNotification).filter(
             AsyncNotification.sent == False,
             AsyncNotification.send_after < now_ts,
@@ -73,6 +76,10 @@ class SendEmailThread(Thread):
         return sent_ct
 
     def run(self):
+        # TODO(herb): get around circular depdendencies; long term remove call to
+        # send_async_email() from grouper.models
+        from grouper.models import get_db_engine, Session
+
         while True:
             logging.debug("Sending emails...")
             try:
@@ -111,6 +118,10 @@ def send_async_email(session, recipients, subject, template, settings, context, 
     Returns:
         Nothing.
     """
+    # TODO(herb): get around circular depdendencies; long term remove call to
+    # send_async_email() from grouper.models
+    from grouper.models import AsyncNotification
+
     if isinstance(recipients, basestring):
         recipients = recipients.split(",")
 
@@ -161,7 +172,6 @@ def get_email_from_template(recipient_list, subject, template, settings, context
         MIMEMultipart: Constructed object for the email message.
     """
     template_env = get_template_env()
-    print settings
     sender = settings["from_addr"]
 
     context["url"] = settings["url"]

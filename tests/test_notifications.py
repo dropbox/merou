@@ -7,7 +7,7 @@ import pytest
 from fixtures import graph, session, users, groups, permissions
 from util import add_member, edit_member, revoke_member, grant_permission
 
-from grouper.email import SendEmailThread
+from grouper.email_util import SendEmailThread
 from grouper.models import AsyncNotification
 from grouper.settings import settings
 

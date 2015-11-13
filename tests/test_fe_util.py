@@ -1,7 +1,7 @@
 from datetime import datetime
 from mock import patch
 
-from grouper.fe.util import expires_when_str, long_ago_str
+from grouper.fe.template_util import expires_when_str, long_ago_str
 
 def test_expires_when_str():
     utcnow_fn=utcnow_fn = lambda: datetime(2015, 8, 11, 12)

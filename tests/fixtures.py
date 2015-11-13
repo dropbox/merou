@@ -5,7 +5,7 @@ from grouper.api.routes import HANDLERS as API_HANDLERS
 from grouper.app import Application
 from grouper.constants import AUDIT_MANAGER, PERMISSION_AUDITOR
 from grouper.fe.routes import HANDLERS as FE_HANDLERS
-from grouper.fe.util import get_template_env
+from grouper.fe.template_util import get_template_env
 from grouper.models import get_db_engine, User, Group, Permission, Session
 from grouper.graph import Graph
 

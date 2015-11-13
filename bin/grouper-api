@@ -13,7 +13,7 @@ import grouper
 from grouper.app import Application
 from grouper.api.routes import HANDLERS
 from grouper.api.settings import settings
-from grouper.email import SendEmailThread
+from grouper.email_util import SendEmailThread
 from grouper.graph import GroupGraph
 from grouper.models import get_db_engine, Session, load_plugins
 from grouper.settings import default_settings_path

@@ -2,7 +2,6 @@ import fnmatch
 import functools
 import logging
 import random as insecure_random
-import smtplib
 import subprocess
 import threading
 import time
@@ -58,31 +57,6 @@ def get_database_url(settings, retries=3, retry_wait_seconds=1):
                 if retry > retries:
                     raise
                 time.sleep(retry_wait_seconds)
-
-
-def send_email_raw(settings, recipient_list, msg_raw):
-    """Send raw email (from string)
-
-    Given some recipients and the string version of a message, this sends it immediately
-    through the SMTP library.
-
-    Args:
-        settings (Settings): Grouper Settings object for current run.
-        recipient_list (list(str)): Email addresses to send this email to.
-        msg_raw (str): The message to send. This should be the output of one of the methods
-            that generates a MIMEMultipart object.
-
-    Returns:
-        Nothing.
-    """
-    if not settings["send_emails"]:
-        logging.debug(msg_raw)
-        return
-
-    sender = settings["from_addr"]
-    smtp = smtplib.SMTP(settings["smtp_server"])
-    smtp.sendmail(sender, recipient_list, msg_raw)
-    smtp.quit()
 
 
 def matches_glob(glob, text):

@@ -17,7 +17,7 @@ from grouper.util import get_loglevel, get_database_url
 
 import grouper.fe
 from grouper.fe.routes import HANDLERS
-from grouper.fe.util import get_template_env
+from grouper.fe.template_util import get_template_env
 from grouper.fe.settings import settings
 from grouper.settings import default_settings_path
 

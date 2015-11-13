@@ -28,6 +28,7 @@ from .forms import (
     PublicKeyForm,
     UsersPublicKeyForm,
 )
+from ..email_util import send_email, send_async_email
 from ..graph import NoSuchUser, NoSuchGroup
 from ..models import (
     User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog, GroupEdge, Counter,
@@ -779,10 +780,12 @@ class GroupRequestUpdate(GrouperHandler):
             id=request.edge_id
         ).one()
         if form.data['status'] == 'actioned':
-            self.send_email(
+            send_email(
+                self.session,
                 [request.requester.name],
                 'Added to group: {}'.format(group.groupname),
                 'request_actioned',
+                settings,
                 {
                     'group': group.name,
                     'actioned_by': self.current_user.name,
@@ -792,10 +795,12 @@ class GroupRequestUpdate(GrouperHandler):
                 }
             )
         elif form.data['status'] == 'cancelled':
-            self.send_email(
+            send_email(
+                self.session,
                 [request.requester.name],
                 'Request to join cancelled: {}'.format(group.groupname),
                 'request_cancelled',
+                settings,
                 {
                     'group': group.name,
                     'cancelled_by': self.current_user.name,
@@ -990,16 +995,16 @@ class AuditsCreate(GrouperHandler):
                 if GROUP_EDGE_ROLES[member.role] in ('owner', 'np-owner')
             ]
 
-            self.send_email(mail_to, 'Group Audit: {}'.format(group.name), 'audit_notice', {
-                "group": group.name,
-                "ends_at": ends_at,
-            })
+            send_email(self.session, mail_to, 'Group Audit: {}'.format(group.name), 'audit_notice',
+                    settings, {"group": group.name, "ends_at": ends_at})
 
             for days_prior, email_time in schedule_times:
-                self.send_async_email(
+                send_async_email(
+                    self.session,
                     mail_to,
                     'Group Audit: {} - {} day(s) left'.format(group.name, days_prior),
                     'audit_notice_reminder',
+                    settings,
                     {
                         "group": group.name,
                         "ends_at": ends_at,
@@ -1223,10 +1228,12 @@ class GroupAdd(GrouperHandler):
                      on_group_id=group.id)
 
         if member.type == "User":
-            self.send_email(
+            send_email(
+                self.session,
                 [member.name],
                 'Added to group: {}'.format(group.name),
                 'request_actioned',
+                settings,
                 {
                     'group': group.name,
                     'actioned_by': self.current_user.name,
@@ -1351,14 +1358,16 @@ class GroupJoin(GrouperHandler):
                 if GROUP_EDGE_ROLES[user.role] in ('manager', 'owner', 'np-owner')
             ]
 
-            self.send_email(mail_to, 'Request to join: {}'.format(group.name), 'pending_request', {
-                "requester": member.name,
-                "requested_by": self.current_user.name,
-                "requested": group.name,
-                "reason": form.data["reason"],
-                "expiration": expiration,
-                "role": form.data["role"],
-            })
+            email_context =  {
+                    "requester": member.name,
+                    "requested_by": self.current_user.name,
+                    "requested": group.name,
+                    "reason": form.data["reason"],
+                    "expiration": expiration,
+                    "role": form.data["role"],
+                    }
+            send_email(self.session, mail_to, 'Request to join: {}'.format(group.name),
+                    'pending_request', settings, email_context)
 
         elif group.canjoin == 'canjoin':
             AuditLog.log(self.session, self.current_user.id, 'join_group',
@@ -1589,11 +1598,13 @@ class PublicKeyAdd(GrouperHandler):
                      'Added public key: {}'.format(pubkey.fingerprint),
                      on_user_id=user.id)
 
-        self.send_email([user.name], 'Public SSH key added', 'ssh_keys_changed', {
-            "actioner": self.current_user.name,
-            "changed_user": user.name,
-            "action": "added",
-        })
+        email_context = {
+                "actioner": self.current_user.name,
+                "changed_user": user.name,
+                "action": "added",
+                }
+        send_email(self.session, [user.name], 'Public SSH key added', 'ssh_keys_changed',
+                settings, email_context)
 
         return self.redirect("/users/{}?refresh=yes".format(user.name))
 
@@ -1632,11 +1643,13 @@ class PublicKeyDelete(GrouperHandler):
                      'Deleted public key: {}'.format(key.fingerprint),
                      on_user_id=user.id)
 
-        self.send_email([user.name], 'Public SSH key removed', 'ssh_keys_changed', {
-            "actioner": self.current_user.name,
-            "changed_user": user.name,
-            "action": "removed",
-        })
+        email_context = {
+                "actioner": self.current_user.name,
+                "changed_user": user.name,
+                "action": "removed",
+                }
+        send_email(self.session, [user.name], 'Public SSH key removed', 'ssh_keys_changed',
+                settings, email_context)
 
         return self.redirect("/users/{}?refresh=yes".format(user.name))
 

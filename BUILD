@@ -116,6 +116,11 @@ py_pip(
 )
 
 py_pip(
+    name = 'enum34',
+    pip_deps = ['enum34==1.0.4'],
+)
+
+py_pip(
     name = 'expvar',
     pip_deps = ['expvar==0.0.2'],
 )

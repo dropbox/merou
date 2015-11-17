@@ -9,7 +9,7 @@ from sqlalchemy.sql import label, literal
 
 from .. import perf_profile
 from .. import public_key
-from ..audit import assert_controllers_are_auditors, assert_can_join, UserNotAuditor
+from ..audit import assert_controllers_are_auditors, assert_can_join, get_audits, UserNotAuditor
 from ..constants import (
     PERMISSION_GRANT, PERMISSION_CREATE, PERMISSION_AUDITOR, AUDIT_MANAGER, AUDIT_VIEWER
 )
@@ -28,13 +28,13 @@ from .forms import (
     PublicKeyForm,
     UsersPublicKeyForm,
 )
-from ..email_util import send_email, send_async_email
+from ..email_util import cancel_async_emails, send_email, send_async_email
 from ..graph import NoSuchUser, NoSuchGroup
 from ..models import (
     User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog, GroupEdge, Counter,
     GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES, OBJ_TYPES,
     get_all_groups, get_all_users,
-    get_user_or_group, Audit, AuditMember, AUDIT_STATUS_CHOICES,
+    get_user_or_group, Audit, AuditMember, AUDIT_STATUS_CHOICES, AuditLogCategory,
 )
 from .settings import settings
 from .util import ensure_audit_security, GrouperHandler, Alert, test_reserved_names
@@ -895,16 +895,22 @@ class AuditsComplete(GrouperHandler):
                                           "Revoked as part of audit.")
                 AuditLog.log(self.session, self.current_user.id, 'remove_member',
                              'Removed membership in audit: {}'.format(member.member.name),
-                             on_group_id=audit.group.id)
+                             on_group_id=audit.group.id, category=AuditLogCategory.audit)
 
         audit.complete = True
         self.session.commit()
 
         # Now cancel pending emails
-        self.cancel_async_emails('audit-{}'.format(audit.group.id))
+        cancel_async_emails(self.session, 'audit-{}'.format(audit.group.id))
 
         AuditLog.log(self.session, self.current_user.id, 'complete_audit',
-                     'Completed group audit.', on_group_id=audit.group.id)
+                     'Completed group audit.', on_group_id=audit.group.id,
+                     category=AuditLogCategory.audit)
+
+        # check if all audits are complete
+        if get_audits(self.session, only_open=True).count() == 0:
+            AuditLog.log(self.session, self.current_user.id, 'complete_global_audit',
+                    'last open audit have been completed', category=AuditLogCategory.audit)
 
         return self.redirect('/groups/{}'.format(audit.group.name))
 
@@ -973,7 +979,7 @@ class AuditsCreate(GrouperHandler):
         self.session.commit()
 
         AuditLog.log(self.session, self.current_user.id, 'start_audit',
-                     'Started global audit.')
+                     'Started global audit.', category=AuditLogCategory.audit)
 
         # Calculate schedule of emails, basically we send emails at various periods in advance
         # of the end of the audit period.
@@ -1028,14 +1034,8 @@ class AuditsView(GrouperHandler):
         if limit > 200:
             limit = 200
 
-        audits = (
-            self.session.query(Audit)
-            .order_by(Audit.started_at)
-        )
-
         open_filter = self.get_argument("filter", "Open Audits")
-        if open_filter == "Open Audits":
-            audits = audits.filter(Audit.complete == False)
+        audits = get_audits(self.session, only_open=(open_filter == "Open Audits"))
 
         open_audits = any([not audit.complete for audit in audits])
         total = audits.count()
@@ -1045,9 +1045,14 @@ class AuditsView(GrouperHandler):
             Audit.complete == False).all()
         can_start = user.has_permission(AUDIT_MANAGER)
 
+        # FIXME(herb): make limit selected from ui
+        audit_log_entries = AuditLog.get_entries(self.session, category=AuditLogCategory.audit,
+                limit=100)
+
         self.render(
-            "audits.html", audits=audits, filter=open_filter, can_start=can_start,
+            "audits.html", audits=audits, open_filter=open_filter, can_start=can_start,
             offset=offset, limit=limit, total=total, open_audits=open_audits,
+            audit_log_entries=audit_log_entries,
         )
 
 

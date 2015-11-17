@@ -1,5 +1,7 @@
 from constants import PERMISSION_AUDITOR
-from graph import Graph
+
+from grouper.graph import Graph
+from grouper.models import Audit
 
 
 class UserNotAuditor(Exception):
@@ -111,3 +113,18 @@ def assert_can_join(group, user_or_group, role="member"):
     # We have to fetch each group's details individually though to figure out what someone's role
     # is in that particular group.
     return assert_controllers_are_auditors(user_or_group)
+
+
+def get_audits(session, only_open):
+    """Return audits in the system.
+
+    Args:
+        session (session): database session
+        only_open (bool): whether to filter by open audits
+    """
+    query = session.query(Audit).order_by(Audit.started_at)
+
+    if only_open:
+        query = query.filter(Audit.complete == False)
+
+    return query

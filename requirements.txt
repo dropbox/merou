@@ -8,6 +8,7 @@ WTForms==2.0.1
 argparse==1.2.1
 backports.ssl-match-hostname==3.4.0.2
 bittle==0.2.1
+enum34==1.0.4
 expvar==0.0.2
 networkx==1.8.1
 plop==0.3.0

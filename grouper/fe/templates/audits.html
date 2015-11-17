@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import account, paginator, dropdown with context %}
+{% from 'macros/ui.html' import log_entry_panel, account, paginator, dropdown with context %}
 
 {% block heading %}
     Audits
@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block headingbuttons %}
-    {{ dropdown("filter", filter, ["Open Audits", "All Audits"])}}
+    {{ dropdown("filter", open_filter, ["Open Audits", "All Audits"])}}
     {{ dropdown("limit", limit, [50, 100, 200]) }}
     {{ paginator(offset, limit, total) }}
     {% if not open_audits %}
@@ -27,44 +27,57 @@
 {% endblock %}
 
 {% block content %}
-    {% if not audits %}
-        There are no audits to view.
-    {% else %}
-        <div class="col-md-10 col-md-offset-1">
-            <table class="table table-elist">
-                <thead>
-                    <tr>
-                        <th class="col-sm-4">Group</th>
-                        <th class="col-sm-2">Started</th>
-                        <th class="col-sm-2">Ends</th>
-                        <th class="col-sm-1">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for audit in audits %}
-                    <tr>
-                        <td>{{ account(audit.group) }}</td>
-                        <td>{{ audit.started_at|print_date }}</td>
-                        <td>{% if audit.complete %}
-                            ---
-                        {% else %}
-                            {{ audit.ends_at|expires_when_str }}
-                        {% endif %}</td>
-                        <td>{% if audit.complete %}
-                            <span class="btn-xs btn-success">
-                                <i class="fa fa-check"></i> complete
-                            </span>
-                        {% else %}
-                            <span class="btn-xs btn-danger">
-                                <i class="fa fa-warning"></i> in progress
-                            </span>
-                        {% endif %}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+    <div class="row">
+        <div class="col-md-12">
+            {{ log_entry_panel(390, audit_log_entries) }}
         </div>
-    {% endif %}
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div>
+                    <table class="table table-elist">
+                        <thead>
+                            <tr>
+                                <th class="col-sm-4">Group</th>
+                                <th class="col-sm-2">Started</th>
+                                <th class="col-sm-2">Ends</th>
+                                <th class="col-sm-1">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% if not audits %}
+                            <tr>
+                                <td colspan="4" style="text-align: center;">There are no audits to view.</td>
+                            </tr>
+                        {% else %}
+                        {% for audit in audits %}
+                            <tr>
+                                <td>{{ account(audit.group) }}</td>
+                                <td>{{ audit.started_at|print_date }}</td>
+                                <td>{% if audit.complete %}
+                                    ---
+                                {% else %}
+                                    {{ audit.ends_at|expires_when_str }}
+                                {% endif %}</td>
+                                <td>{% if audit.complete %}
+                                    <span class="btn-xs btn-success">
+                                        <i class="fa fa-check"></i> complete
+                                    </span>
+                                {% else %}
+                                    <span class="btn-xs btn-danger">
+                                        <i class="fa fa-warning"></i> in progress
+                                    </span>
+                                {% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 

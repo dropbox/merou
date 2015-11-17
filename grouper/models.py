@@ -6,6 +6,7 @@ import json
 import logging
 import re
 
+from enum import IntEnum
 from sqlalchemy import create_engine
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, UniqueConstraint,
@@ -63,9 +64,17 @@ GROUP_EDGE_ROLES = (
 )
 OWNER_ROLE_INDICES = set([GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.index("np-owner")])
 
-
 MappedPermission = namedtuple('MappedPermission',
                               ['permission', 'audited', 'argument', 'groupname', 'granted_on'])
+
+class AuditLogCategory(IntEnum):
+    """Categories of entries in the audit_log."""
+
+    # generic, catch-all category
+    general = 1
+
+    # periodic global audit related
+    audit = 2
 
 
 class Session(_Session):
@@ -1710,10 +1719,12 @@ class AuditLog(Model):
     # to the user as-is, but we might provide filtering or something.
     action = Column(String(length=64), nullable=False)
     description = Column(Text, nullable=False)
+    category = Column(Integer, nullable=False, default=AuditLogCategory.general)
 
     @staticmethod
     def log(session, actor_id, action, description,
-            on_user_id=None, on_group_id=None, on_permission_id=None):
+            on_user_id=None, on_group_id=None, on_permission_id=None,
+            category=AuditLogCategory.general):
         '''
         Log an event in the database.
         '''
@@ -1725,6 +1736,7 @@ class AuditLog(Model):
             on_user_id=on_user_id if on_user_id else None,
             on_group_id=on_group_id if on_group_id else None,
             on_permission_id=on_permission_id if on_permission_id else None,
+            category=category,
         )
         try:
             entry.add(session)
@@ -1736,7 +1748,8 @@ class AuditLog(Model):
 
     @staticmethod
     def get_entries(session, actor_id=None, on_user_id=None, on_group_id=None,
-                    on_permission_id=None, limit=None, offset=None, involve_user_id=None):
+                    on_permission_id=None, limit=None, offset=None, involve_user_id=None,
+                    category=None):
         '''
         Flexible method for getting log entries. By default it returns all entries
         starting at the newest. Most recent first.
@@ -1759,6 +1772,8 @@ class AuditLog(Model):
                 AuditLog.on_user_id == involve_user_id,
                 AuditLog.actor_id == involve_user_id
             ))
+        if category:
+            results = results.filter(AuditLog.category == category)
 
         results = results.order_by(desc(AuditLog.log_time))
 

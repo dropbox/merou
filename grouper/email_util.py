@@ -147,6 +147,10 @@ def cancel_async_emails(session, async_key):
     Args:
         async_key (str): The async_key previously provided for your emails.
     """
+    # TODO(herb): get around circular depdendencies; long term remove call to
+    # send_async_email() from grouper.models
+    from grouper.models import AsyncNotification
+
     session.query(AsyncNotification).filter(
         AsyncNotification.key == async_key,
         AsyncNotification.sent == False

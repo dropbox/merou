@@ -1,12 +1,13 @@
 from sqlalchemy.exc import IntegrityError
 import sshpubkey
-from sshpubkey.exc import PublicKeyParseError #noqa
+from sshpubkey.exc import PublicKeyParseError  # noqa
 
 from .models import PublicKey
 
 
 class DuplicateKey(Exception):
     pass
+
 
 def add_public_key(session, user, public_key_str):
     """Add a public key for a particular user.

@@ -44,7 +44,7 @@ RESERVED_NAMES = [
     r"^admin",
     r"^test",
     r"^[^.]*$",
-    r"^[0-9]+$", # Reserved in order to select user or group by id.
+    r"^[0-9]+$",  # Reserved in order to select user or group by id.
     r".*\|.*",
 ]
 

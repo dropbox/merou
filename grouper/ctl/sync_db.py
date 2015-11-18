@@ -30,6 +30,7 @@ def sync_db_command(args):
             raise Exception('Failed to create permission: %s' % (name, ))
         session.commit()
 
+
 def add_parser(subparsers):
     sync_db_parser = subparsers.add_parser("sync_db", help="Apply database schema to database.")
     sync_db_parser.set_defaults(func=sync_db_command)

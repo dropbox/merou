@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from tempfile import NamedTemporaryFile
 
 from plop.collector import FlamegraphFormatter, PlopFormatter
 from pyflamegraph import generate

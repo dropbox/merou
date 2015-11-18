@@ -25,6 +25,7 @@ def ensure_valid_username(f):
 
     return wrapper
 
+
 def ensure_valid_groupname(f):
     @wraps(f)
     def wrapper(args):
@@ -35,6 +36,7 @@ def ensure_valid_groupname(f):
         return f(args)
 
     return wrapper
+
 
 def make_session():
     db_engine = get_db_engine(get_database_url(settings))

@@ -37,6 +37,7 @@ def group_command(args):
                 on_group_id=group.id)
             session.commit()
 
+
 def add_parser(subparsers):
     group_parser = subparsers.add_parser(
         "group", help="Edit groups and membership")

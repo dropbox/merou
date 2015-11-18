@@ -67,6 +67,7 @@ OWNER_ROLE_INDICES = set([GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.inde
 MappedPermission = namedtuple('MappedPermission',
                               ['permission', 'audited', 'argument', 'groupname', 'granted_on'])
 
+
 class AuditLogCategory(IntEnum):
     """Categories of entries in the audit_log."""
 
@@ -171,10 +172,12 @@ def load_plugins(plugin_dir, service_name):
     for plugin in Plugins:
         plugin.configure(service_name)
 
+
 def get_plugins():
     """Get a list of loaded plugins."""
     global Plugins
     return list(Plugins)
+
 
 def flush_transaction(method):
     @functools.wraps(method)
@@ -1182,7 +1185,6 @@ class Audit(Model):
         # Sort by name and return members
         return [auditmember for _, auditmember in sorted(auditmember_name_pairs)]
 
-
     @property
     def completable(self):
         """Whether or not this audit is completable
@@ -1612,7 +1614,6 @@ class AsyncNotification(Model):
     @staticmethod
     def add_expiration(session, expiration, group_name, member_name, recipients, member_is_user):
         async_key = AsyncNotification._expiration_key(group_name, member_name)
-        subject = "%s's membership in %s is expiring at %s UTC" % (member_name, group_name, expiration)
         send_after = expiration - timedelta(settings.expiration_notice_days)
         email_context = {
                 'expiration': expiration,
@@ -1635,7 +1636,7 @@ class AsyncNotification(Model):
     def cancel_expiration(session, group_name, member_name, recipients=None):
         async_key = AsyncNotification._expiration_key(group_name, member_name)
         opt_arg = []
-        if not recipients is None:
+        if recipients is not None:
             exprs = [AsyncNotification.email == recipient for recipient in recipients]
             opt_arg.append(or_(*exprs))
         session.query(AsyncNotification).filter(
@@ -1644,6 +1645,7 @@ class AsyncNotification(Model):
             *opt_arg
         ).delete()
         session.commit()
+
 
 class PermissionMap(Model):
     '''

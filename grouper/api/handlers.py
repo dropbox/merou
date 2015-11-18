@@ -97,7 +97,7 @@ class Users(GraphHandler):
             if not name:
                 return self.success({
                     "users": sorted([k
-                                     for k,v in self.graph.user_metadata.iteritems()
+                                     for k, v in self.graph.user_metadata.iteritems()
                                      if include_role_users or (not v["role_user"])]),
                 })
 

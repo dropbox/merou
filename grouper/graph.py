@@ -8,9 +8,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import label, literal
 
-from .constants import ILLEGAL_NAME_CHARACTER
 from .models import (
-    AsyncNotification,
     Group, User, GroupEdge, PublicKey, UserMetadata, Counter, GROUP_EDGE_ROLES,
     Permission, PermissionMap, MappedPermission,
 )
@@ -31,35 +29,41 @@ def Graph():  # noqa
 # A GroupGraph caches users, permissions, and groups as objects which are intended
 # to behave like the corresponding models but without any connection to SQL
 # backend.
-PermissionTuple = namedtuple("PermissionTuple",
-                              ["id", "name", "description", "created_on", "audited"])
-GroupTuple = namedtuple("GroupTuple",
-                        ["id", "groupname", "name", "description", "canjoin", "enabled", "type"])
+PermissionTuple = namedtuple(
+    "PermissionTuple",
+    ["id", "name", "description", "created_on", "audited"])
+GroupTuple = namedtuple(
+    "GroupTuple",
+    ["id", "groupname", "name", "description", "canjoin", "enabled", "type"])
+
 
 # Raise these exceptions when asking about users or groups that are not cached.
 class NoSuchUser(Exception):
     pass
+
+
 class NoSuchGroup(Exception):
     pass
+
 
 class GroupGraph(object):
     def __init__(self):
         logging.info('Created graph object.')
         self._graph = None
         self._rgraph = None
-        self.lock = RLock() # Graph structure.
-        self.update_lock = RLock() # Limit to 1 updating thread at a time.
-        self.users = set() # Enabled user names.
-        self.groups = set() # Group names.
-        self.permissions = set() # Permission names.
+        self.lock = RLock()  # Graph structure.
+        self.update_lock = RLock()  # Limit to 1 updating thread at a time.
+        self.users = set()  # Enabled user names.
+        self.groups = set()  # Group names.
+        self.permissions = set()  # Permission names.
         self.checkpoint = 0
         self.checkpoint_time = 0
-        self.user_metadata = {} # username -> {metaddata:[{}] public_keys:[{}]}.
+        self.user_metadata = {}  # username -> {metaddata:[{}] public_keys:[{}]}.
         self.group_metadata = {}
-        self.permission_metadata = {} # TODO: rename.  This is about permission grants.
-        self.permission_tuples = set() # Mock Permission instances.
-        self.group_tuples = {} # groupname -> Mock Group instance.
-        self.disabled_group_tuples = {} # groupname -> Mock Group instance.
+        self.permission_metadata = {}  # TODO: rename.  This is about permission grants.
+        self.permission_tuples = set()  # Mock Permission instances.
+        self.group_tuples = {}  # groupname -> Mock Group instance.
+        self.disabled_group_tuples = {}  # groupname -> Mock Group instance.
 
     @property
     def nodes(self):
@@ -392,12 +396,12 @@ class GroupGraph(object):
                 audited_group_nodes = set()
                 while len(queue):
                     g = queue.pop()
-                    if not g in audited_group_nodes:
+                    if g not in audited_group_nodes:
                         audited_group_nodes.add(g)
-                        for nhbr in self._graph.neighbors(g): # Members of g.
+                        for nhbr in self._graph.neighbors(g):  # Members of g.
                             if nhbr[0] == 'Group':
                                 queue.append(nhbr)
-                groups = sorted([self.group_tuples[g[1]] for g in audited_group_nodes],
+                groups = sorted([self.group_tuples[group[1]] for group in audited_group_nodes],
                                 key=lambda g: g.groupname)
         return groups
 
@@ -478,7 +482,7 @@ class GroupGraph(object):
 
     def get_user_details(self, username, cutoff=None):
         """ Get a user's groups and permissions.  Raise NoSuchUser for missing users."""
-        max_dist = cutoff-1 if (cutoff is not None) else None
+        max_dist = cutoff - 1 if (cutoff is not None) else None
 
         groups = {}
         permissions = []
@@ -488,7 +492,7 @@ class GroupGraph(object):
         }
 
         with self.lock:
-            if not username in self.user_metadata:
+            if username not in self.user_metadata:
                 raise NoSuchUser(username)
 
             user = ("User", username)
@@ -518,7 +522,7 @@ class GroupGraph(object):
                     continue
                 new_rpaths = single_source_shortest_path(self._rgraph, group, max_dist)
                 for parent, path in new_rpaths.iteritems():
-                    if not parent in rpaths or 1+len(path) < len(rpaths[parent]):
+                    if parent not in rpaths or 1 + len(path) < len(rpaths[parent]):
                         rpaths[parent] = [user] + path
 
             for parent, path in rpaths.iteritems():

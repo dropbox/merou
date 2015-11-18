@@ -29,6 +29,7 @@ def user_proxy_command(args):
     except KeyboardInterrupt:
         print "Bye!"
 
+
 def add_parser(subparsers):
     user_proxy_parser = subparsers.add_parser("user_proxy",
                                               help="Start a development reverse proxy.")

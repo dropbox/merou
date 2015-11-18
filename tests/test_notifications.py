@@ -7,7 +7,7 @@ import pytest
 from fixtures import graph, session, users, groups, permissions
 from util import add_member, edit_member, revoke_member, grant_permission
 
-from grouper.email_util import SendEmailThread
+from grouper.email_util import process_async_emails
 from grouper.models import AsyncNotification
 from grouper.settings import settings
 
@@ -43,7 +43,6 @@ def test_expiration_notifications(expiring_graph, session, users, groups, permis
     note_exp_now = now + timedelta(settings.expiration_notice_days)
     day = timedelta(1)
     week = timedelta(7)
-    async = SendEmailThread(settings)
 
     # What expirations are coming up in the next day?  Next week?
     upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+day)
@@ -105,10 +104,10 @@ def test_expiration_notifications(expiring_graph, session, users, groups, permis
     ]
 
     # Send notices about expirations coming up in the next day, next week.
-    notices_sent = async.send_emails(session, now+day, dry_run=True)
+    notices_sent = process_async_emails(settings, session, now+day, dry_run=True)
     assert notices_sent == 0
 
-    notices_sent = async.send_emails(session, now+week, dry_run=True)
+    notices_sent = process_async_emails(settings, session, now+week, dry_run=True)
     assert notices_sent == 3
     # ("serving-team", "team-sre", "gary@a.co")
     # ("serving-team", "team-sre", "oliver@a.co")
@@ -125,7 +124,7 @@ def test_expiration_notifications(expiring_graph, session, users, groups, permis
     ]
 
     # We already sent these notices.
-    notices_sent = async.send_emails(session, now+week, dry_run=True)
+    notices_sent = process_async_emails(settings, session, now+week, dry_run=True)
     assert notices_sent == 0
 
     # Extend gary's membership to beyond worth mentioning expiration in two weeks.
@@ -134,5 +133,5 @@ def test_expiration_notifications(expiring_graph, session, users, groups, permis
     upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+2*week)
     assert upcoming_expirations == []
 
-    notices_sent = async.send_emails(session, now+2*week, dry_run=True)
+    notices_sent = process_async_emails(settings, session, now+2*week, dry_run=True)
     assert notices_sent == 0

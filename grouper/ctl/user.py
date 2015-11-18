@@ -48,8 +48,9 @@ def user_command(args):
             return
 
         AuditLog.log(session, user.id, 'add_public_key',
-                            '(Administrative) Added public key: {}'.format(pubkey.fingerprint),
-                            on_user_id=user.id)
+                '(Administrative) Added public key: {}'.format(pubkey.fingerprint),
+                on_user_id=user.id)
+
 
 def add_parser(subparsers):
     user_parser = subparsers.add_parser(

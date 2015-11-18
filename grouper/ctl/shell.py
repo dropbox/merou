@@ -25,6 +25,7 @@ def shell_command(args):
     else:
         embed()
 
+
 def add_parser(subparsers):
     shell_parser = subparsers.add_parser(
         "shell", help="Launch a shell with models imported.")

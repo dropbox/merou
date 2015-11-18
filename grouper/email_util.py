@@ -8,7 +8,6 @@ from time import sleep
 
 from sqlalchemy.exc import OperationalError
 
-from grouper.fe.settings import settings as fe_settings
 from grouper.fe.template_util import get_template_env
 from grouper.util import get_database_url
 
@@ -92,12 +91,14 @@ class SendEmailThread(Thread):
                 logging.critical("Failed to connect to database.")
             sleep(60)
 
-def send_email(session, recipients, subject, template, settings, context):
-    return send_async_email(session, recipients, subject, template, settings, context,
-            send_after=datetime.utcnow())
 
-def send_async_email(session, recipients, subject, template, settings, context, send_after,
-        async_key=None):
+def send_email(session, recipients, subject, template, settings, context):
+    return send_async_email(
+        session, recipients, subject, template, settings, context, send_after=datetime.utcnow())
+
+
+def send_async_email(
+        session, recipients, subject, template, settings, context, send_after, async_key=None):
     """Construct a message object from a template and schedule it
 
     This is the main email sending method to send out a templated email. This is used to
@@ -138,6 +139,7 @@ def send_async_email(session, recipients, subject, template, settings, context, 
         notif.add(session)
     session.commit()
 
+
 def cancel_async_emails(session, async_key):
     """Cancel pending async emails by key
 
@@ -155,6 +157,7 @@ def cancel_async_emails(session, async_key):
         AsyncNotification.key == async_key,
         AsyncNotification.sent == False
     ).update({"sent": True})
+
 
 def get_email_from_template(recipient_list, subject, template, settings, context):
     """Construct a message object from a template
@@ -198,6 +201,7 @@ def get_email_from_template(recipient_list, subject, template, settings, context
     msg.attach(html)
 
     return msg
+
 
 def send_email_raw(settings, recipient_list, msg_raw):
     """Send raw email (from string)

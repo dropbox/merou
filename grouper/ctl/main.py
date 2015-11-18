@@ -18,6 +18,7 @@ from grouper.util import get_loglevel
 
 sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
+
 def main(sys_argv=sys.argv, start_config_thread=True):
 
     description_msg = "Grouper Control"

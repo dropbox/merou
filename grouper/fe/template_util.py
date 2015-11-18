@@ -56,6 +56,8 @@ def long_ago_str(date_obj, utcnow_fn=datetime.utcnow):
 
 
 _DELTA_COMPONENTS = ["year", "month", "day", "hour", "minute", "second"]
+
+
 def highest_period_delta_str(delta):
     for name in _DELTA_COMPONENTS:
         value = getattr(delta, "{}s".format(name))

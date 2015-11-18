@@ -712,7 +712,6 @@ class GroupRequestUpdate(GrouperHandler):
         form = GroupRequestModifyForm(self.request.arguments)
         form.status.choices = self._get_choices(request.status)
 
-
         updates = request.my_status_updates()
 
         self.render(
@@ -1363,7 +1362,7 @@ class GroupJoin(GrouperHandler):
                 if GROUP_EDGE_ROLES[user.role] in ('manager', 'owner', 'np-owner')
             ]
 
-            email_context =  {
+            email_context = {
                     "requester": member.name,
                     "requested_by": self.current_user.name,
                     "requested": group.name,

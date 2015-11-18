@@ -6,6 +6,7 @@ import yaml
 
 from expvar.stats import stats
 
+
 class Settings(object):
     def __init__(self, initial_settings):
         self.settings = initial_settings
@@ -44,7 +45,6 @@ class Settings(object):
 
             self[key] = value
 
-
     def start_config_thread(self, filename, section=None, refresh_config_seconds=10):
         """
         Start a daemon thread to reload the given config file and section periodically.
@@ -53,6 +53,7 @@ class Settings(object):
         """
         assert not self._loading_thread_started, "start_config_thread called twice!"
         self._update_from_config(filename, section=section)
+
         def refresh_config_loop():
             while True:
                 time.sleep(refresh_config_seconds)
@@ -80,6 +81,7 @@ class Settings(object):
                 return self.settings[name]
             except KeyError as err:
                 raise AttributeError(err)
+
 
 def default_settings_path():
     return os.environ.get("GROUPER_SETTINGS", "/etc/grouper.yaml")

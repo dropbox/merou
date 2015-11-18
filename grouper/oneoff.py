@@ -2,6 +2,8 @@
 Base class for Grouper oneoffs. These are scripts are run in the grouper
 environment via grouper-ctl.
 """
+
+
 class BaseOneOff(object):
     def configure(self, service_name):
         """

@@ -1,16 +1,13 @@
 from datetime import datetime
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from functools import wraps
 import logging
 import re
 import sys
-import traceback
 import urllib
 from uuid import uuid4
 
 from expvar.stats import stats
-from plop.collector import Collector, FlamegraphFormatter
+from plop.collector import Collector
 import sqlalchemy.exc
 import tornado.web
 from tornado.web import RequestHandler
@@ -20,7 +17,6 @@ from grouper.constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATIO
 from grouper.fe.settings import settings
 from grouper.graph import Graph
 from grouper.models import (
-        AsyncNotification,
         get_db_engine,
         Session,
         User,

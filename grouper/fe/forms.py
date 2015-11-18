@@ -3,7 +3,6 @@ import re
 import sshpubkey
 
 from wtforms import (
-        BooleanField,
         HiddenField,
         IntegerField,
         SelectField,
@@ -74,10 +73,11 @@ class PermissionCreateForm(Form):
     ])
     description = TextAreaField("Description")
 
+
 class GroupCreateForm(Form):
     creatorrole = SelectField("Creator role", choices=[
-        ("owner", "Owner"), ("np-owner", "No-Permissions Owner"),
-    ], default="owner")
+            ("owner", "Owner"), ("np-owner", "No-Permissions Owner"),
+            ], default="owner")
     groupname = TextField("Name", [
         validators.Length(min=3, max=32),
         validators.Required(),
@@ -88,6 +88,7 @@ class GroupCreateForm(Form):
         ("canjoin", "Anyone"), ("canask", "Must Ask"),
         ("nobody", "Nobody"),
     ], default="canask")
+
 
 class GroupEditForm(Form):
     groupname = TextField("Name", [

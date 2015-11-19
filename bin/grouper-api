@@ -13,7 +13,7 @@ import grouper
 from grouper.app import Application
 from grouper.api.routes import HANDLERS
 from grouper.api.settings import settings
-from grouper.email_util import SendEmailThread
+from grouper.background import BackgroundThread
 from grouper.graph import GroupGraph
 from grouper.models import get_db_engine, Session, load_plugins
 from grouper.settings import default_settings_path
@@ -117,9 +117,9 @@ def main(argv):
     refresher.daemon = True
     refresher.start()
 
-    emailer = SendEmailThread(settings)
-    emailer.daemon = True
-    emailer.start()
+    background = BackgroundThread(settings)
+    background.daemon = True
+    background.start()
 
     address = args.address or settings.address
     port = args.port or settings.port

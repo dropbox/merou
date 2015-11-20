@@ -837,6 +837,12 @@ class Group(Model):
             member_type=member_type,
             member_pk=user_or_group.id,
         )
+
+        # TODO(herb): this means all requests by this user to this group will
+        # have the same role. we should probably record the role specifically
+        # on the request and use that as the source on the UI
+        edge._role = GROUP_EDGE_ROLES.index(role)
+
         self.session.flush()
 
         request = Request(
@@ -1054,7 +1060,7 @@ class Group(Model):
             label("requester", User.username),
             label("type", members.c.type),
             label("requesting", members.c.name),
-            label("reason", Comment.comment)
+            label("reason", Comment.comment),
         ).filter(
             Request.on_behalf_obj_pk == members.c.id,
             Request.on_behalf_obj_type == members.c.type,

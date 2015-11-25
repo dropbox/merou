@@ -1,6 +1,11 @@
 from sqlalchemy.exc import IntegrityError
 
-from grouper.constants import SYSTEM_PERMISSIONS
+from grouper.constants import (
+        GROUP_ADMIN,
+        PERMISSION_ADMIN,
+        SYSTEM_PERMISSIONS,
+        USER_ADMIN,
+        )
 from grouper.ctl.util import make_session
 from grouper.models import (
         get_db_engine,
@@ -18,6 +23,20 @@ def sync_db_command(args):
 
     # Add some basic database structures we know we will need if they don't exist.
     session = make_session()
+
+    for name, description in SYSTEM_PERMISSIONS:
+        test = Permission.get(session, name)
+        if test:
+            continue
+        permission = Permission(name=name, description=description)
+        try:
+            permission.add(session)
+            session.flush()
+        except IntegrityError:
+            session.rollback()
+            raise Exception('Failed to create permission: %s' % (name, ))
+        session.commit()
+
     # This group is needed to bootstrap a Grouper installation.
     admin_group = Group.get(session, name="grouper-administrators")
     if not admin_group:
@@ -33,33 +52,13 @@ def sync_db_command(args):
         except IntegrityError:
             session.rollback()
             raise Exception('Failed to create group: grouper-administrators')
-    admin_group_permission_names = [perm[1] for perm in admin_group.my_permissions()]
 
-    for name, description in SYSTEM_PERMISSIONS:
-        permission = Permission.get(session, name)
-        if permission and name not in admin_group_permission_names:
-            try:
-                admin_group.grant_permission(permission)
-                session.commit()
-            except IntegrityError:
-                # The permission is already extant in the group, carry on.
-                session.rollback()
-            continue
-        elif permission:
-            continue
+        for permission_name in (GROUP_ADMIN, PERMISSION_ADMIN, USER_ADMIN):
+            permission = Permission.get(session, permission_name)
+            assert permission, "Permission should have been created earlier!"
+            admin_group.grant_permission(permission)
 
-        permission = Permission(name=name, description=description)
-        try:
-            permission.add(session)
-            session.flush()
-        except IntegrityError:
-            session.rollback()
-            raise Exception('Failed to create permission: %s' % (name, ))
         session.commit()
-        admin_group.grant_permission(permission)
-        session.commit()
-
-    session.commit()
 
 
 def add_parser(subparsers):

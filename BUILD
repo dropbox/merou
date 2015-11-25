@@ -24,24 +24,25 @@ py_library(
     srcs = glob(["grouper/**/*.py"]),
     data = [
         ':annex',
+        ':argparse',
+        ':bittle',
+        ':enum34',
+        ':expvar',
         ':jinja2',
         ':mysql-python',
         ':markup-safe',
-        ':pyyaml',
-        ':sqlalchemy',
-        ':wtforms',
-        ':argparse',
-        ':ssl-match-hostname',
-        ':bittle',
-        ':expvar',
         ':networkx',
         ':python-dateutil',
         ':pytz',
+        ':pyyaml',
+        ':sqlalchemy',
         ':sshpubkey',
+        ':ssl-match-hostname',
+        ':template_files',
         ':tornado',
         ':wsgiref',
+        ':wtforms',
         ':wtforms-tornado',
-        ':template_files',
     ],
 )
 
@@ -143,11 +144,19 @@ dbx_py_pip(
 dbx_py_pip(
     name = 'python-dateutil',
     pip_deps = ['python-dateutil==2.4.2'],
+    deps = [
+        ':six',
+    ],
 )
 
 dbx_py_pip(
     name = 'pytz',
     pip_deps = ['pytz==2014.2'],
+)
+
+dbx_py_pip(
+    name = 'six',
+    pip_deps = ['six==1.10.0'],
 )
 
 dbx_py_pip(

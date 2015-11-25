@@ -63,6 +63,8 @@ GROUP_EDGE_ROLES = (
     "np-owner",  # Same as owner but don't inherit permissions.
 )
 OWNER_ROLE_INDICES = set([GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.index("np-owner")])
+APPROVER_ROLE_INDICIES = set([GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.index("np-owner"),
+        GROUP_EDGE_ROLES.index("manager")])
 
 MappedPermission = namedtuple('MappedPermission',
                               ['permission', 'audited', 'argument', 'groupname', 'granted_on'])
@@ -554,7 +556,7 @@ class User(Model):
             GroupEdge.group_id == Group.id,
             GroupEdge.member_pk == self.id,
             GroupEdge.active == True,
-            GroupEdge._role.in_([1, 2]),
+            GroupEdge._role.in_(APPROVER_ROLE_INDICIES),
             self.enabled == True,
             Group.enabled == True,
             or_(
@@ -837,6 +839,12 @@ class Group(Model):
             member_type=member_type,
             member_pk=user_or_group.id,
         )
+
+        # TODO(herb): this means all requests by this user to this group will
+        # have the same role. we should probably record the role specifically
+        # on the request and use that as the source on the UI
+        edge._role = GROUP_EDGE_ROLES.index(role)
+
         self.session.flush()
 
         request = Request(
@@ -1054,7 +1062,7 @@ class Group(Model):
             label("requester", User.username),
             label("type", members.c.type),
             label("requesting", members.c.name),
-            label("reason", Comment.comment)
+            label("reason", Comment.comment),
         ).filter(
             Request.on_behalf_obj_pk == members.c.id,
             Request.on_behalf_obj_type == members.c.type,

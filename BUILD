@@ -25,7 +25,6 @@ py_library(
     data = [
         ':annex',
         ':argparse',
-        ':bittle',
         ':enum34',
         ':expvar',
         ':jinja2',
@@ -109,11 +108,6 @@ dbx_py_pip(
 dbx_py_pip(
     name = 'ssl-match-hostname',
     pip_deps = ['backports.ssl-match-hostname==3.4.0.2'],
-)
-
-dbx_py_pip(
-    name = 'bittle',
-    pip_deps = ['bittle==0.2.1'],
 )
 
 dbx_py_pip(

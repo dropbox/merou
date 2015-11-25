@@ -4,7 +4,6 @@ import sys
 
 from grouper import __version__
 from grouper.ctl import (
-        capabilities,
         group,
         oneoff,
         shell,
@@ -37,7 +36,6 @@ def main(sys_argv=sys.argv, start_config_thread=True):
     subparsers = parser.add_subparsers(dest="command")
 
     for subcommand_module in [
-            capabilities,
             group,
             oneoff,
             shell,

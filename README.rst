@@ -76,14 +76,9 @@ via the following commands:
     export PYTHONPATH=$(pwd)
     export GROUPER_SETTINGS=$(pwd)/config/dev.yaml
 
-    # Allow user to set up groups and group-membership.
-    bin/grouper-ctl -vv \
-        capabilities add $USER@example.com group_admin
+    bin/grouper-ctl -vv\
+        user create $USER@example.com
 
-    # Allow someone to enable/disable user accounts.
+    # Give the user administrative access to the Grouper instance
     bin/grouper-ctl -vv \
-        capabilities add $USER@example.com user_admin
-
-    # Allow someone to create permissions.
-    bin/grouper-ctl -vv \
-        capabilities add $USER@example.com permission_admin
+        group add_member grouper-administrators $USER@example.com

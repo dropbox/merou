@@ -1,8 +1,15 @@
 from mock import patch
 
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
+from grouper.constants import (
+        GROUP_ADMIN,
+        PERMISSION_ADMIN,
+        SYSTEM_PERMISSIONS,
+        USER_ADMIN,
+)
+
 from grouper.ctl.main import main
-from grouper.models import Group, User
+from grouper.models import Group, Model, User
 
 
 def call_main(*args):
@@ -99,3 +106,21 @@ def test_group_add_remove_member(make_session, session, users, groups):
     bad_username = 'not_a_valid_username'
     call_main('group', 'add_member', groupname , bad_username)
     assert (u'User', bad_username) not in Group.get(session, name=groupname).my_members()
+
+noop = lambda *k: None
+
+@patch('grouper.ctl.sync_db.make_session')
+@patch('grouper.ctl.sync_db.get_database_url', new=noop)
+@patch('grouper.ctl.sync_db.get_db_engine', new=noop)
+@patch.object(Model.metadata, 'create_all', new=noop)
+def test_sync_db_default_group(make_session, session, users, groups):
+    make_session.return_value = session
+
+    call_main('sync_db')
+    admin_group = Group.get(session, name="grouper-administrators")
+    assert admin_group, "Group should have been autocreated"
+
+    admin_group_permission_names = [perm[1] for perm in admin_group.my_permissions()]
+    for permission in (GROUP_ADMIN, PERMISSION_ADMIN, USER_ADMIN):
+        assert permission in admin_group_permission_names, \
+                "Expected permission missing: %s" % permission

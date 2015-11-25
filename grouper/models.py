@@ -21,10 +21,10 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.orm import sessionmaker, Session as _Session
 from sqlalchemy.sql import func, label, literal
 
-from .capabilities import Capabilities
 from .constants import (
     ARGUMENT_VALIDATION, PERMISSION_GRANT, PERMISSION_CREATE, MAX_NAME_LENGTH,
-    PERMISSION_VALIDATION, ILLEGAL_NAME_CHARACTER
+    PERMISSION_VALIDATION, ILLEGAL_NAME_CHARACTER, PERMISSION_ADMIN,
+    GROUP_ADMIN, USER_ADMIN
 )
 from .email_util import send_async_email
 from .plugin import BasePlugin
@@ -263,7 +263,6 @@ class User(Model):
 
     id = Column(Integer, primary_key=True)
     username = Column(String(length=MAX_NAME_LENGTH), unique=True, nullable=False)
-    capabilities = Column(Integer, default=0, nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
     role_user = Column(Boolean, default=False, nullable=False)
 
@@ -333,15 +332,15 @@ class User(Model):
 
     @property
     def user_admin(self):
-        return Capabilities(self.capabilities).has("user_admin")
+        return self.has_permission(USER_ADMIN)
 
     @property
     def group_admin(self):
-        return Capabilities(self.capabilities).has("group_admin")
+        return self.has_permission(GROUP_ADMIN)
 
     @property
     def permission_admin(self):
-        return Capabilities(self.capabilities).has("permission_admin")
+        return self.has_permission(PERMISSION_ADMIN)
 
     def is_member(self, members):
         return ("User", self.name) in members

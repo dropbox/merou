@@ -1,6 +1,7 @@
 from fixtures import graph, groups, permissions, session, standard_graph, users
 
 from grouper.models import Group, Request, User
+from util import add_member
 
 
 def test_basic_request(graph, groups, permissions, session, standard_graph, users):
@@ -71,3 +72,16 @@ def test_aggregate_request(graph, groups, permissions, session, standard_graph, 
     assert len(users["oliver@a.co"].my_requests_aggregate().all()) == 1, "owner should get request"
     user_not_gary_oliver = [u for n,u in users.items() if n not in ("gary@a.co","oliver@a.co")]
     assert not any([u.my_requests_aggregate().all() for u in user_not_gary_oliver])
+
+    # manager and np-owner should get requests
+    figurehead = users["figurehead@a.co"]
+    add_member(groups["audited-team"], figurehead, role="manager")
+    assert len(figurehead.my_requests_aggregate().all()) == 0, "no request for np-owner at first"
+
+    groups["tech-ops"].add_member(users["testuser@a.co"], users["testuser@a.co"],
+            reason="for the lulz")
+    assert len(figurehead.my_requests_aggregate().all()) == 1, "request for np-owner"
+
+    groups["audited-team"].add_member(users["testuser@a.co"], users["testuser@a.co"],
+            reason="for the lulz")
+    assert len(figurehead.my_requests_aggregate().all()) == 2, "request for np-owner and manager"

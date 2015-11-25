@@ -406,7 +406,8 @@ class GroupGraph(object):
         return groups
 
     def get_group_details(self, groupname, cutoff=None, show_permission=None):
-        """ Get users and permissions that belong to a group. Raise NoSuchGroup for missing groups. """
+        """ Get users and permissions that belong to a group. Raise NoSuchGroup
+        for missing groups. """
 
         with self.lock:
             # This is calculated based on all the permissions that apply to this group. Since this

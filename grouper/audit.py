@@ -30,8 +30,9 @@ def user_is_auditor(username):
 def assert_controllers_are_auditors(group):
     """Return whether not all owners/np-owners/managers in a group (and below) are auditors
 
-    This is used to ensure that all of the people who can control a group (owners, np-owners, managers)
-    and all subgroups (all the way down the tree) have audit permissions.
+    This is used to ensure that all of the people who can control a group
+    (owners, np-owners, managers) and all subgroups (all the way down the tree)
+    have audit permissions.
 
     Raises:
         UserNotAuditor: If a user is found that violates the audit training policy, then this

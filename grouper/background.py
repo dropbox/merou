@@ -7,6 +7,7 @@ from sqlalchemy.exc import OperationalError
 
 from grouper.email_util import process_async_emails
 from grouper.models import get_db_engine, Session
+from grouper.perf_profile import prune_old_traces
 from grouper.util import get_database_url
 
 
@@ -37,6 +38,7 @@ class BackgroundThread(Thread):
             try:
                 session = Session()
                 process_async_emails(self.settings, session, datetime.utcnow())
+                prune_old_traces(session)
                 session.commit()
                 session.close()
             except OperationalError:

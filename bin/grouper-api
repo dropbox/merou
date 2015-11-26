@@ -1,25 +1,24 @@
 #!/usr/bin/env python
 
 import argparse
-from expvar.stats import stats
 import logging
 import os
 import sys
-from threading import Thread
-from time import sleep
-import tornado.ioloop
+
 import tornado.httpserver
+import tornado.ioloop
+
 import grouper
-from grouper.app import Application
 from grouper.api.routes import HANDLERS
 from grouper.api.settings import settings
+from grouper.app import Application
 from grouper.background import BackgroundThread
+from grouper.database import DbRefreshThread
 from grouper.graph import GroupGraph
 from grouper.models import get_db_engine, Session, load_plugins
 from grouper.settings import default_settings_path
 from grouper.util import get_loglevel, get_database_url
 
-from sqlalchemy.exc import OperationalError
 
 sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
@@ -30,36 +29,6 @@ try:
 except ImportError:
     raven_installed = False
 
-
-class DbRefreshThread(Thread):
-    def __init__(self, graph, refresh_interval, sentry_client, *args, **kwargs):
-        self.graph = graph
-        self.refresh_interval = refresh_interval
-        self.sentry_client = sentry_client
-        Thread.__init__(self, *args, **kwargs)
-
-    def capture_exception(self):
-        if self.sentry_client:
-            self.sentry_client.captureException()
-
-    def run(self):
-        while True:
-            sleep(self.refresh_interval)
-
-            logging.debug("Updating Graph from Database.")
-            try:
-                session = Session()
-                self.graph.update_from_db(session)
-                session.close()
-                stats.set_gauge("successful-db-update", 1)
-            except OperationalError:
-                Session.configure(bind=get_db_engine(get_database_url(settings)))
-                logging.critical("Failed to connect to database.")
-                stats.set_gauge("successful-db-update", 0)
-                self.capture_exception()
-            except:
-                self.capture_exception()
-                raise
 
 def main(argv):
 
@@ -123,7 +92,7 @@ def main(argv):
 
     application.sentry_client = sentry_client
 
-    refresher = DbRefreshThread(graph, settings.refresh_interval, sentry_client)
+    refresher = DbRefreshThread(settings, graph, settings.refresh_interval, sentry_client)
     refresher.daemon = True
     refresher.start()
 

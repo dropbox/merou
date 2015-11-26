@@ -33,13 +33,16 @@ sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
 
 class DbRefreshThread(Thread):
-    def __init__(self, graph, refresh_interval, *args, **kwargs):
+    def __init__(self, graph, refresh_interval, sentry_client, *args, **kwargs):
         self.graph = graph
         self.refresh_interval = refresh_interval
         Thread.__init__(self, *args, **kwargs)
 
-    def run(self):
+    def capture_exception(self):
+        if self.sentry_client:
+            self.sentry_client.captureException()
 
+    def run(self):
         while True:
             sleep(self.refresh_interval)
 
@@ -54,6 +57,10 @@ class DbRefreshThread(Thread):
                 Session.configure(bind=get_db_engine(get_database_url(settings)))
                 logging.critical("Failed to connect to database.")
                 stats.set_gauge("successful-db-update", 0)
+                self.capture_exception()
+            except:
+                self.capture_exception()
+                raise
 
 
 def main(argv):
@@ -120,15 +127,18 @@ def main(argv):
 
     application = Application(HANDLERS, my_settings=my_settings, **tornado_settings)
 
+    sentry_client = None
     if settings.sentry_dsn:
         logging.info("sentry DSN set")
         if not raven_installed:
             logging.warning("raven not installed, not enabling sentry")
         else:
             logging.info("enabling sentry")
-            application.sentry_client = AsyncSentryClient(settings.sentry_dsn)
+            sentry_client = AsyncSentryClient(settings.sentry_dsn)
 
-    refresher = DbRefreshThread(graph, settings.refresh_interval)
+    application.sentry_client = sentry_client
+
+    refresher = DbRefreshThread(graph, settings.refresh_interval, sentry_client)
     refresher.daemon = True
     refresher.start()
 

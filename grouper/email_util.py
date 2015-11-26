@@ -190,3 +190,66 @@ def send_email_raw(settings, recipient_list, msg_raw):
     smtp = smtplib.SMTP(settings["smtp_server"])
     smtp.sendmail(sender, recipient_list, msg_raw)
     smtp.quit()
+
+
+def notify_edge_expiration(settings, session, edge):
+    """Send notification that an edge has expired.
+
+    Handles email notification and audit logging.
+
+    Args:
+        settings (Settings): Grouper Settings object for current run.
+        session (Session): Object for db session.
+        edge (GroupEdge): The expiring edge.
+    """
+    # TODO(herb): get around circular depdendencies; long term remove call to
+    # send_async_email() from grouper.models
+    from grouper.models import AuditLog, Group, OBJ_TYPES_IDX, User
+
+    # TODO(rra): Arbitrarily use the first listed owner of the group from which membership expired
+    # as the actor, since we have to provide an actor and we didn't record who set the expiration on
+    # the edge originally.
+    actor_id = next(edge.group.my_owners().itervalues()).id
+
+    # Pull data about the edge and the affected user or group.
+    group_name = edge.group.name
+    if OBJ_TYPES_IDX[edge.member_type] == "User":
+        user = User.get(session, pk=edge.member_pk)
+        member_name = user.username
+        recipients = [member_name]
+        member_is_user = True
+    else:
+        subgroup = Group.get(session, pk=edge.member_pk)
+        member_name = subgroup.groupname
+        recipients = subgroup.my_owners_as_strings()
+        member_is_user = False
+
+    # Log to the audit log.  How depends on whether a user's membership has expired or a group's
+    # membership has expired.
+    audit_data = {
+        "action": "expired_from_group",
+        "actor_id": actor_id,
+        "description": "{} expired out of the group".format(member_name),
+    }
+    if member_is_user:
+        AuditLog.log(session, on_user_id=user.id, on_group_id=edge.group_id, **audit_data)
+    else:
+        # Make an audit log entry for both the subgroup and the parent group so that it will show up
+        # in the FE view for both groups.
+        AuditLog.log(session, on_group_id=edge.group_id, **audit_data)
+        AuditLog.log(session, on_group_id=subgroup.id, **audit_data)
+
+    # Send email notification to the affected people.
+    email_context = {
+        "group_name": group_name,
+        "member_name": member_name,
+        "member_is_user": member_is_user,
+    }
+    send_email(
+        session=session,
+        recipients=recipients,
+        subject="Membership in {} expired".format(group_name),
+        template="expiration",
+        settings=settings,
+        context=email_context,
+    )

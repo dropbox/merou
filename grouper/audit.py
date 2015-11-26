@@ -1,5 +1,4 @@
-from constants import PERMISSION_AUDITOR
-
+from grouper.constants import PERMISSION_AUDITOR
 from grouper.graph import Graph
 from grouper.models import Audit
 

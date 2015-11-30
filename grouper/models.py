@@ -1406,12 +1406,14 @@ class GroupEdge(Model):
                 if value:
                     expiration = datetime.strptime(value, "%m/%d/%Y")
                     setattr(self, key, expiration)
-                    AsyncNotification.add_expiration(self.session,
-                                                     expiration,
-                                                     group_name,
-                                                     member_name,
-                                                     recipients=recipients,
-                                                     member_is_user=member_is_user)
+                    # Avoid sending notifications for expired edges.
+                    if expiration > datetime.utcnow():
+                        AsyncNotification.add_expiration(self.session,
+                                                         expiration,
+                                                         group_name,
+                                                         member_name,
+                                                         recipients=recipients,
+                                                         member_is_user=member_is_user)
                 else:
                     setattr(self, key, None)
             else:
@@ -1758,7 +1760,7 @@ class AuditLog(Model):
     @staticmethod
     def get_entries(session, actor_id=None, on_user_id=None, on_group_id=None,
                     on_permission_id=None, limit=None, offset=None, involve_user_id=None,
-                    category=None):
+                    category=None, action=None):
         '''
         Flexible method for getting log entries. By default it returns all entries
         starting at the newest. Most recent first.
@@ -1783,6 +1785,8 @@ class AuditLog(Model):
             ))
         if category:
             results = results.filter(AuditLog.category == category)
+        if action:
+            results = results.filter(AuditLog.action == action)
 
         results = results.order_by(desc(AuditLog.log_time))
 

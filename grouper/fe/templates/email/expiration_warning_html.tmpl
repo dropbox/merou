@@ -7,6 +7,6 @@
 <p>Your membership is about to expire at {{ expiration|print_date }}</p>
 
 {% else %}
-<p>The membership of '{{ member_name }}' in the group '{{ group_name }}' (which you are an owner) is about to expire on {{ expiration|print_date }}.</p>
+<p>The membership of '{{ member_name }}' in the group '{{ group_name }}' (of which you are an owner) is about to expire on {{ expiration|print_date }}.</p>
 {% endif %}
 {% endblock %}

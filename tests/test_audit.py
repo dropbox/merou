@@ -3,7 +3,8 @@ import pytest
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 
 from grouper.audit import (
-    assert_controllers_are_auditors, assert_can_join, user_is_auditor, UserNotAuditor
+    assert_controllers_are_auditors, assert_can_join, user_is_auditor,
+    UserNotAuditor
 )
 
 

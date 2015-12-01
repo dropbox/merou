@@ -1738,6 +1738,16 @@ class AuditLog(Model):
             category=AuditLogCategory.general):
         '''
         Log an event in the database.
+
+        Args:
+            session(Session): database session
+            actor_id(int): actor
+            action(str): unique string identifier for action taken
+            description(str): description for action taken
+            on_user_id(int): user affected, if any
+            on_group_id(int): group affected, if any
+            on_permission_id(int): permission affected, if any
+            category(AuditLogCategory): category of log entry
         '''
         entry = AuditLog(
             actor_id=actor_id,
@@ -1747,7 +1757,7 @@ class AuditLog(Model):
             on_user_id=on_user_id if on_user_id else None,
             on_group_id=on_group_id if on_group_id else None,
             on_permission_id=on_permission_id if on_permission_id else None,
-            category=category,
+            category=int(category),
         )
         try:
             entry.add(session)
@@ -1784,7 +1794,7 @@ class AuditLog(Model):
                 AuditLog.actor_id == involve_user_id
             ))
         if category:
-            results = results.filter(AuditLog.category == category)
+            results = results.filter(AuditLog.category == int(category))
         if action:
             results = results.filter(AuditLog.action == action)
 

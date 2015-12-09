@@ -894,7 +894,8 @@ class AuditsComplete(GrouperHandler):
                                           "Revoked as part of audit.")
                 AuditLog.log(self.session, self.current_user.id, 'remove_member',
                              'Removed membership in audit: {}'.format(member.member.name),
-                             on_group_id=audit.group.id, category=AuditLogCategory.audit)
+                             on_group_id=audit.group.id, on_user_id=member.member.id,
+                             category=AuditLogCategory.audit)
 
         audit.complete = True
         self.session.commit()

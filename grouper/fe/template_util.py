@@ -7,25 +7,54 @@ from pytz import UTC
 from grouper.fe.settings import settings
 
 
+def _make_date_obj(date_obj):
+    """Given either a datetime object, float date/time in UTC unix epoch, or
+    string date/time in the form '%Y-%m-%d %H:%M:%S.%f' return a datetime
+    object."""
+    if isinstance(date_obj, float):
+        date_obj = datetime.fromtimestamp(date_obj, UTC)
+
+    if isinstance(date_obj, basestring):
+        date_obj = datetime.strptime(date_obj, "%Y-%m-%d %H:%M:%S.%f")
+        date_obj = date_obj.replace(tzinfo=UTC)
+
+    assert isinstance(date_obj, datetime)
+
+    if date_obj.tzinfo is None:
+        # naive dates are assumed UTC
+        date_obj = date_obj.replace(tzinfo=UTC)
+
+    return date_obj
+
+
+def _utcnow():
+    return datetime.now(UTC)
+
+
 def print_date(date_obj):
+    """Print a human readable date/time string that respects system
+    configuration for time zone and date/time format.
+
+    Args:
+        date_obj(datetime, float, str): either a datetime object, float of
+        seconds since epoch, or a str in the form '%Y-%m-%d %H:%M:%S.%f'
+
+    Returns human readable date/time string.
+    """
     if date_obj is None:
         return ""
 
-    if date_obj.tzinfo is None:
-        # Assume naive datetime objects are UTC
-        date_obj = date_obj.replace(tzinfo=UTC)
+    date_obj = _make_date_obj(date_obj)
 
     date_obj = date_obj.astimezone(settings["timezone"])
     return date_obj.strftime(settings["date_format"])
 
 
-def expires_when_str(date_obj, utcnow_fn=datetime.utcnow):
+def expires_when_str(date_obj, utcnow_fn=_utcnow):
     if date_obj is None:
         return "Never"
 
-    if isinstance(date_obj, basestring):
-        date_obj = datetime.strptime(date_obj, "%Y-%m-%d %H:%M:%S.%f")
-
+    date_obj = _make_date_obj(date_obj)
     now = utcnow_fn()
 
     if now > date_obj:
@@ -39,9 +68,8 @@ def expires_when_str(date_obj, utcnow_fn=datetime.utcnow):
         return str_
 
 
-def long_ago_str(date_obj, utcnow_fn=datetime.utcnow):
-    if isinstance(date_obj, basestring):
-        date_obj = datetime.strptime(date_obj, "%Y-%m-%d %H:%M:%S.%f")
+def long_ago_str(date_obj, utcnow_fn=_utcnow):
+    date_obj = _make_date_obj(date_obj)
 
     now = utcnow_fn()
     if date_obj > now:

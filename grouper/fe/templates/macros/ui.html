@@ -290,6 +290,7 @@ enabled. Membership in this group is regularly reviewed.
                         <th class="col-sm-2">Permission</th>
                         <th class="col-sm-2">Argument</th>
                         <th class="col-sm-2">From Group</th>
+                        <th class="col-sm-2">Granted</th>
                         {% if can_grant %}
                             <th class="col-sm-2"></th>
                         {% endif %}
@@ -306,6 +307,9 @@ enabled. Membership in this group is regularly reviewed.
                         {% else %}
                             {{ account(map.path[-1], type='group') }}
                         {% endif %}
+                        </td>
+                        <td class="col-sm-2" title="{{ map.granted_on|print_date }}">
+                            {{ map.granted_on|long_ago_str }}
                         </td>
                         {% if can_grant %}
                             <td class="col-sm-2">

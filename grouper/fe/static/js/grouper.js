@@ -7,6 +7,12 @@ $(document).ready(function(){
     $('[data-toggle="popover"]').popover({
         html: true,
         placement: 'auto right',
-        container: 'body',
+        container: 'body'
+    });
+
+    $('table.datatable').dataTable({
+        'searching': false,
+        'paging': false,
+        'info': false
     });
 });

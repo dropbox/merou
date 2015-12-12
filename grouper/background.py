@@ -27,6 +27,7 @@ class BackgroundThread(Thread):
             settings (Settings): The current Settings object for this application.
         """
         self.settings = settings
+        self.sentry_client = sentry_client
         Thread.__init__(self, *args, **kwargs)
 
     def capture_exception(self):

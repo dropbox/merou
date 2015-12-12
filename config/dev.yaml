@@ -38,6 +38,11 @@ common:
     # Type: str
     from_addr: "no-reply@grouper.local"
 
+    # Url is the location of the Grouper homepage, no trailing slash. This should include a
+    # port if one is needed.
+    # Type: str
+    url: "http://127.0.0.1:8888"
+
 fe:
     # Number of worker processes to fork for receving requests. This option
     # is mutually exclusive with debug.
@@ -72,11 +77,6 @@ fe:
     # and internal mirror for production deployments.
     # Type: str
     cdnjs_prefix: "//cdnjs.cloudflare.com"
-
-    # Url is the location of the Grouper homepage, no trailing slash. This should include a
-    # port if one is needed.
-    # Type: str
-    url: "http://127.0.0.1:8888"
 
     # Header to check for Authenticated Username
     # Type: str

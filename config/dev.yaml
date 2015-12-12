@@ -98,6 +98,11 @@ fe:
     # Type: str
     sentry_dsn:
 
+    # Url is the location of the Grouper homepage, no trailing slash. This should include a
+    # port if one is needed.
+    # Type: str
+    url: "http://127.0.0.1:8888"
+
 api:
     # The port to listen to requests on.
     # Type: int
@@ -120,3 +125,8 @@ api:
     # Sentry DSN for logging exceptions
     # Type: str
     sentry_dsn:
+
+    # Url is the location of the Grouper homepage, no trailing slash. This should include a
+    # port if one is needed.
+    # Type: str
+    url: "http://127.0.0.1:8888"

@@ -97,4 +97,5 @@ settings = Settings({
     "from_addr": "no-reply@grouper.local",
     "expiration_notice_days": 7,
     "sentry_dsn": None,
+    "url": "http://127.0.0.1:8888",
 })

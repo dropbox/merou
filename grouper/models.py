@@ -1,3 +1,5 @@
+from collections import OrderedDict, namedtuple
+from datetime import datetime, timedelta
 import functools
 import hashlib
 import hmac
@@ -5,9 +7,6 @@ import json
 import logging
 import os
 import re
-
-from collections import OrderedDict, namedtuple
-from datetime import datetime, timedelta
 
 from annex import Annex
 from enum import IntEnum
@@ -31,7 +30,7 @@ from .constants import (
     GROUP_ADMIN, USER_ADMIN
 )
 from .email_util import send_async_email
-from .plugin import BasePlugin
+from .plugin import get_plugins
 from .settings import settings
 from .util import matches_glob
 
@@ -162,29 +161,6 @@ def get_db_engine(url):
     return create_engine(url, pool_recycle=300)
 
 
-Plugins = []
-
-
-class PluginsAlreadyLoaded(Exception):
-    pass
-
-
-def load_plugins(plugin_dir, service_name):
-    """Load plugins from a directory"""
-    global Plugins
-    if Plugins:
-        raise PluginsAlreadyLoaded("Plugins already loaded; can't load twice!")
-    Plugins = Annex(BasePlugin, [plugin_dir], raise_exceptions=True)
-    for plugin in Plugins:
-        plugin.configure(service_name)
-
-
-def get_plugins():
-    """Get a list of loaded plugins."""
-    global Plugins
-    return list(Plugins)
-
-
 def flush_transaction(method):
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
@@ -292,7 +268,7 @@ class User(Model):
         return None
 
     def just_created(self):
-        for plugin in Plugins:
+        for plugin in get_plugins():
             plugin.user_created(self)
 
     def can_manage(self, group):

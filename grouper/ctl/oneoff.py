@@ -6,8 +6,8 @@ import types
 from annex import Annex
 
 from grouper.ctl.util import make_session
-from grouper.models import load_plugins
 from grouper.oneoff import BaseOneOff
+from grouper.plugin import load_plugins
 from grouper.settings import settings
 
 

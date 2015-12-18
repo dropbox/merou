@@ -15,6 +15,7 @@ dbx_py_par(
     main = 'bin/grouper-ctl',
     deps = [
         ':grouper_lib',
+        ':ipython',
         ':mrproxy',
     ],
 )
@@ -176,4 +177,9 @@ dbx_py_pip(
 dbx_py_pip(
     name = 'mrproxy',
     pip_deps = ['mrproxy==0.3.2'],
+)
+
+dbx_py_pip(
+    name = 'ipython',
+    pip_deps = ['ipython==3.2.1'],
 )

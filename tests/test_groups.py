@@ -236,6 +236,24 @@ def test_graph_cycle_indirect(session, graph, users, groups):  # noqa
 
 
 @pytest.mark.gen_test
+def test_graph_disable(session, graph, groups, http_client, base_url):  # noqa
+    """ Test that disabled groups work with the graph as expected."""
+    graph.update_from_db(session)
+    old_groups = graph.groups
+    assert sorted(old_groups) == sorted(groups.keys())
+
+    # disable a group
+    fe_url = url(base_url, '/groups/serving-team/disable')
+    resp = yield http_client.fetch(fe_url, method="POST",
+            headers={"X-Grouper-User": "zorkian@a.co"}, body=urlencode({"name": "serving-team"}))
+    assert resp.code == 200
+
+    graph.update_from_db(session)
+    assert len(graph.groups) == (len(old_groups) - 1), 'disabled group removed from graph'
+    assert u'serving-team' not in graph.groups
+
+
+@pytest.mark.gen_test
 def test_group_disable(session, groups, http_client, base_url):
     # create global audit
     fe_url = url(base_url, '/audits/create')

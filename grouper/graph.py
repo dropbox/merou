@@ -270,10 +270,10 @@ class GroupGraph(object):
             User.enabled == True
         ).union(session.query(
             label("type", literal("Group")),
-            label("name", Group.groupname))
+            label("name", Group.groupname)
         ).filter(
             Group.enabled == True
-        ).all()
+        )).all()
 
     @staticmethod
     def _get_edges_from_db(session):

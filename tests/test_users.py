@@ -33,3 +33,10 @@ def test_basic_metadata(standard_graph, session, users, groups, permissions):  #
     users["zorkian@a.co"].set_metadata("baz", None)
     md = users["zorkian@a.co"].my_metadata()
     assert len(md) == 1, "One metadata item"
+
+
+# TODO(herb): test graph when user is disabled ; this test isn't trivial if we
+# want to be able to include FE code to do the disable (we need a user with
+# admin perms but adding those to fixtures isn't straightforward and adding it
+# one-off is a bit hacky ; need to rethink how those perms exist in test,
+# specifically what test_sync_db_default_group() assumes

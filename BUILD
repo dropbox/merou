@@ -18,6 +18,9 @@ dbx_py_par(
         ':ipython',
         ':mrproxy',
     ],
+    # NOTE(herb): this is to get around networkx including tests in its main package
+    # which bazel filters by default
+    py_excludes = [],
 )
 
 py_library(
@@ -124,6 +127,9 @@ dbx_py_pip(
 dbx_py_pip(
     name = 'networkx',
     pip_deps = ['networkx==1.8.1'],
+    # NOTE(herb): this is to get around networkx including tests in its main package
+    # which bazel filters by default
+    py_excludes = [],
 )
 
 dbx_py_pip(

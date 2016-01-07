@@ -188,4 +188,8 @@ dbx_py_pip(
 dbx_py_pip(
     name = 'ipython',
     pip_deps = ['ipython==3.2.1'],
+    # NOTE(herb): this is to get around ipython including a package called
+    # 'testing' (specifically 'testing.skipdoctest' when importing 'embed')
+    # which bazel filters by default
+    py_excludes = [],
 )

@@ -3,6 +3,7 @@ import re
 import sshpubkey
 
 from wtforms import (
+        BooleanField,
         HiddenField,
         IntegerField,
         SelectField,
@@ -183,6 +184,10 @@ class GroupEditMemberForm(Form):
     expiration = TextField("Expiration", [
         ValidateDate(),
     ], id="edit-form-expiration")
+
+
+class UserEnableForm(Form):
+    preserve_membership = BooleanField(default=False)
 
 
 class UsersPublicKeyForm(Form):

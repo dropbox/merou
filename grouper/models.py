@@ -290,10 +290,6 @@ class User(Model):
         for plugin in Plugins:
             plugin.user_created(self)
 
-    def enable(self):
-        self.enabled = True
-        Counter.incr(self.session, "updates")
-
     def can_manage(self, group):
         """Determine if this user can manage the given group
 
@@ -312,16 +308,28 @@ class User(Model):
             return True
         return False
 
-    def disable(self, requester):
-        for group in self.my_groups():
-            group_obj = self.session.query(Group).filter_by(
-                groupname=group.name
-            ).scalar()
-            if group_obj:
-                group_obj.revoke_member(
-                    requester, self, "Account has been disabled."
-                )
+    def enable(self, requester, preserve_membership):
+        """Enable a disabled user.
 
+        Args:
+            preserve_membership(bool): whether to remove user from any groups it may be a member of
+        Returns:
+            None
+        """
+        if not preserve_membership:
+            for group in self.my_groups(ignore_user_disabled=True):
+                group_obj = self.session.query(Group).filter_by(
+                    groupname=group.name
+                ).scalar()
+                if group_obj:
+                    group_obj.revoke_member(
+                        requester, self, "group membership stripped as part of re-enabling account."
+                    )
+
+        self.enabled = True
+        Counter.incr(self.session, "updates")
+
+    def disable(self):
         self.enabled = False
         Counter.incr(self.session, "updates")
 
@@ -514,7 +522,13 @@ class User(Model):
                                    grantable[1] if len(grantable) > 1 else '*', ))
         return sorted(result, key=lambda x: x[0].name + x[1])
 
-    def my_groups(self):
+    def my_groups(self, ignore_user_disabled=False):
+        '''
+        Returns all groups this user is a member of.
+
+        Args:
+            ignore_user_disabled(bool): if this user is disabled should this query ignore that fact
+        '''
         now = datetime.utcnow()
         groups = self.session.query(
             label("name", Group.groupname),
@@ -525,15 +539,17 @@ class User(Model):
             GroupEdge.member_pk == self.id,
             GroupEdge.member_type == 0,
             GroupEdge.active == True,
-            self.enabled == True,
             Group.enabled == True,
             or_(
                 GroupEdge.expiration > now,
                 GroupEdge.expiration == None
             )
-        ).all()
+        )
 
-        return groups
+        if not ignore_user_disabled:
+            groups.filter(self.enabled == True)
+
+        return groups.all()
 
     def my_requests_aggregate(self):
         """Returns all pending requests for this user to approve across groups."""

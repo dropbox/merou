@@ -26,6 +26,7 @@ from .forms import (
     PermissionCreateForm,
     PermissionGrantForm,
     PublicKeyForm,
+    UserEnableForm,
     UsersPublicKeyForm,
 )
 from ..email_util import cancel_async_emails, send_email, send_async_email
@@ -493,7 +494,12 @@ class UserEnable(GrouperHandler):
         if not user:
             return self.notfound()
 
-        user.enable()
+        form = UserEnableForm(self.request.arguments)
+        if not form.validate():
+            # TODO: add error message
+            return self.redirect("/users/{}?refresh=yes".format(user.name))
+
+        user.enable(self.current_user, preserve_membership=form.preserve_membership.data)
         self.session.commit()
 
         AuditLog.log(self.session, self.current_user.id, 'enable_user',
@@ -512,7 +518,7 @@ class UserDisable(GrouperHandler):
         if not user:
             return self.notfound()
 
-        user.disable(self.current_user)
+        user.disable()
         self.session.commit()
 
         AuditLog.log(self.session, self.current_user.id, 'disable_user',

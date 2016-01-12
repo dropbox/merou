@@ -571,8 +571,8 @@ class GroupView(GrouperHandler):
         my_permissions = group.my_permissions()
         for perm_up in permissions:
             for perm_direct in my_permissions:
-                if (perm_up['permission'] == perm_direct.name
-                        and perm_up['argument'] == perm_direct.argument):
+                if (perm_up['permission'] == perm_direct.name and
+                        perm_up['argument'] == perm_direct.argument):
                     perm_up['mapping_id'] = perm_direct.mapping_id
                     break
 

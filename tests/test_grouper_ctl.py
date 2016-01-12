@@ -1,4 +1,5 @@
 from mock import patch
+import pytest
 
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from grouper.constants import (
@@ -10,6 +11,9 @@ from grouper.constants import (
 
 from grouper.ctl.main import main
 from grouper.models import Group, Model, User
+
+
+noop = lambda *k: None
 
 
 def call_main(*args):
@@ -107,7 +111,6 @@ def test_group_add_remove_member(make_session, session, users, groups):
     call_main('group', 'add_member', groupname , bad_username)
     assert (u'User', bad_username) not in Group.get(session, name=groupname).my_members()
 
-noop = lambda *k: None
 
 @patch('grouper.ctl.sync_db.make_session')
 @patch('grouper.ctl.sync_db.get_database_url', new=noop)
@@ -124,3 +127,55 @@ def test_sync_db_default_group(make_session, session, users, groups):
     for permission in (GROUP_ADMIN, PERMISSION_ADMIN, USER_ADMIN):
         assert permission in admin_group_permission_names, \
                 "Expected permission missing: %s" % permission
+
+
+@patch('grouper.ctl.oneoff.load_plugins')
+@patch('grouper.ctl.oneoff.Annex')
+@patch('grouper.ctl.oneoff.make_session')
+def test_oneoff(mock_make_session, mock_annex, mock_load_plugins, session):
+    mock_make_session.return_value = session
+    username = 'fake_user@a.co'
+    other_username = 'fake_user2@a.co'
+    groupname = 'fake_group'
+
+    class FakeOneOff(object):
+        def configure(self, service_name):
+            pass
+
+        def run(self, session, **kwargs):
+            if kwargs.get('group'):
+                Group.get_or_create(session, groupname=groupname)
+                session.commit()
+            elif kwargs.get('key') == 'valuewith=':
+                User.get_or_create(session, username=other_username)
+                session.commit()
+            else:
+                User.get_or_create(session, username=username)
+                session.commit()
+
+    mock_annex.return_value = [FakeOneOff()]
+
+    # dry_run
+    call_main('oneoff', 'run', 'FakeOneOff')
+    assert User.get(session, name=username) is None, 'default dry_run means no writes'
+    assert User.get(session, name=other_username) is None, '"valuewith= not in arg'
+    assert Group.get(session, name=groupname) is None, '"group" not in arg so no group created'
+
+    # not dry_run, create a user
+    call_main('oneoff', 'run', '--no-dry_run', 'FakeOneOff')
+    assert User.get(session, name=username) is not None, 'dry_run off means writes'
+    assert User.get(session, name=other_username) is None, '"valuewith= not in arg'
+    assert Group.get(session, name=groupname) is None, '"group" not in arg so no group created'
+
+    # not dry_run, use kwarg to create a group
+    call_main('oneoff', 'run', '--no-dry_run', 'FakeOneOff', 'group=1')
+    assert User.get(session, name=username) is not None, 'dry_run off means writes'
+    assert User.get(session, name=other_username) is None, '"valuewith= not in arg'
+    assert Group.get(session, name=groupname) is not None, '"group" in arg so group created'
+
+    # invalid format for argument should result in premature system exit
+    with pytest.raises(SystemExit):
+        call_main('oneoff', 'run', '--no-dry_run', 'FakeOneOff', 'bad_arg')
+
+    call_main('oneoff', 'run', '--no-dry_run', 'FakeOneOff', 'key=valuewith=')
+    assert User.get(session, name=other_username) is not None, '"valuewith= in arg, create user2'

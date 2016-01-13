@@ -184,7 +184,9 @@ class GroupGraph(object):
         '''
         out = defaultdict(list)  # groupid -> [ ... ]
         permissions = session.query(Permission, PermissionMap).filter(
-            Permission.id == PermissionMap.permission_id
+            Permission.id == PermissionMap.permission_id,
+            PermissionMap.group_id == Group.id,
+            Group.enabled == True,
         )
         for permission in permissions:
             out[permission[1].group.name].append(MappedPermission(

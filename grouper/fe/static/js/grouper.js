@@ -10,9 +10,13 @@ $(document).ready(function(){
         container: 'body'
     });
 
-    $('table.datatable').dataTable({
-        'searching': false,
-        'paging': false,
-        'info': false
-    });
+    try {
+        $('table.datatable').dataTable({
+            'searching': false,
+            'paging': false,
+            'info': false
+        });
+    } catch(e) {
+        console.log("error in datatable init: ", e);
+    }
 });

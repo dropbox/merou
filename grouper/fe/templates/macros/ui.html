@@ -284,7 +284,7 @@ enabled. Membership in this group is regularly reviewed.
             <h3 class="panel-title">Permissions</h3>
         </div>
         <div style="max-height: {{max_height}}px; overflow-y: auto">
-            <table class="datatable table table-striped table-condensed">
+            <table class="{% if mappings %}datatable {% endif %}table table-striped table-condensed">
                 <thead>
                     <tr>
                         <th class="col-sm-2">Permission</th>

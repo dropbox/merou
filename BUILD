@@ -2,13 +2,33 @@ package(default_visibility = ['//visibility:public'])
 
 load('/build_tools/bazel/py', 'dbx_py_pip', 'dbx_py_bin', 'dbx_py_par')
 
-#dbx_py_par(
-#    name = 'grouper-fe.par',
-#    main = 'bin/grouper-fe',
-#    deps = [
-#        ':grouper_lib',
-#    ],
-#)
+dbx_py_bin(
+    name = 'grouper-fe',
+    main = 'bin/grouper-fe',
+    deps = [
+        ':grouper_lib',
+        ':plop',
+        ':pyflamegraph',
+        ':raven',
+    ],
+    # NOTE(herb): this is to get around networkx including tests in its main package
+    # which bazel filters by default
+    py_excludes = [],
+)
+
+dbx_py_bin(
+    name = 'grouper-api',
+    main = 'bin/grouper-api',
+    deps = [
+        ':grouper_lib',
+        ':plop',
+        ':pyflamegraph',
+        ':raven',
+    ],
+    # NOTE(herb): this is to get around networkx including tests in its main package
+    # which bazel filters by default
+    py_excludes = [],
+)
 
 dbx_py_par(
     name = 'grouper-ctl',
@@ -183,6 +203,13 @@ dbx_py_pip(
 dbx_py_pip(
     name = 'mrproxy',
     pip_deps = ['mrproxy==0.3.2'],
+)
+
+dbx_py_pip(
+    name = 'raven',
+    pip_deps = ['raven==5.7.1'],
+    deps = [
+    ],
 )
 
 dbx_py_pip(

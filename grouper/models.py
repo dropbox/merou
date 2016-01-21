@@ -1586,6 +1586,7 @@ class Permission(Model):
         ).filter(
             Group.id == PermissionMap.group_id,
             PermissionMap.permission_id == self.id,
+            Group.enabled == True,
         )
         return results.all()
 

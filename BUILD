@@ -43,10 +43,13 @@ dbx_py_par(
     py_excludes = [],
 )
 
-py_library(
+dbx_py_library(
     name = 'grouper_lib',
     srcs = glob(["grouper/**/*.py"]),
     data = [
+        ':template_files',
+    ],
+    deps = [
         ':annex',
         ':argparse',
         ':enum34',
@@ -61,7 +64,6 @@ py_library(
         ':sqlalchemy',
         ':sshpubkey',
         ':ssl-match-hostname',
-        ':template_files',
         ':tornado',
         ':wsgiref',
         ':wtforms',

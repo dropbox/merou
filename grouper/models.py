@@ -32,7 +32,7 @@ from .constants import (
 from .email_util import send_async_email
 from .plugin import get_plugins
 from .settings import settings
-from .util import matches_glob
+from .permissions import filter_grantable_permissions
 
 
 OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange")
@@ -463,8 +463,8 @@ class User(Model):
         if self.permission_admin:
             return '*'
 
-        # Someone can grant a permission if they are a member of a group that has a permission
-        # of PERMISSION_GRANT with an argument that matches the name of a permission.
+        # Someone can create a permission if they are a member of a group that has a permission
+        # of PERMISSION_CREATE with an argument that matches the name of a permission.
         return [
             permission.argument
             for permission in self.my_permissions()
@@ -490,18 +490,8 @@ class User(Model):
 
         # Someone can grant a permission if they are a member of a group that has a permission
         # of PERMISSION_GRANT with an argument that matches the name of a permission.
-        result = []
-        for permission in self.my_permissions():
-            if permission.name != PERMISSION_GRANT:
-                continue
-            grantable = permission.argument.split('/', 1)
-            if not grantable:
-                continue
-            for name, permission_obj in all_permissions.iteritems():
-                if matches_glob(grantable[0], name):
-                    result.append((permission_obj,
-                                   grantable[1] if len(grantable) > 1 else '*', ))
-        return sorted(result, key=lambda x: x[0].name + x[1])
+        grants = [x for x in self.my_permissions() if x.name == PERMISSION_GRANT]
+        return filter_grantable_permissions(self.session, grants)
 
     def my_groups(self, ignore_user_disabled=False):
         '''

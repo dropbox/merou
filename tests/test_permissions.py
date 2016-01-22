@@ -5,15 +5,17 @@ import unittest
 from wtforms.validators import ValidationError
 
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
-from util import get_group_permissions, get_user_permissions
+from util import get_group_permissions, get_user_permissions, grant_permission
 from grouper.constants import (
         ARGUMENT_VALIDATION,
         AUDIT_MANAGER,
         PERMISSION_AUDITOR,
+        PERMISSION_GRANT,
         PERMISSION_VALIDATION,
         )
 from grouper.fe.forms import ValidateRegex
 import grouper.fe.util
+from grouper.models import Permission
 
 
 def test_basic_permission(standard_graph, session, users, groups, permissions):  # noqa
@@ -95,3 +97,26 @@ class PermissionTests(unittest.TestCase):
         self.assertRaises(ValidationError, eval_argument, 'whitespace invalid')
         self.assertRaises(ValidationError, eval_argument, 'question?mark')
         self.assertRaises(ValidationError, eval_argument, 'exclaimation!point')
+
+
+def test_grantable_permissions(session, standard_graph, users, groups):
+    perm_grant, _ = Permission.get_or_create(session, name=PERMISSION_GRANT, description="")
+    perm0, _ = Permission.get_or_create(session, name="grantable", description="")
+    perm2, _ = Permission.get_or_create(session, name="grantable.one", description="")
+    perm3, _ = Permission.get_or_create(session, name="grantable.two", description="")
+    session.commit()
+
+    assert not users["zorkian@a.co"].my_grantable_permissions(), "start with none"
+
+    grant_permission(groups["auditors"], perm_grant, argument="notgrantable.one")
+    assert not users["zorkian@a.co"].my_grantable_permissions(), "grant on non-existent is fine"
+
+    grant_permission(groups["auditors"], perm_grant, argument=perm0.name)
+    grants = users["zorkian@a.co"].my_grantable_permissions()
+    assert len(grants) == 1, "only specific permission grant"
+    assert grants[0][0].name == perm0.name, "only specific permission grant"
+
+    grant_permission(groups["auditors"], perm_grant, argument="grantable.*")
+    grants = users["zorkian@a.co"].my_grantable_permissions()
+    assert len(grants) == 3, "wildcard grant should grab appropriat amount"
+    assert sorted([x[0].name for x in grants]) == ["grantable", "grantable.one", "grantable.two"]

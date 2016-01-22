@@ -82,8 +82,8 @@ py_library(
 filegroup(
     name = 'template_files',
     srcs = glob([
-        'gropuer/fe/templates/*.html',
         'grouper/fe/templates/**/*.html',
+        'grouper/fe/templates/**/*.tmpl',
         'grouper/fe/static/favicon.ico',
         'grouper/fe/static/css/grouper.css',
         'grouper/fe/static/css/ext/**/*.css',

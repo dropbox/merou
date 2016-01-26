@@ -288,3 +288,19 @@ def test_group_disable(session, groups, http_client, base_url):
     assert not just_created
     assert serving_team.audit
     assert serving_team.audit.complete, "disabling group should complete any outstanding audit"
+
+
+@pytest.mark.gen_test
+def test_graph_edit_role(session, graph, standard_graph, groups, users):
+    """Test that membership role changes are refected in the graph."""
+    username = "figurehead@a.co"
+
+    user_role = graph.get_group_details("tech-ops")["users"][username]["rolename"]
+    assert user_role == "np-owner"
+
+    groups["tech-ops"].edit_member(users["zorkian@a.co"], users[username], "a reason",
+            role="owner")
+
+    graph.update_from_db(session)
+    user_role = graph.get_group_details("tech-ops")["users"][username]["rolename"]
+    assert user_role == "owner"

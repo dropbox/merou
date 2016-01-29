@@ -10,7 +10,7 @@ from grouper.constants import (
 )
 
 from grouper.ctl.main import main
-from grouper.models import Group, Model, User
+from grouper.models import Group, GROUP_EDGE_ROLES, Model, User
 
 
 noop = lambda *k: None
@@ -85,8 +85,11 @@ def test_group_add_remove_member(make_session, session, users, groups):
 
     # add
     assert (u'User', username) not in groups[groupname].my_members()
-    call_main('group', 'add_member', groupname, username)
-    assert (u'User', username) in Group.get(session, name=groupname).my_members()
+    call_main('group', 'add_member', '--owner', groupname, username)
+    all_members = Group.get(session, name=groupname).my_members()
+    assert (u'User', username) in all_members
+    _, _, _, role, _, _ = all_members[(u'User', username)]
+    assert GROUP_EDGE_ROLES[role] == "owner"
 
     # remove
     call_main('group', 'remove_member', groupname, username)
@@ -94,7 +97,7 @@ def test_group_add_remove_member(make_session, session, users, groups):
 
     # bulk add
     usernames = {'oliver@a.co', 'testuser@a.co', 'zebu@a.co'}
-    call_main('group', 'add_member', groupname, *usernames)
+    call_main('group', 'add_member', '--member', groupname, *usernames)
     members = {u for _, u in Group.get(session, name=groupname).my_members().keys()}
     assert usernames.issubset(members)
 
@@ -104,11 +107,11 @@ def test_group_add_remove_member(make_session, session, users, groups):
     assert not members.intersection(usernames)
 
     # check user/group name
-    call_main('group', 'add_member', 'invalid group name', username)
+    call_main('group', 'add_member', '--member', 'invalid group name', username)
     assert (u'User', username) not in Group.get(session, name=groupname).my_members()
 
     bad_username = 'not_a_valid_username'
-    call_main('group', 'add_member', groupname , bad_username)
+    call_main('group', 'add_member', '--member', groupname, bad_username)
     assert (u'User', bad_username) not in Group.get(session, name=groupname).my_members()
 
 

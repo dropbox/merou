@@ -20,8 +20,19 @@ def group_command(args):
             return
 
         if args.subcommand == "add_member":
-            logging.info("Adding {} to group {}".format(username, args.groupname))
-            group.add_member(user, user, "grouper-ctl join", status="actioned")
+            if args.member:
+                role = 'member'
+            elif args.owner:
+                role = 'owner'
+            elif args.np_owner:
+                role = 'np-owner'
+            elif args.manager:
+                role = 'manager'
+
+            assert role
+
+            logging.info("Adding {} as {} to group {}".format(username, role, args.groupname))
+            group.add_member(user, user, "grouper-ctl join", status="actioned", role=role)
             AuditLog.log(
                 session, user.id, 'join_group',
                 '{} manually joined via grouper-ctl'.format(username),
@@ -48,6 +59,12 @@ def add_parser(subparsers):
         "add_member", help="Join a user to a group")
     group_join_parser.add_argument("groupname")
     group_join_parser.add_argument("username", nargs="+")
+
+    group_join_type_parser = group_join_parser.add_mutually_exclusive_group(required=True)
+    group_join_type_parser.add_argument("--member", action="store_true")
+    group_join_type_parser.add_argument("--owner", action="store_true")
+    group_join_type_parser.add_argument("--np-owner", action="store_true")
+    group_join_type_parser.add_argument("--manager", action="store_true")
 
     group_remove_parser = group_subparser.add_parser(
         "remove_member", help="Remove a user from a group")

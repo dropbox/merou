@@ -38,5 +38,6 @@ class DbRefreshThread(Thread):
                 stats.set_gauge("successful-db-update", 0)
                 self.capture_exception()
             except:
+                stats.set_gauge("successful-db-update", 0)
                 self.capture_exception()
                 raise

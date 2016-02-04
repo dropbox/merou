@@ -7,7 +7,7 @@ from sqlalchemy import and_
 from sqlalchemy.exc import OperationalError
 
 from grouper.email_util import notify_edge_expiration, process_async_emails
-from grouper.models import get_db_engine, GroupEdge, Session
+from grouper.models import get_db_engine, Group, GroupEdge, Session
 from grouper.perf_profile import prune_old_traces
 from grouper.util import get_database_url
 
@@ -50,6 +50,8 @@ class BackgroundThread(Thread):
 
         # Pull the expired edges.
         edges = session.query(GroupEdge).filter(
+            GroupEdge.group_id == Group.id,
+            Group.enabled == True,
             GroupEdge.active == True,
             and_(
                 GroupEdge.expiration <= now,

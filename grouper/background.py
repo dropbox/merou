@@ -3,6 +3,7 @@ import logging
 from threading import Thread
 from time import sleep
 
+from expvar.stats import stats
 from sqlalchemy import and_
 from sqlalchemy.exc import OperationalError
 
@@ -75,11 +76,14 @@ class BackgroundThread(Thread):
                 prune_old_traces(session)
                 session.commit()
                 session.close()
+                stats.set_gauge("successful-background-run", 1)
             except OperationalError:
                 Session.configure(bind=get_db_engine(get_database_url(self.settings)))
                 logging.critical("Failed to connect to database.")
+                stats.set_gauge("successful-background-run", 0)
                 self.capture_exception()
             except:
+                stats.set_gauge("successful-background-run", 0)
                 self.capture_exception()
                 raise
             sleep(60)

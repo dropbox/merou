@@ -6,16 +6,26 @@ from util import add_member
 
 from grouper.background import BackgroundThread
 from grouper.fe.settings import settings
-from grouper.models import AsyncNotification, AuditLog, GroupEdge
+from grouper.models import AsyncNotification, AuditLog, Group, GroupEdge
 
 
 @pytest.fixture
 def expired_graph(session, graph, groups, users):
     now = datetime.utcnow()
+
+    # expired user membership
     add_member(groups["team-sre"], users["gary@a.co"], role="owner")
     add_member(groups["team-sre"], users["zay@a.co"], expiration=now)
+
+    # expired group membership
     add_member(groups["serving-team"], users["zorkian@a.co"], role="owner")
     add_member(groups["serving-team"], groups["team-sre"], expiration=now)
+
+    # expired user membership in disabled group
+    add_member(groups["sad-team"], users["figurehead@a.co"], expiration=now)
+    groups["sad-team"].disable()
+    session.commit()
+
     return graph
 
 
@@ -31,7 +41,11 @@ def test_expire_edges(expired_graph, session):  # noqa
     background.expire_edges(session)
 
     # Check that the edges are now marked as inactive.
-    edges = session.query(GroupEdge).filter(GroupEdge.expiration != None).all()
+    edges = session.query(GroupEdge).filter(
+            GroupEdge.group_id == Group.id,
+            Group.enabled == True,
+            GroupEdge.expiration != None
+            ).all()
     for edge in edges:
         assert edge.active == False
 

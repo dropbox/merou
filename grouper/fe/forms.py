@@ -186,6 +186,21 @@ class GroupEditMemberForm(Form):
     ], id="edit-form-expiration")
 
 
+class GroupPermissionRequestForm(Form):
+    permission_name = SelectField("Permission", [
+        validators.DataRequired(),
+    ])
+    argument_text = StringField("Argument", [
+        validators.Optional(),
+    ])
+    argument_select = SelectField("Argument", [
+        validators.Optional(),
+    ])
+    reason = TextAreaField("Reason", [
+        validators.DataRequired(),
+    ])
+
+
 class UserEnableForm(Form):
     preserve_membership = BooleanField(default=False)
 

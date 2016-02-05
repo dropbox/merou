@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import json
 import operator
 
 from expvar.stats import stats
@@ -8,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label, literal
 
 from .. import perf_profile
+from .. import permissions
 from .. import public_key
 from ..audit import assert_controllers_are_auditors, assert_can_join, get_audits, UserNotAuditor
 from ..constants import (
@@ -21,6 +23,7 @@ from .forms import (
     GroupEditForm,
     GroupEditMemberForm,
     GroupJoinForm,
+    GroupPermissionRequestForm,
     GroupRemoveForm,
     GroupRequestModifyForm,
     PermissionCreateForm,
@@ -33,12 +36,30 @@ from .forms import (
 from ..email_util import cancel_async_emails, send_email, send_async_email
 from ..graph import NoSuchUser, NoSuchGroup
 from ..models import (
-    User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog, GroupEdge, Counter,
-    GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES, OBJ_TYPES,
-    get_all_groups, get_all_users,
-    get_user_or_group, Audit, AuditMember, AUDIT_STATUS_CHOICES, AuditLogCategory,
+    AUDIT_STATUS_CHOICES,
+    Audit,
+    AuditLog,
+    AuditLogCategory,
+    AuditMember,
+    Counter,
+    GROUP_EDGE_ROLES,
+    GROUP_JOIN_CHOICES,
+    Group,
+    GroupEdge,
+    OBJ_TYPES,
+    OWNER_ROLE_INDICES,
+    Permission,
+    PermissionMap,
+    PublicKey,
+    REQUEST_STATUS_CHOICES,
+    Request,
+    User,
     UserToken,
+    get_all_groups,
+    get_all_users,
+    get_user_or_group,
 )
+from ..permissions import get_grantable_permissions, get_pending_request_by_group
 from .settings import settings
 from .util import ensure_audit_security, GrouperHandler, Alert, test_reserved_names
 from ..util import matches_glob
@@ -566,9 +587,11 @@ class GroupView(GrouperHandler):
         members = group.my_members()
         groups = group.my_groups()
         permissions = group_md.get('permissions', [])
+        permission_requests_pending = get_pending_request_by_group(self.session, group)
         audited = group_md.get('audited', False)
         log_entries = group.my_log_entries()
         num_pending = group.my_requests("pending").count()
+        is_owner = self.current_user.my_role_index(members) in OWNER_ROLE_INDICES
 
         # Add mapping_id to permissions structure
         my_permissions = group.my_permissions()
@@ -588,7 +611,8 @@ class GroupView(GrouperHandler):
             "group.html", group=group, members=members, groups=groups,
             num_pending=num_pending, alerts=alerts, permissions=permissions,
             log_entries=log_entries, grantable=grantable, audited=audited,
-            statuses=AUDIT_STATUS_CHOICES,
+            statuses=AUDIT_STATUS_CHOICES, is_owner=is_owner,
+            permission_requests_pending=permission_requests_pending
         )
 
 
@@ -856,6 +880,93 @@ class GroupRequests(GrouperHandler):
             members=members, status=status, statuses=REQUEST_STATUS_CHOICES,
             offset=offset, limit=limit, total=total
         )
+
+
+class GroupPermissionRequest(GrouperHandler):
+    def _prep_form(self, form, args_by_perm):
+        form.permission_name.choices = [("", "")] + sorted([(p, p) for p in args_by_perm.keys()])
+        form.argument_select.choices = [("", "")]
+
+        return form
+
+    def _prep_form_for_display(self, form):
+        # hack: we don't want validation to puke if one is undefined but we
+        # want them to show up in the UI as such
+        form.argument_select.flags.required = True
+        form.argument_text.flags.required = True
+
+        return form
+
+    def get(self, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
+        if not group:
+            return self.notfound()
+
+        form = GroupPermissionRequestForm()
+        args_by_perm = get_grantable_permissions(self.session)
+        form = self._prep_form_for_display(self._prep_form(form, args_by_perm))
+
+        self.render("group-permission-request.html", form=form, group=group,
+                args_by_perm_json=json.dumps(args_by_perm))
+
+    def post(self, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
+        if not group:
+            return self.notfound()
+
+        role_index = self.current_user.my_role_index(group.my_members())
+        if role_index not in OWNER_ROLE_INDICES:
+            return self.forbidden()
+
+        form = GroupPermissionRequestForm(self.request.arguments)
+        args_by_perm = get_grantable_permissions(self.session)
+
+        form = self._prep_form(form, args_by_perm)
+
+        if not form.validate():
+            form = self._prep_form_for_display(form)
+            return self.render(
+                    "group-permission-request.html", form=form, group=group,
+                    args_by_perm_json=json.dumps(args_by_perm),
+                    alerts=self.get_form_alerts(form.errors),
+                    )
+
+        if form.argument_select.data:
+            argument = form.argument_select.data
+        else:
+            argument = form.argument_text.data
+        permission = Permission.get(self.session, form.permission_name.data)
+
+        calc_args = args_by_perm.get(permission.name, [])
+        if not permission or (argument not in calc_args and "*" not in calc_args):
+            return self.render(
+                    "group-permission-request.html", form=form, group=group,
+                    args_by_perm_json=json.dumps(args_by_perm),
+                    alerts=[
+                        Alert("danger", "no such permission or permission+argument pair"),
+                        ],
+                    )
+
+        # save off request
+        try:
+            permissions.create_request(self.session, self.current_user, group,
+                    permission, argument, form.reason.data)
+        except permissions.RequestAlreadyExists:
+            alerts = [Alert("danger", "request for permission + argument already exists")]
+        except permissions.NoOwnersAvailable:
+            alerts = [Alert("danger", "no owners available for requested permission + argument")]
+        else:
+            alerts = None
+
+        if alerts:
+            form = self._prep_form(form, args_by_perm)
+            return self.render(
+                    "group-permission-request.html", form=form, group=group,
+                    args_by_perm_json=json.dumps(args_by_perm),
+                    alerts=alerts,
+                    )
+        else:
+            return self.redirect("/groups/{}".format(group.name))
 
 
 class AuditsComplete(GrouperHandler):

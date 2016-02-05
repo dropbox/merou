@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block heading %}
+    <a href="/groups">Groups</a>
+{% endblock %}
+
+{% block subheading %}
+    Request Permission for Group {{ group.name }}
+{% endblock %}
+
+{% block script %}
+<
+<script type="text/javascript">
+    $(function () {
+        var args_by_perm = {{ args_by_perm_json }};
+
+        var $perm = $('#permission_name');
+        var $reason_div = $('#form-group-reason');
+
+        var $arg_text_div = $('#form-group-argument_text');
+        var $arg_text = $('#argument_text');
+
+        var $arg_select_div = $('#form-group-argument_select');
+        var $arg_select = $('#argument_select');
+
+        function update_args() {
+            var args = args_by_perm[$perm.val()];
+            if ($perm.val() == "") {
+                $arg_text_div.hide();
+                $arg_select_div.hide();
+                $reason_div.hide();
+
+            } else if (args.length == 1 && args[0] == "*") {
+                // change to text field
+                $arg_text_div.show();
+                $arg_select_div.hide();
+                $reason_div.show();
+
+                $arg_text.empty();
+            } else if (args.length > 1) {
+                // change to select
+                $arg_text_div.hide();
+                $arg_select_div.show();
+                $reason_div.show();
+
+                $arg_select.empty();
+                $.each(args, function(index, arg) {
+                    $option = $("<option></option>").attr("value", arg).text(arg);
+                    $arg_select.append($option);
+                });
+            }
+        }
+
+        // prime it
+        update_args();
+
+        $perm.on('change', update_args);
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="col-md-6 col-md-offset-3">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Request Permission for Group {{ group.name }}</h3>
+       </div>
+        <div class="panel-body">
+            <form class="form-horizontal" role="form"
+                method="post" action="/groups/{{ group.name }}/permission/request">
+                {% include "forms/group-permission-request.html" %}
+                <div class="form-permission">
+                    <div class="col-sm-offset-3 col-sm-4">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

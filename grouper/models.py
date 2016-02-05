@@ -8,7 +8,6 @@ import logging
 import os
 import re
 
-from annex import Annex
 from enum import IntEnum
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, UniqueConstraint,
@@ -32,10 +31,9 @@ from .constants import (
 from .email_util import send_async_email
 from .plugin import get_plugins
 from .settings import settings
-from .permissions import filter_grantable_permissions
 
 
-OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange")
+OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange", "PermissionRequestStatusChange")
 OBJ_TYPES = {obj_type: idx for idx, obj_type in enumerate(OBJ_TYPES_IDX)}
 
 GROUP_JOIN_CHOICES = {
@@ -334,13 +332,20 @@ class User(Model):
     def is_member(self, members):
         return ("User", self.name) in members
 
-    def my_role(self, members):
+    def my_role_index(self, members):
         if self.group_admin:
-            return "owner"
+            return GROUP_EDGE_ROLES.index("owner")
         member = members.get(("User", self.name))
         if not member:
             return None
-        return GROUP_EDGE_ROLES[member.role]
+        return member.role
+
+    def my_role(self, members):
+        role_index = self.my_role_index(members)
+        if not role_index:
+            return None
+        else:
+            return GROUP_EDGE_ROLES[role_index]
 
     def set_metadata(self, key, value):
         if not re.match(PERMISSION_VALIDATION, key):
@@ -482,6 +487,9 @@ class User(Model):
 
         Returns a list of tuples (Permission, argument) that the user is allowed to grant.
         '''
+        # avoid circular dependency
+        from grouper.permissions import filter_grantable_permissions
+
         all_permissions = {permission.name: permission
                            for permission in Permission.get_all(self.session)}
         if self.permission_admin:
@@ -771,7 +779,7 @@ class Group(Model):
         self.session.flush()
 
         Comment(
-            obj_type=3,
+            obj_type=OBJ_TYPES_IDX.index("RequestStatusChange"),
             obj_pk=request_status_change.id,
             user_id=requester.id,
             comment=reason,
@@ -857,7 +865,7 @@ class Group(Model):
         self.session.flush()
 
         Comment(
-            obj_type=3,
+            obj_type=OBJ_TYPES_IDX.index("RequestStatusChange"),
             obj_pk=request_status_change.id,
             user_id=requester.id,
             comment=reason,
@@ -1351,7 +1359,7 @@ class Request(Model):
         self.session.flush()
 
         Comment(
-            obj_type=3,
+            obj_type=OBJ_TYPES_IDX.index("RequestStatusChange"),
             obj_pk=request_status_change.id,
             user_id=requester.id,
             comment=reason,
@@ -1644,6 +1652,48 @@ class Permission(Model):
     def my_log_entries(self):
 
         return AuditLog.get_entries(self.session, on_permission_id=self.id, limit=20)
+
+
+class PermissionRequest(Model):
+    """Represent request for a permission/argument to be granted to a particular group."""
+    __tablename__ = "permission_requests"
+
+    id = Column(Integer, primary_key=True)
+
+    # The User that made the request.
+    requester_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    requester = relationship(
+        User, backref="permission_requests", foreign_keys=[requester_id]
+    )
+
+    permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=False)
+    permission = relationship(Permission, foreign_keys=[permission_id])
+    argument = Column(String(length=64), nullable=True)
+
+    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
+    group = relationship(Group, foreign_keys=[group_id])
+
+    requested_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    status = Column(Enum(*REQUEST_STATUS_CHOICES), default="pending", nullable=False)
+
+
+class PermissionRequestStatusChange(Model):
+    """Tracks changes to each permission grant request."""
+    __tablename__ = "permission_request_status_changes"
+
+    id = Column(Integer, primary_key=True)
+
+    request_id = Column(Integer, ForeignKey("permission_requests.id"))
+    request = relationship(PermissionRequest)
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user = relationship(User, foreign_keys=[user_id])
+
+    from_status = Column(Enum(*REQUEST_STATUS_CHOICES))
+    to_status = Column(Enum(*REQUEST_STATUS_CHOICES), nullable=False)
+
+    change_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class AsyncNotification(Model):

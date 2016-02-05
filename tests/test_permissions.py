@@ -1,10 +1,13 @@
 from collections import namedtuple
 import re
 import unittest
+from urllib import urlencode
 
 from wtforms.validators import ValidationError
+import pytest
 
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
+from fixtures import fe_app as app  # noqa
 from util import get_group_permissions, get_user_permissions, grant_permission
 from grouper.constants import (
         ARGUMENT_VALIDATION,
@@ -16,6 +19,19 @@ from grouper.constants import (
 from grouper.fe.forms import ValidateRegex
 import grouper.fe.util
 from grouper.models import Permission
+from grouper.permissions import get_owners_by_grantable_permission
+from url_util import url
+
+
+@pytest.fixture
+def grantable_permissions(session, standard_graph):
+    perm_grant, _ = Permission.get_or_create(session, name=PERMISSION_GRANT, description="")
+    perm0, _ = Permission.get_or_create(session, name="grantable", description="")
+    perm1, _ = Permission.get_or_create(session, name="grantable.one", description="")
+    perm2, _ = Permission.get_or_create(session, name="grantable.two", description="")
+    session.commit()
+
+    return perm_grant, perm0, perm1, perm2
 
 
 def test_basic_permission(standard_graph, session, users, groups, permissions):  # noqa
@@ -99,12 +115,8 @@ class PermissionTests(unittest.TestCase):
         self.assertRaises(ValidationError, eval_argument, 'exclaimation!point')
 
 
-def test_grantable_permissions(session, standard_graph, users, groups):
-    perm_grant, _ = Permission.get_or_create(session, name=PERMISSION_GRANT, description="")
-    perm0, _ = Permission.get_or_create(session, name="grantable", description="")
-    perm2, _ = Permission.get_or_create(session, name="grantable.one", description="")
-    perm3, _ = Permission.get_or_create(session, name="grantable.two", description="")
-    session.commit()
+def test_grantable_permissions(session, standard_graph, users, groups, grantable_permissions):
+    perm_grant, perm0, _, _ = grantable_permissions
 
     assert not users["zorkian@a.co"].my_grantable_permissions(), "start with none"
 
@@ -120,3 +132,39 @@ def test_grantable_permissions(session, standard_graph, users, groups):
     grants = users["zorkian@a.co"].my_grantable_permissions()
     assert len(grants) == 3, "wildcard grant should grab appropriat amount"
     assert sorted([x[0].name for x in grants]) == ["grantable", "grantable.one", "grantable.two"]
+
+
+def test_permission_grant_to_owners(session, standard_graph, groups, grantable_permissions):
+    perm_grant, _, perm1, perm2 = grantable_permissions
+
+    assert not get_owners_by_grantable_permission(session), 'nothing to begin with'
+
+    # grant a grant on a non-existent permission
+    grant_permission(groups["auditors"], perm_grant, argument="notgrantable.one")
+    assert not get_owners_by_grantable_permission(session), 'ignore grants for non-existent perms'
+
+    # grant a wildcard grant -- make sure all permissions are represented and
+    # the grant isn't inherited
+    grant_permission(groups["all-teams"], perm_grant, argument="grantable.*")
+    owner_by_perm_args = get_owners_by_grantable_permission(session)
+    expected = [groups['all-teams']]
+    assert owner_by_perm_args[(perm1.name, '*')] == expected, 'grants are not inherited'
+    assert owner_by_perm_args[(perm2.name, '*')] == expected, 'grants are not inherited'
+    assert len(owner_by_perm_args) == 2
+
+
+@pytest.mark.gen_test
+def test_permission_request_flow(session, standard_graph, groups,
+        grantable_permissions, http_client, base_url):
+    """Test that a permission request gets into the system correctly and
+    notifications are sent correctly."""
+    perm_grant, _, perm1, perm2 = grantable_permissions
+    grant_permission(groups["all-teams"], perm_grant, argument="grantable.*")
+
+    groupname = "serving-team"
+    username = "zorkian@a.co"
+    fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"permission_name": "grantable.one", "argument": "some argument"}),
+            headers={'X-Grouper-User': username})
+    assert resp.code == 200

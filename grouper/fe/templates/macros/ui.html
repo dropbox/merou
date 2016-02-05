@@ -244,7 +244,7 @@ enabled. Membership in this group is regularly reviewed.
             max-height: {{max_height}}px;
             overflow-y: auto;
         ">
-            <table class="table table-striped table-condensed">
+            <table class="datatable table table-striped table-condensed">
                 <thead>
                     <tr>
                         <th class="col-sm-1"></th>
@@ -322,7 +322,7 @@ enabled. Membership in this group is regularly reviewed.
     </div>
 {%- endmacro %}
 
-{% macro permission_panel(max_height, mappings, group=None, can_grant=None) -%}
+{% macro permission_panel(max_height, mappings, group=None, can_grant=None, is_owner=None, pending_requests=None) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Permissions</h3>
@@ -378,13 +378,36 @@ enabled. Membership in this group is regularly reviewed.
                     </tr>
                 {% endif %}
                 </tbody>
+                {% if pending_requests %}
+                <tbody>
+                {% for request in pending_requests %}
+                    <tr>
+                        <td>
+                            <i class="text-muted fa fa-question-circle hidden-xs" title="pending"></i>
+                            <i class="text-muted">{{ request.permission.name }}</i>
+                        </td>
+                        <td><i class="text-muted">{{ request.argument }}</i></td>
+                        <td><i class="text-muted">(direct)</i></td>
+                        <td><i class="text-muted">--</i></td>
+                        <td>&nbsp;</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                {% endif %}
             </table>
         </div>
-        {% if group and can_grant %}
+        {% if group and (can_grant or is_owner) %}
         <div class='panel-footer'>
+            {% if can_grant %}
             <a class="btn btn-default btn-sm" href="/permissions/grant/{{ group.name }}">
-            <span class="glyphicon glyphicon-plus"></span> Add Permission
+                <span class="glyphicon glyphicon-plus"></span> Add Permission
             </a>
+            {% endif %}
+            {% if is_owner %}
+            <a class="btn btn-default btn-sm" href="/groups/{{ group.name }}/permission/request">
+                <span class="glyphicon glyphicon-plus"></span> Request Permission
+            </a>
+            {% endif %}
         </div>
         {% endif %}
     </div>

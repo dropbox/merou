@@ -64,6 +64,7 @@ for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
             r"/groups/{}/requests/(?P<request_id>[0-9]+)".format(regex),
             handlers.GroupRequestUpdate
         ),
+        (r"/groups/{}/permission/request".format(regex), handlers.GroupPermissionRequest),
         (
             r"/groups/{}/edit/(?P<member_type>user|group)/{}".format(regex, NAME2_VALIDATION),
             handlers.GroupEditMember

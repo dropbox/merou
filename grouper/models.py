@@ -1,3 +1,6 @@
+import hmac
+
+import os
 from annex import Annex
 from collections import OrderedDict, namedtuple
 from datetime import datetime, timedelta
@@ -265,6 +268,7 @@ class User(Model):
     username = Column(String(length=MAX_NAME_LENGTH), unique=True, nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
     role_user = Column(Boolean, default=False, nullable=False)
+    tokens = relationship("UserToken", back_populates="user")
 
     @hybrid_property
     def name(self):
@@ -629,6 +633,49 @@ class User(Model):
                 GroupEdge.expiration == None,
             )
         ).all()
+
+
+def _make_secret():
+    return os.urandom(20).encode("hex")
+
+
+class UserToken(Model):
+    """Simple bearer tokens used by third parties to verify user identity"""
+
+    __tablename__ = "user_tokens"
+
+    id = Column(Integer, primary_key=True)
+
+    user_id = Column(Integer, ForeignKey("users.id"))
+    name = Column(String(length=16), nullable=False)
+
+    ctime = Column(DateTime, default=datetime.utcnow, nullable=False)
+    dtime = Column(DateTime, default=None, nullable=True)
+
+    secret = Column(String(length=32), default=_make_secret, unique=True, nullable=False)
+
+    user = relationship("User", back_populates="tokens")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "name"),
+    )
+
+    @staticmethod
+    def get(session, name):
+        return session.query(UserToken).filter_by(name=name).scalar()
+
+    def add(self, session):
+        super(UserToken, self).add(session)
+        Counter.incr(session, "updates")
+        return self
+
+    def check_secret(self, secret):
+        # The length of self.secret is not secret
+        return hmac.compare_digest(secret, self.secret)
+
+    @property
+    def enabled(self):
+        return self.dtime is None and self.user.enabled
 
 
 def build_changes(edge, **updates):

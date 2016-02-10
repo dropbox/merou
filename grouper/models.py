@@ -678,7 +678,7 @@ class UserToken(Model):
         return self.disabled_at is None and self.user.enabled
 
     def disable(self):
-        self.dtime = datetime.utcnow()
+        self.disabled_at = datetime.utcnow()
         Counter.incr(self.session, "updates")
 
     def __str__(self):

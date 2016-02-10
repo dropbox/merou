@@ -126,6 +126,7 @@ class UserView(GrouperHandler):
         log_entries = user.my_log_entries()
         self.render("user.html", user=user, groups=groups, public_keys=public_keys,
                     can_control=can_control, permissions=permissions,
+                    user_tokens=user.tokens,
                     log_entries=log_entries, num_pending_requests=num_pending_requests,
                     open_audits=open_audits)
 

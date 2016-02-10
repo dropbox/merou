@@ -12,6 +12,15 @@ NAME2_VALIDATION = _NAME_VALIDATION.format("name2")
 # This regex is specifically to validate usernames.
 USERNAME_VALIDATION = r"(?P<name>\w+@\w+\.\w+)"
 
+# UserToken validators
+TOKEN_SECRET_VALIDATION = r"(?P<token_secret>[a-f0-9]{40})"
+TOKEN_NAME_VALIDATION = r"/(?P<token_name>[A-Za-z0-9]+)"
+TOKEN_FORMAT = r"^{}{}:{}$".format(
+    USERNAME_VALIDATION,
+    TOKEN_NAME_VALIDATION,
+    TOKEN_SECRET_VALIDATION,
+)
+
 # Regexes for validating permission/argument names
 PERMISSION_VALIDATION = r"(?P<name>(?:[a-z0-9]+[_\-\.])*[a-z0-9]+)"
 PERMISSION_WILDCARD_VALIDATION = r"(?P<name>(?:[a-z0-9]+[_\-\.])*[a-z0-9]+(?:\.\*)?)"

@@ -1,16 +1,18 @@
-from cStringIO import StringIO
 import csv
-from datetime import datetime
 import sys
 import traceback
 
-from expvar.stats import stats
+from cStringIO import StringIO
+from datetime import datetime
+
+import re
 import sshpubkey
+from expvar.stats import stats
 from tornado.web import RequestHandler, HTTPError
 
-from ..models import PublicKey, Session, User
+from ..constants import TOKEN_FORMAT
+from ..models import PublicKey, Session, User, UserToken
 from ..util import try_update
-
 
 # if raven library around, pull in SentryMixin
 try:
@@ -186,6 +188,37 @@ class Permissions(GraphHandler):
             try_update(out["permission"], self.graph.permission_metadata.get(name, {}))
             try_update(out, details)
             return self.success(out)
+
+
+class TokenValidate(GraphHandler):
+    validator = re.compile(TOKEN_FORMAT)
+
+    def post(self):
+        supplied_token = self.get_body_argument("token")
+        match = TokenValidate.validator.match(supplied_token)
+        if not match:
+            return self.error(((1, "Token format not recognized"),))
+
+        sess = Session()
+
+        token_name = match.group("token_name")
+        token_secret = match.group("token_secret")
+        owner = User.get(sess, name=match.group("name"))
+
+        token = UserToken.get(sess, owner, token_name)
+        if token is None:
+            return self.error(((2, "Token specified does not exist"),))
+        if not token.enabled:
+            return self.error(((3, "Token is disabled"),))
+        if not token.check_secret(token_secret):
+            return self.error(((4, "Token secret mismatch"),))
+
+        return self.success({
+            "owner": owner.username,
+            "identity": str(token),
+            "act_as_owner": True,
+            "valid": True,
+        })
 
 
 # Don't use GraphHandler here as we don't want to count

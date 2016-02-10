@@ -671,7 +671,7 @@ class UserToken(Model):
 
     def check_secret(self, secret):
         # The length of self.secret is not secret
-        return hmac.compare_digest(secret, self.secret)
+        return self.enabled and hmac.compare_digest(secret, self.secret)
 
     @property
     def enabled(self):

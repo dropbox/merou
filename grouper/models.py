@@ -677,6 +677,10 @@ class UserToken(Model):
     def enabled(self):
         return self.dtime is None and self.user.enabled
 
+    def disable(self):
+        self.dtime = datetime.utcnow()
+        Counter.incr(self.session, "updates")
+
     def __str__(self):
         return "/".join((
                 self.user.username if self.user is not None else "unspecified",

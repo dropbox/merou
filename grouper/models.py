@@ -1,26 +1,26 @@
-import hmac
-
-import os
-from annex import Annex
-from collections import OrderedDict, namedtuple
-from datetime import datetime, timedelta
 import functools
+import hmac
 import json
 import logging
+import os
 import re
 
+from collections import OrderedDict, namedtuple
+from datetime import datetime, timedelta
+
+from annex import Annex
 from enum import IntEnum
-from sqlalchemy import create_engine
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, UniqueConstraint,
     ForeignKey, Enum, DateTime, SmallInteger, Index, LargeBinary
 )
+from sqlalchemy import create_engine
 from sqlalchemy import or_, union_all, asc, desc
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship, object_session
 from sqlalchemy.orm import aliased
+from sqlalchemy.orm import relationship, object_session
 from sqlalchemy.orm import sessionmaker, Session as _Session
 from sqlalchemy.sql import func, label, literal
 

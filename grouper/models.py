@@ -661,8 +661,8 @@ class UserToken(Model):
     )
 
     @staticmethod
-    def get(session, name):
-        return session.query(UserToken).filter_by(name=name).scalar()
+    def get(session, user, name):
+        return session.query(UserToken).filter_by(name=name, user=user).scalar()
 
     def add(self, session):
         super(UserToken, self).add(session)

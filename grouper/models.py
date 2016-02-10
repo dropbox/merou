@@ -677,6 +677,12 @@ class UserToken(Model):
     def enabled(self):
         return self.dtime is None and self.user.enabled
 
+    def __str__(self):
+        return "/".join((
+                self.user.username if self.user is not None else "unspecified",
+                self.name if self.name is not None else "unspecified",
+        ))
+
 
 def build_changes(edge, **updates):
     changes = {}

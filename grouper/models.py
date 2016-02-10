@@ -649,8 +649,8 @@ class UserToken(Model):
     user_id = Column(Integer, ForeignKey("users.id"))
     name = Column(String(length=16), nullable=False)
 
-    ctime = Column(DateTime, default=datetime.utcnow, nullable=False)
-    dtime = Column(DateTime, default=None, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    disabled_at = Column(DateTime, default=None, nullable=True)
 
     secret = Column(String(length=32), default=_make_secret, unique=True, nullable=False)
 
@@ -675,7 +675,7 @@ class UserToken(Model):
 
     @property
     def enabled(self):
-        return self.dtime is None and self.user.enabled
+        return self.disabled_at is None and self.user.enabled
 
     def disable(self):
         self.dtime = datetime.utcnow()

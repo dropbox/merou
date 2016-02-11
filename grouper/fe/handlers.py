@@ -1743,6 +1743,31 @@ class UserTokenAdd(GrouperHandler):
         return self.render("user-token-created.html", token=token)
 
 
+class UserTokenDisable(GrouperHandler):
+    def get(self, user_id=None, name=None, token_id=None):
+        user = User.get(self.session, user_id, name)
+        if not user:
+            return self.notfound()
+
+        if (user.name != self.current_user.name) and not self.current_user.user_admin:
+            return self.forbidden()
+        token = UserToken.get(self.session, user=user, id=token_id)
+        return self.render("user-token-disable.html", user=user, token=token)
+
+    def post(self, user_id=None, name=None, token_id=None):
+        user = User.get(self.session, user_id, name)
+        if not user:
+            return self.notfound()
+
+        if (user.name != self.current_user.name) and not self.current_user.user_admin:
+            return self.forbidden()
+
+        token = UserToken.get(self.session, user=user, id=token_id)
+        token.disable()
+        self.session.commit()
+        return self.render("user-token-disabled.html", token=token)
+
+
 # Don't use GraphHandler here as we don't want to count
 # these as requests.
 class Stats(RequestHandler):

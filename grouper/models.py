@@ -1,23 +1,26 @@
-from annex import Annex
-from collections import OrderedDict, namedtuple
-from datetime import datetime, timedelta
 import functools
+import hmac
 import json
 import logging
+import os
 import re
 
+from collections import OrderedDict, namedtuple
+from datetime import datetime, timedelta
+
+from annex import Annex
 from enum import IntEnum
-from sqlalchemy import create_engine
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, UniqueConstraint,
     ForeignKey, Enum, DateTime, SmallInteger, Index, LargeBinary
 )
+from sqlalchemy import create_engine
 from sqlalchemy import or_, union_all, asc, desc
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship, object_session
 from sqlalchemy.orm import aliased
+from sqlalchemy.orm import relationship, object_session
 from sqlalchemy.orm import sessionmaker, Session as _Session
 from sqlalchemy.sql import func, label, literal
 
@@ -265,6 +268,7 @@ class User(Model):
     username = Column(String(length=MAX_NAME_LENGTH), unique=True, nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
     role_user = Column(Boolean, default=False, nullable=False)
+    tokens = relationship("UserToken", back_populates="user")
 
     @hybrid_property
     def name(self):
@@ -629,6 +633,59 @@ class User(Model):
                 GroupEdge.expiration == None,
             )
         ).all()
+
+
+def _make_secret():
+    return os.urandom(20).encode("hex")
+
+
+class UserToken(Model):
+    """Simple bearer tokens used by third parties to verify user identity"""
+
+    __tablename__ = "user_tokens"
+
+    id = Column(Integer, primary_key=True)
+
+    user_id = Column(Integer, ForeignKey("users.id"))
+    name = Column(String(length=16), nullable=False)
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    disabled_at = Column(DateTime, default=None, nullable=True)
+
+    secret = Column(String(length=32), default=_make_secret, unique=True, nullable=False)
+
+    user = relationship("User", back_populates="tokens")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "name"),
+    )
+
+    @staticmethod
+    def get(session, user, name):
+        return session.query(UserToken).filter_by(name=name, user=user).scalar()
+
+    def add(self, session):
+        super(UserToken, self).add(session)
+        Counter.incr(session, "updates")
+        return self
+
+    def check_secret(self, secret):
+        # The length of self.secret is not secret
+        return self.enabled and hmac.compare_digest(secret, self.secret)
+
+    @property
+    def enabled(self):
+        return self.disabled_at is None and self.user.enabled
+
+    def disable(self):
+        self.disabled_at = datetime.utcnow()
+        Counter.incr(self.session, "updates")
+
+    def __str__(self):
+        return "/".join((
+                self.user.username if self.user is not None else "unspecified",
+                self.name if self.name is not None else "unspecified",
+        ))
 
 
 def build_changes(edge, **updates):

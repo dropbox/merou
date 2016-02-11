@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block heading %}
+    <a href="/users">Users</a>
+{% endblock %}
+
+{% block subheading %}
+    Add Token
+{% endblock %}
+
+{% block content %}
+<div class="col-md-6 col-md-offset-3">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Add Token</h3>
+       </div>
+        <div class="panel-body">
+            <p>
+                User tokens allow for programmatic access to resources.
+            </p>
+            <p>
+                Providing a user token to an application will <strong>allow it to perform any action
+                as you</strong>, so they should only be provided with trusted applications. For
+                example, scripts you wrote yourself, or have been approved by your organization's
+                IT and security teams.
+            </p>
+            <form class="form-horizontal" role="form"
+                  method="post" action="/users/{{user.name}}/tokens/add">
+                {% include "forms/user-token.html" %}
+                <div class="form-group">
+                    <div class="col-sm-offset-3 col-sm-4">
+                        <button type="submit" class="btn btn-primary">Add Token</button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

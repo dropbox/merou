@@ -28,6 +28,7 @@ from .forms import (
     PublicKeyForm,
     UserEnableForm,
     UsersPublicKeyForm,
+    UserTokenForm,
 )
 from ..email_util import cancel_async_emails, send_email, send_async_email
 from ..graph import NoSuchUser, NoSuchGroup
@@ -36,6 +37,7 @@ from ..models import (
     GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES, OBJ_TYPES,
     get_all_groups, get_all_users,
     get_user_or_group, Audit, AuditMember, AUDIT_STATUS_CHOICES, AuditLogCategory,
+    UserToken,
 )
 from .settings import settings
 from .util import ensure_audit_security, GrouperHandler, Alert, test_reserved_names
@@ -1685,6 +1687,60 @@ class Help(GrouperHandler):
 class NotFound(GrouperHandler):
     def get(self):
         return self.notfound()
+
+
+class UserTokenAdd(GrouperHandler):
+    def get(self, user_id=None, name=None):
+        user = User.get(self.session, user_id, name)
+        if not user:
+            return self.notfound()
+
+        if user.name != self.current_user.name:
+            return self.forbidden()
+
+        self.render("user-token-add.html", form=UserTokenForm(), user=user)
+
+    def post(self, user_id=None, name=None):
+        user = User.get(self.session, user_id, name)
+        if not user:
+            return self.notfound()
+
+        if user.name != self.current_user.name:
+            return self.forbidden()
+
+        form = UserTokenForm(self.request.arguments)
+        if not form.validate():
+            return self.render(
+                "user-token-add.html", form=form, user=user,
+                alerts=self.get_form_alerts(form.errors),
+            )
+
+        try:
+            token = UserToken(name=form.data["name"], user=user)
+            token.add(self.session)
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            form.name.errors.append(
+                "Name already in use."
+            )
+            return self.render(
+                "user-token-add.html", form=form, user=user,
+                alerts=self.get_form_alerts(form.errors),
+            )
+
+        AuditLog.log(self.session, self.current_user.id, 'add_token',
+                     'Added token: {}'.format(token.name),
+                     on_user_id=user.id)
+
+        email_context = {
+                "actioner": self.current_user.name,
+                "changed_user": user.name,
+                "action": "added",
+                }
+        send_email(self.session, [user.name], 'User token created', 'user_tokens_changed',
+                settings, email_context)
+        return self.render("user-token-created.html", token=token)
 
 
 # Don't use GraphHandler here as we don't want to count

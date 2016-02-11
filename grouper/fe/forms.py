@@ -7,7 +7,7 @@ from wtforms import (
         HiddenField,
         IntegerField,
         SelectField,
-        TextField,
+        StringField,
         TextAreaField,
         validators,
         )
@@ -51,25 +51,25 @@ class ValidatePublicKey(object):
 
 class PublicKeyForm(Form):
     public_key = TextAreaField("Public Key", [
-        validators.Required(),
+        validators.DataRequired(),
         ValidatePublicKey(),
     ])
 
 
 class PermissionGrantForm(Form):
     permission = SelectField("Permission", [
-        validators.Required(),
+        validators.DataRequired(),
     ], choices=[["", "(select one)"]], default="")
-    argument = TextField("Argument", [
+    argument = StringField("Argument", [
         validators.Length(min=0, max=constants.MAX_NAME_LENGTH),
         ValidateRegex(constants.ARGUMENT_VALIDATION),
     ])
 
 
 class PermissionCreateForm(Form):
-    name = TextField("Name", [
+    name = StringField("Name", [
         validators.Length(min=3, max=64),
-        validators.Required(),
+        validators.DataRequired(),
         ValidateRegex(constants.PERMISSION_VALIDATION),
     ])
     description = TextAreaField("Description")
@@ -79,9 +79,9 @@ class GroupCreateForm(Form):
     creatorrole = SelectField("Creator role", choices=[
             ("owner", "Owner"), ("np-owner", "No-Permissions Owner"),
             ], default="owner")
-    groupname = TextField("Name", [
+    groupname = StringField("Name", [
         validators.Length(min=3, max=32),
-        validators.Required(),
+        validators.DataRequired(),
         ValidateRegex(constants.NAME_VALIDATION),
     ])
     description = TextAreaField("Description")
@@ -92,9 +92,9 @@ class GroupCreateForm(Form):
 
 
 class GroupEditForm(Form):
-    groupname = TextField("Name", [
+    groupname = StringField("Name", [
         validators.Length(min=3, max=32),
-        validators.Required(),
+        validators.DataRequired(),
         ValidateRegex(constants.NAME_VALIDATION),
     ])
     description = TextAreaField("Description")
@@ -105,18 +105,18 @@ class GroupEditForm(Form):
 
 
 class AuditCreateForm(Form):
-    ends_at = TextField("Ends At", [
+    ends_at = StringField("Ends At", [
         ValidateDate(),
-        validators.Required(),
+        validators.DataRequired(),
     ], id="audit-form-ends-at")
 
 
 class GroupRequestModifyForm(Form):
     status = SelectField("New Status", [
-        validators.Required(),
+        validators.DataRequired(),
     ])
     reason = TextAreaField("Reason", [
-        validators.Required(),
+        validators.DataRequired(),
     ])
     redirect_aggregate = HiddenField()
 
@@ -124,29 +124,29 @@ class GroupRequestModifyForm(Form):
 class GroupAddForm(Form):
     member = SelectField("Name", [
         validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
-        validators.Required(),
+        validators.DataRequired(),
         ValidateRegex(constants.NAME_VALIDATION),
     ])
     role = SelectField("Role", [
         validators.Length(min=3, max=32),
-        validators.Required(),
+        validators.DataRequired(),
     ], default="member")
     reason = TextAreaField("Reason", [
-        validators.Required(),
+        validators.DataRequired(),
     ])
-    expiration = TextField("Expiration", [
+    expiration = StringField("Expiration", [
         ValidateDate(),
     ], id="add-form-expiration")
 
 
 class GroupRemoveForm(Form):
-    member = TextField("Member", [
+    member = StringField("Member", [
         validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
-        validators.Required(),
+        validators.DataRequired(),
         ValidateRegex(constants.NAME_VALIDATION),
     ])
     member_type = SelectField("Member Type", [
-        validators.Required(),
+        validators.DataRequired(),
     ], choices=[
         ("user", "User"), ("group", "Group"),
     ])
@@ -155,20 +155,20 @@ class GroupRemoveForm(Form):
 class GroupJoinForm(Form):
     member = SelectField("Member", [
         validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
-        validators.Required(),
+        validators.DataRequired(),
         ValidateRegex(r"(?:User|Member|Group): {}".format(constants.NAME_VALIDATION)),
     ])
     role = SelectField("Role", [
         validators.Length(min=3, max=32),
-        validators.Required(),
+        validators.DataRequired(),
     ], choices=[
         (role, role.title())
         for role in models.GROUP_EDGE_ROLES
     ], default="member")
     reason = TextAreaField("Reason", [
-        validators.Required(),
+        validators.DataRequired(),
     ])
-    expiration = TextField("Expiration", [
+    expiration = StringField("Expiration", [
         ValidateDate(),
     ], id="join-form-expiration")
 
@@ -176,12 +176,12 @@ class GroupJoinForm(Form):
 class GroupEditMemberForm(Form):
     role = SelectField("Role", [
         validators.Length(min=3, max=32),
-        validators.Required(),
+        validators.DataRequired(),
     ])
     reason = TextAreaField("Reason", [
-        validators.Required(),
+        validators.DataRequired(),
     ])
-    expiration = TextField("Expiration", [
+    expiration = StringField("Expiration", [
         ValidateDate(),
     ], id="edit-form-expiration")
 
@@ -194,11 +194,11 @@ class UsersPublicKeyForm(Form):
     offset = IntegerField(default=0)
     limit = IntegerField(default=100, validators=[validators.NumberRange(min=100, max=1000)])
     enabled = IntegerField(default=1, validators=[validators.NumberRange(min=0, max=1)])
-    sort_by = TextField(validators=[
+    sort_by = StringField(validators=[
             validators.Optional(),
             validators.AnyOf(["age", "size", "type", "user"]),
             ])
-    fingerprint = TextField(label="fingerprint", validators=[
+    fingerprint = StringField(label="fingerprint", validators=[
             validators.Optional(),
             validators.Regexp("^[\w:]+$"),
             ],

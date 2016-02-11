@@ -93,11 +93,13 @@
         {{ permission_panel(390, permissions) }}
     </div>
 </div>
-<div class="row">
-    <div class="col-md-4">
-        {{ tokens_panel(390, user, user_tokens, can_control) }}
+{% if current_user.user_admin or current_user.id == user.id %}
+    <div class="row">
+        <div class="col-md-4">
+            {{ tokens_panel(390, user, user_tokens, can_control) }}
+        </div>
     </div>
-</div>
+{% endif %}
 <div class="row">
     <div class="col-md-12">
         {{ log_entry_panel(390, log_entries) }}

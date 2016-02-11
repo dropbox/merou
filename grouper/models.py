@@ -661,8 +661,24 @@ class UserToken(Model):
     )
 
     @staticmethod
-    def get(session, user, name):
-        return session.query(UserToken).filter_by(name=name, user=user).scalar()
+    def get(session, user, name=None, id=None):
+        """Retrieves a single UserToken.
+
+        Args:
+            session (Session): Session object
+            user (User): Owner of the token
+            name (str): Name of the token
+            id (int): Primary key of the token
+
+        Returns:
+            UserToken: UserToken matching the specified constraints
+
+        """
+        assert name is None or id is None
+
+        if name is not None:
+            return session.query(UserToken).filter_by(name=name, user=user).scalar()
+        return session.query(UserToken).filter_by(id=id, user=user).scalar()
 
     def add(self, session):
         super(UserToken, self).add(session)

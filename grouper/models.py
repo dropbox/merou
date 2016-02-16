@@ -295,8 +295,10 @@ class User(Model):
         Returns:
             None
         """
+        # avoid circular dependency
+        from grouper.group import get_groups_by_user
         if not preserve_membership:
-            for group in self.my_groups(ignore_user_disabled=True):
+            for group, group_edge in get_groups_by_user(self.session, self):
                 group_obj = self.session.query(Group).filter_by(
                     groupname=group.name
                 ).scalar()
@@ -500,35 +502,6 @@ class User(Model):
         # of PERMISSION_GRANT with an argument that matches the name of a permission.
         grants = [x for x in self.my_permissions() if x.name == PERMISSION_GRANT]
         return filter_grantable_permissions(self.session, grants)
-
-    def my_groups(self, ignore_user_disabled=False):
-        '''
-        Returns all groups this user is a member of.
-
-        Args:
-            ignore_user_disabled(bool): if this user is disabled should this query ignore that fact
-        '''
-        now = datetime.utcnow()
-        groups = self.session.query(
-            label("name", Group.groupname),
-            label("type", literal("Group")),
-            label("role", GroupEdge._role)
-        ).filter(
-            GroupEdge.group_id == Group.id,
-            GroupEdge.member_pk == self.id,
-            GroupEdge.member_type == 0,
-            GroupEdge.active == True,
-            Group.enabled == True,
-            or_(
-                GroupEdge.expiration > now,
-                GroupEdge.expiration == None
-            )
-        )
-
-        if not ignore_user_disabled:
-            groups.filter(self.enabled == True)
-
-        return groups.all()
 
     def my_requests_aggregate(self):
         """Returns all pending requests for this user to approve across groups."""

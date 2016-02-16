@@ -8,6 +8,7 @@ from sqlalchemy import union_all
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label, literal
 
+from .. import group as group_biz
 from .. import perf_profile
 from .. import permissions
 from .. import public_key
@@ -143,7 +144,8 @@ class UserView(GrouperHandler):
             user_md = {}
 
         open_audits = user.my_open_audits()
-        groups = user.my_groups()
+        group_edge_list = group_biz.get_groups_by_user(self.session, user) if user.enabled else []
+        groups = [{'name': g.name, 'type': 'Group', 'role': ge._role} for g, ge in group_edge_list]
         public_keys = user.my_public_keys()
         permissions = user_md.get('permissions', [])
         log_entries = user.my_log_entries()
@@ -1530,7 +1532,7 @@ class GroupJoin(GrouperHandler):
                 ("User: {}".format(self.current_user.name), ) * 2
             )
 
-        for _group in self.current_user.my_groups():
+        for _group, group_edge in group_biz.get_groups_by_user(self.session, self.current_user):
             if group.name == _group.name:  # Don't add self.
                 continue
             if _group.role < 1:  # manager, owner, and np-owner only.

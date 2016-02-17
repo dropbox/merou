@@ -1764,6 +1764,9 @@ class UserTokenDisable(GrouperHandler):
 
         token = UserToken.get(self.session, user=user, id=token_id)
         token.disable()
+        AuditLog.log(self.session, self.current_user.id, 'disable_token',
+                     'Disabled token: {}'.format(token.name),
+                     on_user_id=user.id)
         self.session.commit()
         return self.render("user-token-disabled.html", token=token)
 

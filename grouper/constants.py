@@ -1,11 +1,13 @@
-
 # These regexes must not include line anchors ('^', '$'). Those will be added by the
 # ValidateRegex library function and anybody else who needs them.
-NAME_VALIDATION = r"(?P<name>[@\-\w\.]+)"
 
-# This regex needs to exactly match the above, EXCEPT that the name should be "name2". So if the
-# above regex changes, change this one. This is kind of gross. :\
-NAME2_VALIDATION = r"(?P<name2>[@\-\w\.]+)"
+_NAME_VALIDATION = r"(?P<{}>[@\-\w\.]+)"
+NAME_VALIDATION = _NAME_VALIDATION.format("name")
+
+# This regex needs to exactly match the above, EXCEPT that the name should be "name2".
+# This is kind of gross. :\
+# TODO(lfaraone): Figure out why this is needed, and then stop needing it.
+NAME2_VALIDATION = _NAME_VALIDATION.format("name2")
 
 # This regex is specifically to validate usernames.
 USERNAME_VALIDATION = r"(?P<name>\w+@\w+\.\w+)"

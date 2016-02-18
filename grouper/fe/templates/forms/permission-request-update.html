@@ -1,0 +1,20 @@
+<div class="form-group {% if form.status.errors %}has-error{% endif %}">
+    <label for="{{form.status.label.field_id}}"
+           class="col-sm-3 control-label">
+        {{ form.status.label.text }} {% if form.status.flags.required %}*{% endif %}
+    </label>
+    <div class="col-sm-7">
+        {{ form.status(class_="form-control") }}
+    </div>
+</div>
+
+<div class="form-group {% if form.reason.errors %}has-error{% endif %}">
+    <label for="{{form.reason.label.field_id}}"
+           class="col-sm-3 control-label">
+        {{ form.reason.label.text }} {% if form.reason.flags.required %}*{% endif %}
+    </label>
+    <div class="col-sm-8">
+        {{ form.reason(class_="form-control", rows=5) }}
+    </div>
+</div>
+{{ xsrf_form() }}

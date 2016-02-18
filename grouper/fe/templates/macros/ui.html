@@ -295,7 +295,7 @@ enabled. Membership in this group is regularly reviewed.
                             {{ account(entry.actor) }}
                         </td>
                         <td class="col-sm-2">{{ entry.action }}</td>
-                        <td class="col-sm-2">{{ entry.description }}</td>
+                        <td class="col-sm-2">{{ entry.description|escape }}</td>
                         <td class="col-sm-2">
                             {% if entry.on_group %}
                                 Group: {{ account(entry.on_group) }}<br />
@@ -344,7 +344,7 @@ enabled. Membership in this group is regularly reviewed.
                 {% for map in mappings %}
                     <tr>
                         <td>{{ permission(map) }}</td>
-                        <td class="col-sm-2">{{ map.argument|default("(unargumented)", True) }}</td>
+                        <td class="col-sm-2">{{ map.argument|default("(unargumented)", True)|escape }}</td>
                         <td class="col-sm-2">
                         {% if map.distance == 0 %}
                             (direct)

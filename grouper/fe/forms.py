@@ -201,6 +201,23 @@ class GroupPermissionRequestForm(Form):
     ])
 
 
+class PermissionRequestsForm(Form):
+    offset = IntegerField(default=0)
+    limit = IntegerField(default=100, validators=[validators.NumberRange(min=100, max=9000)])
+    status = SelectField("New Status", [
+        validators.Optional(),
+    ], default='')
+
+
+class PermissionRequestUpdateForm(Form):
+    status = SelectField("New Status", [
+        validators.DataRequired(),
+    ])
+    reason = TextAreaField("Reason", [
+        validators.DataRequired(),
+    ])
+
+
 class UserEnableForm(Form):
     preserve_membership = BooleanField(default=False)
 

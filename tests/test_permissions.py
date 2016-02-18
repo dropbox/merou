@@ -1,4 +1,5 @@
 from collections import namedtuple
+from mock import patch
 import re
 import unittest
 from urllib import urlencode
@@ -18,8 +19,8 @@ from grouper.constants import (
         )
 from grouper.fe.forms import ValidateRegex
 import grouper.fe.util
-from grouper.models import Permission
-from grouper.permissions import get_owners_by_grantable_permission
+from grouper.models import AsyncNotification, Group, Permission, User
+from grouper.permissions import get_owners_by_grantable_permission, get_requests_by_owner
 from url_util import url
 
 
@@ -146,25 +147,118 @@ def test_permission_grant_to_owners(session, standard_graph, groups, grantable_p
     # grant a wildcard grant -- make sure all permissions are represented and
     # the grant isn't inherited
     grant_permission(groups["all-teams"], perm_grant, argument="grantable.*")
-    owner_by_perm_args = get_owners_by_grantable_permission(session)
+    owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
     expected = [groups['all-teams']]
-    assert owner_by_perm_args[(perm1.name, '*')] == expected, 'grants are not inherited'
-    assert owner_by_perm_args[(perm2.name, '*')] == expected, 'grants are not inherited'
-    assert len(owner_by_perm_args) == 2
+    assert owners_by_arg_by_perm[perm1.name]['*'] == expected, 'grants are not inherited'
+    assert len(owners_by_arg_by_perm) == 2
+    assert len(owners_by_arg_by_perm[perm1.name]) == 1
+    assert len(owners_by_arg_by_perm[perm2.name]) == 1
+
+
+def _load_permissions_by_group_name(session, group_name):
+    group = Group.get(session, name=group_name)
+    return [name for _, name, _, _, _ in group.my_permissions()]
 
 
 @pytest.mark.gen_test
-def test_permission_request_flow(session, standard_graph, groups,
-        grantable_permissions, http_client, base_url):
+def test_permission_request_flow(session, standard_graph, groups, grantable_permissions,
+        http_client, base_url):
     """Test that a permission request gets into the system correctly and
     notifications are sent correctly."""
     perm_grant, _, perm1, perm2 = grantable_permissions
     grant_permission(groups["all-teams"], perm_grant, argument="grantable.*")
 
+    # REQUEST: 'grantable.one', 'some argument' for 'serving-team'
     groupname = "serving-team"
     username = "zorkian@a.co"
     fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
     resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({"permission_name": "grantable.one", "argument": "some argument"}),
+            body=urlencode({"permission_name": "grantable.one", "argument": "some argument",
+                "reason": "blah blah black sheep"}),
             headers={'X-Grouper-User': username})
     assert resp.code == 200
+
+    emails = session.query(AsyncNotification).all()
+    assert len(emails) == 1, "only one user (and no group) should receive notification for request"
+
+    perms = _load_permissions_by_group_name(session, 'serving-team')
+    assert len(perms) == 1
+    assert "grantable.one" not in perms, "requested permission shouldn't be granted immediately"
+
+    user = User.get(session, name='zorkian@a.co')
+    request_tuple, total = get_requests_by_owner(session, user, "pending", 10, 0)
+    assert len(request_tuple.requests) == 0, "random user shouldn't have a request"
+
+    user = User.get(session, name='testuser@a.co')
+    request_tuple, total = get_requests_by_owner(session, user, "pending", 10, 0)
+    assert len(request_tuple.requests) == 1, "user in group with grant should have a request"
+
+    # APPROVE grant: have 'testuser@a.co' action this request as owner of
+    # 'all-teams' which has the grant permission for the requested permission
+    request_id = request_tuple.requests[0].id
+    fe_url = url(base_url, "/permissions/requests/{}".format(request_id))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"status": "actioned", "reason": "lgtm"}),
+            headers={'X-Grouper-User': user.name})
+    assert resp.code == 200
+
+    perms = _load_permissions_by_group_name(session, 'serving-team')
+    assert len(perms) == 2
+    assert "grantable.one" in perms, "requested permission shouldn't be granted immediately"
+
+    emails = session.query(AsyncNotification).all()
+    assert len(emails) == 2, "requester should receive email as well"
+
+    # (re)REQUEST: 'grantable.one', 'some argument' for 'serving-team'
+    groupname = "serving-team"
+    username = "zorkian@a.co"
+    fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"permission_name": "grantable.one", "argument": "some argument",
+                "reason": "blah blah black sheep"}),
+            headers={'X-Grouper-User': username})
+    assert resp.code == 200
+
+    user = User.get(session, name='testuser@a.co')
+    request_tuple, total = get_requests_by_owner(session, user, "pending", 10, 0)
+    assert len(request_tuple.requests) == 0, "request for existing perm should fail"
+
+    # REQUEST: 'grantable.two', 'some argument' for 'serving-team'
+    groupname = "serving-team"
+    username = "zorkian@a.co"
+    fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"permission_name": "grantable.two", "argument": "some argument",
+                "reason": "blah blah black sheep"}),
+            headers={'X-Grouper-User': username})
+    assert resp.code == 200
+
+    emails = session.query(AsyncNotification).all()
+    assert len(emails) == 3, "only one user (and no group) should receive notification for request"
+
+    perms = _load_permissions_by_group_name(session, 'serving-team')
+    assert len(perms) == 2
+    assert "grantable.two" not in perms, "requested permission shouldn't be granted immediately"
+
+    user = User.get(session, name='zorkian@a.co')
+    request_tuple, total = get_requests_by_owner(session, user, "pending", 10, 0)
+    assert len(request_tuple.requests) == 0, "random user shouldn't have a request"
+
+    user = User.get(session, name='testuser@a.co')
+    request_tuple, total = get_requests_by_owner(session, user, "pending", 10, 0)
+    assert len(request_tuple.requests) == 1, "user in group with grant should have a request"
+
+    # CANCEL request: have 'testuser@a.co' cancel this request
+    request_id = request_tuple.requests[0].id
+    fe_url = url(base_url, "/permissions/requests/{}".format(request_id))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"status": "cancelled", "reason": "heck no"}),
+            headers={'X-Grouper-User': user.name})
+    assert resp.code == 200
+
+    emails = session.query(AsyncNotification).all()
+    assert len(emails) == 4, "rejection email should be sent"
+
+    perms = _load_permissions_by_group_name(session, 'serving-team')
+    assert len(perms) == 2
+    assert "grantable.two" not in perms, "no new permissions should be granted for this"

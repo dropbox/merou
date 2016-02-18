@@ -1,10 +1,10 @@
-from . import handlers
-from ..constants import (
+from grouper.constants import (
         NAME_VALIDATION,
         NAME2_VALIDATION,
-        USERNAME_VALIDATION,
         PERMISSION_VALIDATION,
+        USERNAME_VALIDATION,
         )
+from grouper.fe import handlers
 
 
 HANDLERS = [
@@ -14,6 +14,8 @@ HANDLERS = [
     (r"/audits/create", handlers.AuditsCreate),
     (r"/groups", handlers.GroupsView),
     (r"/permissions/create", handlers.PermissionsCreate),
+    (r"/permissions/requests", handlers.PermissionsRequests),
+    (r"/permissions/requests/(?P<request_id>[0-9]+)", handlers.PermissionsRequestUpdate),
     (r"/permissions/{}".format(PERMISSION_VALIDATION), handlers.PermissionView),
     (r"/permissions", handlers.PermissionsView),
     (

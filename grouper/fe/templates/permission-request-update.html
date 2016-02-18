@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block heading %}
+    Permission Requests
+{% endblock %}
+
+{% block subheading %}
+    Edit/Action Requests (<a href="/users/{{ current_user.name }}">{{ current_user.name }}</a>)
+{% endblock %}
+
+{% block content %}
+<div class="row"><div class="col-md-10 col-md-offset-1">
+    <hr>
+    <table class="table table-elist">
+        <thead>
+            <tr>
+                <th class="col-sm-2">Change By</th>
+                <th class="col-sm-2">From Status</th>
+                <th class="col-sm-2">To Status</th>
+                <th class="col-sm-2">Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for change_status, comment in change_comment_list %}
+                <tr>
+                    <td>{{ change_status.user.name }}</td>
+                    <td>{{ change_status.from_status|default("", True) }}</td>
+                    <td>{{ change_status.to_status }}</td>
+                    <td>{{ change_status.change_at|print_date }}</td>
+                </tr>
+                <tr>
+                    <td colspan="5">
+                        <span style="padding-left: 10px;">
+                            <strong>Reason:</strong> <em>{{comment.comment}}</em>
+                        </span>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div></div>
+
+<div class="col-md-6 col-md-offset-3">
+
+    {% if statuses[request.status] %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Update Request</h3>
+       </div>
+        <div class="panel-body">
+            <form class="form-horizontal" role="form"
+                  method="post" action="/permissions/requests/{{request.id}}">
+                {% include "forms/permission-request-update.html" %}
+                <div class="form-group">
+                    <div class="col-sm-offset-3 col-sm-4">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+
+</div>
+
+{% endblock %}

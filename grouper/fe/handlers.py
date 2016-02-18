@@ -29,6 +29,8 @@ from .forms import (
     GroupRequestModifyForm,
     PermissionCreateForm,
     PermissionGrantForm,
+    PermissionRequestsForm,
+    PermissionRequestUpdateForm,
     PublicKeyForm,
     UserEnableForm,
     UsersPublicKeyForm,
@@ -916,10 +918,12 @@ class GroupPermissionRequest(GrouperHandler):
         if not group:
             return self.notfound()
 
+        # only owner of group can request permissions for that group
         role_index = self.current_user.my_role_index(group.my_members())
         if role_index not in OWNER_ROLE_INDICES:
             return self.forbidden()
 
+        # check inputs
         form = GroupPermissionRequestForm(self.request.arguments)
         args_by_perm = get_grantable_permissions(self.session)
 
@@ -933,12 +937,25 @@ class GroupPermissionRequest(GrouperHandler):
                     alerts=self.get_form_alerts(form.errors),
                     )
 
+        # load requested permission
         if form.argument_select.data:
             argument = form.argument_select.data
         else:
             argument = form.argument_text.data
         permission = Permission.get(self.session, form.permission_name.data)
 
+        # make sure group doesn't already have this permission
+        for _, permission_name, _, permission_argument, _ in group.my_permissions():
+            if permission.name == permission_name and argument == permission_argument:
+                return self.render(
+                        "group-permission-request.html", form=form, group=group,
+                        args_by_perm_json=json.dumps(args_by_perm),
+                        alerts=[
+                            Alert("danger", "this group already has this permission+argument pair"),
+                            ],
+                        )
+
+        # make sure there's an owner for this
         calc_args = args_by_perm.get(permission.name, [])
         if not permission or (argument not in calc_args and "*" not in calc_args):
             return self.render(
@@ -969,6 +986,88 @@ class GroupPermissionRequest(GrouperHandler):
                     )
         else:
             return self.redirect("/groups/{}".format(group.name))
+
+
+class PermissionsRequests(GrouperHandler):
+    """Allow a user to review a list of permission requests that they have both
+    un-actioned and previously actioned."""
+    def get(self):
+        form = PermissionRequestsForm(self.request.arguments)
+        form.status.choices = [("", "")] + [(k, k) for k in REQUEST_STATUS_CHOICES]
+
+        requests = []
+        alerts = []
+        total = 0
+
+        if not form.validate():
+            alerts = self.get_form_alerts(form.errors)
+        else:
+            request_tuple, total = permissions.get_requests_by_owner(self.session,
+                    self.current_user, status=form.status.data,
+                    limit=form.limit.data, offset=form.offset.data)
+
+        return self.render("permission-requests.html", form=form, request_tuple=request_tuple,
+                alerts=alerts, total=total, statuses=REQUEST_STATUS_CHOICES)
+
+
+class PermissionsRequestUpdate(GrouperHandler):
+    """Allow a user to action a permisison request they have."""
+    def _get_choices(self, current_status):
+        return [["", ""]] + [
+            [status] * 2
+            for status in REQUEST_STATUS_CHOICES[current_status]
+        ]
+
+    def get(self, request_id):
+        # check for request existence
+        request = permissions.get_request_by_id(self.session, request_id)
+        if not request:
+            return self.notfound()
+
+        # check that this user should be actioning this request
+        user_requests, total = permissions.get_requests_by_owner(self.session,
+                self.current_user, status="pending", limit=None, offset=0)
+        user_request_ids = [ur.id for ur in user_requests.requests]
+        if request.id not in user_request_ids:
+            return self.forbidden()
+
+        form = PermissionRequestUpdateForm(self.request.arguments)
+        form.status.choices = self._get_choices(request.status)
+
+        # compile list of changes to this request
+        change_comment_list = [(sc, user_requests.comment_by_status_change_id[sc.id]) for sc in
+                user_requests.status_change_by_request_id[request.id]]
+
+        return self.render("permission-request-update.html", form=form, request=request,
+                change_comment_list=change_comment_list, statuses=REQUEST_STATUS_CHOICES)
+
+    def post(self, request_id):
+        # check for request existence
+        request = permissions.get_request_by_id(self.session, request_id)
+        if not request:
+            return self.notfound()
+
+        # check that this user should be actioning this request
+        user_requests, total = permissions.get_requests_by_owner(self.session,
+                self.current_user, status="pending", limit=None, offset=0)
+        user_request_ids = [ur.id for ur in user_requests.requests]
+        if request.id not in user_request_ids:
+            return self.forbidden()
+
+        form = PermissionRequestUpdateForm(self.request.arguments)
+        form.status.choices = self._get_choices(request.status)
+        if not form.validate():
+            change_comment_list = [(sc, user_requests.comment_by_status_change_id[sc.id]) for sc in
+                    user_requests.status_change_by_request_id[request.id]]
+
+            return self.render("permission-request-update.html", form=form, request=request,
+                    change_comment_list=change_comment_list, statuses=REQUEST_STATUS_CHOICES,
+                    alerts=self.get_form_alerts(form.errors))
+
+        permissions.update_request(self.session, request, self.current_user,
+                form.status.data, form.reason.data)
+
+        return self.redirect("/permissions/requests")
 
 
 class AuditsComplete(GrouperHandler):

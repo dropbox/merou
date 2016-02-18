@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import paginator, dropdown with context %}
+
+{% block heading %}
+    Permission Requests
+{% endblock %}
+
+{% block subheading %}
+    Requests (<a href="/users/{{ current_user.name }}">{{ current_user.name }}</a>)
+{% endblock %}
+
+{% block headingbuttons %}
+    {{ dropdown("status", form.status.data, statuses, allow_none=True) }}
+    {{ dropdown("limit", form.limit.data, [100, 250, 500]) }}
+    {{ paginator(form.offset.data, form.limit.data, total) }}
+{% endblock %}
+
+
+{% block content %}
+    <div class="row"><div class="col-sm-10 col-sm-offset-1">
+        <table class="table table-elist">
+            <thead>
+                <tr>
+                    <th class="col-sm-1">Modify</th>
+                    <th class="col-sm-2">Requested</th>
+                    <th class="col-sm-2">Requester</th>
+                    <th class="col-sm-2">Status</th>
+                    <th class="col-sm-2">Requested At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if not request_tuple.requests %}
+                <tr>
+                    <td colspan="5" class="text-center">no requests fit the criteria</td>
+                </tr>
+                {% endif %}
+                {% for request in request_tuple.requests %}
+                <tr>
+                    <td>
+                        <a href="/permissions/requests/{{ request.id }}"
+                           class="btn btn-default btn-xs">
+                            <i class="fa fa-edit"></i>
+                        </a>
+                    </td>
+                    <td>
+                        {{ request.permission.name }}, {{ request.argument }}
+                    </td>
+                    <td>{{ request.requester }}</td>
+                    <td>{{ request.status }}</td>
+                    <td>{{ request.requested_at | print_date }}</td>
+                </tr>
+                {% for status_change in request_tuple.status_change_by_request_id[request.id] %}
+                {% set comment = request_tuple.comment_by_status_change_id[status_change.id] %}
+                <tr class="active">
+                    <td>&nbsp;</td>
+                    <td colspan="4">
+                        <div style="padding-left: 10px;">
+                            <strong>Who:</strong> {{ status_change.user.name  }} ({{ status_change.change_at|long_ago_str }})<br/>
+                            <strong>Reason:</strong> <em>{{ comment.comment }}</em>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div></div>
+{% endblock %}

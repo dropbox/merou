@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block heading %}
+    <a href="/users">Users</a>
+{% endblock %}
+
+{% block subheading %}
+    Token created
+{% endblock %}
+
+{% block content %}
+<div class="col-md-6 col-md-offset-3">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Token details</h3>
+       </div>
+        <div class="panel-body">
+            <p>Your token <code>{{token.name}}</code> has been successfully created. Provide the
+                following to
+            the application that requested the token:</p>
+            <pre class="alert alert-danger">{{token}}:{{token.secret}}</pre>
+            <p class="text-danger">This is the only time this information will be displayed.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

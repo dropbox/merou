@@ -203,3 +203,9 @@ class UsersPublicKeyForm(Form):
             validators.Regexp("^[\w:]+$"),
             ],
             default=None)
+
+
+class UserTokenForm(Form):
+    name = StringField("Token name", [
+        validators.DataRequired(),
+    ])

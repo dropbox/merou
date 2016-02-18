@@ -45,6 +45,8 @@ for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
             r"/users/{}/public-key/(?P<key_id>[0-9]+)/delete".format(regex),
             handlers.PublicKeyDelete
         ),
+        (r"/users/{}/tokens/add".format(regex), handlers.UserTokenAdd),
+        (r"/users/{}/tokens/(?P<token_id>[0-9]+)/disable".format(regex), handlers.UserTokenDisable),
     ])
 
 for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import group_panel, public_key_panel, permission_panel, log_entry_panel %}
+{% from 'macros/ui.html' import group_panel, public_key_panel, permission_panel, log_entry_panel, tokens_panel %}
 
 {% block heading %}
     <a href="/users">Users</a>
@@ -93,6 +93,13 @@
         {{ permission_panel(390, permissions) }}
     </div>
 </div>
+{% if current_user.user_admin or current_user.id == user.id %}
+    <div class="row">
+        <div class="col-md-4">
+            {{ tokens_panel(390, user, user_tokens, can_control) }}
+        </div>
+    </div>
+{% endif %}
 <div class="row">
     <div class="col-md-12">
         {{ log_entry_panel(390, log_entries) }}

@@ -67,3 +67,36 @@ def test_public_key(session, users, http_client, base_url):
 
     user = User.get(session, name=user.username)
     assert not user.my_public_keys()
+
+@pytest.mark.gen_test
+def test_usertokens(session, users, http_client, base_url):
+    user = users['zorkian@a.co']
+    assert len(user.tokens) == 0
+
+    # Add token
+    fe_url = url(base_url, '/users/{}/tokens/add'.format(user.username))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'name': 'myFoobarToken'}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    # Verify add
+    fe_url = url(base_url, '/users/{}'.format(user.username))
+    resp = yield http_client.fetch(fe_url, method="GET",
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+    assert "Added token: myFoobarToken" in resp.body
+
+    # Disable token
+    fe_url = url(base_url, '/users/{}/tokens/1/disable'.format(user.username))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body="",
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    # Verify disable
+    fe_url = url(base_url, '/users/{}'.format(user.username))
+    resp = yield http_client.fetch(fe_url, method="GET",
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+    assert "Disabled token: myFoobarToken" in resp.body

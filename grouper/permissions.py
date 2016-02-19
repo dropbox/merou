@@ -62,10 +62,9 @@ def get_owners_by_grantable_permission(session):
         session(sqlalchemy.orm.session.Session): database session
 
     Returns:
-        A map of permission+argument to owners of the form
-        defaultdict({(permission, argument): [owner1, owner2, ...], ...}) where
-        'owners' are models.Group objects. And 'argument' can be '*' which
-        means 'anything'.
+        A map of permission to argument to owners of the form {permission:
+        {argument: [owner1, ...], }, } where 'owners' are models.Group objects.
+        And 'argument' can be '*' which means 'anything'.
     """
     all_permissions = {permission.name: permission for permission in Permission.get_all(session)}
     all_groups = session.query(Group).filter(Group.enabled == True).all()

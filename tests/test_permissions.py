@@ -20,7 +20,11 @@ from grouper.constants import (
 from grouper.fe.forms import ValidateRegex
 import grouper.fe.util
 from grouper.models import AsyncNotification, Group, Permission, User
-from grouper.permissions import get_owners_by_grantable_permission, get_requests_by_owner
+from grouper.permissions import (
+        get_owners,
+        get_owners_by_grantable_permission,
+        get_requests_by_owner,
+        )
 from url_util import url
 
 
@@ -136,6 +140,8 @@ def test_grantable_permissions(session, standard_graph, users, groups, grantable
 
 
 def test_permission_grant_to_owners(session, standard_graph, groups, grantable_permissions):
+    """Test we're getting correct owners according to granted
+    'grouper.permission.grant' permissions."""
     perm_grant, _, perm1, perm2 = grantable_permissions
 
     assert not get_owners_by_grantable_permission(session), 'nothing to begin with'
@@ -153,6 +159,23 @@ def test_permission_grant_to_owners(session, standard_graph, groups, grantable_p
     assert len(owners_by_arg_by_perm) == 2
     assert len(owners_by_arg_by_perm[perm1.name]) == 1
     assert len(owners_by_arg_by_perm[perm2.name]) == 1
+
+    # grant on argument substring
+    grant_permission(groups["team-sre"], perm_grant, argument="{}/somesubstring*".format(
+            perm1.name))
+    owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
+    expected = [groups['all-teams']]
+    assert owners_by_arg_by_perm[perm1.name]['*'] == expected
+    expected = [groups["team-sre"]]
+    assert owners_by_arg_by_perm[perm1.name]['somesubstring*'] == expected
+
+    # make sure get_owner() respect substrings
+    res = get_owners(session, perm1, "somesubstring", owners_by_arg_by_perm=owners_by_arg_by_perm)
+    assert (sorted(res) == sorted([groups["all-teams"], groups["team-sre"]]),
+            "should include substring wildcard matches")
+
+    res = get_owners(session, perm1, "othersubstring", owners_by_arg_by_perm=owners_by_arg_by_perm)
+    assert sorted(res) == [groups["all-teams"]], "negative test of substring wildcard matches"
 
 
 def _load_permissions_by_group_name(session, group_name):

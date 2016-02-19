@@ -1657,7 +1657,7 @@ class PermissionRequestStatusChange(Model):
 
     id = Column(Integer, primary_key=True)
 
-    request_id = Column(Integer, ForeignKey("permission_requests.id"))
+    request_id = Column(Integer, ForeignKey("permission_requests.id"), nullable=False)
     request = relationship(PermissionRequest)
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)

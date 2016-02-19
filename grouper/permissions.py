@@ -118,7 +118,7 @@ def get_grantable_permissions(session):
             args_by_perm[permission].append(argument)
 
     def _reduce_args(args):
-        return "*" if len(args) > 1 and "*" in args else args
+        return ["*"] if len(args) > 1 and "*" in args else args
     return {p: _reduce_args(a) for p, a in args_by_perm.items()}
 
 
@@ -163,6 +163,10 @@ class InvalidRequestID(PermissionRequestException):
     """Submitted request ID is invalid (doesn't exist or group doesn't match."""
 
 
+class RequestAlreadyGranted(PermissionRequestException):
+    """Group already has requested permission + argument pair."""
+
+
 def create_request(session, user, group, permission, argument, reason):
     """
     Creates an permission request and sends notification to the responsible approvers.
@@ -179,6 +183,11 @@ def create_request(session, user, group, permission, argument, reason):
         RequestAlreadyExists if trying to create a request that is already pending
         NoOwnersAvailable if no owner is available for the requested perm + arg.
     """
+    # check if group already has perm + arg pair
+    for _, existing_perm_name, _, existing_perm_argument, _ in group.my_permissions():
+        if permission.name == existing_perm_name and argument == existing_perm_argument:
+            raise RequestAlreadyGranted()
+
     # check if request already pending for this perm + arg pair
     existing_count = session.query(PermissionRequest).filter(
             PermissionRequest.group_id == group.id,

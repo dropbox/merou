@@ -937,39 +937,23 @@ class GroupPermissionRequest(GrouperHandler):
                     alerts=self.get_form_alerts(form.errors),
                     )
 
+        form = self._prep_form_for_display(form)
+
         # load requested permission
         if form.argument_select.data:
             argument = form.argument_select.data
         else:
             argument = form.argument_text.data
+
         permission = Permission.get(self.session, form.permission_name.data)
-
-        # make sure group doesn't already have this permission
-        for _, permission_name, _, permission_argument, _ in group.my_permissions():
-            if permission.name == permission_name and argument == permission_argument:
-                return self.render(
-                        "group-permission-request.html", form=form, group=group,
-                        args_by_perm_json=json.dumps(args_by_perm),
-                        alerts=[
-                            Alert("danger", "this group already has this permission+argument pair"),
-                            ],
-                        )
-
-        # make sure there's an owner for this
-        calc_args = args_by_perm.get(permission.name, [])
-        if not permission or (argument not in calc_args and "*" not in calc_args):
-            return self.render(
-                    "group-permission-request.html", form=form, group=group,
-                    args_by_perm_json=json.dumps(args_by_perm),
-                    alerts=[
-                        Alert("danger", "no such permission or permission+argument pair"),
-                        ],
-                    )
+        assert permission, "our prefilled permission should exist or we have problems"
 
         # save off request
         try:
             permissions.create_request(self.session, self.current_user, group,
                     permission, argument, form.reason.data)
+        except permissions.RequestAlreadyGranted:
+            alerts = [Alert("danger", "this group already has this permission + argument")]
         except permissions.RequestAlreadyExists:
             alerts = [Alert("danger", "request for permission + argument already exists")]
         except permissions.NoOwnersAvailable:

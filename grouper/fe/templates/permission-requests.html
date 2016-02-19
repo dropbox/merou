@@ -29,7 +29,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% if not request_tuple.requests %}
+                {% if not request_tuple or not request_tuple.requests %}
                 <tr>
                     <td colspan="5" class="text-center">no requests fit the criteria</td>
                 </tr>

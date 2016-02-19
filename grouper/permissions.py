@@ -297,7 +297,7 @@ def get_requests_by_owner(session, owner, status, limit, offset):
     total = len(requests)
     requests = requests[offset:limit]
 
-    status_change_by_request_id =  defaultdict(list)
+    status_change_by_request_id = defaultdict(list)
     if not requests:
         comment_by_status_change_id = {}
     else:

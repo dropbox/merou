@@ -284,7 +284,7 @@ def get_requests_by_owner(session, owner, status, limit, offset):
     if status:
         all_requests = all_requests.filter(PermissionRequest.status == status)
 
-    all_requests = all_requests.all()
+    all_requests = all_requests.order_by(PermissionRequest.requested_at.desc()).all()
 
     owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
 

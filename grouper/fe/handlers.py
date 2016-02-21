@@ -24,7 +24,8 @@ from .forms import (
     GroupEditForm,
     GroupEditMemberForm,
     GroupJoinForm,
-    GroupPermissionRequestForm,
+    GroupPermissionRequestDropdownForm,
+    GroupPermissionRequestTextForm,
     GroupRemoveForm,
     GroupRequestModifyForm,
     PermissionCreateForm,
@@ -887,31 +888,33 @@ class GroupRequests(GrouperHandler):
 
 
 class GroupPermissionRequest(GrouperHandler):
-    def _prep_form(self, form, args_by_perm):
-        form.permission_name.choices = [("", "")] + sorted([(p, p) for p in args_by_perm.keys()])
-        form.argument_select.choices = [("", "")]
+    def _get_forms(self, args_by_perm, get_request_data=False):
+        if get_request_data:
+            data = self.request.arguments
+        else:
+            data = None
 
-        return form
+        dropdown_form = GroupPermissionRequestDropdownForm(data)
+        text_form = GroupPermissionRequestTextForm(data)
 
-    def _prep_form_for_display(self, form):
-        # hack: we don't want validation to puke if one is undefined but we
-        # want them to show up in the UI as such
-        form.argument_select.flags.required = True
-        form.argument_text.flags.required = True
+        for form in [dropdown_form, text_form]:
+            form.permission_name.choices = [("", "")] + sorted([(p, p) for p in
+                    args_by_perm.keys()])
 
-        return form
+        dropdown_form.argument.choices = [("", "")]
+
+        return dropdown_form, text_form
 
     def get(self, group_id=None, name=None):
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
 
-        form = GroupPermissionRequestForm()
         args_by_perm = get_grantable_permissions(self.session)
-        form = self._prep_form_for_display(self._prep_form(form, args_by_perm))
+        dropdown_form, text_form = self._get_forms(args_by_perm, get_request_data=False)
 
-        self.render("group-permission-request.html", form=form, group=group,
-                args_by_perm_json=json.dumps(args_by_perm))
+        self.render("group-permission-request.html", dropdown_form=dropdown_form,
+                text_form=text_form, group=group, args_by_perm_json=json.dumps(args_by_perm))
 
     def post(self, group_id=None, name=None):
         group = Group.get(self.session, group_id, name)
@@ -924,26 +927,25 @@ class GroupPermissionRequest(GrouperHandler):
             return self.forbidden()
 
         # check inputs
-        form = GroupPermissionRequestForm(self.request.arguments)
         args_by_perm = get_grantable_permissions(self.session)
+        dropdown_form, text_form = self._get_forms(args_by_perm, get_request_data=True)
 
-        form = self._prep_form(form, args_by_perm)
+        argument_type = self.request.arguments.get("argument_type")
+        if argument_type and argument_type[0] == "text":
+            form = text_form
+        elif argument_type and argument_type[0] == "dropdown":
+            form = dropdown_form
+            form.argument.choices = [(a,a) for a in args_by_perm[form.permission_name.data]]
+        else:
+            # someone messing with the form
+            return self.forbidden()
 
         if not form.validate():
-            form = self._prep_form_for_display(form)
             return self.render(
-                    "group-permission-request.html", form=form, group=group,
-                    args_by_perm_json=json.dumps(args_by_perm),
+                    "group-permission-request.html", dropdown_form=dropdown_form,
+                    text_form=text_form, group=group, args_by_perm_json=json.dumps(args_by_perm),
                     alerts=self.get_form_alerts(form.errors),
                     )
-
-        form = self._prep_form_for_display(form)
-
-        # load requested permission
-        if form.argument_select.data:
-            argument = form.argument_select.data
-        else:
-            argument = form.argument_text.data
 
         permission = Permission.get(self.session, form.permission_name.data)
         assert permission, "our prefilled permission should exist or we have problems"
@@ -951,7 +953,7 @@ class GroupPermissionRequest(GrouperHandler):
         # save off request
         try:
             permissions.create_request(self.session, self.current_user, group,
-                    permission, argument, form.reason.data)
+                    permission, form.argument.data, form.reason.data)
         except permissions.RequestAlreadyGranted:
             alerts = [Alert("danger", "this group already has this permission + argument")]
         except permissions.RequestAlreadyExists:
@@ -962,10 +964,9 @@ class GroupPermissionRequest(GrouperHandler):
             alerts = None
 
         if alerts:
-            form = self._prep_form(form, args_by_perm)
             return self.render(
-                    "group-permission-request.html", form=form, group=group,
-                    args_by_perm_json=json.dumps(args_by_perm),
+                    "group-permission-request.html", dropdown_form=dropdown_form,
+                    text_form=text_form, group=group, args_by_perm_json=json.dumps(args_by_perm),
                     alerts=alerts,
                     )
         else:

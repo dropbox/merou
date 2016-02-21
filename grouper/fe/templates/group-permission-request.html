@@ -13,47 +13,67 @@
     $(function () {
         var args_by_perm = {{ args_by_perm_json }};
 
-        var $perm = $('#permission_name');
-        var $reason_div = $('#form-group-reason');
+        var $reason_divs = $('.form-group-reason');
+        var $argument_divs = $('.form-group-argument');
 
-        var $arg_text_div = $('#form-group-argument_text');
-        var $arg_text = $('#argument_text');
+        var $argument_select = $('#dropdown_form #argument');
+        var $argument_text = $('#text_form #argument');
 
-        var $arg_select_div = $('#form-group-argument_select');
-        var $arg_select = $('#argument_select');
+        var $dropdown_form_div = $('#dropdown_form');
+        var $text_form_div = $('#text_form');
+
+        var $perm_fields = $('.input-permission_name');
+        var $reason_fields = $('.input-reason');
 
         function update_args() {
-            var args = args_by_perm[$perm.val()];
-            if ($perm.val() == "") {
-                $arg_text_div.hide();
-                $arg_select_div.hide();
-                $reason_div.hide();
+            var args = args_by_perm[$perm_fields.val()];
+            if ($perm_fields.val() == "") {
+                {# default we show dropdown form and hide argument and reason fields #}
+                $argument_divs.hide();
+                $reason_divs.hide();
 
+                $dropdown_form_div.show();
+                $text_form_div.hide();
             } else if (args.length == 1 && args[0] == "*") {
-                // change to text field
-                $arg_text_div.show();
-                $arg_select_div.hide();
-                $reason_div.show();
+                {# change to text form field #}
+                $argument_divs.show();
+                $reason_divs.show();
 
-                $arg_text.empty();
-            } else if (args.length > 1) {
-                // change to select
-                $arg_text_div.hide();
-                $arg_select_div.show();
-                $reason_div.show();
+                $dropdown_form_div.hide();
+                $text_form_div.show();
 
-                $arg_select.empty();
+                $argument_text.empty();
+            } else {
+                {# change to dropdown form field #}
+                $argument_divs.show();
+                $reason_divs.show();
+
+                $dropdown_form_div.show();
+                $text_form_div.hide();
+
+                $argument_select.empty();
                 $.each(args, function(index, arg) {
                     $option = $("<option></option>").attr("value", arg).text(arg);
-                    $arg_select.append($option);
+                    $argument_select.append($option);
                 });
             }
         }
 
-        // prime it
+        {# prime it #}
         update_args();
 
-        $perm.on('change', update_args);
+        $perm_fields.change(function() {
+            {# keep permission values sync'd #}
+            $perm_fields.val($(this).val());
+
+            {# update view of the world #}
+            update_args();
+        });
+
+        $reason_fields.keyup(function() {
+            {# keep reason values sync'd #}
+            $reason_fields.val($(this).val());
+        });
     });
 </script>
 {% endblock %}

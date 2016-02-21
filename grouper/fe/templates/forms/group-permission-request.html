@@ -1,6 +1,5 @@
 {% macro form_field(field, label_width, field_width) -%}
-    <div class="form-group {% if field.errors %}has-error{% endif %}"
-            id="form-group-{{field.label.field_id}}">
+    <div class="form-group form-group-{{field.label.field_id}} {% if field.errors %}has-error{% endif %}">
         <label for="{{field.label.field_id}}"
                class="col-sm-{{label_width}} control-label">
             {{ field.label.text }} {% if field.flags.required %}*{% endif %}
@@ -11,10 +10,19 @@
     </div>
 {%- endmacro %}
 
-{{ form_field(form.permission_name, 3, 8, class_="form-control") }}
-{{ form_field(form.argument_text, 3, 8, class_="form-control") }}
-{{ form_field(form.argument_select, 3, 8, class_="form-control") }}
-{{ form_field(form.reason, 3, 8, class_="form-control") }}
+<div id="dropdown_form">
+{{ form_field(dropdown_form.permission_name, 3, 8, class_="form-control input-permission_name") }}
+{{ form_field(dropdown_form.argument, 3, 8, class_="form-control") }}
+{{ form_field(dropdown_form.reason, 3, 8, class_="form-control input-reason") }}
+{{ dropdown_form.argument_type() }}
+</div>
+
+<div id="text_form" style="display: none">
+{{ form_field(text_form.permission_name, 3, 8, class_="form-control input-permission_name") }}
+{{ form_field(text_form.argument, 3, 8, class_="form-control") }}
+{{ form_field(text_form.reason, 3, 8, class_="form-control input-reason") }}
+{{ text_form.argument_type() }}
+</div>
 
 {{ xsrf_form() }}
 

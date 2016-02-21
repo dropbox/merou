@@ -197,7 +197,7 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
     fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
     resp = yield http_client.fetch(fe_url, method="POST",
             body=urlencode({"permission_name": "grantable.one", "argument": "some argument",
-                "reason": "blah blah black sheep"}),
+                "reason": "blah blah black sheep", "argument_type": "text"}),
             headers={'X-Grouper-User': username})
     assert resp.code == 200
 
@@ -238,7 +238,7 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
     fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
     resp = yield http_client.fetch(fe_url, method="POST",
             body=urlencode({"permission_name": "grantable.one", "argument": "some argument",
-                "reason": "blah blah black sheep"}),
+                "reason": "blah blah black sheep", "argument_type": "text"}),
             headers={'X-Grouper-User': username})
     assert resp.code == 200
 
@@ -252,7 +252,7 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
     fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
     resp = yield http_client.fetch(fe_url, method="POST",
             body=urlencode({"permission_name": "grantable.two", "argument": "some argument",
-                "reason": "blah blah black sheep"}),
+                "reason": "blah blah black sheep", "argument_type": "text"}),
             headers={'X-Grouper-User': username})
     assert resp.code == 200
 

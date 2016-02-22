@@ -40,6 +40,7 @@ from .forms import (
 from ..email_util import cancel_async_emails, send_email, send_async_email
 from ..graph import NoSuchUser, NoSuchGroup
 from ..models import (
+    APPROVER_ROLE_INDICIES,
     AUDIT_STATUS_CHOICES,
     Audit,
     AuditLog,
@@ -935,7 +936,7 @@ class GroupPermissionRequest(GrouperHandler):
             form = text_form
         elif argument_type and argument_type[0] == "dropdown":
             form = dropdown_form
-            form.argument.choices = [(a,a) for a in args_by_perm[form.permission_name.data]]
+            form.argument.choices = [(a, a) for a in args_by_perm[form.permission_name.data]]
         else:
             # someone messing with the form
             return self.forbidden()
@@ -1617,7 +1618,7 @@ class GroupJoin(GrouperHandler):
         for _group, group_edge in group_biz.get_groups_by_user(self.session, self.current_user):
             if group.name == _group.name:  # Don't add self.
                 continue
-            if _group.role < 1:  # manager, owner, and np-owner only.
+            if group_edge._role in APPROVER_ROLE_INDICIES:  # manager, owner, and np-owner only.
                 continue
             if ("Group", _group.name) in members:
                 continue

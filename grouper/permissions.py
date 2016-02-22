@@ -19,6 +19,11 @@ Requests = namedtuple('Requests', ['requests', 'status_change_by_request_id',
         'comment_by_status_change_id'])
 
 
+# represents a permission grant, essentially what come back from User.my_permissions()
+# TODO: consider replacing that output with this namedtuple
+Grant = namedtuple('Grant', 'name, argument')
+
+
 def filter_grantable_permissions(session, grants, all_permissions=None):
     """For a given set of PERMISSION_GRANT permissions, return all permissions
     that are grantable.
@@ -85,12 +90,20 @@ def get_owners_by_grantable_permission(session):
 
         for perm, arg in filter_grantable_permissions(session, grants,
                 all_permissions=all_permissions):
-            owners_by_arg_by_perm[perm.name][arg].append(group)
+            if perm.name == PERMISSION_GRANT and '*' in arg:
+                # recursively resolve this for one level
+                grants = [Grant(perm.name, arg)]
+                for real_perm, real_arg in filter_grantable_permissions(session, grants,
+                        all_permissions=all_permissions):
+                    owners_by_arg_by_perm[real_perm.name][real_arg].append(group)
+            else:
+                owners_by_arg_by_perm[perm.name][arg].append(group)
 
     # merge in plugin results
     for plugin in get_plugins():
-        for (perm, arg), owners in plugin.get_perm_arg_to_owners(session).items():
-            owners_by_arg_by_perm[perm][arg] += owners
+        for perm, owners_by_arg in plugin.get_owner_by_arg_by_perm(session).items():
+            for arg, owners in owners_by_arg.items():
+                owners_by_arg_by_perm[perm][arg] += owners
 
     return owners_by_arg_by_perm
 

@@ -177,6 +177,14 @@ def test_permission_grant_to_owners(session, standard_graph, groups, grantable_p
     res = get_owners(session, perm1, "othersubstring", owners_by_arg_by_perm=owners_by_arg_by_perm)
     assert sorted(res) == [groups["all-teams"]], "negative test of substring wildcard matches"
 
+    # grant a grant on a wildcard
+    grant_permission(groups['security-team'], perm_grant,
+            argument="{}/grantable.*".format(PERMISSION_GRANT))
+    owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
+    expected = sorted([groups["all-teams"], groups["security-team"]])
+    assert sorted(owners_by_arg_by_perm[perm1.name]['*']) == expected, "grant on grant does right"
+    assert sorted(owners_by_arg_by_perm[perm2.name]['*']) == expected, "grant on grant does right"
+
 
 def _load_permissions_by_group_name(session, group_name):
     group = Group.get(session, name=group_name)

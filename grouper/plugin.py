@@ -66,3 +66,17 @@ class BasePlugin(object):
             The return code of this method is ignored.
         """
         pass
+
+    def get_owner_by_arg_by_perm(self, session):
+        """Called when determining owners for permission+arg granting.
+
+        Args:
+            session(sqlalchemy.orm.session.Session): database session
+
+        Returns:
+            dict of the form {'permission_name': {'argument': [owner1, owner2,
+            ...], ...}, ...} where 'ownerN' is a models.Group corresponding to
+            the grouper group that owns (read: is able to) grant that
+            permission + argument pair.
+        """
+        pass

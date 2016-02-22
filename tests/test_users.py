@@ -47,14 +47,13 @@ def test_basic_metadata(standard_graph, session, users, groups, permissions):  #
 def test_usertokens(standard_graph, session, users, groups, permissions):  # noqa
     user = users["zorkian@a.co"]
     assert len(user.tokens) == 0
-    tok = UserToken(
+    tok, secret = UserToken(
         user=user,
         name="Foo"
-    )
-    tok.add(session)
+    ).add(session)
     assert len(user.tokens) == 1
 
-    assert tok.check_secret(tok.secret)
+    assert tok.check_secret(secret)
     assert tok.check_secret("invalid") == False
 
     assert tok.enabled == True
@@ -62,7 +61,7 @@ def test_usertokens(standard_graph, session, users, groups, permissions):  # noq
     assert tok.enabled == False
     assert user.tokens[0].enabled == False
     assert UserToken.get(session, name="Foo", user=user).enabled == False
-    assert tok.check_secret(tok.secret) == False
+    assert tok.check_secret(secret) == False
 
 
 

@@ -1,4 +1,5 @@
 import functools
+import hashlib
 import hmac
 import json
 import logging
@@ -652,7 +653,7 @@ class UserToken(Model):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     disabled_at = Column(DateTime, default=None, nullable=True)
 
-    secret = Column(String(length=32), default=_make_secret, unique=True, nullable=False)
+    hashed_secret = Column(String(length=64), unique=True, nullable=False)
 
     user = relationship("User", back_populates="tokens")
 
@@ -680,14 +681,25 @@ class UserToken(Model):
             return session.query(UserToken).filter_by(name=name, user=user).scalar()
         return session.query(UserToken).filter_by(id=id, user=user).scalar()
 
+    def _set_secret(self):
+        secret = _make_secret()
+        self.hashed_secret = hashlib.sha256(secret).hexdigest()
+        return secret
+
     def add(self, session):
+        secret = None
+        if self.hashed_secret is None:
+            secret = self._set_secret()
         super(UserToken, self).add(session)
         Counter.incr(session, "updates")
-        return self
+        return self, secret
 
     def check_secret(self, secret):
-        # The length of self.secret is not secret
-        return self.enabled and hmac.compare_digest(secret, self.secret)
+        # The length of self.hashed_secret is not secret
+        return self.enabled and hmac.compare_digest(
+                hashlib.sha256(secret).hexdigest(),
+                self.hashed_secret.encode('utf-8'),
+        )
 
     @property
     def enabled(self):

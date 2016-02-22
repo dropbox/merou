@@ -1716,8 +1716,7 @@ class UserTokenAdd(GrouperHandler):
             )
 
         try:
-            token = UserToken(name=form.data["name"], user=user)
-            token.add(self.session)
+            token, secret = UserToken(name=form.data["name"], user=user).add(self.session)
             self.session.commit()
         except IntegrityError:
             self.session.rollback()
@@ -1740,7 +1739,7 @@ class UserTokenAdd(GrouperHandler):
                 }
         send_email(self.session, [user.name], 'User token created', 'user_tokens_changed',
                 settings, email_context)
-        return self.render("user-token-created.html", token=token)
+        return self.render("user-token-created.html", token=token, secret=secret)
 
 
 class UserTokenDisable(GrouperHandler):

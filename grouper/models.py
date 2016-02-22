@@ -653,9 +653,7 @@ class UserToken(Model):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     disabled_at = Column(DateTime, default=None, nullable=True)
 
-    hashed_secret = Column('secret', String(length=64), unique=True, nullable=False)
-
-    secret = None
+    hashed_secret = Column(String(length=64), unique=True, nullable=False)
 
     user = relationship("User", back_populates="tokens")
 
@@ -684,15 +682,17 @@ class UserToken(Model):
         return session.query(UserToken).filter_by(id=id, user=user).scalar()
 
     def _set_secret(self):
-        self.secret = _make_secret()
-        self.hashed_secret = hashlib.sha256(self.secret).hexdigest()
+        secret = _make_secret()
+        self.hashed_secret = hashlib.sha256(secret).hexdigest()
+        return secret
 
     def add(self, session):
-        if self.secret is None:
-            self._set_secret()
+        secret = None
+        if self.hashed_secret is None:
+            secret = self._set_secret()
         super(UserToken, self).add(session)
         Counter.incr(session, "updates")
-        return self
+        return self, secret
 
     def check_secret(self, secret):
         # The length of self.hashed_secret is not secret

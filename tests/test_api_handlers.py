@@ -39,11 +39,10 @@ def test_users(users, http_client, base_url):
 @pytest.mark.gen_test
 def test_usertokens(users, session, http_client, base_url):
     user = users["zorkian@a.co"]
-    tok = UserToken(
+    tok, secret = UserToken(
         user=user,
         name="Foo"
-    )
-    tok.add(session)
+    ).add(session)
     session.commit()
 
     api_url = url(base_url, '/token/validate')
@@ -57,7 +56,7 @@ def test_usertokens(users, session, http_client, base_url):
     assert len(body["errors"]) == 1
     assert body["errors"][0]["code"] == 1
 
-    valid_token = str(tok) + ":" + tok.secret
+    valid_token = str(tok) + ":" + secret
 
     # Valid token
     resp = yield http_client.fetch(api_url, method="POST", body=urlencode({'token': valid_token}))
@@ -71,8 +70,8 @@ def test_usertokens(users, session, http_client, base_url):
     assert body["data"]["valid"]
 
     # Token with the last character changed to something invalid
-    bad_char = "1" if tok.secret[-1].isalpha() else "a"
-    token_with_bad_secret = str(tok) + ":" + tok.secret[:-1] + bad_char
+    bad_char = "1" if secret[-1].isalpha() else "a"
+    token_with_bad_secret = str(tok) + ":" + secret[:-1] + bad_char
 
     resp = yield http_client.fetch(api_url, method="POST", body=urlencode({'token': token_with_bad_secret}))
     body = json.loads(resp.body)
@@ -83,7 +82,7 @@ def test_usertokens(users, session, http_client, base_url):
     assert body["errors"][0]["code"] == 4
 
     # Token with the token name frobbed to be something invalid
-    token_with_bad_name = str(tok) + "z:" + tok.secret
+    token_with_bad_name = str(tok) + "z:" + secret
 
     resp = yield http_client.fetch(api_url, method="POST", body=urlencode({'token': token_with_bad_name}))
     body = json.loads(resp.body)
@@ -94,7 +93,7 @@ def test_usertokens(users, session, http_client, base_url):
     assert body["errors"][0]["code"] == 2
 
     # Token with the user frobbed to be something invalid
-    token_with_bad_user = "z" + str(tok) + ":" + tok.secret
+    token_with_bad_user = "z" + str(tok) + ":" + secret
 
     resp = yield http_client.fetch(api_url, method="POST", body=urlencode({'token': token_with_bad_user}))
     body = json.loads(resp.body)
@@ -105,7 +104,7 @@ def test_usertokens(users, session, http_client, base_url):
     assert body["errors"][0]["code"] == 2
 
     # Token with the user changed to another valid, but wrong user
-    token_with_wrong_user = "oliver@a.co/" + tok.name + ":" + tok.secret
+    token_with_wrong_user = "oliver@a.co/" + tok.name + ":" + secret
 
     resp = yield http_client.fetch(api_url, method="POST", body=urlencode({'token': token_with_wrong_user}))
     body = json.loads(resp.body)

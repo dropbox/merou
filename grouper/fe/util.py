@@ -189,6 +189,12 @@ class GrouperHandler(RequestHandler):
         except Exception:
             self.log_exception(*sys.exc_info())
 
+    def log_message(self, message, **kwargs):
+        if self.captureMessage:
+            self.captureMessage(message, **kwargs)
+        else:
+            logging.info("{}, kwargs={}".format(message, kwargs))
+
     # TODO(gary): Add json error responses.
     def badrequest(self, format_type=None):
         self.set_status(400)

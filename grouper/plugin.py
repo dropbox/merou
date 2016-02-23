@@ -4,6 +4,30 @@ plugin.py
 Base plugin for Grouper plugins. These are plugins that can be written to extend Grouper
 functionality.
 """
+from annex import Annex
+
+
+Plugins = []
+
+
+class PluginsAlreadyLoaded(Exception):
+    pass
+
+
+def load_plugins(plugin_dir, service_name):
+    """Load plugins from a directory"""
+    global Plugins
+    if Plugins:
+        raise PluginsAlreadyLoaded("Plugins already loaded; can't load twice!")
+    Plugins = Annex(BasePlugin, [plugin_dir], raise_exceptions=True)
+    for plugin in Plugins:
+        plugin.configure(service_name)
+
+
+def get_plugins():
+    """Get a list of loaded plugins."""
+    global Plugins
+    return list(Plugins)
 
 
 class BasePlugin(object):
@@ -40,5 +64,19 @@ class BasePlugin(object):
 
         Returns:
             The return code of this method is ignored.
+        """
+        pass
+
+    def get_owner_by_arg_by_perm(self, session):
+        """Called when determining owners for permission+arg granting.
+
+        Args:
+            session(sqlalchemy.orm.session.Session): database session
+
+        Returns:
+            dict of the form {'permission_name': {'argument': [owner1, owner2,
+            ...], ...}, ...} where 'ownerN' is a models.Group corresponding to
+            the grouper group that owns (read: is able to) grant that
+            permission + argument pair.
         """
         pass

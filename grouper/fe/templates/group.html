@@ -15,7 +15,7 @@
 
 {% block headingbuttons %}
     <!-- Enable/Disable button. -->
-    {% if current_user.my_role(members) in ("owner", "np-owner") %}
+    {% if is_owner %}
         {% if group.enabled %}
             <button class="btn btn-danger" data-toggle="modal" data-target="#disableModal">
                 <i class="fa fa-minus"></i> Disable
@@ -99,7 +99,7 @@
 </div>
 <div class="row">
     <div class="col-md-12">
-        {{ permission_panel(390, permissions, group=group, can_grant=grantable) }}
+        {{ permission_panel(390, permissions, group=group, can_grant=grantable, is_owner=is_owner, pending_requests=permission_requests_pending) }}
     </div>
 </div>
 <div class="row">
@@ -287,7 +287,7 @@ text and set its form actions to correspond to the selected user. #}
     });
 </script>
 
-{% if group.audit and not group.audit.complete and current_user.my_role(members) in ("owner","np-owner") %}
+{% if group.audit and not group.audit.complete and is_owner %}
 <script type="text/javascript">
 $(function () {
     $('#auditModal').modal('show');

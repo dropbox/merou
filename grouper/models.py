@@ -1,3 +1,5 @@
+from collections import OrderedDict, namedtuple
+from datetime import datetime, timedelta
 import functools
 import hashlib
 import hmac
@@ -6,10 +8,6 @@ import logging
 import os
 import re
 
-from collections import OrderedDict, namedtuple
-from datetime import datetime, timedelta
-
-from annex import Annex
 from enum import IntEnum
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, UniqueConstraint,
@@ -31,12 +29,11 @@ from .constants import (
     GROUP_ADMIN, USER_ADMIN
 )
 from .email_util import send_async_email
-from .plugin import BasePlugin
+from .plugin import get_plugins
 from .settings import settings
-from .util import matches_glob
 
 
-OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange")
+OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange", "PermissionRequestStatusChange")
 OBJ_TYPES = {obj_type: idx for idx, obj_type in enumerate(OBJ_TYPES_IDX)}
 
 GROUP_JOIN_CHOICES = {
@@ -162,29 +159,6 @@ def get_db_engine(url):
     return create_engine(url, pool_recycle=300)
 
 
-Plugins = []
-
-
-class PluginsAlreadyLoaded(Exception):
-    pass
-
-
-def load_plugins(plugin_dir, service_name):
-    """Load plugins from a directory"""
-    global Plugins
-    if Plugins:
-        raise PluginsAlreadyLoaded("Plugins already loaded; can't load twice!")
-    Plugins = Annex(BasePlugin, [plugin_dir], raise_exceptions=True)
-    for plugin in Plugins:
-        plugin.configure(service_name)
-
-
-def get_plugins():
-    """Get a list of loaded plugins."""
-    global Plugins
-    return list(Plugins)
-
-
 def flush_transaction(method):
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
@@ -292,7 +266,7 @@ class User(Model):
         return None
 
     def just_created(self):
-        for plugin in Plugins:
+        for plugin in get_plugins():
             plugin.user_created(self)
 
     def can_manage(self, group):
@@ -321,8 +295,10 @@ class User(Model):
         Returns:
             None
         """
+        # avoid circular dependency
+        from grouper.group import get_groups_by_user
         if not preserve_membership:
-            for group in self.my_groups(ignore_user_disabled=True):
+            for group, group_edge in get_groups_by_user(self.session, self):
                 group_obj = self.session.query(Group).filter_by(
                     groupname=group.name
                 ).scalar()
@@ -358,13 +334,20 @@ class User(Model):
     def is_member(self, members):
         return ("User", self.name) in members
 
-    def my_role(self, members):
+    def my_role_index(self, members):
         if self.group_admin:
-            return "owner"
+            return GROUP_EDGE_ROLES.index("owner")
         member = members.get(("User", self.name))
         if not member:
             return None
-        return GROUP_EDGE_ROLES[member.role]
+        return member.role
+
+    def my_role(self, members):
+        role_index = self.my_role_index(members)
+        if not role_index:
+            return None
+        else:
+            return GROUP_EDGE_ROLES[role_index]
 
     def set_metadata(self, key, value):
         if not re.match(PERMISSION_VALIDATION, key):
@@ -487,8 +470,8 @@ class User(Model):
         if self.permission_admin:
             return '*'
 
-        # Someone can grant a permission if they are a member of a group that has a permission
-        # of PERMISSION_GRANT with an argument that matches the name of a permission.
+        # Someone can create a permission if they are a member of a group that has a permission
+        # of PERMISSION_CREATE with an argument that matches the name of a permission.
         return [
             permission.argument
             for permission in self.my_permissions()
@@ -506,6 +489,9 @@ class User(Model):
 
         Returns a list of tuples (Permission, argument) that the user is allowed to grant.
         '''
+        # avoid circular dependency
+        from grouper.permissions import filter_grantable_permissions
+
         all_permissions = {permission.name: permission
                            for permission in Permission.get_all(self.session)}
         if self.permission_admin:
@@ -514,47 +500,8 @@ class User(Model):
 
         # Someone can grant a permission if they are a member of a group that has a permission
         # of PERMISSION_GRANT with an argument that matches the name of a permission.
-        result = []
-        for permission in self.my_permissions():
-            if permission.name != PERMISSION_GRANT:
-                continue
-            grantable = permission.argument.split('/', 1)
-            if not grantable:
-                continue
-            for name, permission_obj in all_permissions.iteritems():
-                if matches_glob(grantable[0], name):
-                    result.append((permission_obj,
-                                   grantable[1] if len(grantable) > 1 else '*', ))
-        return sorted(result, key=lambda x: x[0].name + x[1])
-
-    def my_groups(self, ignore_user_disabled=False):
-        '''
-        Returns all groups this user is a member of.
-
-        Args:
-            ignore_user_disabled(bool): if this user is disabled should this query ignore that fact
-        '''
-        now = datetime.utcnow()
-        groups = self.session.query(
-            label("name", Group.groupname),
-            label("type", literal("Group")),
-            label("role", GroupEdge._role)
-        ).filter(
-            GroupEdge.group_id == Group.id,
-            GroupEdge.member_pk == self.id,
-            GroupEdge.member_type == 0,
-            GroupEdge.active == True,
-            Group.enabled == True,
-            or_(
-                GroupEdge.expiration > now,
-                GroupEdge.expiration == None
-            )
-        )
-
-        if not ignore_user_disabled:
-            groups.filter(self.enabled == True)
-
-        return groups.all()
+        grants = [x for x in self.my_permissions() if x.name == PERMISSION_GRANT]
+        return filter_grantable_permissions(self.session, grants)
 
     def my_requests_aggregate(self):
         """Returns all pending requests for this user to approve across groups."""
@@ -805,7 +752,7 @@ class Group(Model):
         self.session.flush()
 
         Comment(
-            obj_type=3,
+            obj_type=OBJ_TYPES_IDX.index("RequestStatusChange"),
             obj_pk=request_status_change.id,
             user_id=requester.id,
             comment=reason,
@@ -891,7 +838,7 @@ class Group(Model):
         self.session.flush()
 
         Comment(
-            obj_type=3,
+            obj_type=OBJ_TYPES_IDX.index("RequestStatusChange"),
             obj_pk=request_status_change.id,
             user_id=requester.id,
             comment=reason,
@@ -1385,7 +1332,7 @@ class Request(Model):
         self.session.flush()
 
         Comment(
-            obj_type=3,
+            obj_type=OBJ_TYPES_IDX.index("RequestStatusChange"),
             obj_pk=request_status_change.id,
             user_id=requester.id,
             comment=reason,
@@ -1678,6 +1625,48 @@ class Permission(Model):
     def my_log_entries(self):
 
         return AuditLog.get_entries(self.session, on_permission_id=self.id, limit=20)
+
+
+class PermissionRequest(Model):
+    """Represent request for a permission/argument to be granted to a particular group."""
+    __tablename__ = "permission_requests"
+
+    id = Column(Integer, primary_key=True)
+
+    # The User that made the request.
+    requester_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    requester = relationship(
+        User, backref="permission_requests", foreign_keys=[requester_id]
+    )
+
+    permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=False)
+    permission = relationship(Permission, foreign_keys=[permission_id])
+    argument = Column(String(length=64), nullable=True)
+
+    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
+    group = relationship(Group, foreign_keys=[group_id])
+
+    requested_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    status = Column(Enum(*REQUEST_STATUS_CHOICES), default="pending", nullable=False)
+
+
+class PermissionRequestStatusChange(Model):
+    """Tracks changes to each permission grant request."""
+    __tablename__ = "permission_request_status_changes"
+
+    id = Column(Integer, primary_key=True)
+
+    request_id = Column(Integer, ForeignKey("permission_requests.id"), nullable=False)
+    request = relationship(PermissionRequest)
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user = relationship(User, foreign_keys=[user_id])
+
+    from_status = Column(Enum(*REQUEST_STATUS_CHOICES))
+    to_status = Column(Enum(*REQUEST_STATUS_CHOICES), nullable=False)
+
+    change_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class AsyncNotification(Model):

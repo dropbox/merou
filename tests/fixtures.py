@@ -14,6 +14,55 @@ from util import add_member, grant_permission
 
 @pytest.fixture
 def standard_graph(session, graph, users, groups, permissions):
+    """Setup a standard graph used for many tests. In graph form:
+
+    +-----------------------+
+    |                       |
+    |  team-sre             |
+    |    * gary (o)         +---------------------------------+
+    |    * zay              |                                 |
+    |    * zorkian          |                     +-----------v-----------+
+    |                       |                     |                       |
+    +-----------------------+                     |  serving-team         |
+    +-----------------------+           +--------->    * zorkian (o)      |
+    |                       |           |         |                       |
+    |  tech-ops             |           |         +-----------+-----------+
+    |    * zay (o)          |           |                     |
+    |    * gary             +-----------+                     |
+    |    * figurehead (np)  |                                 |
+    |                       |                                 |
+    +-----------------------+                                 |
+    +-----------------------+                     +-----------v-----------+
+    |                       |                     |                       |
+    |  security-team        |                     |  team-infra           |
+    |    * oliver (o)       +--------------------->    * gary (o)         |
+    |    * figurehead       |                     |                       |
+    |                       |                     +-----------+-----------+
+    +-----------------------+                                 |
+    +-----------------------+                                 |
+    |                       |                                 |
+    |  sad-team             |                                 |
+    |    * zorkian (o)      |                                 |
+    |    * oliver           |                     +-----------v-----------+
+    |                       |                     |                       |
+    +-----------------------+                     |  all-teams            |
+    +-----------------------+                     |    * testuser (o)     |
+    |                       |                     |                       |
+    |  audited-team         |                     +-----------------------+
+    |    * zorkian (o)      |
+    |                       |
+    |                       |
+    +-----------------------+
+    +-----------------------+
+    |                       |
+    |  auditors             |
+    |    * zorkian (o)      |
+    |                       |
+    +-----------------------+
+
+    Arrows denote member of the source in the destination group. (o) for
+    owners, (np) for non-permissioned owners.
+    """
     add_member(groups["team-sre"], users["gary@a.co"], role="owner")
     add_member(groups["team-sre"], users["zay@a.co"])
     add_member(groups["team-sre"], users["zorkian@a.co"])

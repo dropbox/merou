@@ -1,0 +1,17 @@
+{% extends "email/base_text.tmpl" %}
+
+{% block subject %}Permission Grant Request{% endblock %}
+
+{% block content %}
+
+{{ user_name }} has requested a permission be granted to the group {{ group_name }}. To action this request, please visit the pending permissions requests queue:
+
+    {{ url }}/groups/permission-requests
+
+More details about the request:
+
+    Permission: {{ permission_name }}
+    Argument: {{ argument|escape }}
+    Reason: {{ reason|escape }}
+
+{% endblock %}

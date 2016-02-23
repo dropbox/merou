@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import json
 import operator
 
 from expvar.stats import stats
@@ -7,7 +8,9 @@ from sqlalchemy import union_all
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label, literal
 
+from .. import group as group_biz
 from .. import perf_profile
+from .. import permissions
 from .. import public_key
 from ..audit import assert_controllers_are_auditors, assert_can_join, get_audits, UserNotAuditor
 from ..constants import (
@@ -21,10 +24,14 @@ from .forms import (
     GroupEditForm,
     GroupEditMemberForm,
     GroupJoinForm,
+    GroupPermissionRequestDropdownForm,
+    GroupPermissionRequestTextForm,
     GroupRemoveForm,
     GroupRequestModifyForm,
     PermissionCreateForm,
     PermissionGrantForm,
+    PermissionRequestsForm,
+    PermissionRequestUpdateForm,
     PublicKeyForm,
     UserEnableForm,
     UsersPublicKeyForm,
@@ -33,12 +40,31 @@ from .forms import (
 from ..email_util import cancel_async_emails, send_email, send_async_email
 from ..graph import NoSuchUser, NoSuchGroup
 from ..models import (
-    User, Group, Request, PublicKey, Permission, PermissionMap, AuditLog, GroupEdge, Counter,
-    GROUP_JOIN_CHOICES, REQUEST_STATUS_CHOICES, GROUP_EDGE_ROLES, OBJ_TYPES,
-    get_all_groups, get_all_users,
-    get_user_or_group, Audit, AuditMember, AUDIT_STATUS_CHOICES, AuditLogCategory,
+    APPROVER_ROLE_INDICIES,
+    AUDIT_STATUS_CHOICES,
+    Audit,
+    AuditLog,
+    AuditLogCategory,
+    AuditMember,
+    Counter,
+    GROUP_EDGE_ROLES,
+    GROUP_JOIN_CHOICES,
+    Group,
+    GroupEdge,
+    OBJ_TYPES,
+    OWNER_ROLE_INDICES,
+    Permission,
+    PermissionMap,
+    PublicKey,
+    REQUEST_STATUS_CHOICES,
+    Request,
+    User,
     UserToken,
+    get_all_groups,
+    get_all_users,
+    get_user_or_group,
 )
+from ..permissions import get_grantable_permissions, get_pending_request_by_group
 from .settings import settings
 from .util import ensure_audit_security, GrouperHandler, Alert, test_reserved_names
 from ..util import matches_glob
@@ -122,7 +148,8 @@ class UserView(GrouperHandler):
             user_md = {}
 
         open_audits = user.my_open_audits()
-        groups = user.my_groups()
+        group_edge_list = group_biz.get_groups_by_user(self.session, user) if user.enabled else []
+        groups = [{'name': g.name, 'type': 'Group', 'role': ge._role} for g, ge in group_edge_list]
         public_keys = user.my_public_keys()
         permissions = user_md.get('permissions', [])
         log_entries = user.my_log_entries()
@@ -566,9 +593,11 @@ class GroupView(GrouperHandler):
         members = group.my_members()
         groups = group.my_groups()
         permissions = group_md.get('permissions', [])
+        permission_requests_pending = get_pending_request_by_group(self.session, group)
         audited = group_md.get('audited', False)
         log_entries = group.my_log_entries()
         num_pending = group.my_requests("pending").count()
+        is_owner = self.current_user.my_role_index(members) in OWNER_ROLE_INDICES
 
         # Add mapping_id to permissions structure
         my_permissions = group.my_permissions()
@@ -588,7 +617,8 @@ class GroupView(GrouperHandler):
             "group.html", group=group, members=members, groups=groups,
             num_pending=num_pending, alerts=alerts, permissions=permissions,
             log_entries=log_entries, grantable=grantable, audited=audited,
-            statuses=AUDIT_STATUS_CHOICES,
+            statuses=AUDIT_STATUS_CHOICES, is_owner=is_owner,
+            permission_requests_pending=permission_requests_pending
         )
 
 
@@ -856,6 +886,175 @@ class GroupRequests(GrouperHandler):
             members=members, status=status, statuses=REQUEST_STATUS_CHOICES,
             offset=offset, limit=limit, total=total
         )
+
+
+class GroupPermissionRequest(GrouperHandler):
+    @staticmethod
+    def _get_forms(args_by_perm, data):
+        dropdown_form = GroupPermissionRequestDropdownForm(data)
+        text_form = GroupPermissionRequestTextForm(data)
+
+        for form in [dropdown_form, text_form]:
+            form.permission_name.choices = [("", "")] + sorted([(p, p) for p in
+                    args_by_perm.keys()])
+
+        dropdown_form.argument.choices = [("", "")]
+
+        return dropdown_form, text_form
+
+    def get(self, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
+        if not group:
+            return self.notfound()
+
+        args_by_perm = get_grantable_permissions(self.session)
+        dropdown_form, text_form = GroupPermissionRequest._get_forms(args_by_perm, None)
+
+        self.render("group-permission-request.html", dropdown_form=dropdown_form,
+                text_form=text_form, group=group, args_by_perm_json=json.dumps(args_by_perm))
+
+    def post(self, group_id=None, name=None):
+        group = Group.get(self.session, group_id, name)
+        if not group:
+            return self.notfound()
+
+        # only owner of group can request permissions for that group
+        role_index = self.current_user.my_role_index(group.my_members())
+        if role_index not in OWNER_ROLE_INDICES:
+            return self.forbidden()
+
+        # check inputs
+        args_by_perm = get_grantable_permissions(self.session)
+        dropdown_form, text_form = GroupPermissionRequest._get_forms(args_by_perm,
+                self.request.arguments)
+
+        argument_type = self.request.arguments.get("argument_type")
+        if argument_type and argument_type[0] == "text":
+            form = text_form
+        elif argument_type and argument_type[0] == "dropdown":
+            form = dropdown_form
+            form.argument.choices = [(a, a) for a in args_by_perm[form.permission_name.data]]
+        else:
+            # someone messing with the form
+            self.log_message("unknown argument type", group_name=group.name,
+                    argument_type=argument_type)
+            return self.forbidden()
+
+        if not form.validate():
+            return self.render(
+                    "group-permission-request.html", dropdown_form=dropdown_form,
+                    text_form=text_form, group=group, args_by_perm_json=json.dumps(args_by_perm),
+                    alerts=self.get_form_alerts(form.errors),
+                    )
+
+        permission = Permission.get(self.session, form.permission_name.data)
+        assert permission is not None, "our prefilled permission should exist or we have problems"
+
+        # save off request
+        try:
+            permissions.create_request(self.session, self.current_user, group,
+                    permission, form.argument.data, form.reason.data)
+        except permissions.RequestAlreadyGranted:
+            alerts = [Alert("danger", "This group already has this permission and argument.")]
+        except permissions.RequestAlreadyExists:
+            alerts = [Alert("danger",
+                    "Request for permission and argument already exists, please wait patiently.")]
+        except permissions.NoOwnersAvailable:
+            self.log_message("prefilled perm+arg have no owner", group_name=group.name,
+                    permission_name=permission.name, argument=form.argument.data)
+            alerts = [Alert("danger", "No owners available for requested permission and argument."
+                    " If this error persists please contact an adminstrator.")]
+        else:
+            alerts = None
+
+        if alerts:
+            return self.render(
+                    "group-permission-request.html", dropdown_form=dropdown_form,
+                    text_form=text_form, group=group, args_by_perm_json=json.dumps(args_by_perm),
+                    alerts=alerts,
+                    )
+        else:
+            return self.redirect("/groups/{}".format(group.name))
+
+
+class PermissionsRequests(GrouperHandler):
+    """Allow a user to review a list of permission requests that they have."""
+    def get(self):
+        form = PermissionRequestsForm(self.request.arguments)
+        form.status.choices = [("", "")] + [(k, k) for k in REQUEST_STATUS_CHOICES]
+
+        if not form.validate():
+            alerts = self.get_form_alerts(form.errors)
+            request_tuple = None
+            total = 0
+        else:
+            alerts = []
+            request_tuple, total = permissions.get_requests_by_owner(self.session,
+                    self.current_user, status=form.status.data,
+                    limit=form.limit.data, offset=form.offset.data)
+
+        return self.render("permission-requests.html", form=form, request_tuple=request_tuple,
+                alerts=alerts, total=total, statuses=REQUEST_STATUS_CHOICES)
+
+
+class PermissionsRequestUpdate(GrouperHandler):
+    """Allow a user to action a permisison request they have."""
+    def _get_choices(self, current_status):
+        return [["", ""]] + [
+            [status] * 2
+            for status in REQUEST_STATUS_CHOICES[current_status]
+        ]
+
+    def get(self, request_id):
+        # check for request existence
+        request = permissions.get_request_by_id(self.session, request_id)
+        if not request:
+            return self.notfound()
+
+        # check that this user should be actioning this request
+        user_requests, total = permissions.get_requests_by_owner(self.session,
+                self.current_user, status="pending", limit=None, offset=0)
+        user_request_ids = [ur.id for ur in user_requests.requests]
+        if request.id not in user_request_ids:
+            return self.forbidden()
+
+        form = PermissionRequestUpdateForm(self.request.arguments)
+        form.status.choices = self._get_choices(request.status)
+
+        # compile list of changes to this request
+        change_comment_list = [(sc, user_requests.comment_by_status_change_id[sc.id]) for sc in
+                user_requests.status_change_by_request_id[request.id]]
+
+        return self.render("permission-request-update.html", form=form, request=request,
+                change_comment_list=change_comment_list, statuses=REQUEST_STATUS_CHOICES)
+
+    def post(self, request_id):
+        # check for request existence
+        request = permissions.get_request_by_id(self.session, request_id)
+        if not request:
+            return self.notfound()
+
+        # check that this user should be actioning this request
+        user_requests, total = permissions.get_requests_by_owner(self.session,
+                self.current_user, status="pending", limit=None, offset=0)
+        user_request_ids = [ur.id for ur in user_requests.requests]
+        if request.id not in user_request_ids:
+            return self.forbidden()
+
+        form = PermissionRequestUpdateForm(self.request.arguments)
+        form.status.choices = self._get_choices(request.status)
+        if not form.validate():
+            change_comment_list = [(sc, user_requests.comment_by_status_change_id[sc.id]) for sc in
+                    user_requests.status_change_by_request_id[request.id]]
+
+            return self.render("permission-request-update.html", form=form, request=request,
+                    change_comment_list=change_comment_list, statuses=REQUEST_STATUS_CHOICES,
+                    alerts=self.get_form_alerts(form.errors))
+
+        permissions.update_request(self.session, request, self.current_user,
+                form.status.data, form.reason.data)
+
+        return self.redirect("/permissions/requests")
 
 
 class AuditsComplete(GrouperHandler):
@@ -1419,10 +1618,10 @@ class GroupJoin(GrouperHandler):
                 ("User: {}".format(self.current_user.name), ) * 2
             )
 
-        for _group in self.current_user.my_groups():
+        for _group, group_edge in group_biz.get_groups_by_user(self.session, self.current_user):
             if group.name == _group.name:  # Don't add self.
                 continue
-            if _group.role < 1:  # manager, owner, and np-owner only.
+            if group_edge._role in APPROVER_ROLE_INDICIES:  # manager, owner, and np-owner only.
                 continue
             if ("Group", _group.name) in members:
                 continue

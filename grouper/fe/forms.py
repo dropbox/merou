@@ -186,6 +186,51 @@ class GroupEditMemberForm(Form):
     ], id="edit-form-expiration")
 
 
+class GroupPermissionRequestDropdownForm(Form):
+    """permission request form using a dropdown field for the argument."""
+    permission_name = SelectField("Permission", [
+        validators.DataRequired(),
+    ])
+    argument = SelectField("Argument", [
+        validators.DataRequired(),
+    ])
+    reason = TextAreaField("Reason", [
+        validators.DataRequired(),
+    ])
+    argument_type = HiddenField(default="dropdown")
+
+
+class GroupPermissionRequestTextForm(Form):
+    """permission request form using a text field for the argument."""
+    permission_name = SelectField("Permission", [
+        validators.DataRequired(),
+    ])
+    argument = StringField("Argument", [
+        validators.DataRequired(),
+    ])
+    reason = TextAreaField("Reason", [
+        validators.DataRequired(),
+    ])
+    argument_type = HiddenField(default="text")
+
+
+class PermissionRequestsForm(Form):
+    offset = IntegerField(default=0)
+    limit = IntegerField(default=100, validators=[validators.NumberRange(min=100, max=9000)])
+    status = SelectField("New Status", [
+        validators.Optional(),
+    ], default='')
+
+
+class PermissionRequestUpdateForm(Form):
+    status = SelectField("New Status", [
+        validators.DataRequired(),
+    ])
+    reason = TextAreaField("Reason", [
+        validators.DataRequired(),
+    ])
+
+
 class UserEnableForm(Form):
     preserve_membership = BooleanField(default=False)
 

@@ -16,7 +16,8 @@ from grouper.fe.routes import HANDLERS
 from grouper.fe.settings import settings
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
-from grouper.models import get_db_engine, Session, load_plugins
+from grouper.models import get_db_engine, Session
+from grouper.plugin import load_plugins
 from grouper.util import get_loglevel, get_database_url
 from grouper.settings import default_settings_path
 

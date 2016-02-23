@@ -28,14 +28,16 @@
         function update_args() {
             var args = args_by_perm[$perm_fields.val()];
             if ($perm_fields.val() == "") {
-                {# default we show dropdown form and hide argument and reason fields #}
+                {# default we show dropdown form (we have to choose one) and
+                    hide argument and reason fields (ux hint to select permission
+                    first) #}
                 $argument_divs.hide();
                 $reason_divs.hide();
 
                 $dropdown_form_div.show();
                 $text_form_div.hide();
             } else if (args.length == 1 && args[0] == "*") {
-                {# change to text form field #}
+                {# change to text form field cause permission allows a wildcard argument #}
                 $argument_divs.show();
                 $reason_divs.show();
 
@@ -44,7 +46,8 @@
 
                 $argument_text.empty();
             } else {
-                {# change to dropdown form field #}
+                {# change to dropdown form field cause permission only specific
+                    specific arguments #}
                 $argument_divs.show();
                 $reason_divs.show();
 
@@ -63,7 +66,7 @@
         update_args();
 
         $perm_fields.change(function() {
-            {# keep permission values sync'd #}
+            {# keep permission values synced #}
             $perm_fields.val($(this).val());
 
             {# update view of the world #}
@@ -71,7 +74,7 @@
         });
 
         $reason_fields.keyup(function() {
-            {# keep reason values sync'd #}
+            {# keep reason values synced #}
             $reason_fields.val($(this).val());
         });
     });

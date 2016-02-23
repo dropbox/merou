@@ -889,12 +889,8 @@ class GroupRequests(GrouperHandler):
 
 
 class GroupPermissionRequest(GrouperHandler):
-    def _get_forms(self, args_by_perm, get_request_data=False):
-        if get_request_data:
-            data = self.request.arguments
-        else:
-            data = None
-
+    @staticmethod
+    def _get_forms(args_by_perm, data):
         dropdown_form = GroupPermissionRequestDropdownForm(data)
         text_form = GroupPermissionRequestTextForm(data)
 
@@ -912,7 +908,7 @@ class GroupPermissionRequest(GrouperHandler):
             return self.notfound()
 
         args_by_perm = get_grantable_permissions(self.session)
-        dropdown_form, text_form = self._get_forms(args_by_perm, get_request_data=False)
+        dropdown_form, text_form = GroupPermissionRequest._get_forms(args_by_perm, None)
 
         self.render("group-permission-request.html", dropdown_form=dropdown_form,
                 text_form=text_form, group=group, args_by_perm_json=json.dumps(args_by_perm))
@@ -929,7 +925,8 @@ class GroupPermissionRequest(GrouperHandler):
 
         # check inputs
         args_by_perm = get_grantable_permissions(self.session)
-        dropdown_form, text_form = self._get_forms(args_by_perm, get_request_data=True)
+        dropdown_form, text_form = GroupPermissionRequest._get_forms(args_by_perm,
+                self.request.arguments)
 
         argument_type = self.request.arguments.get("argument_type")
         if argument_type and argument_type[0] == "text":
@@ -939,6 +936,8 @@ class GroupPermissionRequest(GrouperHandler):
             form.argument.choices = [(a, a) for a in args_by_perm[form.permission_name.data]]
         else:
             # someone messing with the form
+            self.log_message("unknown argument type", group_name=group.name,
+                    argument_type=argument_type)
             return self.forbidden()
 
         if not form.validate():
@@ -949,18 +948,22 @@ class GroupPermissionRequest(GrouperHandler):
                     )
 
         permission = Permission.get(self.session, form.permission_name.data)
-        assert permission, "our prefilled permission should exist or we have problems"
+        assert permission is not None, "our prefilled permission should exist or we have problems"
 
         # save off request
         try:
             permissions.create_request(self.session, self.current_user, group,
                     permission, form.argument.data, form.reason.data)
         except permissions.RequestAlreadyGranted:
-            alerts = [Alert("danger", "this group already has this permission + argument")]
+            alerts = [Alert("danger", "This group already has this permission and argument.")]
         except permissions.RequestAlreadyExists:
-            alerts = [Alert("danger", "request for permission + argument already exists")]
+            alerts = [Alert("danger",
+                    "Request for permission and argument already exists, please wait patiently.")]
         except permissions.NoOwnersAvailable:
-            alerts = [Alert("danger", "no owners available for requested permission + argument")]
+            self.log_message("prefilled perm+arg have no owner", group_name=group.name,
+                    permission_name=permission.name, argument=form.argument.data)
+            alerts = [Alert("danger", "No owners available for requested permission and argument."
+                    " If this error persists please contact an adminstrator.")]
         else:
             alerts = None
 

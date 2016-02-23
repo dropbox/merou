@@ -114,9 +114,6 @@ def get_grantable_permissions(session):
     permissive, i.e. if a wildcard argument exists, everything else is
     discarded.
 
-    TODO: this only does a simplistic reduction and doesn't really understand
-    globbing.
-
     Args:
         session(sqlalchemy.orm.session.Session): database session
 
@@ -130,6 +127,8 @@ def get_grantable_permissions(session):
         for argument in owners_by_arg:
             args_by_perm[permission].append(argument)
 
+    # TODO(herb): this only does a simplistic reduction and doesn't really
+    # understand globbing.
     def _reduce_args(args):
         return ["*"] if len(args) > 1 and "*" in args else args
     return {p: _reduce_args(a) for p, a in args_by_perm.items()}

@@ -101,7 +101,8 @@ def get_owners_by_grantable_permission(session):
 
     # merge in plugin results
     for plugin in get_plugins():
-        for perm, owners_by_arg in plugin.get_owner_by_arg_by_perm(session).items():
+        res = plugin.get_owner_by_arg_by_perm(session) or []
+        for perm, owners_by_arg in res.items():
             for arg, owners in owners_by_arg.items():
                 owners_by_arg_by_perm[perm][arg] += owners
 

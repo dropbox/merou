@@ -111,9 +111,8 @@ def get_owners_by_grantable_permission(session):
 
 def get_grantable_permissions(session):
     """Returns all grantable permissions and their possible arguments. This
-    function attempts to reduce a permission's arguments to the most
-    permissive, i.e. if a wildcard argument exists, everything else is
-    discarded.
+    function attempts to reduce a permission's arguments to the least
+    permissive possible.
 
     Args:
         session(sqlalchemy.orm.session.Session): database session
@@ -128,10 +127,14 @@ def get_grantable_permissions(session):
         for argument in owners_by_arg:
             args_by_perm[permission].append(argument)
 
-    # TODO(herb): this only does a simplistic reduction and doesn't really
-    # understand globbing.
     def _reduce_args(args):
-        return ["*"] if len(args) > 1 and "*" in args else args
+        non_wildcard_args = filter(lambda a: a != "*", args)
+        if any(non_wildcard_args):
+            # at least one none wildcard arg so we only return those
+            return list(set(non_wildcard_args))
+        else:
+            # it's all wildcard so return that one
+            return ["*"]
     return {p: _reduce_args(a) for p, a in args_by_perm.items()}
 
 

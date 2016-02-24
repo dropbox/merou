@@ -21,6 +21,7 @@ from grouper.fe.forms import ValidateRegex
 import grouper.fe.util
 from grouper.models import AsyncNotification, Group, Permission, User
 from grouper.permissions import (
+        get_grantable_permissions,
         get_owners,
         get_owners_by_grantable_permission,
         get_requests_by_owner,
@@ -121,7 +122,7 @@ class PermissionTests(unittest.TestCase):
 
 
 def test_grantable_permissions(session, standard_graph, users, groups, grantable_permissions):
-    perm_grant, perm0, _, _ = grantable_permissions
+    perm_grant, perm0, perm1, _ = grantable_permissions
 
     assert not users["zorkian@a.co"].my_grantable_permissions(), "start with none"
 
@@ -137,6 +138,13 @@ def test_grantable_permissions(session, standard_graph, users, groups, grantable
     grants = users["zorkian@a.co"].my_grantable_permissions()
     assert len(grants) == 3, "wildcard grant should grab appropriat amount"
     assert sorted([x[0].name for x in grants]) == ["grantable", "grantable.one", "grantable.two"]
+
+    args_by_perm = get_grantable_permissions(session)
+    assert args_by_perm[perm1.name] == ["*"], "wildcard grant reflected in list of grantable"
+
+    grant_permission(groups["auditors"], perm_grant, argument="{}/single_arg".format(perm1.name))
+    args_by_perm = get_grantable_permissions(session)
+    assert args_by_perm[perm1.name] == ["single_arg"], "least permissive argument shown"
 
 
 def test_permission_grant_to_owners(session, standard_graph, groups, grantable_permissions):

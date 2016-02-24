@@ -22,7 +22,7 @@ import grouper.fe.util
 from grouper.models import AsyncNotification, Group, Permission, User
 from grouper.permissions import (
         get_grantable_permissions,
-        get_owners,
+        get_owner_arg_list,
         get_owners_by_grantable_permission,
         get_requests_by_owner,
         )
@@ -38,6 +38,17 @@ def grantable_permissions(session, standard_graph):
     session.commit()
 
     return perm_grant, perm0, perm1, perm2
+
+
+def _get_unsent_and_mark_as_sent_emails(session):
+    """Helper to count unsent emails and then mark them as sent."""
+    emails = session.query(AsyncNotification).filter(AsyncNotification.sent == False).all()
+
+    for email in emails:
+        email.sent = True
+
+    session.commit()
+    return emails
 
 
 def test_basic_permission(standard_graph, session, users, groups, permissions):  # noqa
@@ -178,11 +189,13 @@ def test_permission_grant_to_owners(session, standard_graph, groups, grantable_p
     assert owners_by_arg_by_perm[perm1.name]['somesubstring*'] == expected
 
     # make sure get_owner() respect substrings
-    res = get_owners(session, perm1, "somesubstring", owners_by_arg_by_perm=owners_by_arg_by_perm)
+    res = [o for o, a in get_owner_arg_list(session, perm1, "somesubstring",
+            owners_by_arg_by_perm=owners_by_arg_by_perm)]
     assert (sorted(res) == sorted([groups["all-teams"], groups["team-sre"]]),
             "should include substring wildcard matches")
 
-    res = get_owners(session, perm1, "othersubstring", owners_by_arg_by_perm=owners_by_arg_by_perm)
+    res = [o for o, a in get_owner_arg_list(session, perm1, "othersubstring",
+            owners_by_arg_by_perm=owners_by_arg_by_perm)]
     assert sorted(res) == [groups["all-teams"]], "negative test of substring wildcard matches"
 
     # grant a grant on a wildcard
@@ -217,7 +230,7 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
             headers={'X-Grouper-User': username})
     assert resp.code == 200
 
-    emails = session.query(AsyncNotification).all()
+    emails = _get_unsent_and_mark_as_sent_emails(session)
     assert len(emails) == 1, "only one user (and no group) should receive notification for request"
 
     perms = _load_permissions_by_group_name(session, 'serving-team')
@@ -245,8 +258,8 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
     assert len(perms) == 2
     assert "grantable.one" in perms, "requested permission shouldn't be granted immediately"
 
-    emails = session.query(AsyncNotification).all()
-    assert len(emails) == 2, "requester should receive email as well"
+    emails = _get_unsent_and_mark_as_sent_emails(session)
+    assert len(emails) == 1, "requester should receive email as well"
 
     # (re)REQUEST: 'grantable.one', 'some argument' for 'serving-team'
     groupname = "serving-team"
@@ -272,8 +285,8 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
             headers={'X-Grouper-User': username})
     assert resp.code == 200
 
-    emails = session.query(AsyncNotification).all()
-    assert len(emails) == 3, "only one user (and no group) should receive notification for request"
+    emails = _get_unsent_and_mark_as_sent_emails(session)
+    assert len(emails) == 1, "only one user (and no group) should receive notification for request"
 
     perms = _load_permissions_by_group_name(session, 'serving-team')
     assert len(perms) == 2
@@ -295,9 +308,38 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
             headers={'X-Grouper-User': user.name})
     assert resp.code == 200
 
-    emails = session.query(AsyncNotification).all()
-    assert len(emails) == 4, "rejection email should be sent"
+    emails = _get_unsent_and_mark_as_sent_emails(session)
+    assert len(emails) == 1, "rejection email should be sent"
 
     perms = _load_permissions_by_group_name(session, 'serving-team')
     assert len(perms) == 2
     assert "grantable.two" not in perms, "no new permissions should be granted for this"
+
+@pytest.mark.gen_test
+def test_limited_permissions(session, standard_graph, groups, grantable_permissions,
+        http_client, base_url):
+    """Test that notifications are not sent to wildcard grant owners unless necessary."""
+    perm_grant, _, perm1, _ = grantable_permissions
+    # one super wildcard, one wildcard grant and one specific grant
+    grant_permission(groups["sad-team"], perm_grant, argument="*")
+    grant_permission(groups["all-teams"], perm_grant, argument="grantable.*")
+    grant_permission(groups["security-team"], perm_grant,
+            argument="{}/specific_arg".format(perm1.name))
+
+    security_team_members = {name for (t, name) in groups['security-team'].my_members().keys()
+            if t == 'User'}
+
+    # SPECIFIC REQUEST: 'grantable.one', 'specific_arg' for 'sad-team'
+    groupname = "sad-team"
+    username = "zorkian@a.co"
+    fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"permission_name": perm1.name, "argument": "specific_arg",
+                "reason": "blah blah black sheep", "argument_type": "text"}),
+            headers={'X-Grouper-User': username})
+    assert resp.code == 200
+
+    emails = _get_unsent_and_mark_as_sent_emails(session)
+    assert len(emails) == 2, "email only sent to security-team"
+    assert not security_team_members.difference(e.email for e in emails), \
+            "only security-team members get notification"

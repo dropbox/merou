@@ -138,28 +138,30 @@ def get_grantable_permissions(session):
     return {p: _reduce_args(a) for p, a in args_by_perm.items()}
 
 
-def get_owners(session, permission, argument, owners_by_arg_by_perm=None):
+def get_owner_arg_list(session, permission, argument, owners_by_arg_by_perm=None):
     """Return the grouper group(s) responsible for approving a request for the
-    given permission + argument.
+    given permission + argument along with the actual argument they were
+    granted.
 
     Args:
-        session(): database session
+        session(sqlalchemy.orm.session.Session): database session
         permission(models.Permission): permission in question
         argument(str): argument for the permission
     Returns:
-        list of models.Group grouper groups responsibile for
-        permimssion+argument. can be empty.
+        list of 2-tuple of (group, argument) where group is the models.Group
+        grouper groups responsibile for permimssion+argument and argument is
+        the argument actually granted to that group. can be empty.
     """
     if owners_by_arg_by_perm is None:
         owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
 
-    all_owners = []
+    all_owner_arg_list = []
     owners_by_arg = owners_by_arg_by_perm[permission.name]
     for arg, owners in owners_by_arg.items():
         if fnmatch(argument, arg):
-            all_owners += owners
+            all_owner_arg_list += [(owner, arg) for owner in owners]
 
-    return list(set(all_owners))
+    return all_owner_arg_list
 
 
 class PermissionRequestException(Exception):
@@ -216,9 +218,9 @@ def create_request(session, user, group, permission, argument, reason):
         raise RequestAlreadyExists()
 
     # determine owner(s)
-    owners = get_owners(session, permission, argument)
+    owner_arg_list = get_owner_arg_list(session, permission, argument)
 
-    if not owners:
+    if not owner_arg_list:
         raise NoOwnersAvailable()
 
     pending_status = "pending"
@@ -263,8 +265,17 @@ def create_request(session, user, group, permission, argument, reason):
 
     # TODO: would be nicer if it told you which group you're an approver of
     # that's causing this notification
+
     mail_to = []
-    for owner in owners:
+    non_wildcard_owners = [(owner, arg) for owner, arg in owner_arg_list if arg != "*"]
+    if any(non_wildcard_owners):
+        # non-wildcard owners should get all the notifications
+        mailto_owner_arg_list = non_wildcard_owners
+    else:
+        # only the wildcards so they get the notifications
+        mailto_owner_arg_list = owner_arg_list
+
+    for owner, arg in mailto_owner_arg_list:
         mail_to += [u for t, u in owner.my_members() if t == 'User']
     send_email(session, set(mail_to), "Request for permission: {}".format(permission.name),
             "pending_permission_request", settings, email_context)
@@ -316,8 +327,9 @@ def get_requests_by_owner(session, owner, status, limit, offset):
 
     requests = []
     for request in all_requests:
-        owners = get_owners(session, request.permission, request.argument, owners_by_arg_by_perm)
-        if group_ids.intersection([o.id for o in owners]):
+        owner_arg_list = get_owner_arg_list(session, request.permission, request.argument,
+                owners_by_arg_by_perm)
+        if group_ids.intersection([o.id for o, arg in owner_arg_list]):
             requests.append(request)
 
     total = len(requests)

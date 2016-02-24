@@ -30,8 +30,15 @@
                 </tr>
                 <tr>
                     <td colspan="5">
-                        <span style="padding-left: 10px;">
-                            <strong>Reason:</strong> <em>{{comment.comment}}</em>
+                        <dl class="dl-horizontal" style="margin-bottom: 0px;">
+                            <dt>Permission:<dt>
+                            <dd>
+                                <a href="/permissions/{{ request.permission.name }}">
+                                    {{ request.permission.name }}
+                                </a>
+                            </dd>
+                            <dt>Argument:</dt><dd>{{ request.argument }}</dd>
+                            <dt>Reason:</dt><dd>{{ comment.comment }}</dd>
                         </span>
                     </td>
                 </tr>

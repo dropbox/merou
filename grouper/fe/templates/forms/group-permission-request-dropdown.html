@@ -1,0 +1,17 @@
+{% macro form_field(field, label_width, field_width) -%}
+    <div class="form-group form-group-{{field.label.field_id}} {% if field.errors %}has-error{% endif %}">
+        <label for="{{field.label.field_id}}"
+               class="col-sm-{{label_width}} control-label">
+            {{ field.label.text }} {% if field.flags.required %}*{% endif %}
+        </label>
+        <div class="col-sm-{{field_width}}">
+            {{ field(**kwargs) }}
+        </div>
+    </div>
+{%- endmacro %}
+
+{{ form_field(dropdown_form.permission_name, 3, 8, class_="form-control input-permission_name") }}
+{{ form_field(dropdown_form.argument, 3, 8, class_="form-control") }}
+{{ form_field(dropdown_form.reason, 3, 8, class_="form-control input-reason") }}
+{{ dropdown_form.argument_type() }}
+{{ xsrf_form() }}

@@ -12,6 +12,7 @@
 <script type="text/javascript">
     $(function () {
         var args_by_perm = {{ args_by_perm_json }};
+        console.log('args_by_perm', args_by_perm);
 
         var $reason_divs = $('.form-group-reason');
         var $argument_divs = $('.form-group-argument');
@@ -87,10 +88,11 @@
         <div class="panel-heading">
             <h3 class="panel-title">Request Permission for Group {{ group.name }}</h3>
        </div>
-        <div class="panel-body">
+
+        <div class="panel-body" id="dropdown_form">
             <form class="form-horizontal" role="form"
                 method="post" action="/groups/{{ group.name }}/permission/request">
-                {% include "forms/group-permission-request.html" %}
+                {% include "forms/group-permission-request-dropdown.html" %}
                 <div class="form-permission">
                     <div class="col-sm-offset-3 col-sm-4">
                         <button type="submit" class="btn btn-primary">Submit</button>
@@ -98,6 +100,19 @@
                 </div>
             </form>
         </div>
+
+        <div class="panel-body" id="text_form">
+            <form class="form-horizontal" role="form"
+                method="post" action="/groups/{{ group.name }}/permission/request">
+                {% include "forms/group-permission-request-text.html" %}
+                <div class="form-permission">
+                    <div class="col-sm-offset-3 col-sm-4">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
     </div>
 </div>
 {% endblock %}

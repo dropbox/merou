@@ -1621,7 +1621,7 @@ class GroupJoin(GrouperHandler):
         for _group, group_edge in group_biz.get_groups_by_user(self.session, self.current_user):
             if group.name == _group.name:  # Don't add self.
                 continue
-            if group_edge._role in APPROVER_ROLE_INDICIES:  # manager, owner, and np-owner only.
+            if group_edge._role not in APPROVER_ROLE_INDICIES:  # manager, owner, and np-owner only.
                 continue
             if ("Group", _group.name) in members:
                 continue

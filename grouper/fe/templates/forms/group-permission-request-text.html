@@ -10,19 +10,8 @@
     </div>
 {%- endmacro %}
 
-<div id="dropdown_form">
-{{ form_field(dropdown_form.permission_name, 3, 8, class_="form-control input-permission_name") }}
-{{ form_field(dropdown_form.argument, 3, 8, class_="form-control") }}
-{{ form_field(dropdown_form.reason, 3, 8, class_="form-control input-reason") }}
-{{ dropdown_form.argument_type() }}
-</div>
-
-<div id="text_form" style="display: none">
 {{ form_field(text_form.permission_name, 3, 8, class_="form-control input-permission_name") }}
 {{ form_field(text_form.argument, 3, 8, class_="form-control") }}
 {{ form_field(text_form.reason, 3, 8, class_="form-control input-reason") }}
 {{ text_form.argument_type() }}
-</div>
-
 {{ xsrf_form() }}
-

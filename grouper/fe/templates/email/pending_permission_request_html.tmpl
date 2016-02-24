@@ -7,9 +7,10 @@
 <p><strong><a href="{{ url }}/users/{{ user_name }}">{{ user_name }}</a></strong> has requested
 a permission be granted to the group <strong><a href="{{ url }}/groups/{{ group_name }}">{{ group_name }}</a></strong>.</p>
 
-<p>To action
-this request, please visit the <a href="{{ url }}/groups/{{ requested }}/requests?status=pending">
-pending permission requests</a> queue.</p>
+<p>To action this request, please visit the
+<a href="{{ url }}/permissions/requests/{{ request_id }}">permission request update</a> page.</p>
+
+<p>To see all your outstanding pending permission requests visit the <a href="{{ url }}/permissions/requests?status=pending">permission requests queue</a>.</p>
 
 <p>More details about the request:</p>
 

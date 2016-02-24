@@ -255,6 +255,7 @@ def create_request(session, user, group, permission, argument, reason):
             "permission_name": permission.name,
             "argument": argument,
             "reason": reason,
+            "request_id": request.id,
             }
 
     # TODO: would be nicer if it told you which group you're an approver of
@@ -262,7 +263,7 @@ def create_request(session, user, group, permission, argument, reason):
     mail_to = []
     for owner in owners:
         mail_to += [u for t, u in owner.my_members() if t == 'User']
-    send_email(session, mail_to, "Request for permission: {}".format(permission.name),
+    send_email(session, set(mail_to), "Request for permission: {}".format(permission.name),
             "pending_permission_request", settings, email_context)
 
 

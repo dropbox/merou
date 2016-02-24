@@ -4,9 +4,16 @@
 
 {% block content %}
 
-{{ user_name }} has requested a permission be granted to the group {{ group_name }}. To action this request, please visit the pending permissions requests queue:
+{{ user_name }} has requested a permission be granted to the group {{ group_name }}.
 
-    {{ url }}/groups/permission-requests
+
+To action this request, please visit the permission request update page:
+
+    {{ url }}/permissions/requests/{{ request_id }}
+
+To see all your outstanding pending permission requests visit the permission requests queue:
+
+    {{ url }}/permissions/requests?status=pending
 
 More details about the request:
 

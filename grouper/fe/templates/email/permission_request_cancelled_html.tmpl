@@ -5,9 +5,9 @@
 {% block content %}
 <p>
 You request for permission
-<a href="/permissions/{{ permission_name }} ">{{ permission_name }}</a>
+<a href="{{ url }}/permissions/{{ permission_name }} ">{{ permission_name }}</a>
 with argument {{ argument }}
-has been <b>cancelled</b> to the group <a href="/groups/{{ group_name }}">{{ group_name }}</a>
+has been <b>cancelled</b> to the group <a href="{{ url }}/groups/{{ group_name }}">{{ group_name }}</a>
 </p>
 
 <p>More details about the request:</p>

@@ -91,6 +91,7 @@ settings = Settings({
     "database_source": None,
     "log_format": "%(asctime)-15s\t%(levelname)s\t%(message)s",
     "plugin_dir": None,
+    "plugin_module_paths": None,
     "oneoff_dir": None,
     "send_emails": True,
     "smtp_server": "localhost",

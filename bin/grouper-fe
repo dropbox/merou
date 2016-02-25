@@ -17,7 +17,7 @@ from grouper.fe.settings import settings
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
 from grouper.models import get_db_engine, Session
-from grouper.plugin import load_plugins
+from grouper.plugin import load_plugins, PluginsDirectoryDoesNotExist
 from grouper.util import get_loglevel, get_database_url
 from grouper.settings import default_settings_path
 
@@ -57,11 +57,10 @@ def main(argv):
         logging.fatal("Debug mode does not support multiple processes.")
         sys.exit(1)
 
-    if settings.plugin_dir:
-        if not os.path.exists(settings.plugin_dir):
-            logging.fatal("Plugin directory does not exist")
-            sys.exit(1)
+    try:
         load_plugins(settings.plugin_dir, service_name="grouper-fe")
+    except PluginsDirectoryDoesNotExist as e:
+        logging.fatal("Plugin directory does not exist: {}".format(e))
 
     log_level = get_loglevel(args)
     logging.basicConfig(

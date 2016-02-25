@@ -2,7 +2,6 @@
 
 import argparse
 import logging
-import os
 import sys
 
 import tornado.httpserver
@@ -16,7 +15,7 @@ from grouper.background import BackgroundThread
 from grouper.database import DbRefreshThread
 from grouper.graph import GroupGraph
 from grouper.models import get_db_engine, Session
-from grouper.plugin import load_plugins
+from grouper.plugin import load_plugins, PluginsDirectoryDoesNotExist
 from grouper.settings import default_settings_path
 from grouper.util import get_loglevel, get_database_url
 
@@ -59,11 +58,11 @@ def main(argv):
     if log_level < 0:
         sa_log.setLevel(logging.INFO)
 
-    if settings.plugin_dir:
-        if not os.path.exists(settings.plugin_dir):
-            logging.fatal("Plugin directory does not exist")
-            sys.exit(1)
+    try:
         load_plugins(settings.plugin_dir, service_name="grouper-api")
+    except PluginsDirectoryDoesNotExist as e:
+        logging.fatal("Plugin directory does not exist: {}".format(e))
+        sys.exist(1)
 
     tornado_settings = {
         "debug": settings.debug,

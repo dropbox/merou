@@ -22,6 +22,10 @@ common:
     # Type: str
     plugin_dir: ""
 
+    # Module paths for plugins to load from.
+    # Type: list of str
+    plugin_module_paths:
+
     # Directory for one-offs. If set, load oneoffs from this directory which
     # are run via grouper-ctl.
     oneoff_dir: ""

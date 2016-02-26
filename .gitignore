@@ -39,3 +39,7 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# Grouper
+bin/grouper-apic
+bin/grouper-fec

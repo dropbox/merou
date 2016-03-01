@@ -3,7 +3,7 @@ from datetime import datetime
 from fnmatch import fnmatch
 
 from grouper.audit import assert_controllers_are_auditors
-from grouper.constants import PERMISSION_GRANT
+from grouper.constants import PERMISSION_ADMIN, PERMISSION_GRANT
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
 from grouper.group import get_groups_by_user
@@ -76,7 +76,7 @@ def get_owners_by_grantable_permission(session):
 
     owners_by_arg_by_perm = defaultdict(lambda: defaultdict(list))
     for group in all_groups:
-        grants = session.query(
+        group_permissions = session.query(
                 Permission.name,
                 PermissionMap.argument,
                 PermissionMap.granted_on,
@@ -85,8 +85,15 @@ def get_owners_by_grantable_permission(session):
                 PermissionMap.group_id == Group.id,
                 Group.id == group.id,
                 Permission.id == PermissionMap.permission_id,
-                Permission.name == PERMISSION_GRANT,
         ).all()
+
+        # special case permission admins
+        if any(filter(lambda g: g.name == PERMISSION_ADMIN, group_permissions)):
+            for perm_name in all_permissions:
+                owners_by_arg_by_perm[perm_name]["*"].append(group)
+            continue
+
+        grants = [gp for gp in group_permissions if gp.name == PERMISSION_GRANT]
 
         for perm, arg in filter_grantable_permissions(session, grants,
                 all_permissions=all_permissions):

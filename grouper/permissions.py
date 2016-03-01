@@ -90,14 +90,7 @@ def get_owners_by_grantable_permission(session):
 
         for perm, arg in filter_grantable_permissions(session, grants,
                 all_permissions=all_permissions):
-            if perm.name == PERMISSION_GRANT and '*' in arg:
-                # recursively resolve this for one level
-                grants = [Grant(perm.name, arg)]
-                for real_perm, real_arg in filter_grantable_permissions(session, grants,
-                        all_permissions=all_permissions):
-                    owners_by_arg_by_perm[real_perm.name][real_arg].append(group)
-            else:
-                owners_by_arg_by_perm[perm.name][arg].append(group)
+            owners_by_arg_by_perm[perm.name][arg].append(group)
 
     # merge in plugin results
     for plugin in get_plugins():

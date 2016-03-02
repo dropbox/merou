@@ -26,6 +26,11 @@ common:
     # are run via grouper-ctl.
     oneoff_dir: ""
 
+    # Name of permissions for which we restrict ownership calculations to
+    # exclude wildcard ownership if any non-wildcard owners are avaiable.
+    # Type: list of str
+    restricted_ownership_permissions:
+
     # Whether to send notification e-mails.
     # Type: bool
     send_emails: false

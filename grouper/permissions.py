@@ -109,13 +109,16 @@ def get_owners_by_grantable_permission(session):
     return owners_by_arg_by_perm
 
 
-def get_grantable_permissions(session):
+def get_grantable_permissions(session, restricted_ownership_permissions):
     """Returns all grantable permissions and their possible arguments. This
     function attempts to reduce a permission's arguments to the least
     permissive possible.
 
     Args:
         session(sqlalchemy.orm.session.Session): database session
+        restricted_ownership_permissions(List[str]): list of permissions for which
+            we exclude wildcard ownership from the result if any non-wildcard
+            owners exist
 
     Returns:
         A map of models.Permission object to a list of possible arguments, i.e.
@@ -127,15 +130,16 @@ def get_grantable_permissions(session):
         for argument in owners_by_arg:
             args_by_perm[permission].append(argument)
 
-    def _reduce_args(args):
+    def _reduce_args(perm_name, args):
         non_wildcard_args = filter(lambda a: a != "*", args)
-        if any(non_wildcard_args):
+        if (restricted_ownership_permissions and perm_name in restricted_ownership_permissions and
+                any(non_wildcard_args)):
             # at least one none wildcard arg so we only return those
             return list(set(non_wildcard_args))
         else:
             # it's all wildcard so return that one
             return ["*"]
-    return {p: _reduce_args(a) for p, a in args_by_perm.items()}
+    return {p: _reduce_args(p, a) for p, a in args_by_perm.items()}
 
 
 def get_owner_arg_list(session, permission, argument, owners_by_arg_by_perm=None):

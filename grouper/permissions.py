@@ -131,11 +131,13 @@ def get_grantable_permissions(session, restricted_ownership_permissions):
             args_by_perm[permission].append(argument)
 
     def _reduce_args(perm_name, args):
-        non_wildcard_args = filter(lambda a: a != "*", args)
+        non_wildcard_args = map(lambda a: a != "*", args)
         if (restricted_ownership_permissions and perm_name in restricted_ownership_permissions and
                 any(non_wildcard_args)):
-            # at least one none wildcard arg so we only return those
-            return list(set(non_wildcard_args))
+            # at least one none wildcard arg so we only return those and we care
+            return sorted({a for a in args if a != "*"})
+        elif all(non_wildcard_args):
+            return sorted(set(args))
         else:
             # it's all wildcard so return that one
             return ["*"]

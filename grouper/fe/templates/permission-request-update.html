@@ -31,6 +31,12 @@
                 <tr>
                     <td colspan="5">
                         <dl class="dl-horizontal" style="margin-bottom: 0px;">
+                            <dt>Group:</dt>
+                            <dd>
+                                <a href="/groups/{{ request.group.name }}">
+                                    {{ request.group.name }}
+                                </a>
+                            </dd>
                             <dt>Permission:<dt>
                             <dd>
                                 <a href="/permissions/{{ request.permission.name }}">

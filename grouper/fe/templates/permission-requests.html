@@ -54,10 +54,15 @@
                 <tr class="active">
                     <td>&nbsp;</td>
                     <td colspan="4">
-                        <div style="padding-left: 10px;">
-                            <strong>Who:</strong> {{ status_change.user.name  }} ({{ status_change.change_at|long_ago_str }})<br/>
-                            <strong>Reason:</strong> <em>{{ comment.comment }}</em>
-                        </div>
+                        <dl class="dl-horizontal" style="margin-bottom: 0px;">
+                            <dt>Group:</dt><dd>{{ request.group.name }}</dd>
+                            <dt>Who:</dt>
+                            <dd>
+                                {{ status_change.user.name  }}
+                                ({{ status_change.change_at|long_ago_str }})
+                            </dd>
+                            <dt>Reason:</dt> <dd>{{ comment.comment }}</dd>
+                        </dl>
                     </td>
                 </tr>
                 {% endfor %}

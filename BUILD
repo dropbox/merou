@@ -65,7 +65,6 @@ dbx_py_library(
         ':sshpubkey',
         ':ssl-match-hostname',
         ':tornado',
-        ':wsgiref',
         ':wtforms',
         ':wtforms-tornado',
     ],
@@ -190,11 +189,6 @@ dbx_py_pip(
 dbx_py_pip(
     name = 'tornado',
     pip_deps = ['tornado==3.2'],
-)
-
-dbx_py_pip(
-    name = 'wsgiref',
-    pip_deps = ['wsgiref==0.1.2'],
 )
 
 dbx_py_pip(

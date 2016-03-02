@@ -13,6 +13,7 @@ from util import get_group_permissions, get_user_permissions, grant_permission
 from grouper.constants import (
         ARGUMENT_VALIDATION,
         AUDIT_MANAGER,
+        PERMISSION_ADMIN,
         PERMISSION_AUDITOR,
         PERMISSION_GRANT,
         PERMISSION_VALIDATION,
@@ -198,13 +199,17 @@ def test_permission_grant_to_owners(session, standard_graph, groups, grantable_p
             owners_by_arg_by_perm=owners_by_arg_by_perm)]
     assert sorted(res) == [groups["all-teams"]], "negative test of substring wildcard matches"
 
-    # grant a grant on a wildcard
-    grant_permission(groups['security-team'], perm_grant,
-            argument="{}/grantable.*".format(PERMISSION_GRANT))
+    # permission admins have all the power
+    perm_admin, _ = Permission.get_or_create(session, name=PERMISSION_ADMIN, description="")
+    session.commit()
+    grant_permission(groups["security-team"], perm_admin)
+
     owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
-    expected = sorted([groups["all-teams"], groups["security-team"]])
-    assert sorted(owners_by_arg_by_perm[perm1.name]['*']) == expected, "grant on grant does right"
-    assert sorted(owners_by_arg_by_perm[perm2.name]['*']) == expected, "grant on grant does right"
+    all_permissions = Permission.get_all(session)
+    for perm in all_permissions:
+        assert perm.name in owners_by_arg_by_perm, 'all permission should be represented'
+        assert groups["security-team"] in owners_by_arg_by_perm[perm.name]["*"], \
+                'permission admin should be wildcard owners'
 
 
 def _load_permissions_by_group_name(session, group_name):

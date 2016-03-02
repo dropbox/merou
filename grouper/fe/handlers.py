@@ -907,7 +907,8 @@ class GroupPermissionRequest(GrouperHandler):
         if not group:
             return self.notfound()
 
-        args_by_perm = get_grantable_permissions(self.session)
+        args_by_perm = get_grantable_permissions(self.session,
+                settings.restricted_ownership_permissions)
         dropdown_form, text_form = GroupPermissionRequest._get_forms(args_by_perm, None)
 
         self.render("group-permission-request.html", dropdown_form=dropdown_form,
@@ -924,7 +925,8 @@ class GroupPermissionRequest(GrouperHandler):
             return self.forbidden()
 
         # check inputs
-        args_by_perm = get_grantable_permissions(self.session)
+        args_by_perm = get_grantable_permissions(self.session,
+                settings.restricted_ownership_permissions)
         dropdown_form, text_form = GroupPermissionRequest._get_forms(args_by_perm,
                 self.request.arguments)
 

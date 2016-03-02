@@ -151,12 +151,16 @@ def test_grantable_permissions(session, standard_graph, users, groups, grantable
     assert len(grants) == 3, "wildcard grant should grab appropriat amount"
     assert sorted([x[0].name for x in grants]) == ["grantable", "grantable.one", "grantable.two"]
 
-    args_by_perm = get_grantable_permissions(session)
+    args_by_perm = get_grantable_permissions(session, None)
     assert args_by_perm[perm1.name] == ["*"], "wildcard grant reflected in list of grantable"
 
     grant_permission(groups["auditors"], perm_grant, argument="{}/single_arg".format(perm1.name))
-    args_by_perm = get_grantable_permissions(session)
-    assert args_by_perm[perm1.name] == ["single_arg"], "least permissive argument shown"
+    args_by_perm = get_grantable_permissions(session, None)
+    assert args_by_perm[perm1.name] == ["*"], "wildcard grant reflected cause no restricted perms"
+
+    args_by_perm = get_grantable_permissions(session, [perm1.name])
+    assert args_by_perm[perm1.name] == ["single_arg"], \
+            "least permissive argument shown cause of restricted perms"
 
 
 def test_permission_grant_to_owners(session, standard_graph, groups, grantable_permissions):

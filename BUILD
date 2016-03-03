@@ -61,7 +61,6 @@ dbx_py_library(
         ':python-dateutil',
         ':pytz',
         ':pyyaml',
-        ':setuptools',
         ':sqlalchemy',
         ':sshpubkey',
         ':ssl-match-hostname',
@@ -114,12 +113,6 @@ dbx_py_pip(
 dbx_py_pip(
     name = 'pyyaml',
     pip_deps = ['PyYAML==3.10'],
-)
-
-dbx_py_pip(
-  name = 'setuptools',
-  pip_deps = ['setuptools==18.4'],
-  provides = ['pkg_resources'],
 )
 
 dbx_py_pip(

@@ -1053,8 +1053,18 @@ class PermissionsRequestUpdate(GrouperHandler):
                     change_comment_list=change_comment_list, statuses=REQUEST_STATUS_CHOICES,
                     alerts=self.get_form_alerts(form.errors))
 
-        permissions.update_request(self.session, request, self.current_user,
-                form.status.data, form.reason.data)
+        try:
+            permissions.update_request(self.session, request, self.current_user,
+                    form.status.data, form.reason.data)
+        except UserNotAuditor as e:
+            alerts = [Alert("danger", str(e))]
+
+            change_comment_list = [(sc, user_requests.comment_by_status_change_id[sc.id]) for sc in
+                    user_requests.status_change_by_request_id[request.id]]
+
+            return self.render("permission-request-update.html", form=form, request=request,
+                    change_comment_list=change_comment_list, statuses=REQUEST_STATUS_CHOICES,
+                    alerts=alerts)
 
         return self.redirect("/permissions/requests")
 

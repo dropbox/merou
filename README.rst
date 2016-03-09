@@ -81,4 +81,4 @@ via the following commands:
 
     # Give the user administrative access to the Grouper instance
     bin/grouper-ctl -vv \
-        group add_member grouper-administrators $USER@example.com
+        group add_member --owner grouper-administrators $USER@example.com

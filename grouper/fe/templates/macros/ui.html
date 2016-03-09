@@ -80,6 +80,18 @@
     </div>
 {%- endmacro %}
 
+{% macro one_user_token_row(token, username, can_control) -%}
+    <td>{{ token.name }}</td>
+    <td>{{ token.created_at | long_ago_str }}</td>
+    <td>
+    {% if can_control %}
+        <a class="btn btn-default btn-xs pull-right"
+           href="/users/{{ username }}/tokens/{{ token.id }}/disable">
+            <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span>
+        </a>
+    {% endif %}
+    </td>
+{%- endmacro %}
 {% macro tokens_panel(max_height, user, tokens, can_control=False) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
@@ -98,16 +110,7 @@
                 {% for token in tokens %}
                 {% if token.enabled %}
                     <tr>
-                        <td>{{ token.name }}</td>
-                        <td>{{ token.created_at | long_ago_str }}</td>
-                        <td>
-                            {% if can_control %}
-                                <a class="btn btn-default btn-xs pull-right"
-                                   href="/users/{{ user.name }}/tokens/{{ token.id }}/disable">
-                                    <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span>
-                                </a>
-                            {% endif %}
-                        </td>
+                        {{ one_user_token_row(token, user.name, can_control) }}
                     </tr>
                 {% endif %}
                 {% endfor %}

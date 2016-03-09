@@ -34,6 +34,7 @@ HANDLERS = [
     (r"/search", handlers.Search),
     (r"/users", handlers.UsersView),
     (r"/users/public-keys", handlers.UsersPublicKey),
+    (r"/users/tokens", handlers.UsersUserTokens),
     (r"/user/requests", handlers.UserRequests),
 ]
 

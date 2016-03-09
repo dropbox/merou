@@ -250,6 +250,16 @@ class UsersPublicKeyForm(Form):
             default=None)
 
 
+class UsersUserTokenForm(Form):
+    offset = IntegerField(default=0)
+    limit = IntegerField(default=100, validators=[validators.NumberRange(min=100, max=1000)])
+    enabled = IntegerField(default=1, validators=[validators.NumberRange(min=0, max=1)])
+    sort_by = StringField(validators=[
+            validators.Optional(),
+            validators.AnyOf(["age", "user", "name"]),
+            ])
+
+
 class UserTokenForm(Form):
     name = StringField("Token name", [
         validators.DataRequired(),

@@ -14,7 +14,7 @@ def user_command(args):
             user = User.get(session, name=username)
             if not user:
                 logging.info("{}: No such user, creating...".format(username))
-                user = User.get_or_create(session, username=username)
+                user = User.get_or_create(session, username=username, role_user=args.role_user)
                 session.commit()
             else:
                 logging.info("{}: Already exists. Doing nothing.".format(username))

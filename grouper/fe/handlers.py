@@ -14,7 +14,8 @@ from .. import permissions
 from .. import public_key
 from ..audit import assert_controllers_are_auditors, assert_can_join, get_audits, UserNotAuditor
 from ..constants import (
-    PERMISSION_GRANT, PERMISSION_CREATE, PERMISSION_AUDITOR, AUDIT_MANAGER, AUDIT_VIEWER
+    PERMISSION_GRANT, PERMISSION_CREATE, PERMISSION_AUDITOR, AUDIT_MANAGER, AUDIT_VIEWER,
+    USER_ADMIN, USER_ENABLE, USER_DISABLE,
 )
 
 from .forms import (
@@ -132,9 +133,9 @@ class UserView(GrouperHandler):
         if not user:
             return self.notfound()
 
-        can_control = False
-        if (user.name == self.current_user.name) or self.current_user.user_admin:
-            can_control = True
+        can_control = user.name == self.current_user.name or self.current_user.user_admin
+        can_disable = UserDisable.check_access(self.current_user, user)
+        can_enable = UserEnable.check_access(self.current_user, user)
 
         if user.id == self.current_user.id:
             num_pending_requests = self.current_user.my_requests_aggregate().count()
@@ -156,6 +157,8 @@ class UserView(GrouperHandler):
         log_entries = user.my_log_entries()
         self.render("user.html", user=user, groups=groups, public_keys=public_keys,
                     can_control=can_control, permissions=permissions,
+                    can_disable=can_disable,
+                    can_enable=can_enable,
                     user_tokens=user.tokens,
                     log_entries=log_entries, num_pending_requests=num_pending_requests,
                     open_audits=open_audits)
@@ -560,13 +563,20 @@ class UsersUserTokens(GrouperHandler):
 
 
 class UserEnable(GrouperHandler):
-    def post(self, user_id=None, name=None):
-        if not self.current_user.user_admin:
-            return self.forbidden()
+    @staticmethod
+    def check_access(actor, target):
+        return (
+            actor.has_permission(USER_ADMIN) or
+            actor.has_permission(USER_ENABLE, argument=target.name)
+        )
 
+    def post(self, user_id=None, name=None):
         user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
+
+        if not self.check_access(self.current_user, user):
+            return self.forbidden()
 
         form = UserEnableForm(self.request.arguments)
         if not form.validate():
@@ -583,14 +593,21 @@ class UserEnable(GrouperHandler):
 
 
 class UserDisable(GrouperHandler):
-    def post(self, user_id=None, name=None):
+    @staticmethod
+    def check_access(actor, target):
+        return (
+            actor.has_permission(USER_ADMIN) or
+            actor.has_permission(USER_DISABLE, argument=target.name)
+        )
 
-        if not self.current_user.user_admin:
-            return self.forbidden()
+    def post(self, user_id=None, name=None):
 
         user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
+
+        if not self.check_access(self.current_user, user):
+            return self.forbidden()
 
         user.disable()
         self.session.commit()

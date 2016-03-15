@@ -70,10 +70,9 @@ Creating a development instance:
 Setting up the first groups and permissions
 -------------------------------------------
 
-There are three administrative flags, corresponding to full authority to
-administer groups, users, and permissions. These flags can be set for any
-account and grant powers independent of the usual way and are given out manually
-via the following commands:
+In order to bootstrap your new Grouper environment, you will want to
+create a user for yourself and add it to the ``grouper-administrators``
+group.
 
 .. code:: bash
 

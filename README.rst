@@ -19,16 +19,20 @@ to have schema changes that will need to be manually applied.
 Installation
 ------------
 
-New versions will be updated to PyPI pretty regularly so it should be as
-easy as:
+Standard Python package installation instructions apply. You will need
+development headers for MySQL and Python 2 available.
+
+On Debian-based systems:
 
 .. code:: bash
 
-    pip install grouper
+    apt-get install libmysqlclient-dev libpython2.7-dev
+    pip install -e git+https://github.com/dropbox/grouper#egg=grouper
 
-Next you need to configure grouper to find a SQL-style backing database and
-stand up processes to serve the read-write web UI and read-only programmatic
-API.
+Next you need to configure grouper to find a SQL-style backing database
+and stand up processes to serve the read-write web UI and read-only
+programmatic API. There's an sample configuration file, suitable for
+local development and testing, in ``config/dev.yaml``.
 
 
 Running a Test instance

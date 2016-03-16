@@ -12,16 +12,15 @@
 {% endblock %}
 
 {% block headingbuttons %}
-    {% if current_user.user_admin %}
-        {% if user.enabled %}
-            <button class="btn btn-danger" data-toggle="modal" data-target="#disableModal">
-                <i class="fa fa-minus"></i> Disable
-            </button>
-        {% elif not user.enabled %}
-            <button class="btn btn-warning" data-toggle="modal" data-target="#enableModal">
-                <i class="fa fa-plus"></i> Enable
-            </button>
-        {% endif %}
+
+    {% if user.enabled and can_disable %}
+        <button class="btn btn-danger" data-toggle="modal" data-target="#disableModal">
+            <i class="fa fa-minus"></i> Disable
+        </button>
+    {% elif not user.enabled and can_enable %}
+        <button class="btn btn-warning" data-toggle="modal" data-target="#enableModal">
+            <i class="fa fa-plus"></i> Enable
+        </button>
     {% endif %}
     {% if current_user.id == user.id %}
     <div class="btn-group">
@@ -145,7 +144,7 @@
                     <span aria-hidden="true">&times;</span>
                     <span class="sr-only">Close</span>
                 </button>
-                <h4 class="modal-title">Disable Group</h4>
+                <h4 class="modal-title">Disable User</h4>
            </div>
             <div class="modal-body">
                 <p>Are you sure you want to disable this user?</p>

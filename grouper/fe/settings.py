@@ -27,4 +27,6 @@ settings = FeSettings.from_settings(base_settings, {
     "url": "http://127.0.0.1:8888",
     "how_to_get_help": None,
     "site_docs": None,
+    "permission_request_dropdown_help": None,
+    "permission_request_text_help": None,
 })

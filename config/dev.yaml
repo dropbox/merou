@@ -95,6 +95,13 @@ fe:
     # Type: str
     how_to_get_help: "not arranged"
 
+    # Help text given when a dropdown permission argument is available in
+    # permission request. This is probably help around how this dropdown was
+    # populated and how to get what the user wants if they don't see it as an
+    # option.
+    # Type: str
+    permission_request_dropdown_help:
+
     # Site-specific docs.
     # Type: list of maps giving url, name, and description strings.
     site_docs:

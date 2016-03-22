@@ -89,14 +89,14 @@ def default_settings_path():
 settings = Settings({
     "database": None,
     "database_source": None,
+    "expiration_notice_days": 7,
+    "from_addr": "no-reply@grouper.local",
     "log_format": "%(asctime)-15s\t%(levelname)s\t%(message)s",
-    "plugin_dir": None,
     "oneoff_dir": None,
+    "plugin_dir": None,
     "restricted_ownership_permissions": None,
     "send_emails": True,
-    "smtp_server": "localhost",
-    "from_addr": "no-reply@grouper.local",
-    "expiration_notice_days": 7,
     "sentry_dsn": None,
+    "smtp_server": "localhost",
     "url": "http://127.0.0.1:8888",
 })

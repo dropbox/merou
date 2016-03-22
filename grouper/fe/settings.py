@@ -15,16 +15,18 @@ class FeSettings(Settings):
 
 
 settings = FeSettings.from_settings(base_settings, {
-    "debug": False,
-    "num_processes": 1,
-    "port": 8989,
     "address": None,
-    "timezone": FeSettings.default_timezone,
-    "date_format": "%Y-%m-%d %I:%M %p",
     "cdnjs_prefix": "//cdnjs.cloudflare.com",
-    "user_auth_header": "X-Grouper-User",
-    "refresh_interval": 60,
-    "url": "http://127.0.0.1:8888",
+    "date_format": "%Y-%m-%d %I:%M %p",
+    "debug": False,
     "how_to_get_help": None,
+    "num_processes": 1,
+    "permission_request_dropdown_help": None,
+    "permission_request_text_help": None,
+    "port": 8989,
+    "refresh_interval": 60,
     "site_docs": None,
+    "timezone": FeSettings.default_timezone,
+    "url": "http://127.0.0.1:8888",
+    "user_auth_header": "X-Grouper-User",
 })

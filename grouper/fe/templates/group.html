@@ -236,6 +236,7 @@
                     <thead>
                         <tr>
                             <th class="col-sm-4">Member</th>
+                            <th class="col-sm-2">role</th>
                             <th class="col-sm-2">Audit Status</th>
                         </tr>
                     </thead>
@@ -243,6 +244,7 @@
                     {% for member in group.audit.my_members() %}
                         <tr>
                             <td>{{ account(member.member) }}</a></td>
+                            <td>{{ member.edge.role }}</td>
                             <td>
                                 {{ audit_status(member) }}
                             </td>

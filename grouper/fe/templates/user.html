@@ -24,10 +24,16 @@
     {% endif %}
     {% if current_user.id == user.id %}
     <div class="btn-group">
-        <a href="/user/requests" title="Pending Requests"
-           class="btn btn-default"><i class="fa fa-list"></i> Requests</a>
-        <a href="/user/requests" title="Pending Requests"
-           class="btn btn-default btn-pending">{{ num_pending_requests }}</a>
+        <a href="/user/requests" title="Pending Group Membership Requests"
+           class="btn btn-default"><i class="fa fa-list"></i> Group Requests</a>
+        <a href="/user/requests" title="Pending Group Membership Requests"
+           class="btn btn-default btn-pending">{{ num_pending_group_requests }}</a>
+    </div>
+    <div class="btn-group">
+        <a href="/permissions/requests?status=pending" title="Pending Permission Requests"
+           class="btn btn-default"><i class="fa fa-list"></i> Permission Requests</a>
+        <a href="/permissions/requests?status=pending" title="Pending Permission  Requests"
+           class="btn btn-default btn-pending">{{ num_pending_perm_requests }}</a>
     </div>
     {% endif %}
 {% endblock %}

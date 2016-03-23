@@ -138,9 +138,12 @@ class UserView(GrouperHandler):
         can_enable = UserEnable.check_access(self.current_user, user)
 
         if user.id == self.current_user.id:
-            num_pending_requests = self.current_user.my_requests_aggregate().count()
+            num_pending_group_requests = self.current_user.my_requests_aggregate().count()
+            _, num_pending_perm_requests = permissions.get_requests_by_owner(self.session,
+                    self.current_user, status='pending', limit=1, offset=0)
         else:
-            num_pending_requests = None
+            num_pending_group_requests = None
+            num_pending_perm_requests = None
 
         try:
             user_md = self.graph.get_user_details(user.name)
@@ -153,15 +156,22 @@ class UserView(GrouperHandler):
         group_edge_list = group_biz.get_groups_by_user(self.session, user) if user.enabled else []
         groups = [{'name': g.name, 'type': 'Group', 'role': ge._role} for g, ge in group_edge_list]
         public_keys = user.my_public_keys()
-        permissions = user_md.get('permissions', [])
+        user_permissions = user_md.get('permissions', [])
         log_entries = user.my_log_entries()
-        self.render("user.html", user=user, groups=groups, public_keys=public_keys,
-                    can_control=can_control, permissions=permissions,
+        self.render("user.html",
+                    user=user,
+                    groups=groups,
+                    public_keys=public_keys,
+                    can_control=can_control,
+                    permissions=user_permissions,
                     can_disable=can_disable,
                     can_enable=can_enable,
                     user_tokens=user.tokens,
-                    log_entries=log_entries, num_pending_requests=num_pending_requests,
-                    open_audits=open_audits)
+                    log_entries=log_entries,
+                    num_pending_group_requests=num_pending_group_requests,
+                    num_pending_perm_requests=num_pending_perm_requests,
+                    open_audits=open_audits,
+                    )
 
 
 class PermissionsCreate(GrouperHandler):

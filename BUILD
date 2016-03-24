@@ -70,14 +70,6 @@ dbx_py_library(
     ],
 )
 
-py_library(
-    name = 'dropbox_lib',
-    srcs = glob([
-         'dropbox/*.py',
-         'dropbox/**/*.py',
-    ]),
-)
-
 filegroup(
     name = 'template_files',
     srcs = glob([

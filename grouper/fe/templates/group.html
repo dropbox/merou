@@ -15,7 +15,7 @@
 
 {% block headingbuttons %}
     <!-- Enable/Disable button. -->
-    {% if is_owner %}
+    {% if current_user_role['is_owner'] %}
         {% if group.enabled %}
             <button class="btn btn-danger" data-toggle="modal" data-target="#disableModal">
                 <i class="fa fa-minus"></i> Disable
@@ -31,7 +31,7 @@
     <div class="btn-group">
         <a href="/groups/{{group.name}}/requests"
            class="btn btn-default"><i class="fa fa-list"></i> Requests</a>
-        {% if current_user.my_role(members) in ("manager", "owner", "np-owner") and num_pending %}
+        {% if is_approver and num_pending %}
             <a href="/groups/{{group.name}}/requests?status=pending"
                title="Pending Requests"
                class="btn btn-default btn-pending">{{ num_pending }}</a>
@@ -46,7 +46,7 @@
     {% endif %}
 
     <!-- Add member or edit group -->
-    {% if current_user.my_role(members) in ("manager", "owner", "np-owner") %}
+    {% if is_approver %}
         <a href="/groups/{{group.name}}/add"
            class="btn btn-success"><i class="fa fa-plus-circle"></i> Add Member</a>
         <a href="/groups/{{group.name}}/edit"
@@ -91,7 +91,7 @@
 
 <div class="row">
     <div class="col-md-7">
-        {{ member_panel(390, group, members, current_user) }}
+        {{ member_panel(390, group, members, current_user, current_user_role) }}
     </div>
     <div class="col-md-5">
         {{ group_panel(390, groups, current_user.my_role(members)) }}
@@ -99,7 +99,7 @@
 </div>
 <div class="row">
     <div class="col-md-12">
-        {{ permission_panel(390, permissions, group=group, can_grant=grantable, is_owner=is_owner, pending_requests=permission_requests_pending) }}
+        {{ permission_panel(390, permissions, group=group, can_grant=grantable, is_owner=current_user_role['is_owner'], pending_requests=permission_requests_pending) }}
     </div>
 </div>
 <div class="row">
@@ -198,7 +198,8 @@
     </div>
 </div>
 
-{% if group.audit %}
+{% if group.audit and not group.audit.complete %}
+{# TODO(herb): audit db calls in this block #}
 
 {% macro audit_status(member) -%}
     {% if member.member.name == current_user.name %}
@@ -289,7 +290,7 @@ text and set its form actions to correspond to the selected user. #}
     });
 </script>
 
-{% if group.audit and not group.audit.complete and is_owner %}
+{% if group.audit and not group.audit.complete and current_user_role['is_owner'] %}
 <script type="text/javascript">
 $(function () {
     $('#auditModal').modal('show');

@@ -1,6 +1,6 @@
 from grouper.fe.util import GrouperHandler, Alert
 from grouper.graph import NoSuchGroup
-from grouper.models import AUDIT_STATUS_CHOICES, Group, OWNER_ROLE_INDICES
+from grouper.models import APPROVER_ROLE_INDICIES, AUDIT_STATUS_CHOICES, Group, OWNER_ROLE_INDICES
 from grouper.permissions import get_pending_request_by_group
 
 
@@ -27,7 +27,11 @@ class GroupView(GrouperHandler):
         audited = group_md.get('audited', False)
         log_entries = group.my_log_entries()
         num_pending = group.my_requests("pending").count()
-        is_owner = self.current_user.my_role_index(members) in OWNER_ROLE_INDICES
+        current_user_role = {
+                'is_owner': self.current_user.my_role_index(members) in OWNER_ROLE_INDICES,
+                'is_approver': self.current_user.my_role_index(members) in APPROVER_ROLE_INDICIES,
+                'is_manager': self.current_user.my_role(members) == "manager",
+                }
 
         # Add mapping_id to permissions structure
         my_permissions = group.my_permissions()
@@ -47,6 +51,6 @@ class GroupView(GrouperHandler):
             "group.html", group=group, members=members, groups=groups,
             num_pending=num_pending, alerts=alerts, permissions=permissions,
             log_entries=log_entries, grantable=grantable, audited=audited,
-            statuses=AUDIT_STATUS_CHOICES, is_owner=is_owner,
+            statuses=AUDIT_STATUS_CHOICES, current_user_role=current_user_role,
             permission_requests_pending=permission_requests_pending
         )

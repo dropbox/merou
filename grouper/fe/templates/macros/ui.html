@@ -208,12 +208,13 @@ enabled. Membership in this group is regularly reviewed.
 </a>
 {%- endmacro %}
 
-{% macro member_row(group, member, members, current_user, current_user_role) -%}
+{% macro member_row(group, member, members, current_user) -%}
     <tr>
         <td>
             {% if member.name != current_user.name and
-                (current_user_role['is_approver'] or
-                 (current_user_role['is_manager'] and ROLES[member.role] == "member"))
+                (current_user.my_role(members) in ("owner", "np-owner") or
+                 (current_user.my_role(members) == "manager" and
+                  ROLES[member.role] == "member"))
             %}
                 <a href="/groups/{{group.name}}/edit/{{member.type|lower}}/{{member.name}}"
                    class="btn btn-default btn-xs">
@@ -237,7 +238,7 @@ enabled. Membership in this group is regularly reviewed.
     </tr>
 {%- endmacro %}
 
-{% macro member_panel(max_height, group, members, current_user, current_user_role) -%}
+{% macro member_panel(max_height, group, members, current_user) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Members</h3>
@@ -257,10 +258,10 @@ enabled. Membership in this group is regularly reviewed.
                 </thead>
                 <tbody>
                 {% for member in members.itervalues()|sort(attribute='name') if member.type == 'Group' %}
-                    {{ member_row(group, member, members, current_user, current_user_role) }}
+                    {{ member_row(group, member, members, current_user) }}
                 {% endfor %}
                 {% for member in members.itervalues()|sort(attribute='name') if member.type == 'User' %}
-                    {{ member_row(group, member, members, current_user, current_user_role) }}
+                    {{ member_row(group, member, members, current_user) }}
                 {% endfor %}
                 {% if not members %}
                     <tr>

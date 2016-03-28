@@ -1,15 +1,15 @@
 package(default_visibility = ['//visibility:public'])
 
-load('/build_tools/bazel/py', 'dbx_py_pip', 'dbx_py_bin', 'dbx_py_par', 'dbx_py_library')
+load('/build_tools/bazel/py', 'dbx_py_bin', 'dbx_py_par', 'dbx_py_library')
 
 dbx_py_bin(
     name = 'grouper-fe',
     main = 'bin/grouper-fe',
     deps = [
         ':grouper_lib',
-        ':plop',
-        ':pyflamegraph',
-        ':raven',
+        '//thirdparty:plop',
+        '//thirdparty:pyflamegraph',
+        '//thirdparty:raven',
     ],
     # NOTE(herb): this is to get around networkx including tests in its main package
     # which bazel filters by default
@@ -21,9 +21,9 @@ dbx_py_bin(
     main = 'bin/grouper-api',
     deps = [
         ':grouper_lib',
-        ':plop',
-        ':pyflamegraph',
-        ':raven',
+        '//thirdparty:plop',
+        '//thirdparty:pyflamegraph',
+        '//thirdparty:raven',
     ],
     # NOTE(herb): this is to get around networkx including tests in its main package
     # which bazel filters by default
@@ -35,8 +35,8 @@ dbx_py_par(
     main = 'bin/grouper-ctl',
     deps = [
         ':grouper_lib',
-        ':ipython',
-        ':mrproxy',
+        '//thirdparty:ipython',
+        '//thirdparty:mrproxy',
     ],
     # NOTE(herb): this is to get around networkx including tests in its main package
     # which bazel filters by default
@@ -50,23 +50,23 @@ dbx_py_library(
         ':template_files',
     ],
     deps = [
-        ':annex',
-        ':argparse',
-        ':enum34',
-        ':expvar',
-        ':jinja2',
-        ':mysql-python',
-        ':markup-safe',
-        ':networkx',
-        ':python-dateutil',
-        ':pytz',
-        ':pyyaml',
-        ':sqlalchemy',
-        ':sshpubkey',
-        ':ssl-match-hostname',
-        ':tornado',
-        ':wtforms',
-        ':wtforms-tornado',
+        '//thirdparty:annex',
+        '//thirdparty:argparse',
+        '//thirdparty:enum34',
+        '//thirdparty:expvar',
+        '//thirdparty:jinja2',
+        '//thirdparty:mysql-python',
+        '//thirdparty:markup-safe',
+        '//thirdparty:networkx',
+        '//thirdparty:python-dateutil',
+        '//thirdparty:pytz',
+        '//thirdparty:pyyaml',
+        '//thirdparty:sqlalchemy',
+        '//thirdparty:sshpubkey',
+        '//thirdparty:ssl-match-hostname',
+        '//thirdparty:tornado',
+        '//thirdparty:wtforms',
+        '//thirdparty:wtforms-tornado',
     ],
 )
 
@@ -80,131 +80,4 @@ filegroup(
         'grouper/fe/static/css/ext/**/*.css',
         'grouper/fe/static/js/*.js',
     ]),
-)
-
-dbx_py_pip(
-    name = 'annex',
-    pip_deps = ['annex==0.3.1'],
-)
-
-dbx_py_pip(
-    name = 'jinja2',
-    pip_deps = ['Jinja2==2.7.3'],
-)
-
-dbx_py_pip(
-    name = 'mysql-python',
-    pip_deps = ['MySQL-python==1.2.5'],
-)
-
-dbx_py_pip(
-    name = 'markup-safe',
-    pip_deps = ['MarkupSafe==0.23'],
-)
-
-dbx_py_pip(
-    name = 'pyyaml',
-    pip_deps = ['PyYAML==3.10'],
-)
-
-dbx_py_pip(
-    name = 'sqlalchemy',
-    pip_deps = ['SQLAlchemy==0.9.1'],
-)
-
-dbx_py_pip(
-    name = 'wtforms',
-    pip_deps = ['WTForms==2.0.1'],
-)
-
-dbx_py_pip(
-    name = 'argparse',
-    pip_deps = ['argparse==1.2.1'],
-)
-
-dbx_py_pip(
-    name = 'ssl-match-hostname',
-    pip_deps = ['backports.ssl-match-hostname==3.4.0.2'],
-)
-
-dbx_py_pip(
-    name = 'enum34',
-    pip_deps = ['enum34==1.0.4'],
-)
-
-dbx_py_pip(
-    name = 'expvar',
-    pip_deps = ['expvar==0.0.2'],
-)
-
-dbx_py_pip(
-    name = 'networkx',
-    pip_deps = ['networkx==1.8.1'],
-    # NOTE(herb): this is to get around networkx including tests in its main package
-    # which bazel filters by default
-    py_excludes = [],
-)
-
-dbx_py_pip(
-    name = 'plop',
-    pip_deps = ['plop==0.3.0'],
-)
-
-dbx_py_pip(
-    name = 'pyflamegraph',
-    pip_deps = ['pyflamegraph==0.0.2'],
-)
-
-dbx_py_pip(
-    name = 'python-dateutil',
-    pip_deps = ['python-dateutil==2.4.2'],
-    deps = [
-        ':six',
-    ],
-)
-
-dbx_py_pip(
-    name = 'pytz',
-    pip_deps = ['pytz==2014.2'],
-)
-
-dbx_py_pip(
-    name = 'six',
-    pip_deps = ['six==1.10.0'],
-)
-
-dbx_py_pip(
-    name = 'sshpubkey',
-    pip_deps = ['sshpubkey==0.1.2'],
-)
-
-dbx_py_pip(
-    name = 'tornado',
-    pip_deps = ['tornado==3.2'],
-)
-
-dbx_py_pip(
-    name = 'wtforms-tornado',
-    pip_deps = ['wtforms-tornado==0.0.1'],
-)
-
-dbx_py_pip(
-    name = 'mrproxy',
-    pip_deps = ['mrproxy==0.3.2'],
-)
-
-dbx_py_pip(
-    name = 'raven',
-    pip_deps = ['raven==5.7.1'],
-    deps = [
-    ],
-)
-
-dbx_py_pip(
-    name = 'ipython',
-    pip_deps = ['ipython==3.2.1'],
-    # NOTE(herb): this is to get around ipython including a package called
-    # 'testing' (specifically 'testing.skipdoctest' when importing 'embed')
-    # which bazel filters by default
-    py_excludes = [],
 )

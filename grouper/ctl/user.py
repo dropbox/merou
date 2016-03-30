@@ -2,7 +2,9 @@ import logging
 
 from grouper import public_key
 from grouper.ctl.util import ensure_valid_username, make_session
+from grouper.model_soup import AuditLog, User
 from grouper.models import AuditLog, User, get_all_users
+from grouper.user import get_all_users
 
 
 def handle_command(args):

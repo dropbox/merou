@@ -2,7 +2,7 @@ from sqlalchemy.exc import IntegrityError
 from grouper.audit import assert_controllers_are_auditors, UserNotAuditor
 from grouper.fe.forms import PermissionGrantForm
 from grouper.fe.util import GrouperHandler
-from grouper.models import AuditLog, Group, Permission
+from grouper.model_soup import AuditLog, Group, Permission
 from grouper.util import matches_glob
 
 

@@ -1,3 +1,9 @@
+################################################################################
+#                                                                              #
+# THIS MODULE IS DEPRECIATED. PLEASE DON'T ADD THE TO SPAGHETTI HERE IF YOU    #
+# CAN AVOID IT.
+#                                                                              #
+################################################################################
 from collections import OrderedDict, namedtuple
 from datetime import datetime, timedelta
 import functools

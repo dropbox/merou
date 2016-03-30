@@ -8,7 +8,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import label, literal
 
-from .models import (
+from .model_soup import (
     Group, User, GroupEdge, PublicKey, UserMetadata, Counter, GROUP_EDGE_ROLES,
     Permission, PermissionMap, MappedPermission,
 )

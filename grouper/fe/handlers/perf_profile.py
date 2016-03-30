@@ -6,7 +6,7 @@ from grouper import perf_profile
 # these as requests.
 class PerfProfile(RequestHandler):
     def get(self, trace_uuid):
-        from grouper.models import Session
+        from grouper.model_soup import Session
         try:
             flamegraph_svg = perf_profile.get_flamegraph_svg(Session(), trace_uuid)
         except perf_profile.InvalidUUID:

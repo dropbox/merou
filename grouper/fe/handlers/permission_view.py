@@ -1,5 +1,5 @@
 from grouper.fe.util import GrouperHandler
-from grouper.models import Permission
+from grouper.model_soup import Permission
 
 
 class PermissionView(GrouperHandler):

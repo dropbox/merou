@@ -2,7 +2,7 @@ from sqlalchemy.exc import IntegrityError
 import sshpubkey
 from sshpubkey.exc import PublicKeyParseError  # noqa
 
-from .models import PublicKey
+from .model_soup import PublicKey
 
 
 class DuplicateKey(Exception):

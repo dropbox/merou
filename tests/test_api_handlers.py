@@ -6,7 +6,7 @@ import pytest
 
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from fixtures import api_app as app  # noqa
-from grouper.models import UserToken
+from grouper.model_soup import UserToken
 from url_util import url
 
 

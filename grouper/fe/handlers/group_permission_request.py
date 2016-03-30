@@ -3,7 +3,7 @@ from grouper import permissions
 from grouper.fe.forms import GroupPermissionRequestDropdownForm, GroupPermissionRequestTextForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler, Alert
-from grouper.models import Group, OWNER_ROLE_INDICES, Permission
+from grouper.model_soup import Group, OWNER_ROLE_INDICES, Permission
 from grouper.permissions import get_grantable_permissions
 
 

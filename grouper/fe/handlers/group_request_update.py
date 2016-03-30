@@ -3,7 +3,7 @@ from grouper.email_util import send_email
 from grouper.fe.forms import GroupRequestModifyForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler, Alert
-from grouper.models import AuditLog, Group, GroupEdge, REQUEST_STATUS_CHOICES, Request
+from grouper.model_soup import AuditLog, Group, GroupEdge, REQUEST_STATUS_CHOICES, Request
 
 
 class GroupRequestUpdate(GrouperHandler):

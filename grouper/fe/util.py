@@ -16,7 +16,7 @@ from grouper import perf_profile
 from grouper.constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATION
 from grouper.fe.settings import settings
 from grouper.graph import Graph
-from grouper.models import (
+from grouper.model_soup import (
         get_db_engine,
         Session,
         User,

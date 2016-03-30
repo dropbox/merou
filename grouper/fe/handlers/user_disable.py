@@ -1,6 +1,6 @@
 from grouper.constants import USER_ADMIN, USER_DISABLE
 from grouper.fe.util import GrouperHandler
-from grouper.models import AuditLog, User
+from grouper.model_soup import AuditLog, User
 
 
 class UserDisable(GrouperHandler):

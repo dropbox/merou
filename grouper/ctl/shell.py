@@ -1,7 +1,7 @@
 import code
 from pprint import pprint
 
-from grouper import models
+from grouper import model_soup
 from grouper.ctl.util import make_session
 from grouper.graph import GroupGraph
 
@@ -9,7 +9,7 @@ from grouper.graph import GroupGraph
 def shell_command(args):
     session = make_session()
     graph = GroupGraph.from_db(session)
-    m = models
+    m = model_soup
     pp = pprint
 
     try:
@@ -19,7 +19,7 @@ def shell_command(args):
             "session": session,
             "graph": graph,
             "m": m,
-            "models": models,
+            "model_soup": model_soup,
             "pp": pp,
         })
     else:
@@ -28,5 +28,5 @@ def shell_command(args):
 
 def add_parser(subparsers):
     shell_parser = subparsers.add_parser(
-        "shell", help="Launch a shell with models imported.")
+        "shell", help="Launch a shell with model_soup imported.")
     shell_parser.set_defaults(func=shell_command)

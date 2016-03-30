@@ -1,7 +1,7 @@
 from grouper.constants import USER_ADMIN, USER_ENABLE
 from grouper.fe.forms import UserEnableForm
 from grouper.fe.util import GrouperHandler
-from grouper.models import AuditLog, User
+from grouper.model_soup import AuditLog, User
 
 
 class UserEnable(GrouperHandler):

@@ -5,7 +5,9 @@ from grouper.email_util import send_email
 from grouper.fe.forms import GroupAddForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import AuditLog, Group, get_all_groups, get_all_users, get_user_or_group
+from grouper.group import get_all_groups
+from grouper.model_soup import AuditLog, Group
+from grouper.user import get_all_users, get_user_or_group
 
 
 class GroupAdd(GrouperHandler):

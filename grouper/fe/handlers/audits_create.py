@@ -5,7 +5,8 @@ from grouper.email_util import send_email, send_async_email
 from grouper.fe.forms import AuditCreateForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import Audit, AuditLog, AuditLogCategory, AuditMember, GROUP_EDGE_ROLES, Group
+from grouper.model_soup import (
+        Audit, AuditLog, AuditLogCategory, AuditMember, GROUP_EDGE_ROLES, Group)
 
 
 class AuditsCreate(GrouperHandler):

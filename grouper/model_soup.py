@@ -6,7 +6,6 @@
 ################################################################################
 from collections import OrderedDict, namedtuple
 from datetime import datetime, timedelta
-import functools
 import hashlib
 import hmac
 import json
@@ -19,12 +18,11 @@ from sqlalchemy import (
     Column, Integer, String, Text, Boolean, UniqueConstraint,
     ForeignKey, Enum, DateTime, SmallInteger, Index, LargeBinary
 )
-from sqlalchemy import create_engine
 from sqlalchemy import or_, union_all, asc, desc
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased
-from sqlalchemy.orm import relationship, object_session
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func, label, literal
 
 from .constants import (
@@ -35,7 +33,7 @@ from .constants import (
 from .email_util import send_async_email
 from .plugin import get_plugins
 from .settings import settings
-from grouper.models.base.session import Session, flush_transaction
+from grouper.models.base.session import flush_transaction
 from grouper.models.base.model_base import Model
 
 

@@ -1,7 +1,7 @@
 ################################################################################
 #                                                                              #
 # THIS MODULE IS DEPRECIATED. PLEASE DON'T ADD THE TO SPAGHETTI HERE IF YOU    #
-# CAN AVOID IT.
+# CAN AVOID IT.                                                                #
 #                                                                              #
 ################################################################################
 from collections import OrderedDict, namedtuple
@@ -22,11 +22,9 @@ from sqlalchemy import (
 from sqlalchemy import create_engine
 from sqlalchemy import or_, union_all, asc, desc
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm import relationship, object_session
-from sqlalchemy.orm import sessionmaker, Session as _Session
 from sqlalchemy.sql import func, label, literal
 
 from .constants import (
@@ -37,6 +35,8 @@ from .constants import (
 from .email_util import send_async_email
 from .plugin import get_plugins
 from .settings import settings
+from grouper.models.base.session import Session, flush_transaction
+from grouper.models.base.model_base import Model
 
 
 OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange", "PermissionRequestStatusChange")
@@ -85,103 +85,6 @@ class AuditLogCategory(IntEnum):
 
     # periodic global audit related
     audit = 2
-
-
-class Session(_Session):
-    """ Custom session meant to utilize add on the model.
-
-        This Session overrides the add/add_all methods to prevent them
-        from being used. This is to for using the add methods on the
-        models themselves where overriding is available.
-    """
-
-    _add = _Session.add
-    _add_all = _Session.add_all
-    _delete = _Session.delete
-
-    def add(self, *args, **kwargs):
-        raise NotImplementedError("Use add method on models instead.")
-
-    def add_all(self, *args, **kwargs):
-        raise NotImplementedError("Use add method on models instead.")
-
-    def delete(self, *args, **kwargs):
-        raise NotImplementedError("Use delete method on models instead.")
-
-
-Session = sessionmaker(class_=Session)
-
-
-class Model(object):
-    """ Custom model mixin with helper methods. """
-
-    @property
-    def session(self):
-        return object_session(self)
-
-    @property
-    def member_type(self):
-        obj_name = type(self).__name__
-        if obj_name not in OBJ_TYPES:
-            raise ValueError()  # TODO(gary) fill out error
-        return OBJ_TYPES[obj_name]
-
-    @classmethod
-    def get(cls, session, **kwargs):
-        instance = session.query(cls).filter_by(**kwargs).scalar()
-        if instance:
-            return instance
-        return None
-
-    @classmethod
-    def get_or_create(cls, session, **kwargs):
-        instance = session.query(cls).filter_by(**kwargs).scalar()
-        if instance:
-            return instance, False
-
-        instance = cls(**kwargs)
-        instance.add(session)
-
-        cls.just_created(instance)
-
-        return instance, True
-
-    def just_created(self):
-        pass
-
-    def add(self, session):
-        session._add(self)
-        return self
-
-    def delete(self, session):
-        session._delete(self)
-        return self
-
-
-Model = declarative_base(cls=Model)
-
-
-def get_db_engine(url):
-    return create_engine(url, pool_recycle=300)
-
-
-def flush_transaction(method):
-    @functools.wraps(method)
-    def wrapper(self, *args, **kwargs):
-        dryrun = kwargs.pop("dryrun", False)
-        try:
-            ret = method(self, *args, **kwargs)
-            if dryrun:
-                self.session.rollback()
-            else:
-                self.session.flush()
-        except Exception:
-            logging.exception("Transaction Failed. Rolling back.")
-            if self.session is not None:
-                self.session.rollback()
-            raise
-        return ret
-    return wrapper
 
 
 def get_all_groups(session):
@@ -241,7 +144,17 @@ def get_user_or_group(session, name, user_or_group=None):
         return session.query(Group).filter_by(groupname=name).scalar()
 
 
-class User(Model):
+class CommentObjectMixin(object):
+    """Mixin used by models which show up as objects referenced by Comment entries."""
+    @property
+    def member_type(self):
+        obj_name = type(self).__name__
+        if obj_name not in OBJ_TYPES:
+            raise ValueError()  # TODO(gary) fill out error
+        return OBJ_TYPES[obj_name]
+
+
+class User(Model, CommentObjectMixin):
 
     __tablename__ = "users"
 
@@ -688,7 +601,7 @@ class MemberNotFound(Exception):
     pass
 
 
-class Group(Model):
+class Group(Model, CommentObjectMixin):
 
     __tablename__ = "groups"
 
@@ -1260,7 +1173,7 @@ class Audit(Model):
         return all([member.status != "pending" for member in self.my_members()])
 
 
-class Request(Model):
+class Request(Model, CommentObjectMixin):
 
     __tablename__ = "requests"
 
@@ -1354,7 +1267,7 @@ class Request(Model):
         Counter.incr(self.session, "updates")
 
 
-class RequestStatusChange(Model):
+class RequestStatusChange(Model, CommentObjectMixin):
 
     __tablename__ = "request_status_changes"
 
@@ -1657,7 +1570,7 @@ class PermissionRequest(Model):
     status = Column(Enum(*REQUEST_STATUS_CHOICES), default="pending", nullable=False)
 
 
-class PermissionRequestStatusChange(Model):
+class PermissionRequestStatusChange(Model, CommentObjectMixin):
     """Tracks changes to each permission grant request."""
     __tablename__ = "permission_request_status_changes"
 

@@ -15,7 +15,7 @@ from grouper.app import Application
 from grouper.background import BackgroundThread
 from grouper.database import DbRefreshThread
 from grouper.graph import GroupGraph
-from grouper.models import get_db_engine, Session
+from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import load_plugins
 from grouper.settings import default_settings_path
 from grouper.util import get_loglevel, get_database_url

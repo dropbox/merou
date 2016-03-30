@@ -3,9 +3,9 @@ import logging
 import re
 
 from grouper.constants import NAME_VALIDATION, USERNAME_VALIDATION
-from grouper.model_soup import get_db_engine, Session
 from grouper.settings import settings
 from grouper.util import get_database_url
+from grouper.models.base.session import Session, get_db_engine
 
 
 def ensure_valid_username(f):

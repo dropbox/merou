@@ -1,5 +1,6 @@
 from tornado.web import RequestHandler
 from grouper import perf_profile
+from grouper.models.base.session import Session
 
 
 # Don't use GraphHandler here as we don't want to count

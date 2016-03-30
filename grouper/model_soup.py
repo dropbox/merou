@@ -16,7 +16,7 @@ import re
 from enum import IntEnum
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, UniqueConstraint,
-    ForeignKey, Enum, DateTime, SmallInteger, Index, LargeBinary
+    ForeignKey, Enum, DateTime, SmallInteger, Index
 )
 from sqlalchemy import or_, union_all, asc, desc
 from sqlalchemy.exc import IntegrityError
@@ -35,6 +35,7 @@ from .plugin import get_plugins
 from .settings import settings
 from grouper.models.base.session import flush_transaction
 from grouper.models.base.model_base import Model
+from grouper.models.counter import Counter
 
 
 OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange", "PermissionRequestStatusChange")
@@ -1352,31 +1353,6 @@ class Comment(Model):
                         onupdate=func.current_timestamp(), nullable=False)
 
 
-class Counter(Model):
-
-    __tablename__ = "counters"
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True, nullable=False)
-    count = Column(Integer, nullable=False, default=0)
-    last_modified = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    @classmethod
-    def incr(cls, session, name, count=1):
-        counter = session.query(cls).filter_by(name=name).scalar()
-        if counter is None:
-            counter = cls(name=name, count=count).add(session)
-            session.flush()
-            return counter
-        counter.count = cls.count + count
-        session.flush()
-        return counter
-
-    @classmethod
-    def decr(cls, session, name, count=1):
-        return cls.incr(session, name, -count)
-
-
 class UserMetadata(Model):
 
     __tablename__ = "user_metadata"
@@ -1757,18 +1733,3 @@ class AuditLog(Model):
             results = results.limit(limit)
 
         return results.all()
-
-
-class PerfProfile(Model):
-    __tablename__ = "perf_profiles"
-    __table_args__ = (
-            Index(
-                "perf_trace_created_on_idx",
-                "created_on",
-            ),
-    )
-
-    uuid = Column(String(length=36), primary_key=True)
-    plop_input = Column(LargeBinary(length=1000000), nullable=False)
-    flamegraph_input = Column(LargeBinary(length=1000000), nullable=False)
-    created_on = Column(DateTime, default=datetime.utcnow, nullable=False)

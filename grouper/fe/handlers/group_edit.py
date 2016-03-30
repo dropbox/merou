@@ -1,7 +1,8 @@
 from sqlalchemy.exc import IntegrityError
 from grouper.fe.forms import GroupEditForm
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import AuditLog, Counter, Group
+from grouper.model_soup import AuditLog, Group
+from grouper.models.counter import Counter
 
 
 class GroupEdit(GrouperHandler):

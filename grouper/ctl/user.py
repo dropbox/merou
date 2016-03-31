@@ -5,12 +5,17 @@ from grouper.ctl.util import ensure_valid_username, make_session
 from grouper.models import AuditLog, User, get_all_users
 
 
-def list_users(args):
-    session = make_session()
-    all_users = get_all_users(session)
-    for user in all_users:
-        user_enabled = "enabled" if user.is_enabled else "disabled"
-        logging.info("{} has status {}".format(user.name, user_enabled))
+def handle_command(args):
+    if args.subcommand == "list":
+        session = make_session()
+        all_users = get_all_users(session)
+        for user in all_users:
+            user_enabled = "enabled" if user.is_enabled else "disabled"
+            logging.info("{} has status {}".format(user.name, user_enabled))
+        return
+
+    else:
+        user_command(args)
 
 
 @ensure_valid_username
@@ -86,14 +91,13 @@ def user_command(args):
 
 
 def add_parser(subparsers):
-    list_users_parser = subparsers.add_parser(
-        "list_users", help="List all users and their account statuses")
-    list_users_parser.set_defaults(func=list_users)
-
     user_parser = subparsers.add_parser(
         "user", help="Edit user")
-    user_parser.set_defaults(func=user_command)
+    user_parser.set_defaults(func=handle_command)
     user_subparser = user_parser.add_subparsers(dest="subcommand")
+
+    user_list_parser = user_subparser.add_parser(
+        "list", help="List all users and their account statuses")
 
     user_create_parser = user_subparser.add_parser(
         "create", help="Create a new user account")

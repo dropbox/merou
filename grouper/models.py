@@ -253,6 +253,10 @@ class User(Model):
     def type(self):
         return "User"
 
+    @property
+    def is_enabled(self):
+        return self.enabled
+
     def __repr__(self):
         return "<%s: id=%s username=%s>" % (
             type(self).__name__, self.id, self.username)

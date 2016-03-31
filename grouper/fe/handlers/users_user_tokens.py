@@ -1,6 +1,7 @@
 from grouper.fe.forms import UsersUserTokenForm
 from grouper.fe.util import ensure_audit_security, GrouperHandler
-from grouper.model_soup import User, UserToken
+from grouper.model_soup import User
+from grouper.models.user_token import UserToken
 
 
 class UsersUserTokens(GrouperHandler):

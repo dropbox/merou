@@ -5,7 +5,9 @@ import pytest
 from fixtures import fe_app as app
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from grouper.constants import USER_ADMIN
-from grouper.model_soup import Permission, UserToken
+from grouper.model_soup import Permission
+from grouper.models.user_token import UserToken
+from grouper.user_token import add_new_user_token, disable_user_token
 from url_util import url
 from util import get_groups, grant_permission
 
@@ -47,17 +49,14 @@ def test_basic_metadata(standard_graph, session, users, groups, permissions):  #
 def test_usertokens(standard_graph, session, users, groups, permissions):  # noqa
     user = users["zorkian@a.co"]
     assert len(user.tokens) == 0
-    tok, secret = UserToken(
-        user=user,
-        name="Foo"
-    ).add(session)
+    tok, secret = add_new_user_token(session, UserToken(user=user, name="Foo"))
     assert len(user.tokens) == 1
 
     assert tok.check_secret(secret)
     assert tok.check_secret("invalid") == False
 
     assert tok.enabled == True
-    tok.disable()
+    disable_user_token(session, tok)
     assert tok.enabled == False
     assert user.tokens[0].enabled == False
     assert UserToken.get(session, name="Foo", user=user).enabled == False

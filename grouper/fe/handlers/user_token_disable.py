@@ -1,6 +1,8 @@
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import User, UserToken
+from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
+from grouper.models.user_token import UserToken
+from grouper.user_token import disable_user_token
 
 
 class UserTokenDisable(GrouperHandler):
@@ -23,7 +25,7 @@ class UserTokenDisable(GrouperHandler):
             return self.forbidden()
 
         token = UserToken.get(self.session, user=user, id=token_id)
-        token.disable()
+        disable_user_token(self.session, token)
         AuditLog.log(self.session, self.current_user.id, 'disable_token',
                      'Disabled token: {}'.format(token.name),
                      on_user_id=user.id)

@@ -10,7 +10,7 @@ def handle_command(args):
         session = make_session()
         all_users = get_all_users(session)
         for user in all_users:
-            user_enabled = "enabled" if user.is_enabled else "disabled"
+            user_enabled = "enabled" if user.enabled else "disabled"
             logging.info("{} has status {}".format(user.name, user_enabled))
         return
 
@@ -38,7 +38,7 @@ def user_command(args):
             user = User.get(session, name=username)
             if not user:
                 logging.info("{}: No such user. Doing nothing.".format(username))
-            elif not user.is_enabled:
+            elif not user.enabled:
                 logging.info("{}: User already disabled. Doing nothing.".format(username))
             else:
                 logging.info("{}: User found, disabling...".format(username))
@@ -51,7 +51,7 @@ def user_command(args):
             user = User.get(session, name=username)
             if not user:
                 logging.info("{}: No such user. Doing nothing.".format(username))
-            elif user.is_enabled:
+            elif user.enabled:
                 logging.info("{}: User not disabled. Doing nothing.".format(username))
             else:
                 logging.info("{}: User found, enabling...".format(username))
@@ -96,7 +96,7 @@ def add_parser(subparsers):
     user_parser.set_defaults(func=handle_command)
     user_subparser = user_parser.add_subparsers(dest="subcommand")
 
-    user_list_parser = user_subparser.add_parser(
+    user_subparser.add_parser(
         "list", help="List all users and their account statuses")
 
     user_create_parser = user_subparser.add_parser(

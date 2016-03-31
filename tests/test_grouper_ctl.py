@@ -59,25 +59,25 @@ def test_user_status_changes(make_user_session, make_group_session, session, use
 
     # disable the account
     call_main('user', 'disable', username)
-    assert not User.get(session, name=username).is_enabled
+    assert not User.get(session, name=username).enabled
 
     # double disabling is a no-op
     call_main('user', 'disable', username)
-    assert not User.get(session, name=username).is_enabled
+    assert not User.get(session, name=username).enabled
 
     # re-enable the account, preserving memberships
     call_main('user', 'enable', '--preserve-membership', username)
-    assert User.get(session, name=username).is_enabled
+    assert User.get(session, name=username).enabled
     assert (u'User', username) in groups[groupname].my_members()
 
     # enabling an active account is a no-op
     call_main('user', 'enable', username)
-    assert User.get(session, name=username).is_enabled
+    assert User.get(session, name=username).enabled
 
     # disable and re-enable without the --preserve-membership flag
     call_main('user', 'disable', username)
     call_main('user', 'enable', username)
-    assert User.get(session, name=username).is_enabled
+    assert User.get(session, name=username).enabled
     assert (u'User', username) not in groups[groupname].my_members()
 
 @patch('grouper.ctl.user.make_session')

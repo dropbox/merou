@@ -4,12 +4,14 @@ from grouper import public_key
 from grouper.ctl.util import ensure_valid_username, make_session
 from grouper.models import AuditLog, User, get_all_users
 
+
 def list_users(args):
     session = make_session()
     all_users = get_all_users(session)
     for user in all_users:
         user_enabled = "enabled" if user.is_enabled else "disabled"
         logging.info("{} has status {}".format(user.name, user_enabled))
+
 
 @ensure_valid_username
 def user_command(args):

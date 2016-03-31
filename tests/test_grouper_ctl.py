@@ -165,6 +165,7 @@ def test_sync_db_default_group(make_session, session, users, groups):
         assert permission in admin_group_permission_names, \
                 "Expected permission missing: %s" % permission
 
+
 @patch('grouper.ctl.oneoff.load_plugins')
 @patch('grouper.ctl.oneoff.Annex')
 @patch('grouper.ctl.oneoff.make_session')

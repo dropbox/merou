@@ -2,8 +2,9 @@ from sqlalchemy.exc import IntegrityError
 from grouper.audit import assert_controllers_are_auditors, UserNotAuditor
 from grouper.fe.forms import PermissionGrantForm
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import AuditLog, Group, Permission
+from grouper.model_soup import Group, Permission
 from grouper.util import matches_glob
+from grouper.models.audit_log import AuditLog
 
 
 class PermissionsGrant(GrouperHandler):

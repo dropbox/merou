@@ -1,6 +1,7 @@
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import AuditLog, PermissionMap
+from grouper.model_soup import PermissionMap
 from grouper.util import matches_glob
+from grouper.models.audit_log import AuditLog
 
 
 class PermissionsRevoke(GrouperHandler):

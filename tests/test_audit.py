@@ -10,9 +10,9 @@ from grouper.audit import (
     assert_can_join, assert_controllers_are_auditors, get_audits, user_is_auditor,
     UserNotAuditor,
 )
-from grouper.model_soup import AuditLog, AuditLogCategory
 from url_util import url
 from util import add_member, grant_permission
+from grouper.models.audit_log import AuditLogCategory, AuditLog
 
 
 def test_group_audited(standard_graph, session, groups, permissions):  # noqa

@@ -1,5 +1,6 @@
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import AuditLog, Permission
+from grouper.model_soup import Permission
+from grouper.models.audit_log import AuditLog
 
 
 class PermissionEnableAuditing(GrouperHandler):

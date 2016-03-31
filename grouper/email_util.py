@@ -5,6 +5,7 @@ import logging
 import smtplib
 
 from grouper.fe.template_util import get_template_env
+from grouper.models.audit_log import AuditLog
 
 
 def send_email(session, recipients, subject, template, settings, context):

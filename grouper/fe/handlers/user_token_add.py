@@ -3,7 +3,8 @@ from grouper.email_util import send_email
 from grouper.fe.forms import UserTokenForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import AuditLog, User, UserToken
+from grouper.model_soup import User, UserToken
+from grouper.models.audit_log import AuditLog
 
 
 class UserTokenAdd(GrouperHandler):

@@ -10,11 +10,12 @@ import sshpubkey
 from expvar.stats import stats
 from tornado.web import RequestHandler, HTTPError
 
-from ..constants import TOKEN_FORMAT
-from ..model_soup import PublicKey, User
-from ..util import try_update
+from grouper.constants import TOKEN_FORMAT
+from grouper.model_soup import User
 from grouper.models.base.session import Session
+from grouper.models.public_key import PublicKey
 from grouper.models.user_token import UserToken
+from grouper.util import try_update
 
 # if raven library around, pull in SentryMixin
 try:

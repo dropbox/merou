@@ -2,11 +2,38 @@ from sqlalchemy.exc import IntegrityError
 import sshpubkey
 from sshpubkey.exc import PublicKeyParseError  # noqa
 
-from .model_soup import PublicKey
+from grouper.models.counter import Counter
+from grouper.models.public_key import PublicKey
 
 
 class DuplicateKey(Exception):
     pass
+
+class KeyNotFound(Exception):
+    key_id = None
+    user_id = None
+    """Particular user's specific key was not found."""
+
+
+def get_public_key(session, user_id, key_id):
+    """Retrieve specific public key for user.
+
+    Args:
+        session(models.base.session.Session): database session
+        user_id(int): id of user in question
+        key_id(int): id of the user's key we want to delete
+
+    Throws:
+        KeyNotFound if specified key wasn't found
+
+    Returns:
+        PublicKey model object representing the key
+    """
+    pkey = session.query(PublicKey).filter_by(id=key_id, user_id=user_id).scalar()
+    if not pkey:
+        raise KeyNotFound(key_id=key_id, user_id=user_id)
+
+    return pkey
 
 
 def add_public_key(session, user, public_key_str):
@@ -29,6 +56,7 @@ def add_public_key(session, user, public_key_str):
     )
     try:
         db_pubkey.add(session)
+        Counter.incr(session, "updates")
     except IntegrityError:
         session.rollback()
         raise DuplicateKey()
@@ -36,3 +64,22 @@ def add_public_key(session, user, public_key_str):
     session.commit()
 
     return db_pubkey
+
+
+def delete_public_key(session, user_id, key_id):
+    """Delete a particular user's public key.
+
+    Args:
+        session(models.base.session.Session): database session
+        user_id(int): id of user in question
+        key_id(int): id of the user's key we want to delete
+
+    Throws:
+        KeyNotFound if specified key wasn't found
+    """
+    pkey = get_public_key(session, user_id, key_id)
+    pkey.delete(session)
+
+    Counter.incr(session, "updates")
+
+    session.commit()

@@ -38,6 +38,7 @@ from grouper.models.base.model_base import Model
 from grouper.models.counter import Counter
 from grouper.models.audit_log import AuditLogCategory, AuditLog
 from grouper.models.comment import Comment
+from grouper.models.public_key import PublicKey
 
 
 OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange", "PermissionRequestStatusChange")
@@ -1261,7 +1262,7 @@ class UserMetadata(Model):
     id = Column(Integer, primary_key=True)
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    user = relationship(User, foreign_keys=[user_id])
+    user = relationship("User", foreign_keys=[user_id])
 
     data_key = Column(String(length=64), nullable=False)
     data_value = Column(String(length=64), nullable=False)
@@ -1274,32 +1275,6 @@ class UserMetadata(Model):
 
     def delete(self, session):
         super(UserMetadata, self).delete(session)
-        Counter.incr(session, "updates")
-        return self
-
-
-class PublicKey(Model):
-
-    __tablename__ = "public_keys"
-
-    id = Column(Integer, primary_key=True)
-
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    user = relationship(User, foreign_keys=[user_id])
-
-    key_type = Column(String(length=32))
-    key_size = Column(Integer)
-    public_key = Column(Text, nullable=False, unique=True)
-    fingerprint = Column(String(length=64), nullable=False)
-    created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    def add(self, session):
-        super(PublicKey, self).add(session)
-        Counter.incr(session, "updates")
-        return self
-
-    def delete(self, session):
-        super(PublicKey, self).delete(session)
         Counter.incr(session, "updates")
         return self
 

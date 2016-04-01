@@ -1,8 +1,9 @@
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import PublicKey, User
+from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
+from grouper.public_key import delete_public_key, get_public_key, KeyNotFound
 
 
 class PublicKeyDelete(GrouperHandler):
@@ -14,8 +15,9 @@ class PublicKeyDelete(GrouperHandler):
         if (user.name != self.current_user.name) and not self.current_user.user_admin:
             return self.forbidden()
 
-        key = self.session.query(PublicKey).filter_by(id=key_id, user_id=user.id).scalar()
-        if not key:
+        try:
+            key = get_public_key(self.session, user.id, key_id)
+        except KeyNotFound:
             return self.notfound()
 
         self.render("public-key-delete.html", user=user, key=key)
@@ -28,12 +30,11 @@ class PublicKeyDelete(GrouperHandler):
         if (user.name != self.current_user.name) and not self.current_user.user_admin:
             return self.forbidden()
 
-        key = self.session.query(PublicKey).filter_by(id=key_id, user_id=user.id).scalar()
-        if not key:
+        try:
+            key = get_public_key(self.session, user.id, key_id)
+            delete_public_key(self.session, user.id, key_id)
+        except KeyNotFound:
             return self.notfound()
-
-        key.delete(self.session)
-        self.session.commit()
 
         AuditLog.log(self.session, self.current_user.id, 'delete_public_key',
                      'Deleted public key: {}'.format(key.fingerprint),

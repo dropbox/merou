@@ -7,7 +7,13 @@ from grouper.constants import PERMISSION_ADMIN, PERMISSION_GRANT
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
 from grouper.group import get_groups_by_user
-from grouper.model_soup import Group, Permission, PermissionMap, PermissionRequest, PermissionRequestStatusChange
+from grouper.model_soup import (
+        Group,
+        Permission,
+        PermissionMap,
+        PermissionRequest,
+        PermissionRequestStatusChange,
+        )
 from grouper.model_soup import OBJ_TYPES_IDX
 from grouper.plugin import get_plugins
 from grouper.util import matches_glob

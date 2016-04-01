@@ -1,29 +1,24 @@
 ################################################################################
 #                                                                              #
-# THIS MODULE IS DEPRECIATED. PLEASE DON'T ADD THE TO SPAGHETTI HERE IF YOU    #
+# THIS MODULE IS DEPRECIATED. PLEASE DON'T ADD TO THE SPAGHETTI HERE IF YOU    #
 # CAN AVOID IT.                                                                #
 #                                                                              #
 ################################################################################
 from collections import OrderedDict, namedtuple
 from datetime import datetime, timedelta
-import hashlib
-import hmac
 import json
 import logging
-import os
 import re
 
-from enum import IntEnum
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, UniqueConstraint,
     ForeignKey, Enum, DateTime, SmallInteger, Index
 )
 from sqlalchemy import or_, union_all, asc, desc
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func, label, literal
+from sqlalchemy.sql import label, literal
 
 from .constants import (
     ARGUMENT_VALIDATION, PERMISSION_GRANT, PERMISSION_CREATE, MAX_NAME_LENGTH,
@@ -36,7 +31,7 @@ from .settings import settings
 from grouper.models.base.session import flush_transaction
 from grouper.models.base.model_base import Model
 from grouper.models.counter import Counter
-from grouper.models.audit_log import AuditLogCategory, AuditLog
+from grouper.models.audit_log import AuditLog
 from grouper.models.comment import Comment
 from grouper.models.public_key import PublicKey
 from grouper.models.user_metadata import UserMetadata
@@ -436,10 +431,6 @@ class User(Model, CommentObjectMixin):
                 GroupEdge.expiration == None,
             )
         ).all()
-
-
-def _make_secret():
-    return os.urandom(20).encode("hex")
 
 
 def build_changes(edge, **updates):
@@ -1470,5 +1461,3 @@ class PermissionMap(Model):
         super(PermissionMap, self).delete(session)
         Counter.incr(session, "updates")
         return self
-
-

@@ -9,6 +9,7 @@ from grouper.models.public_key import PublicKey
 class DuplicateKey(Exception):
     pass
 
+
 class KeyNotFound(Exception):
     key_id = None
     user_id = None

@@ -1,10 +1,15 @@
+from datetime import datetime
 import hashlib
 import hmac
-from datetime import datetime
+import os
+
+from grouper.models.base.model_base import Model
 from sqlalchemy import Column, Integer, String, UniqueConstraint, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from grouper.model_soup import _make_secret
-from grouper.models.base.model_base import Model
+
+
+def _make_secret():
+    return os.urandom(20).encode("hex")
 
 
 class UserToken(Model):

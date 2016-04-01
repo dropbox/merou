@@ -39,6 +39,7 @@ from grouper.models.counter import Counter
 from grouper.models.audit_log import AuditLogCategory, AuditLog
 from grouper.models.comment import Comment
 from grouper.models.public_key import PublicKey
+from grouper.models.user_metadata import UserMetadata
 
 
 OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange", "PermissionRequestStatusChange")
@@ -1250,33 +1251,6 @@ class GroupEdge(Model):
             type(self).__name__, self.group_id,
             OBJ_TYPES_IDX[self.member_type], self.member_pk
         )
-
-
-class UserMetadata(Model):
-
-    __tablename__ = "user_metadata"
-    __table_args__ = (
-        UniqueConstraint('user_id', 'data_key', name='uidx1'),
-    )
-
-    id = Column(Integer, primary_key=True)
-
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    user = relationship("User", foreign_keys=[user_id])
-
-    data_key = Column(String(length=64), nullable=False)
-    data_value = Column(String(length=64), nullable=False)
-    last_modified = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    def add(self, session):
-        super(UserMetadata, self).add(session)
-        Counter.incr(session, "updates")
-        return self
-
-    def delete(self, session):
-        super(UserMetadata, self).delete(session)
-        Counter.incr(session, "updates")
-        return self
 
 
 class Permission(Model):

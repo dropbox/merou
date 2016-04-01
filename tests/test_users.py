@@ -7,6 +7,7 @@ from fixtures import standard_graph, graph, users, groups, session, permissions 
 from grouper.constants import USER_ADMIN
 from grouper.model_soup import Permission
 from grouper.models.user_token import UserToken
+from grouper.user_metadata import set_user_metadata, get_user_metadata
 from grouper.user_token import add_new_user_token, disable_user_token
 from url_util import url
 from util import get_groups, grant_permission
@@ -16,33 +17,34 @@ def test_basic_metadata(standard_graph, session, users, groups, permissions):  #
     """ Test basic metadata functionality. """
 
     graph = standard_graph  # noqa
+    user_id = users["zorkian@a.co"].id
 
     assert len(users["zorkian@a.co"].my_metadata()) == 0, "No metadata yet"
 
     # Test setting "foo" to 1 works, and we get "1" back (metadata is defined as strings)
-    users["zorkian@a.co"].set_metadata("foo", 1)
-    md = users["zorkian@a.co"].my_metadata()
+    set_user_metadata(session, user_id, "foo", 1)
+    md = get_user_metadata(session, user_id)
     assert len(md) == 1, "One metadata item"
     assert [d.data_value for d in md if d.data_key == "foo"] == ["1"], "foo is 1"
 
-    users["zorkian@a.co"].set_metadata("bar", "test string")
-    md = users["zorkian@a.co"].my_metadata()
+    set_user_metadata(session, user_id, "bar", "test string")
+    md = get_user_metadata(session, user_id)
     assert len(md) == 2, "Two metadata items"
     assert [d.data_value for d in md if d.data_key == "bar"] == ["test string"], \
         "bar is test string"
 
-    users["zorkian@a.co"].set_metadata("foo", "test2")
-    md = users["zorkian@a.co"].my_metadata()
+    set_user_metadata(session, user_id, "foo", "test2")
+    md = get_user_metadata(session, user_id)
     assert len(md) == 2, "Two metadata items"
     assert [d.data_value for d in md if d.data_key == "foo"] == ["test2"], "foo is test2"
 
-    users["zorkian@a.co"].set_metadata("foo", None)
-    md = users["zorkian@a.co"].my_metadata()
+    set_user_metadata(session, user_id, "foo", None)
+    md = get_user_metadata(session, user_id)
     assert len(md) == 1, "One metadata item"
     assert [d.data_value for d in md if d.data_key == "foo"] == [], "foo is not found"
 
-    users["zorkian@a.co"].set_metadata("baz", None)
-    md = users["zorkian@a.co"].my_metadata()
+    set_user_metadata(session, user_id, "baz", None)
+    md = get_user_metadata(session, user_id)
     assert len(md) == 1, "One metadata item"
 
 

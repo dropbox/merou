@@ -5,6 +5,7 @@ from grouper.fe.util import GrouperHandler
 from grouper.model_soup import Group, Permission
 from grouper.util import matches_glob
 from grouper.models.audit_log import AuditLog
+from grouper.permissions import grant_permission
 
 
 class PermissionsGrant(GrouperHandler):
@@ -83,7 +84,7 @@ class PermissionsGrant(GrouperHandler):
                 )
 
         try:
-            group.grant_permission(permission, argument=form.data["argument"])
+            grant_permission(self.session, group.id, permission.id, argument=form.data["argument"])
         except IntegrityError:
             form.argument.errors.append(
                 "Permission and Argument already mapped to this group."

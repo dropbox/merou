@@ -1,25 +1,21 @@
 from collections import defaultdict, namedtuple
 from datetime import datetime
 from fnmatch import fnmatch
+import re
 
 from grouper.audit import assert_controllers_are_auditors
-from grouper.constants import PERMISSION_ADMIN, PERMISSION_GRANT
+from grouper.constants import ARGUMENT_VALIDATION, PERMISSION_ADMIN, PERMISSION_GRANT
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
 from grouper.group import get_groups_by_user
-from grouper.model_soup import (
-        Group,
-        Permission,
-        PermissionMap,
-        PermissionRequest,
-        PermissionRequestStatusChange,
-        )
+from grouper.model_soup import Group, Permission, PermissionRequest, PermissionRequestStatusChange
 from grouper.model_soup import OBJ_TYPES_IDX
 from grouper.plugin import get_plugins
 from grouper.util import matches_glob
 from grouper.models.counter import Counter
 from grouper.models.audit_log import AuditLog
 from grouper.models.comment import Comment
+from grouper.models.permission_map import PermissionMap
 
 
 # represents all information we care about for a list of permission requests
@@ -30,6 +26,29 @@ Requests = namedtuple('Requests', ['requests', 'status_change_by_request_id',
 # represents a permission grant, essentially what come back from User.my_permissions()
 # TODO: consider replacing that output with this namedtuple
 Grant = namedtuple('Grant', 'name, argument')
+
+
+def grant_permission(session, group_id, permission_id, argument=''):
+    """
+    Grant a permission to this group. This will fail if the (permission, argument) has already
+    been granted to this group.
+
+    Args:
+        session(models.base.session.Session): database session
+        permission(Permission): a Permission object being granted
+        argument(str): must match constants.ARGUMENT_VALIDATION
+
+    Throws:
+        AssertError if argument does not match ARGUMENT_VALIDATION regex
+    """
+    assert re.match(ARGUMENT_VALIDATION, argument), 'Permission argument does not match regex.'
+
+    mapping = PermissionMap(permission_id=permission_id, group_id=group_id, argument=argument)
+    mapping.add(session)
+
+    Counter.incr(session, "updates")
+
+    session.commit()
 
 
 def filter_grantable_permissions(session, grants, all_permissions=None):
@@ -433,13 +452,14 @@ def update_request(session, request, user, new_status, comment):
 
     if new_status == "actioned":
         # actually grant permission
-        request.group.grant_permission(request.permission, request.argument)
-        Counter.incr(session, "updates")
+        grant_permission(session, request.group.id, request.permission.id, request.argument)
 
     # audit log
     AuditLog.log(session, user.id, "update_perm_request",
             "updated permission request to status: {}".format(new_status),
             on_group_id=request.group_id, on_user_id=request.requester_id)
+
+    session.commit()
 
     # send notification
     if new_status == "actioned":

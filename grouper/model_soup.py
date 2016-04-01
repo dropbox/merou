@@ -35,6 +35,7 @@ from grouper.models.audit_log import AuditLog
 from grouper.models.comment import Comment
 from grouper.models.public_key import PublicKey
 from grouper.models.user_metadata import UserMetadata
+from grouper.models.permission_map import PermissionMap
 
 
 OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange", "PermissionRequestStatusChange")
@@ -531,25 +532,6 @@ class Group(Model, CommentObjectMixin):
 
         edge.apply_changes(request)
         self.session.flush()
-
-        Counter.incr(self.session, "updates")
-
-    @flush_transaction
-    def grant_permission(self, permission, argument=''):
-        """
-        Grant a permission to this group. This will fail if the (permission, argument) has already
-        been granted to this group.
-
-        Arguments:
-            permission: a Permission object being granted
-            argument: must match constants.ARGUMENT_VALIDATION
-        """
-        if not re.match(ARGUMENT_VALIDATION, argument):
-            raise ValueError('Permission argument does not match regex.')
-
-        mapping = PermissionMap(permission_id=permission.id, group_id=self.id,
-                                argument=argument)
-        mapping.add(self.session)
 
         Counter.incr(self.session, "updates")
 
@@ -1421,43 +1403,3 @@ class AsyncNotification(Model):
         session.commit()
 
 
-class PermissionMap(Model):
-    '''
-    Maps a relationship between a Permission and a Group. Note that a single permission can be
-    mapped into a given group multiple times, as long as the argument is unique.
-
-    These include the optional arguments, which can either be a string, an asterisks ("*"), or
-    Null to indicate no argument.
-    '''
-
-    __tablename__ = "permissions_map"
-    __table_args__ = (
-        UniqueConstraint('permission_id', 'group_id', 'argument', name='uidx1'),
-    )
-
-    id = Column(Integer, primary_key=True)
-
-    permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=False)
-    permission = relationship(Permission, foreign_keys=[permission_id])
-
-    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
-    group = relationship(Group, foreign_keys=[group_id])
-
-    argument = Column(String(length=64), nullable=True)
-    granted_on = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    @staticmethod
-    def get(session, id=None):
-        if id is not None:
-            return session.query(PermissionMap).filter_by(id=id).scalar()
-        return None
-
-    def add(self, session):
-        super(PermissionMap, self).add(session)
-        Counter.incr(session, "updates")
-        return self
-
-    def delete(self, session):
-        super(PermissionMap, self).delete(session)
-        Counter.incr(session, "updates")
-        return self

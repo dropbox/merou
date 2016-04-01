@@ -12,6 +12,7 @@ from grouper.models.base.session import get_db_engine
 from grouper.settings import settings
 from grouper.util import get_database_url
 from grouper.models.base.model_base import Model
+from grouper.permissions import grant_permission
 
 
 def sync_db_command(args):
@@ -53,7 +54,7 @@ def sync_db_command(args):
         for permission_name in (GROUP_ADMIN, PERMISSION_ADMIN, USER_ADMIN):
             permission = Permission.get(session, permission_name)
             assert permission, "Permission should have been created earlier!"
-            admin_group.grant_permission(permission)
+            grant_permission(session, admin_group.id, permission.id)
 
         session.commit()
 

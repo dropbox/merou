@@ -2,7 +2,20 @@ import logging
 
 from grouper import public_key
 from grouper.ctl.util import ensure_valid_username, make_session
-from grouper.models import AuditLog, User
+from grouper.models import AuditLog, User, get_all_users
+
+
+def handle_command(args):
+    if args.subcommand == "list":
+        session = make_session()
+        all_users = get_all_users(session)
+        for user in all_users:
+            user_enabled = "enabled" if user.enabled else "disabled"
+            logging.info("{} has status {}".format(user.name, user_enabled))
+        return
+
+    else:
+        user_command(args)
 
 
 @ensure_valid_username
@@ -18,7 +31,32 @@ def user_command(args):
                 session.commit()
             else:
                 logging.info("{}: Already exists. Doing nothing.".format(username))
+        return
 
+    elif args.subcommand == "disable":
+        for username in args.username:
+            user = User.get(session, name=username)
+            if not user:
+                logging.info("{}: No such user. Doing nothing.".format(username))
+            elif not user.enabled:
+                logging.info("{}: User already disabled. Doing nothing.".format(username))
+            else:
+                logging.info("{}: User found, disabling...".format(username))
+                user.disable()
+                session.commit()
+        return
+
+    elif args.subcommand == "enable":
+        for username in args.username:
+            user = User.get(session, name=username)
+            if not user:
+                logging.info("{}: No such user. Doing nothing.".format(username))
+            elif user.enabled:
+                logging.info("{}: User not disabled. Doing nothing.".format(username))
+            else:
+                logging.info("{}: User found, enabling...".format(username))
+                user.enable(user, preserve_membership=args.preserve_membership)
+                session.commit()
         return
 
     # "add_public_key" and "set_metadata"
@@ -55,14 +93,27 @@ def user_command(args):
 def add_parser(subparsers):
     user_parser = subparsers.add_parser(
         "user", help="Edit user")
-    user_parser.set_defaults(func=user_command)
+    user_parser.set_defaults(func=handle_command)
     user_subparser = user_parser.add_subparsers(dest="subcommand")
+
+    user_subparser.add_parser(
+        "list", help="List all users and their account statuses")
 
     user_create_parser = user_subparser.add_parser(
         "create", help="Create a new user account")
     user_create_parser.add_argument("username", nargs="+")
     user_create_parser.add_argument("--role-user", default=False, action="store_true",
                                     help="If given, identifies user as a role user.")
+
+    user_disable_parser = user_subparser.add_parser(
+        "disable", help="Disable a user account")
+    user_disable_parser.add_argument("username", nargs="+")
+
+    user_enable_parser = user_subparser.add_parser(
+        "enable", help="(Re-)enable a user account")
+    user_enable_parser.add_argument("username", nargs="+")
+    user_enable_parser.add_argument("--preserve-membership", default=False, action="store_true",
+                help="Unless provided, scrub all group memberships when re-enabling user.")
 
     user_key_parser = user_subparser.add_parser(
         "add_public_key", help="Add public key to user")

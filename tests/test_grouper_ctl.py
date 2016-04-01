@@ -45,6 +45,40 @@ def test_user_create(make_session, session, users):
     users = [User.get(session, name=u) for u in usernames_with_one_bad]
     assert not any(users), 'one bad seed means no users created'
 
+@patch('grouper.ctl.user.make_session')
+@patch('grouper.ctl.group.make_session')
+def test_user_status_changes(make_user_session, make_group_session, session, users, groups):
+    make_user_session.return_value = session
+    make_group_session.return_value = session
+
+    username = 'zorkian@a.co'
+    groupname = 'team-sre'
+
+    # add user to a group
+    call_main('group', 'add_member', '--member', groupname, username)
+
+    # disable the account
+    call_main('user', 'disable', username)
+    assert not User.get(session, name=username).enabled
+
+    # double disabling is a no-op
+    call_main('user', 'disable', username)
+    assert not User.get(session, name=username).enabled
+
+    # re-enable the account, preserving memberships
+    call_main('user', 'enable', '--preserve-membership', username)
+    assert User.get(session, name=username).enabled
+    assert (u'User', username) in groups[groupname].my_members()
+
+    # enabling an active account is a no-op
+    call_main('user', 'enable', username)
+    assert User.get(session, name=username).enabled
+
+    # disable and re-enable without the --preserve-membership flag
+    call_main('user', 'disable', username)
+    call_main('user', 'enable', username)
+    assert User.get(session, name=username).enabled
+    assert (u'User', username) not in groups[groupname].my_members()
 
 @patch('grouper.ctl.user.make_session')
 def test_user_public_key(make_session, session, users):

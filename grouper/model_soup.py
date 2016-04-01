@@ -28,8 +28,9 @@ from .constants import (
 from .email_util import send_async_email
 from .plugin import get_plugins
 from .settings import settings
-from grouper.models.base.session import flush_transaction
+from grouper.models.base.constants import REQUEST_STATUS_CHOICES
 from grouper.models.base.model_base import Model
+from grouper.models.base.session import flush_transaction
 from grouper.models.counter import Counter
 from grouper.models.audit_log import AuditLog
 from grouper.models.comment import Comment
@@ -52,13 +53,6 @@ GROUP_JOIN_CHOICES = {
 }
 
 AUDIT_STATUS_CHOICES = {"pending", "approved", "remove"}
-
-REQUEST_STATUS_CHOICES = {
-    # Request has been made and awaiting action.
-    "pending": set(["actioned", "cancelled"]),
-    "actioned": set([]),
-    "cancelled": set([]),
-}
 
 # Note: the order of the GROUP_EDGE_ROLES tuple matters! New roles must be
 # appended!  When adding a new role, be sure to update the regression test.
@@ -1281,48 +1275,6 @@ class Permission(Model):
     def my_log_entries(self):
 
         return AuditLog.get_entries(self.session, on_permission_id=self.id, limit=20)
-
-
-class PermissionRequest(Model):
-    """Represent request for a permission/argument to be granted to a particular group."""
-    __tablename__ = "permission_requests"
-
-    id = Column(Integer, primary_key=True)
-
-    # The User that made the request.
-    requester_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    requester = relationship(
-        User, backref="permission_requests", foreign_keys=[requester_id]
-    )
-
-    permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=False)
-    permission = relationship(Permission, foreign_keys=[permission_id])
-    argument = Column(String(length=64), nullable=True)
-
-    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
-    group = relationship(Group, foreign_keys=[group_id])
-
-    requested_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    status = Column(Enum(*REQUEST_STATUS_CHOICES), default="pending", nullable=False)
-
-
-class PermissionRequestStatusChange(Model, CommentObjectMixin):
-    """Tracks changes to each permission grant request."""
-    __tablename__ = "permission_request_status_changes"
-
-    id = Column(Integer, primary_key=True)
-
-    request_id = Column(Integer, ForeignKey("permission_requests.id"), nullable=False)
-    request = relationship(PermissionRequest)
-
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    user = relationship(User, foreign_keys=[user_id])
-
-    from_status = Column(Enum(*REQUEST_STATUS_CHOICES))
-    to_status = Column(Enum(*REQUEST_STATUS_CHOICES), nullable=False)
-
-    change_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class AsyncNotification(Model):

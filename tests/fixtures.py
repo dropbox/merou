@@ -6,12 +6,13 @@ from grouper.app import Application
 from grouper.constants import AUDIT_MANAGER, PERMISSION_AUDITOR
 from grouper.fe.routes import HANDLERS as FE_HANDLERS
 from grouper.fe.template_util import get_template_env
-from grouper.model_soup import User, Group, Permission
 from grouper.graph import Graph
-
-from util import add_member, grant_permission
-from grouper.models.base.session import Session, get_db_engine
+from grouper.model_soup import User, Group
 from grouper.models.base.model_base import Model
+from grouper.models.base.session import Session, get_db_engine
+from grouper.permissions import enable_permission_auditing
+from util import add_member, grant_permission
+from grouper.models.permission import Permission
 
 
 @pytest.fixture
@@ -156,14 +157,15 @@ def groups(session):
 
 
 @pytest.fixture
-def permissions(session):
+def permissions(session, users):
     permissions = {
         permission: Permission.get_or_create(
             session, name=permission, description="{} permission".format(permission))[0]
         for permission in ("ssh", "sudo", "audited", AUDIT_MANAGER, PERMISSION_AUDITOR)
     }
-    permissions["audited"].enable_auditing()
-    session.commit()
+
+    enable_permission_auditing(session, permissions["audited"].name, users['zorkian@a.co'].id)
+
     return permissions
 
 

@@ -5,12 +5,12 @@ import pytest
 from fixtures import fe_app as app
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from grouper.constants import USER_ADMIN
-from grouper.model_soup import Permission
 from grouper.models.user_token import UserToken
 from grouper.user_metadata import set_user_metadata, get_user_metadata
 from grouper.user_token import add_new_user_token, disable_user_token
 from url_util import url
 from util import get_groups, grant_permission
+from grouper.models.permission import Permission
 
 
 def test_basic_metadata(standard_graph, session, users, groups, permissions):  # noqa

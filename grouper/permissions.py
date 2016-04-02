@@ -8,16 +8,17 @@ from grouper.constants import ARGUMENT_VALIDATION, PERMISSION_ADMIN, PERMISSION_
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
 from grouper.group import get_groups_by_user
-from grouper.model_soup import Group, Permission
+from grouper.model_soup import Group
 from grouper.model_soup import OBJ_TYPES_IDX
-from grouper.plugin import get_plugins
-from grouper.util import matches_glob
-from grouper.models.counter import Counter
 from grouper.models.audit_log import AuditLog
 from grouper.models.comment import Comment
+from grouper.models.counter import Counter
+from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.permission_request import PermissionRequest
 from grouper.models.permission_request_status_change import PermissionRequestStatusChange
+from grouper.plugin import get_plugins
+from grouper.util import matches_glob
 
 
 # represents all information we care about for a list of permission requests
@@ -28,6 +29,11 @@ Requests = namedtuple('Requests', ['requests', 'status_change_by_request_id',
 # represents a permission grant, essentially what come back from User.my_permissions()
 # TODO: consider replacing that output with this namedtuple
 Grant = namedtuple('Grant', 'name, argument')
+
+
+class NoSuchPermission(Exception):
+    """No permission by this name exists."""
+    name = None
 
 
 def grant_permission(session, group_id, permission_id, argument=''):
@@ -51,6 +57,83 @@ def grant_permission(session, group_id, permission_id, argument=''):
     Counter.incr(session, "updates")
 
     session.commit()
+
+
+def enable_permission_auditing(session, permission_name, actor_user_id):
+    """Set a permission as audited.
+
+    Args:
+        session(models.base.session.Session): database session
+        permission_name(str): name of permission in question
+        actor_user_id(int): id of user who is enabling auditing
+    """
+    permission = Permission.get(session, permission_name)
+    if not permission:
+        raise NoSuchPermission(name=permission_name)
+
+    permission._audited = True
+
+    AuditLog.log(session, actor_user_id, 'enable_auditing', 'Enabled auditing.',
+            on_permission_id=permission.id)
+
+    Counter.incr(session, "updates")
+
+    session.commit()
+
+
+def disable_permission_auditing(session, permission_name, actor_user_id):
+    """Set a permission as audited.
+
+    Args:
+        session(models.base.session.Session): database session
+        permission_name(str): name of permission in question
+        actor_user_id(int): id of user who is disabling auditing
+    """
+    permission = Permission.get(session, permission_name)
+    if not permission:
+        raise NoSuchPermission(name=permission_name)
+
+    permission._audited = False
+
+    AuditLog.log(session, actor_user_id, 'disable_auditing', 'Disabled auditing.',
+            on_permission_id=permission.id)
+
+    Counter.incr(session, "updates")
+
+    session.commit()
+
+
+def get_groups_by_permission(session, permission):
+    """For a given permission, return the groups and associated arguments that
+    have that permission.
+
+    Args:
+        session(models.base.session.Session): database session
+        permission_name(Permission): permission in question
+
+    Returns:
+        List of 2-tuple of the form (Group, argument).
+    """
+    return session.query(
+        Group.groupname,
+        PermissionMap.argument,
+        PermissionMap.granted_on,
+    ).filter(
+        Group.id == PermissionMap.group_id,
+        PermissionMap.permission_id == permission.id,
+        Group.enabled == True,
+    ).all()
+
+
+def get_log_entries_by_permission(session, permission, limit=20):
+    """For a given permission, return the audit logs that pertain.
+
+    Args:
+        session(models.base.session.Session): database session
+        permission_name(Permission): permission in question
+        limit(int): number of results to return
+    """
+    return AuditLog.get_entries(session, on_permission_id=permission.id, limit=limit)
 
 
 def filter_grantable_permissions(session, grants, all_permissions=None):

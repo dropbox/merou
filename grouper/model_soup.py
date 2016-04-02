@@ -11,7 +11,7 @@ import logging
 import re
 
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, UniqueConstraint,
+    Column, Integer, String, Text, Boolean,
     ForeignKey, Enum, DateTime, SmallInteger, Index
 )
 from sqlalchemy import or_, union_all, asc, desc
@@ -21,7 +21,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import label, literal
 
 from .constants import (
-    ARGUMENT_VALIDATION, PERMISSION_GRANT, PERMISSION_CREATE, MAX_NAME_LENGTH,
+    PERMISSION_GRANT, PERMISSION_CREATE, MAX_NAME_LENGTH,
     PERMISSION_VALIDATION, ILLEGAL_NAME_CHARACTER, PERMISSION_ADMIN,
     GROUP_ADMIN, USER_ADMIN
 )
@@ -37,6 +37,7 @@ from grouper.models.comment import Comment
 from grouper.models.public_key import PublicKey
 from grouper.models.user_metadata import UserMetadata
 from grouper.models.permission_map import PermissionMap
+from grouper.models.permission import Permission
 
 
 OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange", "PermissionRequestStatusChange")
@@ -65,9 +66,6 @@ GROUP_EDGE_ROLES = (
 OWNER_ROLE_INDICES = set([GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.index("np-owner")])
 APPROVER_ROLE_INDICIES = set([GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.index("np-owner"),
         GROUP_EDGE_ROLES.index("manager")])
-
-MappedPermission = namedtuple('MappedPermission',
-                              ['permission', 'audited', 'argument', 'groupname', 'granted_on'])
 
 
 class CommentObjectMixin(object):
@@ -1220,63 +1218,6 @@ class GroupEdge(Model):
         )
 
 
-class Permission(Model):
-    '''
-    Represents permission types. See PermissionEdge for the mapping of which permissions
-    exist on a given Group.
-    '''
-
-    __tablename__ = "permissions"
-
-    id = Column(Integer, primary_key=True)
-
-    name = Column(String(length=64), unique=True, nullable=False)
-    description = Column(Text, nullable=False)
-    created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
-    _audited = Column('audited', Boolean, default=False, nullable=False)
-
-    @staticmethod
-    def get(session, name=None):
-        if name is not None:
-            return session.query(Permission).filter_by(name=name).scalar()
-        return None
-
-    @staticmethod
-    def get_all(session):
-        return session.query(Permission).order_by(asc("name")).all()
-
-    @property
-    def audited(self):
-        return self._audited
-
-    def enable_auditing(self):
-        self._audited = True
-        Counter.incr(self.session, "updates")
-
-    def disable_auditing(self):
-        self._audited = False
-        Counter.incr(self.session, "updates")
-
-    def get_mapped_groups(self):
-        '''
-        Return a list of tuples: (Group object, argument).
-        '''
-        results = self.session.query(
-            Group.groupname,
-            PermissionMap.argument,
-            PermissionMap.granted_on,
-        ).filter(
-            Group.id == PermissionMap.group_id,
-            PermissionMap.permission_id == self.id,
-            Group.enabled == True,
-        )
-        return results.all()
-
-    def my_log_entries(self):
-
-        return AuditLog.get_entries(self.session, on_permission_id=self.id, limit=20)
-
-
 class AsyncNotification(Model):
     """Represent a notification tracking/sending mechanism"""
 
@@ -1353,5 +1294,3 @@ class AsyncNotification(Model):
             *opt_arg
         ).delete()
         session.commit()
-
-

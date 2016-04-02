@@ -1,6 +1,5 @@
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import Permission
-from grouper.models.audit_log import AuditLog
+from grouper.permissions import disable_permission_auditing, NoSuchPermission
 
 
 class PermissionDisableAuditing(GrouperHandler):
@@ -8,15 +7,10 @@ class PermissionDisableAuditing(GrouperHandler):
         if not self.current_user.permission_admin:
             return self.forbidden()
 
-        permission = Permission.get(self.session, name)
-        if not permission:
+        try:
+            disable_permission_auditing(self.session, name, self.current_user.id)
+        except NoSuchPermission:
             return self.notfound()
 
-        permission.disable_auditing()
-        self.session.commit()
-
-        AuditLog.log(self.session, self.current_user.id, 'disable_auditing',
-                     'Disabled auditing.', on_permission_id=permission.id)
-
         # No explicit refresh because handler queries SQL.
-        return self.redirect("/permissions/{}".format(permission.name))
+        return self.redirect("/permissions/{}".format(name))

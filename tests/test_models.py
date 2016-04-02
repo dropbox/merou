@@ -7,7 +7,9 @@ from fixtures import (
     users,
 )  # noqa
 
-from grouper.model_soup import GROUP_EDGE_ROLES, Group, Permission
+from grouper.model_soup import GROUP_EDGE_ROLES, Group
+from grouper.permissions import get_groups_by_permission
+from grouper.models.permission import Permission
 
 
 def test_group_edge_roles_order_unchanged():
@@ -23,7 +25,7 @@ def test_group_edge_roles_order_unchanged():
 def test_permission_exclude_inactive(session, standard_graph):
     """Ensure disabled groups are excluded from permission data."""
     group = Group.get(session, name="team-sre")
-    permission = Permission.get(session, "ssh")
-    assert "team-sre" in [g[0] for g in permission.get_mapped_groups()]
+    permission = Permission.get(session, name="ssh")
+    assert "team-sre" in [g[0] for g in get_groups_by_permission(session, permission)]
     group.disable()
-    assert "team-sre" not in [g[0] for g in permission.get_mapped_groups()]
+    assert "team-sre" not in [g[0] for g in get_groups_by_permission(session, permission)]

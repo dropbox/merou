@@ -5,8 +5,14 @@ from grouper.email_util import send_email
 from grouper.fe.forms import GroupJoinForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler, Alert
-from grouper.models import (APPROVER_ROLE_INDICIES, AuditLog, GROUP_EDGE_ROLES,
-        GROUP_JOIN_CHOICES, Group, User)
+from grouper.model_soup import (
+        APPROVER_ROLE_INDICIES,
+        GROUP_EDGE_ROLES,
+        GROUP_JOIN_CHOICES,
+        Group,
+        User,
+        )
+from grouper.models.audit_log import AuditLog
 
 
 class GroupJoin(GrouperHandler):

@@ -1,15 +1,22 @@
 from collections import defaultdict, namedtuple
 from datetime import datetime
 from fnmatch import fnmatch
+import re
 
 from grouper.audit import assert_controllers_are_auditors
-from grouper.constants import PERMISSION_ADMIN, PERMISSION_GRANT
+from grouper.constants import ARGUMENT_VALIDATION, PERMISSION_ADMIN, PERMISSION_GRANT
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
 from grouper.group import get_groups_by_user
-from grouper.models import (AuditLog, Comment, Counter, Group, Permission, PermissionMap,
-        PermissionRequest, PermissionRequestStatusChange)
-from grouper.models import OBJ_TYPES_IDX
+from grouper.model_soup import Group
+from grouper.model_soup import OBJ_TYPES_IDX
+from grouper.models.audit_log import AuditLog
+from grouper.models.comment import Comment
+from grouper.models.counter import Counter
+from grouper.models.permission import Permission
+from grouper.models.permission_map import PermissionMap
+from grouper.models.permission_request import PermissionRequest
+from grouper.models.permission_request_status_change import PermissionRequestStatusChange
 from grouper.plugin import get_plugins
 from grouper.util import matches_glob
 
@@ -22,6 +29,111 @@ Requests = namedtuple('Requests', ['requests', 'status_change_by_request_id',
 # represents a permission grant, essentially what come back from User.my_permissions()
 # TODO: consider replacing that output with this namedtuple
 Grant = namedtuple('Grant', 'name, argument')
+
+
+class NoSuchPermission(Exception):
+    """No permission by this name exists."""
+    name = None
+
+
+def grant_permission(session, group_id, permission_id, argument=''):
+    """
+    Grant a permission to this group. This will fail if the (permission, argument) has already
+    been granted to this group.
+
+    Args:
+        session(models.base.session.Session): database session
+        permission(Permission): a Permission object being granted
+        argument(str): must match constants.ARGUMENT_VALIDATION
+
+    Throws:
+        AssertError if argument does not match ARGUMENT_VALIDATION regex
+    """
+    assert re.match(ARGUMENT_VALIDATION, argument), 'Permission argument does not match regex.'
+
+    mapping = PermissionMap(permission_id=permission_id, group_id=group_id, argument=argument)
+    mapping.add(session)
+
+    Counter.incr(session, "updates")
+
+    session.commit()
+
+
+def enable_permission_auditing(session, permission_name, actor_user_id):
+    """Set a permission as audited.
+
+    Args:
+        session(models.base.session.Session): database session
+        permission_name(str): name of permission in question
+        actor_user_id(int): id of user who is enabling auditing
+    """
+    permission = Permission.get(session, permission_name)
+    if not permission:
+        raise NoSuchPermission(name=permission_name)
+
+    permission._audited = True
+
+    AuditLog.log(session, actor_user_id, 'enable_auditing', 'Enabled auditing.',
+            on_permission_id=permission.id)
+
+    Counter.incr(session, "updates")
+
+    session.commit()
+
+
+def disable_permission_auditing(session, permission_name, actor_user_id):
+    """Set a permission as audited.
+
+    Args:
+        session(models.base.session.Session): database session
+        permission_name(str): name of permission in question
+        actor_user_id(int): id of user who is disabling auditing
+    """
+    permission = Permission.get(session, permission_name)
+    if not permission:
+        raise NoSuchPermission(name=permission_name)
+
+    permission._audited = False
+
+    AuditLog.log(session, actor_user_id, 'disable_auditing', 'Disabled auditing.',
+            on_permission_id=permission.id)
+
+    Counter.incr(session, "updates")
+
+    session.commit()
+
+
+def get_groups_by_permission(session, permission):
+    """For a given permission, return the groups and associated arguments that
+    have that permission.
+
+    Args:
+        session(models.base.session.Session): database session
+        permission_name(Permission): permission in question
+
+    Returns:
+        List of 2-tuple of the form (Group, argument).
+    """
+    return session.query(
+        Group.groupname,
+        PermissionMap.argument,
+        PermissionMap.granted_on,
+    ).filter(
+        Group.id == PermissionMap.group_id,
+        PermissionMap.permission_id == permission.id,
+        Group.enabled == True,
+    ).all()
+
+
+def get_log_entries_by_permission(session, permission, limit=20):
+    """For a given permission, return the audit logs that pertain.
+
+    Args:
+        session(models.base.session.Session): database session
+        permission_name(Permission): permission in question
+        limit(int): number of results to return
+    """
+    return AuditLog.get_entries(session, on_permission_id=permission.id, limit=limit)
 
 
 def filter_grantable_permissions(session, grants, all_permissions=None):
@@ -310,7 +422,8 @@ def get_requests_by_owner(session, owner, status, limit, offset):
     Args:
         session(sqlalchemy.orm.session.Session): database session
         owner(models.User): model of user in question
-        status(models.REQUEST_STATUS_CHOICES): if not None, filter by particular status
+        status(models.base.constants.REQUEST_STATUS_CHOICES): if not None,
+                filter by particular status
         limit(int): how many results to return
         offset(int): the offset into the result set that should be applied
 
@@ -380,7 +493,7 @@ def update_request(session, request, user, new_status, comment):
         session(sqlalchemy.orm.session.Session): database session
         request(models.PermissionRequest): request to update
         user(models.User): user making update
-        new_status(models.REQUEST_STATUS_CHOICES): new status
+        new_status(models.base.constants.REQUEST_STATUS_CHOICES): new status
         comment(str): comment to include with status change
 
     Raises:
@@ -425,13 +538,14 @@ def update_request(session, request, user, new_status, comment):
 
     if new_status == "actioned":
         # actually grant permission
-        request.group.grant_permission(request.permission, request.argument)
-        Counter.incr(session, "updates")
+        grant_permission(session, request.group.id, request.permission.id, request.argument)
 
     # audit log
     AuditLog.log(session, user.id, "update_perm_request",
             "updated permission request to status: {}".format(new_status),
             on_group_id=request.group_id, on_user_id=request.requester_id)
+
+    session.commit()
 
     # send notification
     if new_status == "actioned":

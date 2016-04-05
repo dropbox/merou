@@ -1,36 +1,43 @@
-from collections import OrderedDict, namedtuple
+################################################################################
+#                                                                              #
+# THIS MODULE IS DEPRECIATED. PLEASE DON'T ADD TO THE SPAGHETTI HERE IF YOU    #
+# CAN AVOID IT.                                                                #
+#                                                                              #
+################################################################################
+from collections import OrderedDict
 from datetime import datetime, timedelta
-import functools
-import hashlib
-import hmac
 import json
 import logging
-import os
 import re
 
-from enum import IntEnum
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, UniqueConstraint,
-    ForeignKey, Enum, DateTime, SmallInteger, Index, LargeBinary
+    Column, Integer, String, Text, Boolean,
+    ForeignKey, Enum, DateTime, SmallInteger, Index
 )
-from sqlalchemy import create_engine
 from sqlalchemy import or_, union_all, asc, desc
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased
-from sqlalchemy.orm import relationship, object_session
-from sqlalchemy.orm import sessionmaker, Session as _Session
-from sqlalchemy.sql import func, label, literal
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import label, literal
 
 from .constants import (
-    ARGUMENT_VALIDATION, PERMISSION_GRANT, PERMISSION_CREATE, MAX_NAME_LENGTH,
+    PERMISSION_GRANT, PERMISSION_CREATE, MAX_NAME_LENGTH,
     PERMISSION_VALIDATION, ILLEGAL_NAME_CHARACTER, PERMISSION_ADMIN,
     GROUP_ADMIN, USER_ADMIN
 )
 from .email_util import send_async_email
 from .plugin import get_plugins
 from .settings import settings
+from grouper.models.base.constants import REQUEST_STATUS_CHOICES
+from grouper.models.base.model_base import Model
+from grouper.models.base.session import flush_transaction
+from grouper.models.counter import Counter
+from grouper.models.audit_log import AuditLog
+from grouper.models.comment import Comment
+from grouper.models.public_key import PublicKey
+from grouper.models.user_metadata import UserMetadata
+from grouper.models.permission_map import PermissionMap
+from grouper.models.permission import Permission
 
 
 OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange", "PermissionRequestStatusChange")
@@ -48,13 +55,6 @@ GROUP_JOIN_CHOICES = {
 
 AUDIT_STATUS_CHOICES = {"pending", "approved", "remove"}
 
-REQUEST_STATUS_CHOICES = {
-    # Request has been made and awaiting action.
-    "pending": set(["actioned", "cancelled"]),
-    "actioned": set([]),
-    "cancelled": set([]),
-}
-
 # Note: the order of the GROUP_EDGE_ROLES tuple matters! New roles must be
 # appended!  When adding a new role, be sure to update the regression test.
 GROUP_EDGE_ROLES = (
@@ -67,52 +67,9 @@ OWNER_ROLE_INDICES = set([GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.inde
 APPROVER_ROLE_INDICIES = set([GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.index("np-owner"),
         GROUP_EDGE_ROLES.index("manager")])
 
-MappedPermission = namedtuple('MappedPermission',
-                              ['permission', 'audited', 'argument', 'groupname', 'granted_on'])
 
-
-class AuditLogCategory(IntEnum):
-    """Categories of entries in the audit_log."""
-
-    # generic, catch-all category
-    general = 1
-
-    # periodic global audit related
-    audit = 2
-
-
-class Session(_Session):
-    """ Custom session meant to utilize add on the model.
-
-        This Session overrides the add/add_all methods to prevent them
-        from being used. This is to for using the add methods on the
-        models themselves where overriding is available.
-    """
-
-    _add = _Session.add
-    _add_all = _Session.add_all
-    _delete = _Session.delete
-
-    def add(self, *args, **kwargs):
-        raise NotImplementedError("Use add method on models instead.")
-
-    def add_all(self, *args, **kwargs):
-        raise NotImplementedError("Use add method on models instead.")
-
-    def delete(self, *args, **kwargs):
-        raise NotImplementedError("Use delete method on models instead.")
-
-
-Session = sessionmaker(class_=Session)
-
-
-class Model(object):
-    """ Custom model mixin with helper methods. """
-
-    @property
-    def session(self):
-        return object_session(self)
-
+class CommentObjectMixin(object):
+    """Mixin used by models which show up as objects referenced by Comment entries."""
     @property
     def member_type(self):
         obj_name = type(self).__name__
@@ -120,122 +77,8 @@ class Model(object):
             raise ValueError()  # TODO(gary) fill out error
         return OBJ_TYPES[obj_name]
 
-    @classmethod
-    def get(cls, session, **kwargs):
-        instance = session.query(cls).filter_by(**kwargs).scalar()
-        if instance:
-            return instance
-        return None
 
-    @classmethod
-    def get_or_create(cls, session, **kwargs):
-        instance = session.query(cls).filter_by(**kwargs).scalar()
-        if instance:
-            return instance, False
-
-        instance = cls(**kwargs)
-        instance.add(session)
-
-        cls.just_created(instance)
-
-        return instance, True
-
-    def just_created(self):
-        pass
-
-    def add(self, session):
-        session._add(self)
-        return self
-
-    def delete(self, session):
-        session._delete(self)
-        return self
-
-
-Model = declarative_base(cls=Model)
-
-
-def get_db_engine(url):
-    return create_engine(url, pool_recycle=300)
-
-
-def flush_transaction(method):
-    @functools.wraps(method)
-    def wrapper(self, *args, **kwargs):
-        dryrun = kwargs.pop("dryrun", False)
-        try:
-            ret = method(self, *args, **kwargs)
-            if dryrun:
-                self.session.rollback()
-            else:
-                self.session.flush()
-        except Exception:
-            logging.exception("Transaction Failed. Rolling back.")
-            if self.session is not None:
-                self.session.rollback()
-            raise
-        return ret
-    return wrapper
-
-
-def get_all_groups(session):
-    """Returns all enabled groups.
-
-    At present, this is not cached at all and returns the full list of
-    groups from the database each time it's called.
-
-    Args:
-        session (Session): Session to load data on.
-
-    Returns:
-        a list of all Group objects in the database
-    """
-    return session.query(Group).filter(Group.enabled == True)
-
-
-def get_all_users(session):
-    """Returns all valid users in the group.
-
-    At present, this is not cached at all and returns the full list of
-    users from the database each time it's called.
-
-    Args:
-        session (Session): Session to load data on.
-
-    Returns:
-        a list of all User objects in the database
-    """
-    return session.query(User).all()
-
-
-def get_user_or_group(session, name, user_or_group=None):
-    """Given a name, fetch a user or group
-
-    If user_or_group is not defined, we determine whether a the name refers to
-    a user or group by checking whether the name is an email address, since
-    that's how users are specified.
-
-    Args:
-        session (Session): Session to load data on.
-        name (str): The name of the user or group.
-        user_or_group(str): "user" or "group" to specify the type explicitly
-
-    Returns:
-        User or Group object.
-    """
-    if user_or_group is not None:
-        assert (user_or_group in ["user", "group"]), ("%s not in ['user', 'group']" % user_or_group)
-        is_user = (user_or_group == "user")
-    else:
-        is_user = '@' in name
-
-    if is_user:
-        return session.query(User).filter_by(username=name).scalar()
-    else:
-        return session.query(Group).filter_by(groupname=name).scalar()
-
-
-class User(Model):
+class User(Model, CommentObjectMixin):
 
     __tablename__ = "users"
 
@@ -583,86 +426,6 @@ class User(Model):
         ).all()
 
 
-def _make_secret():
-    return os.urandom(20).encode("hex")
-
-
-class UserToken(Model):
-    """Simple bearer tokens used by third parties to verify user identity"""
-
-    __tablename__ = "user_tokens"
-
-    id = Column(Integer, primary_key=True)
-
-    user_id = Column(Integer, ForeignKey("users.id"))
-    name = Column(String(length=16), nullable=False)
-
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    disabled_at = Column(DateTime, default=None, nullable=True)
-
-    hashed_secret = Column(String(length=64), unique=True, nullable=False)
-
-    user = relationship("User", back_populates="tokens")
-
-    __table_args__ = (
-        UniqueConstraint("user_id", "name"),
-    )
-
-    @staticmethod
-    def get(session, user, name=None, id=None):
-        """Retrieves a single UserToken.
-
-        Args:
-            session (Session): Session object
-            user (User): Owner of the token
-            name (str): Name of the token
-            id (int): Primary key of the token
-
-        Returns:
-            UserToken: UserToken matching the specified constraints
-
-        """
-        assert name is None or id is None
-
-        if name is not None:
-            return session.query(UserToken).filter_by(name=name, user=user).scalar()
-        return session.query(UserToken).filter_by(id=id, user=user).scalar()
-
-    def _set_secret(self):
-        secret = _make_secret()
-        self.hashed_secret = hashlib.sha256(secret).hexdigest()
-        return secret
-
-    def add(self, session):
-        secret = None
-        if self.hashed_secret is None:
-            secret = self._set_secret()
-        super(UserToken, self).add(session)
-        Counter.incr(session, "updates")
-        return self, secret
-
-    def check_secret(self, secret):
-        # The length of self.hashed_secret is not secret
-        return self.enabled and hmac.compare_digest(
-                hashlib.sha256(secret).hexdigest(),
-                self.hashed_secret.encode('utf-8'),
-        )
-
-    @property
-    def enabled(self):
-        return self.disabled_at is None and self.user.enabled
-
-    def disable(self):
-        self.disabled_at = datetime.utcnow()
-        Counter.incr(self.session, "updates")
-
-    def __str__(self):
-        return "/".join((
-                self.user.username if self.user is not None else "unspecified",
-                self.name if self.name is not None else "unspecified",
-        ))
-
-
 def build_changes(edge, **updates):
     changes = {}
     for key, value in updates.items():
@@ -682,7 +445,7 @@ class MemberNotFound(Exception):
     pass
 
 
-class Group(Model):
+class Group(Model, CommentObjectMixin):
 
     __tablename__ = "groups"
 
@@ -761,25 +524,6 @@ class Group(Model):
 
         edge.apply_changes(request)
         self.session.flush()
-
-        Counter.incr(self.session, "updates")
-
-    @flush_transaction
-    def grant_permission(self, permission, argument=''):
-        """
-        Grant a permission to this group. This will fail if the (permission, argument) has already
-        been granted to this group.
-
-        Arguments:
-            permission: a Permission object being granted
-            argument: must match constants.ARGUMENT_VALIDATION
-        """
-        if not re.match(ARGUMENT_VALIDATION, argument):
-            raise ValueError('Permission argument does not match regex.')
-
-        mapping = PermissionMap(permission_id=permission.id, group_id=self.id,
-                                argument=argument)
-        mapping.add(self.session)
 
         Counter.incr(self.session, "updates")
 
@@ -1254,7 +998,7 @@ class Audit(Model):
         return all([member.status != "pending" for member in self.my_members()])
 
 
-class Request(Model):
+class Request(Model, CommentObjectMixin):
 
     __tablename__ = "requests"
 
@@ -1348,7 +1092,7 @@ class Request(Model):
         Counter.incr(self.session, "updates")
 
 
-class RequestStatusChange(Model):
+class RequestStatusChange(Model, CommentObjectMixin):
 
     __tablename__ = "request_status_changes"
 
@@ -1474,201 +1218,6 @@ class GroupEdge(Model):
         )
 
 
-class Comment(Model):
-
-    __tablename__ = "comments"
-
-    id = Column(Integer, primary_key=True)
-
-    obj_type = Column(Integer, nullable=False)
-    obj_pk = Column(Integer, nullable=False)
-
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    user = relationship(User, foreign_keys=[user_id])
-
-    comment = Column(Text, nullable=False)
-
-    created_on = Column(DateTime, default=datetime.utcnow,
-                        onupdate=func.current_timestamp(), nullable=False)
-
-
-class Counter(Model):
-
-    __tablename__ = "counters"
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True, nullable=False)
-    count = Column(Integer, nullable=False, default=0)
-    last_modified = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    @classmethod
-    def incr(cls, session, name, count=1):
-        counter = session.query(cls).filter_by(name=name).scalar()
-        if counter is None:
-            counter = cls(name=name, count=count).add(session)
-            session.flush()
-            return counter
-        counter.count = cls.count + count
-        session.flush()
-        return counter
-
-    @classmethod
-    def decr(cls, session, name, count=1):
-        return cls.incr(session, name, -count)
-
-
-class UserMetadata(Model):
-
-    __tablename__ = "user_metadata"
-    __table_args__ = (
-        UniqueConstraint('user_id', 'data_key', name='uidx1'),
-    )
-
-    id = Column(Integer, primary_key=True)
-
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    user = relationship(User, foreign_keys=[user_id])
-
-    data_key = Column(String(length=64), nullable=False)
-    data_value = Column(String(length=64), nullable=False)
-    last_modified = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    def add(self, session):
-        super(UserMetadata, self).add(session)
-        Counter.incr(session, "updates")
-        return self
-
-    def delete(self, session):
-        super(UserMetadata, self).delete(session)
-        Counter.incr(session, "updates")
-        return self
-
-
-class PublicKey(Model):
-
-    __tablename__ = "public_keys"
-
-    id = Column(Integer, primary_key=True)
-
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    user = relationship(User, foreign_keys=[user_id])
-
-    key_type = Column(String(length=32))
-    key_size = Column(Integer)
-    public_key = Column(Text, nullable=False, unique=True)
-    fingerprint = Column(String(length=64), nullable=False)
-    created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    def add(self, session):
-        super(PublicKey, self).add(session)
-        Counter.incr(session, "updates")
-        return self
-
-    def delete(self, session):
-        super(PublicKey, self).delete(session)
-        Counter.incr(session, "updates")
-        return self
-
-
-class Permission(Model):
-    '''
-    Represents permission types. See PermissionEdge for the mapping of which permissions
-    exist on a given Group.
-    '''
-
-    __tablename__ = "permissions"
-
-    id = Column(Integer, primary_key=True)
-
-    name = Column(String(length=64), unique=True, nullable=False)
-    description = Column(Text, nullable=False)
-    created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
-    _audited = Column('audited', Boolean, default=False, nullable=False)
-
-    @staticmethod
-    def get(session, name=None):
-        if name is not None:
-            return session.query(Permission).filter_by(name=name).scalar()
-        return None
-
-    @staticmethod
-    def get_all(session):
-        return session.query(Permission).order_by(asc("name")).all()
-
-    @property
-    def audited(self):
-        return self._audited
-
-    def enable_auditing(self):
-        self._audited = True
-        Counter.incr(self.session, "updates")
-
-    def disable_auditing(self):
-        self._audited = False
-        Counter.incr(self.session, "updates")
-
-    def get_mapped_groups(self):
-        '''
-        Return a list of tuples: (Group object, argument).
-        '''
-        results = self.session.query(
-            Group.groupname,
-            PermissionMap.argument,
-            PermissionMap.granted_on,
-        ).filter(
-            Group.id == PermissionMap.group_id,
-            PermissionMap.permission_id == self.id,
-            Group.enabled == True,
-        )
-        return results.all()
-
-    def my_log_entries(self):
-
-        return AuditLog.get_entries(self.session, on_permission_id=self.id, limit=20)
-
-
-class PermissionRequest(Model):
-    """Represent request for a permission/argument to be granted to a particular group."""
-    __tablename__ = "permission_requests"
-
-    id = Column(Integer, primary_key=True)
-
-    # The User that made the request.
-    requester_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    requester = relationship(
-        User, backref="permission_requests", foreign_keys=[requester_id]
-    )
-
-    permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=False)
-    permission = relationship(Permission, foreign_keys=[permission_id])
-    argument = Column(String(length=64), nullable=True)
-
-    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
-    group = relationship(Group, foreign_keys=[group_id])
-
-    requested_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    status = Column(Enum(*REQUEST_STATUS_CHOICES), default="pending", nullable=False)
-
-
-class PermissionRequestStatusChange(Model):
-    """Tracks changes to each permission grant request."""
-    __tablename__ = "permission_request_status_changes"
-
-    id = Column(Integer, primary_key=True)
-
-    request_id = Column(Integer, ForeignKey("permission_requests.id"), nullable=False)
-    request = relationship(PermissionRequest)
-
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    user = relationship(User, foreign_keys=[user_id])
-
-    from_status = Column(Enum(*REQUEST_STATUS_CHOICES))
-    to_status = Column(Enum(*REQUEST_STATUS_CHOICES), nullable=False)
-
-    change_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-
 class AsyncNotification(Model):
     """Represent a notification tracking/sending mechanism"""
 
@@ -1745,170 +1294,3 @@ class AsyncNotification(Model):
             *opt_arg
         ).delete()
         session.commit()
-
-
-class PermissionMap(Model):
-    '''
-    Maps a relationship between a Permission and a Group. Note that a single permission can be
-    mapped into a given group multiple times, as long as the argument is unique.
-
-    These include the optional arguments, which can either be a string, an asterisks ("*"), or
-    Null to indicate no argument.
-    '''
-
-    __tablename__ = "permissions_map"
-    __table_args__ = (
-        UniqueConstraint('permission_id', 'group_id', 'argument', name='uidx1'),
-    )
-
-    id = Column(Integer, primary_key=True)
-
-    permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=False)
-    permission = relationship(Permission, foreign_keys=[permission_id])
-
-    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
-    group = relationship(Group, foreign_keys=[group_id])
-
-    argument = Column(String(length=64), nullable=True)
-    granted_on = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    @staticmethod
-    def get(session, id=None):
-        if id is not None:
-            return session.query(PermissionMap).filter_by(id=id).scalar()
-        return None
-
-    def add(self, session):
-        super(PermissionMap, self).add(session)
-        Counter.incr(session, "updates")
-        return self
-
-    def delete(self, session):
-        super(PermissionMap, self).delete(session)
-        Counter.incr(session, "updates")
-        return self
-
-
-class AuditLogFailure(Exception):
-    pass
-
-
-class AuditLog(Model):
-    '''
-    Logs actions taken in the system. This is a pretty simple logging framework to just
-    let us track everything that happened. The main use case is to show users what has
-    happened recently, to help them understand.
-    '''
-
-    __tablename__ = "audit_log"
-
-    id = Column(Integer, primary_key=True)
-    log_time = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    # The actor is the person who took an action.
-    actor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    actor = relationship(User, foreign_keys=[actor_id])
-
-    # The 'on_*' columns are what was acted on.
-    on_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    on_user = relationship(User, foreign_keys=[on_user_id])
-    on_group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
-    on_group = relationship(Group, foreign_keys=[on_group_id])
-    on_permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=True)
-    on_permission = relationship(Permission, foreign_keys=[on_permission_id])
-
-    # The action and description columns are text. These are mostly displayed
-    # to the user as-is, but we might provide filtering or something.
-    action = Column(String(length=64), nullable=False)
-    description = Column(Text, nullable=False)
-    category = Column(Integer, nullable=False, default=AuditLogCategory.general)
-
-    @staticmethod
-    def log(session, actor_id, action, description,
-            on_user_id=None, on_group_id=None, on_permission_id=None,
-            category=AuditLogCategory.general):
-        '''
-        Log an event in the database.
-
-        Args:
-            session(Session): database session
-            actor_id(int): actor
-            action(str): unique string identifier for action taken
-            description(str): description for action taken
-            on_user_id(int): user affected, if any
-            on_group_id(int): group affected, if any
-            on_permission_id(int): permission affected, if any
-            category(AuditLogCategory): category of log entry
-        '''
-        entry = AuditLog(
-            actor_id=actor_id,
-            log_time=datetime.utcnow(),
-            action=action,
-            description=description,
-            on_user_id=on_user_id if on_user_id else None,
-            on_group_id=on_group_id if on_group_id else None,
-            on_permission_id=on_permission_id if on_permission_id else None,
-            category=int(category),
-        )
-        try:
-            entry.add(session)
-            session.flush()
-        except IntegrityError:
-            session.rollback()
-            raise AuditLogFailure()
-        session.commit()
-
-    @staticmethod
-    def get_entries(session, actor_id=None, on_user_id=None, on_group_id=None,
-                    on_permission_id=None, limit=None, offset=None, involve_user_id=None,
-                    category=None, action=None):
-        '''
-        Flexible method for getting log entries. By default it returns all entries
-        starting at the newest. Most recent first.
-
-        involve_user_id, if set, is (actor_id OR on_user_id).
-        '''
-
-        results = session.query(AuditLog)
-
-        if actor_id:
-            results = results.filter(AuditLog.actor_id == actor_id)
-        if on_user_id:
-            results = results.filter(AuditLog.on_user_id == on_user_id)
-        if on_group_id:
-            results = results.filter(AuditLog.on_group_id == on_group_id)
-        if on_permission_id:
-            results = results.filter(AuditLog.on_permission_id == on_permission_id)
-        if involve_user_id:
-            results = results.filter(or_(
-                AuditLog.on_user_id == involve_user_id,
-                AuditLog.actor_id == involve_user_id
-            ))
-        if category:
-            results = results.filter(AuditLog.category == int(category))
-        if action:
-            results = results.filter(AuditLog.action == action)
-
-        results = results.order_by(desc(AuditLog.log_time))
-
-        if offset:
-            results = results.offset(offset)
-        if limit:
-            results = results.limit(limit)
-
-        return results.all()
-
-
-class PerfProfile(Model):
-    __tablename__ = "perf_profiles"
-    __table_args__ = (
-            Index(
-                "perf_trace_created_on_idx",
-                "created_on",
-            ),
-    )
-
-    uuid = Column(String(length=36), primary_key=True)
-    plop_input = Column(LargeBinary(length=1000000), nullable=False)
-    flamegraph_input = Column(LargeBinary(length=1000000), nullable=False)
-    created_on = Column(DateTime, default=datetime.utcnow, nullable=False)

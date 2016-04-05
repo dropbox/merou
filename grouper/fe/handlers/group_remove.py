@@ -1,6 +1,8 @@
 from grouper.fe.forms import GroupRemoveForm
 from grouper.fe.util import GrouperHandler
-from grouper.models import AuditLog, Group, get_user_or_group
+from grouper.model_soup import Group
+from grouper.user import get_user_or_group
+from grouper.models.audit_log import AuditLog
 
 
 class GroupRemove(GrouperHandler):

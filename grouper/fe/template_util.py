@@ -101,7 +101,7 @@ def get_template_env(package="grouper.fe", deployment_name="",
                      extra_filters=None, extra_globals=None):
     # TODO(herb): get around circular depdendencies; long term remove call to
     # send_async_email() from grouper.models
-    from grouper.models import GROUP_EDGE_ROLES, OBJ_TYPES_IDX
+    from grouper.model_soup import GROUP_EDGE_ROLES, OBJ_TYPES_IDX
 
     filters = {
         "print_date": print_date,

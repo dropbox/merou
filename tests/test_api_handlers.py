@@ -4,9 +4,10 @@ from urllib import urlencode
 
 import pytest
 
-from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from fixtures import api_app as app  # noqa
-from grouper.models import UserToken
+from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
+from grouper.models.user_token import UserToken
+from grouper.user_token import add_new_user_token, disable_user_token
 from url_util import url
 
 
@@ -39,10 +40,7 @@ def test_users(users, http_client, base_url):
 @pytest.mark.gen_test
 def test_usertokens(users, session, http_client, base_url):
     user = users["zorkian@a.co"]
-    tok, secret = UserToken(
-        user=user,
-        name="Foo"
-    ).add(session)
+    tok, secret = add_new_user_token(session, UserToken(user=user, name="Foo"))
     session.commit()
 
     api_url = url(base_url, '/token/validate')
@@ -115,7 +113,7 @@ def test_usertokens(users, session, http_client, base_url):
     assert body["errors"][0]["code"] == 2
 
     # Disabled, but otherwise valid token
-    tok.disable()
+    disable_user_token(session, tok)
     session.commit()
 
     resp = yield http_client.fetch(api_url, method="POST", body=urlencode({'token': valid_token}))

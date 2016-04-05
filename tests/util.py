@@ -1,3 +1,5 @@
+import grouper.permissions
+
 # These functions operate on and return instrumented Grouper.models.Model instances.
 def add_member(parent, member, role="member", expiration=None):
     return parent.add_member(member, member, "Unit Testing", "actioned", role=role,
@@ -11,7 +13,8 @@ def revoke_member(parent, member):
     return parent.revoke_member(member, member, "Unit Testing")
 
 def grant_permission(group, permission, argument=""):
-    return group.grant_permission(permission, argument=argument)
+    return grouper.permissions.grant_permission(group.session, group.id, permission.id,
+            argument=argument)
 
 
 def get_users(graph, groupname, cutoff=None):

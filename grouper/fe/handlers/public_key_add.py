@@ -3,7 +3,8 @@ from grouper.email_util import send_email
 from grouper.fe.forms import PublicKeyForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.models import AuditLog, User
+from grouper.model_soup import User
+from grouper.models.audit_log import AuditLog
 
 
 class PublicKeyAdd(GrouperHandler):

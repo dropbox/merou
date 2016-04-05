@@ -1,7 +1,7 @@
 from grouper.constants import PERMISSION_GRANT, PERMISSION_CREATE, PERMISSION_AUDITOR
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.models import Permission
+from grouper.models.permission import Permission
 
 
 class Help(GrouperHandler):

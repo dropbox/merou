@@ -1,7 +1,7 @@
 from grouper import permissions
 from grouper.fe.forms import PermissionRequestsForm
 from grouper.fe.util import GrouperHandler
-from grouper.models import REQUEST_STATUS_CHOICES
+from grouper.models.base.constants import REQUEST_STATUS_CHOICES
 
 
 class PermissionsRequests(GrouperHandler):

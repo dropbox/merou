@@ -5,6 +5,7 @@ import logging
 import smtplib
 
 from grouper.fe.template_util import get_template_env
+from grouper.models.audit_log import AuditLog
 
 
 def send_email(session, recipients, subject, template, settings, context):
@@ -36,7 +37,7 @@ def send_async_email(
     """
     # TODO(herb): get around circular depdendencies; long term remove call to
     # send_async_email() from grouper.models
-    from grouper.models import AsyncNotification
+    from grouper.model_soup import AsyncNotification
 
     if isinstance(recipients, basestring):
         recipients = recipients.split(",")
@@ -66,7 +67,7 @@ def cancel_async_emails(session, async_key):
     """
     # TODO(herb): get around circular depdendencies; long term remove call to
     # send_async_email() from grouper.models
-    from grouper.models import AsyncNotification
+    from grouper.model_soup import AsyncNotification
 
     session.query(AsyncNotification).filter(
         AsyncNotification.key == async_key,
@@ -92,7 +93,7 @@ def process_async_emails(settings, session, now_ts, dry_run=False):
     """
     # TODO(herb): get around circular depdendencies; long term remove call to
     # send_async_email() from grouper.models
-    from grouper.models import AsyncNotification
+    from grouper.model_soup import AsyncNotification
 
     emails = session.query(AsyncNotification).filter(
         AsyncNotification.sent == False,
@@ -204,7 +205,7 @@ def notify_edge_expiration(settings, session, edge):
     """
     # TODO(herb): get around circular depdendencies; long term remove call to
     # send_async_email() from grouper.models
-    from grouper.models import AuditLog, Group, OBJ_TYPES_IDX, User
+    from grouper.model_soup import Group, OBJ_TYPES_IDX, User
 
     # TODO(rra): Arbitrarily use the first listed owner of the group from which membership expired
     # as the actor, since we have to provide an actor and we didn't record who set the expiration on

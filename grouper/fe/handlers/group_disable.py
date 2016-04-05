@@ -1,5 +1,6 @@
 from grouper.fe.util import GrouperHandler
-from grouper.models import AuditLog, Group
+from grouper.model_soup import Group
+from grouper.models.audit_log import AuditLog
 
 
 class GroupDisable(GrouperHandler):

@@ -2,8 +2,11 @@ from sqlalchemy.exc import IntegrityError
 from grouper.audit import assert_controllers_are_auditors, UserNotAuditor
 from grouper.fe.forms import PermissionGrantForm
 from grouper.fe.util import GrouperHandler
-from grouper.models import AuditLog, Group, Permission
+from grouper.model_soup import Group
 from grouper.util import matches_glob
+from grouper.models.audit_log import AuditLog
+from grouper.permissions import grant_permission
+from grouper.models.permission import Permission
 
 
 class PermissionsGrant(GrouperHandler):
@@ -82,7 +85,7 @@ class PermissionsGrant(GrouperHandler):
                 )
 
         try:
-            group.grant_permission(permission, argument=form.data["argument"])
+            grant_permission(self.session, group.id, permission.id, argument=form.data["argument"])
         except IntegrityError:
             form.argument.errors.append(
                 "Permission and Argument already mapped to this group."

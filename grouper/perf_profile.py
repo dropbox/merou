@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from plop.collector import FlamegraphFormatter, PlopFormatter
 from pyflamegraph import generate
 
-from grouper.models import PerfProfile
+from grouper.models.perf_profile import PerfProfile
 
 
 ONE_WEEK = timedelta(days=7)

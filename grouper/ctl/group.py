@@ -1,7 +1,8 @@
 import logging
 
 from grouper.ctl.util import ensure_valid_username, ensure_valid_groupname, make_session
-from grouper.models import AuditLog, Group, User
+from grouper.model_soup import Group, User
+from grouper.models.audit_log import AuditLog
 
 
 @ensure_valid_username

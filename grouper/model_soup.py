@@ -4,7 +4,7 @@
 # CAN AVOID IT.                                                                #
 #                                                                              #
 ################################################################################
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 from datetime import datetime, timedelta
 import json
 import logging

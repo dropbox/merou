@@ -36,6 +36,7 @@ from grouper.models.audit_log import AuditLog
 from grouper.models.comment import Comment
 from grouper.models.public_key import PublicKey
 from grouper.models.user_metadata import UserMetadata
+from grouper.models.user_token import UserToken
 from grouper.models.permission_map import PermissionMap
 from grouper.models.permission import Permission
 
@@ -86,7 +87,7 @@ class User(Model, CommentObjectMixin):
     username = Column(String(length=MAX_NAME_LENGTH), unique=True, nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
     role_user = Column(Boolean, default=False, nullable=False)
-    tokens = relationship("UserToken", back_populates="user")
+    tokens = relationship(UserToken, back_populates="user")
 
     @hybrid_property
     def name(self):

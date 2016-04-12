@@ -20,7 +20,7 @@ class Permission(Model):
 
     id = Column(Integer, primary_key=True)
 
-    name = Column(String(length=64), unique=True, nullable=False)
+    name = Column(String(length=128), unique=True, nullable=False)
     description = Column(Text, nullable=False)
     created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
     _audited = Column('audited', Boolean, default=False, nullable=False)

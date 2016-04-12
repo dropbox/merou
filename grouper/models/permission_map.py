@@ -28,7 +28,7 @@ class PermissionMap(Model):
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
     group = relationship("Group", foreign_keys=[group_id])
 
-    argument = Column(String(length=64), nullable=True)
+    argument = Column(String(length=128), nullable=True)
     granted_on = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     @staticmethod

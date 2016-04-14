@@ -16,7 +16,9 @@ class UserTokenAdd(GrouperHandler):
         if not user:
             return self.notfound()
 
-        if user.name != self.current_user.name:
+        if user.name != self.current_user.name and not (
+                self.current_user.has_permission(USER_ADMIN) and user.role_user
+        ):
             return self.forbidden()
 
         self.render("user-token-add.html", form=UserTokenForm(), user=user)

@@ -1,4 +1,5 @@
 from sqlalchemy.exc import IntegrityError
+from grouper.constants import USER_ADMIN
 from grouper.email_util import send_email
 from grouper.fe.forms import UserTokenForm
 from grouper.fe.settings import settings
@@ -25,7 +26,9 @@ class UserTokenAdd(GrouperHandler):
         if not user:
             return self.notfound()
 
-        if user.name != self.current_user.name:
+        if user.name != self.current_user.name and not (
+                self.current_user.has_permission(USER_ADMIN) and user.role_user
+        ):
             return self.forbidden()
 
         form = UserTokenForm(self.request.arguments)

@@ -2,6 +2,8 @@ from urllib import urlencode
 
 import pytest
 
+from tornado.httpclient import HTTPError
+
 from fixtures import fe_app as app
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from grouper.constants import USER_ADMIN
@@ -63,6 +65,30 @@ def test_usertokens(standard_graph, session, users, groups, permissions):  # noq
     assert user.tokens[0].enabled == False
     assert UserToken.get(session, name="Foo", user=user).enabled == False
     assert tok.check_secret(secret) == False
+
+
+@pytest.mark.gen_test
+def test_user_tok_acls(session, graph, users, user_admin_perm_to_auditors, http_client, base_url):
+    role_user = "role@a.co"
+    admin = "zorkian@a.co"
+    pleb = "gary@a.co"
+
+    # admin creating token for role user
+    fe_url = url(base_url, "/users/{}/tokens/add".format(role_user))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            headers={"X-Grouper-User": admin}, body=urlencode({"name": "foo"}))
+    assert resp.code == 200
+
+    with pytest.raises(HTTPError):
+        # non-admin creating token for role user
+        resp = yield http_client.fetch(fe_url, method="POST",
+                headers={"X-Grouper-User": pleb}, body=urlencode({"name": "foo2"}))
+
+    fe_url = url(base_url, "/users/{}/tokens/add".format(pleb))
+    with pytest.raises(HTTPError):
+        # admin creating token for normal (non-role) user
+        resp = yield http_client.fetch(fe_url, method="POST",
+                headers={"X-Grouper-User": admin}, body=urlencode({"name": "foo3"}))
 
 
 

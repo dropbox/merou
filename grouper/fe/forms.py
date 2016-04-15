@@ -68,7 +68,7 @@ class PermissionGrantForm(Form):
 
 class PermissionCreateForm(Form):
     name = StringField("Name", [
-        validators.Length(min=3, max=64),
+        validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
         validators.DataRequired(),
         ValidateRegex(constants.PERMISSION_VALIDATION),
     ])

@@ -3,6 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, asc
 
+from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.base.model_base import Model
 
 
@@ -20,7 +21,7 @@ class Permission(Model):
 
     id = Column(Integer, primary_key=True)
 
-    name = Column(String(length=128), unique=True, nullable=False)
+    name = Column(String(length=MAX_NAME_LENGTH), unique=True, nullable=False)
     description = Column(Text, nullable=False)
     created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
     _audited = Column('audited', Boolean, default=False, nullable=False)

@@ -324,7 +324,7 @@ enabled. Membership in this group is regularly reviewed.
     </div>
 {%- endmacro %}
 
-{% macro permission_panel(max_height, mappings, group=None, can_grant=None, is_owner=None, pending_requests=None) -%}
+{% macro permission_panel(max_height, mappings, group=None, can_grant=None, is_member=None, pending_requests=None) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Permissions</h3>
@@ -398,14 +398,14 @@ enabled. Membership in this group is regularly reviewed.
                 {% endif %}
             </table>
         </div>
-        {% if group and (can_grant or is_owner) %}
+        {% if group and (can_grant or is_member) %}
         <div class='panel-footer'>
             {% if can_grant %}
             <a class="btn btn-default btn-sm" href="/permissions/grant/{{ group.name }}">
                 <span class="glyphicon glyphicon-plus"></span> Add Permission
             </a>
             {% endif %}
-            {% if is_owner %}
+            {% if is_member%}
             <a class="btn btn-default btn-sm" href="/groups/{{ group.name }}/permission/request">
                 <span class="glyphicon glyphicon-plus"></span> Request Permission
             </a>

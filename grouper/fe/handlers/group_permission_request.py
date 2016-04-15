@@ -3,7 +3,7 @@ from grouper import permissions
 from grouper.fe.forms import GroupPermissionRequestDropdownForm, GroupPermissionRequestTextForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler, Alert
-from grouper.model_soup import Group, OWNER_ROLE_INDICES
+from grouper.model_soup import Group
 from grouper.permissions import get_grantable_permissions
 from grouper.models.permission import Permission
 
@@ -43,7 +43,7 @@ class GroupPermissionRequest(GrouperHandler):
 
         # only owner of group can request permissions for that group
         role_index = self.current_user.my_role_index(group.my_members())
-        if role_index not in OWNER_ROLE_INDICES:
+        if not role_index:
             return self.forbidden()
 
         # check inputs

@@ -80,3 +80,12 @@ class BasePlugin(object):
             permission + argument pair.
         """
         pass
+
+    def log_auditlog_entry(self, entry):
+        """
+        Called when an audit log entry is saved to the database.
+
+        Args:
+            entry (models.audit_log.AuditLog): just-saved log object
+        """
+        pass

@@ -4,8 +4,9 @@ import re
 import unittest
 from urllib import urlencode
 
-from wtforms.validators import ValidationError
 import pytest
+from tornado.httpclient import HTTPError
+from wtforms.validators import ValidationError
 
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from fixtures import fe_app as app  # noqa
@@ -20,7 +21,7 @@ from grouper.constants import (
         )
 from grouper.fe.forms import ValidateRegex
 import grouper.fe.util
-from grouper.model_soup import AsyncNotification, Group, User
+from grouper.model_soup import AsyncNotification, Group, PermissionMap, User
 from grouper.permissions import (
         get_grantable_permissions,
         get_owner_arg_list,
@@ -353,3 +354,63 @@ def test_limited_permissions(session, standard_graph, groups, grantable_permissi
     assert len(emails) == 2, "email only sent to security-team"
     assert not security_team_members.difference(e.email for e in emails), \
             "only security-team members get notification"
+
+@pytest.mark.gen_test
+def test_grant_and_revoke(session, standard_graph, graph, groups, permissions,
+        http_client, base_url):
+    """Test that permission grant and revokes are reflected correctly."""
+    group_name = "team-sre"
+    permission_name = "sudo"
+    user_name = "oliver@a.co"
+
+    def _check_graph_for_perm(graph):
+        return any(map(lambda x: x.permission == permission_name,
+                graph.permission_metadata[group_name]))
+
+    # make some permission admins
+    perm_admin, _ = Permission.get_or_create(session, name=PERMISSION_ADMIN, description="")
+    session.commit()
+    grant_permission(groups["security-team"], perm_admin)
+
+    # grant attempt by non-permission admin
+    fe_url = url(base_url, "/permissions/grant/{}".format(group_name))
+    with pytest.raises(HTTPError):
+        yield http_client.fetch(fe_url, method="POST",
+                body=urlencode({"permission": permission_name, "argument": "specific_arg"}),
+                headers={'X-Grouper-User': "zorkian@a.co"})
+
+    graph.update_from_db(session)
+    assert not _check_graph_for_perm(graph), "no permissions granted"
+
+    # grant by permission admin
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"permission": permission_name, "argument": "specific_arg"}),
+            headers={'X-Grouper-User': user_name})
+    assert resp.code == 200
+
+    graph.update_from_db(session)
+    assert _check_graph_for_perm(graph), "permissions granted, successfully"
+
+    # figure out mapping_id of grant
+    permission_id = Permission.get(session, name=permission_name).id
+    group_id = Group.get(session, name=group_name).id
+    mapping = session.query(PermissionMap).filter(
+            PermissionMap.permission_id == permission_id,
+            PermissionMap.group_id == group_id).first()
+
+    # revoke permission by non-admin
+    fe_url = url(base_url, "/permissions/{}/revoke/{}".format(permission_name, mapping.id))
+    with pytest.raises(HTTPError):
+        yield http_client.fetch(fe_url, method="POST", body=urlencode({}),
+                headers={'X-Grouper-User': "zorkian@a.co"})
+
+    graph.update_from_db(session)
+    assert _check_graph_for_perm(graph), "permissions not revoked"
+
+    # revoke permission for realz
+    resp = yield http_client.fetch(fe_url, method="POST", body=urlencode({}),
+            headers={'X-Grouper-User': user_name})
+    assert resp.code == 200
+
+    graph.update_from_db(session)
+    assert not _check_graph_for_perm(graph), "permissions revoked successfully"

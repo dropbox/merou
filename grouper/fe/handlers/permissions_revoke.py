@@ -1,6 +1,7 @@
 from grouper.fe.util import GrouperHandler
 from grouper.util import matches_glob
 from grouper.models.audit_log import AuditLog
+from grouper.models.counter import Counter
 from grouper.models.permission_map import PermissionMap
 
 
@@ -45,6 +46,7 @@ class PermissionsRevoke(GrouperHandler):
         group = mapping.group
 
         mapping.delete(self.session)
+        Counter.incr(self.session, "updates")
         self.session.commit()
 
         AuditLog.log(self.session, self.current_user.id, 'revoke_permission',

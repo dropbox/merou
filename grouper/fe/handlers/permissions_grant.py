@@ -59,6 +59,7 @@ class PermissionsGrant(GrouperHandler):
             if perm[0].name == permission.name:
                 if matches_glob(perm[1], form.data["argument"]):
                     allowed = True
+                    break
         if not allowed:
             form.argument.errors.append(
                 "You do not have grant authority over that permission/argument combination."

@@ -41,9 +41,8 @@ class GroupPermissionRequest(GrouperHandler):
         if not group:
             return self.notfound()
 
-        # only owner of group can request permissions for that group
-        role_index = self.current_user.my_role_index(group.my_members())
-        if not role_index:
+        # Only members can request permissions
+        if not self.current_user.is_member(group.my_members()):
             return self.forbidden()
 
         # check inputs

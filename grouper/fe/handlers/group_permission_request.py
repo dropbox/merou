@@ -27,6 +27,10 @@ class GroupPermissionRequest(GrouperHandler):
         if not group:
             return self.notfound()
 
+        # Only members can request permissions
+        if not self.current_user.is_member(group.my_members()):
+            return self.forbidden()
+
         args_by_perm = get_grantable_permissions(self.session,
                 settings.restricted_ownership_permissions)
         dropdown_form, text_form = GroupPermissionRequest._get_forms(args_by_perm, None)

@@ -3,7 +3,7 @@ from grouper.email_util import send_email
 from grouper.fe.forms import GroupRequestModifyForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler, Alert
-from grouper.model_soup import Group, GroupEdge, Request
+from grouper.model_soup import Group, GroupEdge, Request, GROUP_EDGE_ROLES
 from grouper.models.base.constants import REQUEST_STATUS_CHOICES
 from grouper.models.audit_log import AuditLog
 
@@ -92,6 +92,31 @@ class GroupRequestUpdate(GrouperHandler):
         edge = self.session.query(GroupEdge).filter_by(
             id=request.edge_id
         ).one()
+
+        approver_mail_to = [
+            user.name
+            for user in group.my_users()
+            if GROUP_EDGE_ROLES[user.role] in ("manager", "owner", "np-owner") and
+            user.name != self.current_user.name and user.name != request.requester.username
+        ]
+
+        send_email(
+            self.session,
+            approver_mail_to,
+            "Request to join {} by {} has been {}".format(group.groupname,
+                request.requester.name, form.data['status']),
+            "approver_request_updated",
+            settings,
+            {
+                'group': group.name,
+                'requester': request.requester.username,
+                'changed_by': self.current_user.name,
+                'status': form.data['status'],
+                'role': edge.role,
+                'reason': form.data['reason'],
+            },
+        )
+
         if form.data['status'] == 'actioned':
             send_email(
                 self.session,

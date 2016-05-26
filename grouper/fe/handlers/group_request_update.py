@@ -3,7 +3,7 @@ from grouper.email_util import send_email
 from grouper.fe.forms import GroupRequestModifyForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler, Alert
-from grouper.model_soup import Group, GroupEdge, Request, GROUP_EDGE_ROLES
+from grouper.model_soup import Group, GroupEdge, Request
 from grouper.models.base.constants import REQUEST_STATUS_CHOICES
 from grouper.models.audit_log import AuditLog
 
@@ -95,9 +95,8 @@ class GroupRequestUpdate(GrouperHandler):
 
         approver_mail_to = [
             user.name
-            for user in group.my_users()
-            if GROUP_EDGE_ROLES[user.role] in ("manager", "owner", "np-owner") and
-            user.name != self.current_user.name and user.name != request.requester.username
+            for user in group.my_approver_users()
+            if user.name != self.current_user.name and user.name != request.requester.username
         ]
 
         send_email(

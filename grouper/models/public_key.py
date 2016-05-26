@@ -15,6 +15,6 @@ class PublicKey(Model):
 
     key_type = Column(String(length=32))
     key_size = Column(Integer)
-    public_key = Column(Text, nullable=False, unique=True)
-    fingerprint = Column(String(length=64), nullable=False)
+    public_key = Column(Text, nullable=False)
+    fingerprint = Column(String(length=64), nullable=False, unique=True)
     created_on = Column(DateTime, default=datetime.utcnow, nullable=False)

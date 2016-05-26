@@ -8,7 +8,7 @@ class Counter(Model):
     __tablename__ = "counters"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True, nullable=False)
+    name = Column(String(length=255), unique=True, nullable=False)
     count = Column(Integer, nullable=False, default=0)
     last_modified = Column(DateTime, default=datetime.utcnow, nullable=False)
 

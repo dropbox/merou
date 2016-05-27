@@ -13,7 +13,7 @@ import re
 from sqlalchemy import asc, desc, or_, union_all
 from sqlalchemy import (
     Boolean, Column, DateTime, Enum, ForeignKey, Index,
-    Integer, SmallInteger, String, Text
+    Integer, Interval, SmallInteger, String, Text
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased
@@ -454,6 +454,10 @@ class Group(Model, CommentObjectMixin):
     description = Column(Text)
     canjoin = Column(Enum(*GROUP_JOIN_CHOICES), default="canask")
     enabled = Column(Boolean, default=True, nullable=False)
+    # The default amount of time new users have before their membership in the group is expired
+    # NOTE: This only applies to users who join a group via a request in the front end. It does
+    # not apply to users who are added to a group by an approver
+    auto_expire = Column(Interval)
 
     audit_id = Column(Integer, nullable=True)
     audit = relationship("Audit", foreign_keys=[audit_id],

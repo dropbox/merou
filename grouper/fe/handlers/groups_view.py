@@ -50,7 +50,8 @@ class GroupsView(GrouperHandler):
         group = Group(
             groupname=form.data["groupname"],
             description=form.data["description"],
-            canjoin=form.data["canjoin"]
+            canjoin=form.data["canjoin"],
+            auto_expire=form.data["auto_expire"],
         )
         try:
             group.add(self.session)

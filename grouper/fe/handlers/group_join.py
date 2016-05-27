@@ -68,9 +68,17 @@ class GroupJoin(GrouperHandler):
                 ]
             )
 
+        # We only use the default expiration time if no expiration time was given
+        # This does mean that if a user wishes to join a group with no expiration
+        # (even with an owner's permission) that has an auto expiration, they must
+        # first be accepted to the group and then have the owner edit the user to
+        # have no expiration.
+
         expiration = None
         if form.data["expiration"]:
             expiration = datetime.strptime(form.data["expiration"], "%m/%d/%Y")
+        elif group.auto_expire:
+            expiration = datetime.utcnow() + group.auto_expire
 
         group.add_member(
             requester=self.current_user,

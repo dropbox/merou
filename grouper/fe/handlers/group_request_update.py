@@ -107,7 +107,7 @@ class GroupRequestUpdate(GrouperHandler):
             "approver_request_updated",
             settings,
             {
-                'group': group.name,
+                'group_name': group.name,
                 'requester': request.requester.username,
                 'changed_by': self.current_user.name,
                 'status': form.data['status'],
@@ -124,7 +124,7 @@ class GroupRequestUpdate(GrouperHandler):
                 'request_actioned',
                 settings,
                 {
-                    'group': group.name,
+                    'group_name': group.name,
                     'actioned_by': self.current_user.name,
                     'reason': form.data['reason'],
                     'expiration': edge.expiration,
@@ -139,7 +139,7 @@ class GroupRequestUpdate(GrouperHandler):
                 'request_cancelled',
                 settings,
                 {
-                    'group': group.name,
+                    'group_name': group.name,
                     'cancelled_by': self.current_user.name,
                     'reason': form.data['reason'],
                     'expiration': edge.expiration,

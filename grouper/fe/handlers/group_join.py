@@ -96,7 +96,7 @@ class GroupJoin(GrouperHandler):
             email_context = {
                     "requester": member.name,
                     "requested_by": self.current_user.name,
-                    "requested": group.name,
+                    "group_name": group.name,
                     "reason": form.data["reason"],
                     "expiration": expiration,
                     "role": form.data["role"],

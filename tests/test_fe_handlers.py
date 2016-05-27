@@ -7,8 +7,9 @@ from tornado.httpclient import HTTPError
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from fixtures import fe_app as app  # noqa
 from grouper import public_key
-from grouper.model_soup import User, Request, AsyncNotification
+from grouper.model_soup import User, Request, AsyncNotification, Group, GroupEdge
 from url_util import url
+from datetime import timedelta, datetime, date
 
 
 def _get_unsent_and_mark_as_sent_emails_with_username(session, username):
@@ -193,3 +194,130 @@ def test_request_emails(graph, groups, permissions, session, standard_graph, use
     assert zaya_emails + oliver_emails == 2, "Only the approver that didn't action the request and the reqester should get an email"
     assert zaya_emails == 1, "NP-owners that did not action the request should receive an email"
     assert oliver_emails == 1, "The requester should receive an email when the request is handled"
+
+@pytest.mark.gen_test
+def test_request_autoexpiration(graph, groups, permissions, session, standard_graph, users,
+                                base_url, http_client):
+    tech = groups["tech-ops"]
+    sre = groups["team-sre"]
+    security = groups["security-team"]
+    sad = groups["sad-team"]
+    infra = groups["team-infra"]
+
+    tech.canjoin = "canask"
+    tech.auto_expire = timedelta(days=5)
+    tech.add(session)
+    session.commit()
+
+    sre.canjoin = "canjoin"
+    sre.auto_expire = timedelta(days=500)
+    sre.add(session)
+    session.commit()
+
+    security.canjoin = "canjoin"
+    security.add(session)
+    session.commit()
+
+    sad.canjoin = "canjoin"
+    sad.add(session)
+    session.commit()
+
+    infra.canjoin = "canjoin"
+    infra.add(session)
+    session.commit()
+
+    # REQUEST 1
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="testuser@a.co").scalar()
+    tech = session.query(Group).filter_by(groupname="tech-ops").scalar()
+    fe_url = url(base_url, '/groups/{}/join'.format(tech.groupname))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"reason": "Test Request Please Ignore", "member": "User: {}".format(user.name)}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="testuser@a.co").scalar()
+    request = session.query(Request).filter_by(requesting_id=tech.id, requester_id=user.id).scalar()
+    assert datetime.strptime(json.loads(request.changes)['expiration'], "%m/%d/%Y").date() == (datetime.utcnow().date() + tech.auto_expire), "Request expirations should be the current date + group.auto_expire for canask groups"
+
+    # REQUEST 2
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="testuser@a.co").scalar()
+    sre = session.query(Group).filter_by(groupname="team-sre").scalar()
+    fe_url = url(base_url, '/groups/{}/join'.format(sre.groupname))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"reason": "Test Request Please Ignore", "member": "User: {}".format(user.name)}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="testuser@a.co").scalar()
+    request = session.query(Request).filter_by(requesting_id=sre.id, requester_id=user.id).scalar()
+    assert datetime.strptime(json.loads(request.changes)['expiration'], "%m/%d/%Y").date() == (datetime.utcnow().date() + sre.auto_expire), "Request expirations should be the current date + group.auto_expire for canjoin groups"
+
+    # REQUEST 3
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="testuser@a.co").scalar()
+    security = session.query(Group).filter_by(groupname="security-team").scalar()
+    fe_url = url(base_url, '/groups/{}/join'.format(security.groupname))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"reason": "Test Request Please Ignore", "member": "User: {}".format(user.name)}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="testuser@a.co").scalar()
+    request = session.query(Request).filter_by(requesting_id=security.id, requester_id=user.id).scalar()
+    assert "expiration" not in json.loads(request.changes), "The request should not have an expiration if none is provided and there is no auto_expiration"
+
+    # REQUEST 4
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="testuser@a.co").scalar()
+    sad = session.query(Group).filter_by(groupname="sad-team").scalar()
+    fe_url = url(base_url, '/groups/{}/join'.format(sad.groupname))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"reason": "Test Request Please Ignore", "member": "User: {}".format(user.name), "expiration": "01/19/2038"}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="testuser@a.co").scalar()
+    request = session.query(Request).filter_by(requesting_id=sad.id, requester_id=user.id).scalar()
+    assert datetime.strptime(json.loads(request.changes)['expiration'], "%m/%d/%Y").date() == date(year=2038, month=1, day=19), "User provided expiration times should not be overwritten by the auto_expiration"
+
+    # REQUEST 5
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="testuser@a.co").scalar()
+    infra = session.query(Group).filter_by(groupname="team-infra").scalar()
+    fe_url = url(base_url, '/groups/{}/add'.format(infra.groupname))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"reason": "Test Request Please Ignore", "member": "User: {}".format(user.name)}),
+            headers={'X-Grouper-User': "gary@a.co"})
+    assert resp.code == 200
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="testuser@a.co").scalar()
+    request = session.query(Request).filter_by(requesting_id=infra.id, requester_id=user.id).scalar()
+    assert "expiration" not in json.loads(request.changes), "The request should not have an expiration if none is provided and the request was created by adding a member"
+
+    # REQUEST 6
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="testuser@a.co").scalar()
+    sre = session.query(Group).filter_by(groupname="team-sre").scalar()
+    fe_url = url(base_url, '/groups/{}/edit/user/{}'.format(sre.groupname, user.name))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"reason": "Test Request Please Ignore", "member": "User: {}".format(user.name), "role": "member", "expiration": ""}),
+            headers={'X-Grouper-User': "gary@a.co"})
+    assert resp.code == 200
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="testuser@a.co").scalar()
+    group_edge = session.query(GroupEdge).filter_by(group_id=sre.id, member_pk=user.id).scalar()
+    assert group_edge.expiration is None, "The request should not have an expiration if none is provided and the user was edited by an approver"

@@ -66,7 +66,7 @@ GROUP_EDGE_ROLES = (
 )
 OWNER_ROLE_INDICES = set([GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.index("np-owner")])
 APPROVER_ROLE_INDICIES = set([GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.index("np-owner"),
-        GROUP_EDGE_ROLES.index("manager")])
+        GROUP_EDGE_ROLES.index("manager")])  # TODO: Fix spelling
 
 
 class CommentObjectMixin(object):
@@ -710,6 +710,16 @@ class Group(Model, CommentObjectMixin):
         ).all()
 
         return users
+
+    def my_approver_users(self):
+        # type: () -> List[User]
+        """Returns a list of all users in this group that are approvers.
+
+        Returns:
+            A list of all User objects that are approvers for this group.
+        """
+
+        return [user for user in self.my_users() if user.role in APPROVER_ROLE_INDICIES]
 
     def my_log_entries(self):
 

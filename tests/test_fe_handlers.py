@@ -11,6 +11,16 @@ from grouper.model_soup import User, Request, AsyncNotification
 from url_util import url
 
 
+def _get_unsent_and_mark_as_sent_emails_with_username(session, username):
+    """Helper to count unsent emails and then mark them as sent."""
+    emails = session.query(AsyncNotification).filter_by(sent=False, email=username).all()
+
+    for email in emails:
+        email.sent = True
+
+    session.commit()
+    return emails
+
 @pytest.mark.gen_test
 def test_auth(users, http_client, base_url):
     # no 'auth' present
@@ -110,9 +120,9 @@ def test_request_emails(graph, groups, permissions, session, standard_graph, use
     tech.add(session)
     session.commit()
 
-    before_reqs = session.query(Request).count()
-
     # REQUEST 1
+
+    before_reqs = session.query(Request).count()
 
     # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
@@ -122,9 +132,12 @@ def test_request_emails(graph, groups, permissions, session, standard_graph, use
             headers={'X-Grouper-User': user.username})
     assert resp.code == 200
 
-    assert session.query(AsyncNotification).count() == 2, "Only approvers for the requested group should receive an email"
-    assert session.query(AsyncNotification).filter_by(email="zay@a.co").count() == 1, "Owners should receive exactly one email per canask request"
-    assert session.query(AsyncNotification).filter_by(email="figurehead@a.co").count() == 1, "NP-Owners should receive exactly one email per canask request"
+    zaya_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "zay@a.co"))
+    fh_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "figurehead@a.co"))
+
+    assert zaya_emails + fh_emails == 2, "Only approvers for the requested group should receive an email"
+    assert zaya_emails == 1, "Owners should receive exactly one email per canask request"
+    assert fh_emails == 1, "NP-Owners should receive exactly one email per canask request"
 
     assert session.query(Request).count() == before_reqs + 1, "There should only be one added request"
 
@@ -137,11 +150,16 @@ def test_request_emails(graph, groups, permissions, session, standard_graph, use
             headers={'X-Grouper-User': "zay@a.co"})
     assert resp.code == 200
 
-    assert session.query(AsyncNotification).count() == 4, "Only the approver that didn't action the request and the reqester should get an email"
-    assert session.query(AsyncNotification).filter_by(email="figurehead@a.co").count() == 2, "NP-owners that did not action the request should receive an email"
-    assert session.query(AsyncNotification).filter_by(email="testuser@a.co").count() == 1, "The requester should receive an email when the request is handled"
+    fh_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "figurehead@a.co"))
+    testuser_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "testuser@a.co"))
+
+    assert fh_emails + testuser_emails == 2, "Only the approver that didn't action the request and the reqester should get an email"
+    assert fh_emails == 1, "NP-owners that did not action the request should receive an email"
+    assert testuser_emails == 1, "The requester should receive an email when the request is handled"
 
     # REQUEST 2
+
+    before_reqs = session.query(Request).count()
 
     # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
     user = session.query(User).filter_by(username="oliver@a.co").scalar()
@@ -151,11 +169,14 @@ def test_request_emails(graph, groups, permissions, session, standard_graph, use
             headers={'X-Grouper-User': user.username})
     assert resp.code == 200
 
-    assert session.query(AsyncNotification).count() == 6, "Only approvers for the requested group should receive an email"
-    assert session.query(AsyncNotification).filter_by(email="zay@a.co").count() == 2, "Owners should receive exactly one email per canask request"
-    assert session.query(AsyncNotification).filter_by(email="figurehead@a.co").count() == 3, "NP-Owners should receive exactly one email per canask request"
+    zaya_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "zay@a.co"))
+    fh_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "figurehead@a.co"))
 
-    assert session.query(Request).count() == before_reqs + 2, "There should only be one added request"
+    assert zaya_emails + fh_emails == 2, "Only approvers for the requested group should receive an email"
+    assert zaya_emails == 1, "Owners should receive exactly one email per canask request"
+    assert fh_emails == 1, "NP-Owners should receive exactly one email per canask request"
+
+    assert session.query(Request).count() == before_reqs + 1, "There should only be one added request"
 
     # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
     user = session.query(User).filter_by(username="oliver@a.co").scalar()
@@ -166,6 +187,9 @@ def test_request_emails(graph, groups, permissions, session, standard_graph, use
             headers={'X-Grouper-User': "figurehead@a.co"})
     assert resp.code == 200
 
-    assert session.query(AsyncNotification).count() == 8, "Only the approver that didn't action the request and the reqester should get an email"
-    assert session.query(AsyncNotification).filter_by(email="zay@a.co").count() == 3, "NP-owners that did not action the request should receive an email"
-    assert session.query(AsyncNotification).filter_by(email="oliver@a.co").count() == 1, "The requester should receive an email when the request is handled"
+    zaya_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "zay@a.co"))
+    oliver_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "oliver@a.co"))
+
+    assert zaya_emails + oliver_emails == 2, "Only the approver that didn't action the request and the reqester should get an email"
+    assert zaya_emails == 1, "NP-owners that did not action the request should receive an email"
+    assert oliver_emails == 1, "The requester should receive an email when the request is handled"

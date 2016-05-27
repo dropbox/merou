@@ -7,9 +7,19 @@ from tornado.httpclient import HTTPError
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from fixtures import fe_app as app  # noqa
 from grouper import public_key
-from grouper.model_soup import User
+from grouper.model_soup import User, Request, AsyncNotification
 from url_util import url
 
+
+def _get_unsent_and_mark_as_sent_emails_with_username(session, username):
+    """Helper to count unsent emails and then mark them as sent."""
+    emails = session.query(AsyncNotification).filter_by(sent=False, email=username).all()
+
+    for email in emails:
+        email.sent = True
+
+    session.commit()
+    return emails
 
 @pytest.mark.gen_test
 def test_auth(users, http_client, base_url):
@@ -100,3 +110,86 @@ def test_usertokens(session, users, http_client, base_url):
             headers={'X-Grouper-User': user.username})
     assert resp.code == 200
     assert "Disabled token: myFoobarToken" in resp.body
+
+@pytest.mark.gen_test
+def test_request_emails(graph, groups, permissions, session, standard_graph, users, base_url,
+                        http_client):
+    tech = groups["tech-ops"]
+
+    tech.canjoin = "canask"
+    tech.add(session)
+    session.commit()
+
+    # REQUEST 1
+
+    before_reqs = session.query(Request).count()
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="testuser@a.co").scalar()
+    fe_url = url(base_url, '/groups/{}/join'.format(tech.groupname))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"reason": "Test Request Please Ignore", "member": "User: {}".format(user.name)}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    zaya_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "zay@a.co"))
+    fh_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "figurehead@a.co"))
+
+    assert zaya_emails + fh_emails == 2, "Only approvers for the requested group should receive an email"
+    assert zaya_emails == 1, "Owners should receive exactly one email per canask request"
+    assert fh_emails == 1, "NP-Owners should receive exactly one email per canask request"
+
+    assert session.query(Request).count() == before_reqs + 1, "There should only be one added request"
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="testuser@a.co").scalar()
+    request_id = session.query(Request).filter_by(requesting_id=tech.id, requester_id=user.id).scalar().id
+    fe_url = url(base_url, '/groups/{}/requests/{}'.format(tech.groupname, request_id))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"reason": "Test Response Please Ignore", "status": "actioned"}),
+            headers={'X-Grouper-User': "zay@a.co"})
+    assert resp.code == 200
+
+    fh_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "figurehead@a.co"))
+    testuser_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "testuser@a.co"))
+
+    assert fh_emails + testuser_emails == 2, "Only the approver that didn't action the request and the reqester should get an email"
+    assert fh_emails == 1, "NP-owners that did not action the request should receive an email"
+    assert testuser_emails == 1, "The requester should receive an email when the request is handled"
+
+    # REQUEST 2
+
+    before_reqs = session.query(Request).count()
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="oliver@a.co").scalar()
+    fe_url = url(base_url, '/groups/{}/join'.format(tech.groupname))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"reason": "Test Request Please Ignore 2", "member": "User: {}".format(user.name)}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    zaya_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "zay@a.co"))
+    fh_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "figurehead@a.co"))
+
+    assert zaya_emails + fh_emails == 2, "Only approvers for the requested group should receive an email"
+    assert zaya_emails == 1, "Owners should receive exactly one email per canask request"
+    assert fh_emails == 1, "NP-Owners should receive exactly one email per canask request"
+
+    assert session.query(Request).count() == before_reqs + 1, "There should only be one added request"
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="oliver@a.co").scalar()
+    request_id = session.query(Request).filter_by(requesting_id=tech.id, requester_id=user.id).scalar().id
+    fe_url = url(base_url, '/groups/{}/requests/{}'.format(tech.groupname, request_id))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"reason": "Test Response Please Ignore 2", "status": "actioned"}),
+            headers={'X-Grouper-User': "figurehead@a.co"})
+    assert resp.code == 200
+
+    zaya_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "zay@a.co"))
+    oliver_emails = len(_get_unsent_and_mark_as_sent_emails_with_username(session, "oliver@a.co"))
+
+    assert zaya_emails + oliver_emails == 2, "Only the approver that didn't action the request and the reqester should get an email"
+    assert zaya_emails == 1, "NP-owners that did not action the request should receive an email"
+    assert oliver_emails == 1, "The requester should receive an email when the request is handled"

@@ -127,7 +127,7 @@ class GroupAdd(GrouperHandler):
                 'request_actioned',
                 settings,
                 {
-                    'group': group.name,
+                    'group_name': group.name,
                     'actioned_by': self.current_user.name,
                     'reason': form.data['reason'],
                     'expiration': expiration,

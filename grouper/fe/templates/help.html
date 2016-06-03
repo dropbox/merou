@@ -75,6 +75,17 @@ owner, or np-owner of an audited group.</p>
 <p>We're working on tooling to facilitate regular monitoring of both members of audited
   groups and groups with audited permissions.</p>
 
+<h3>What are tags?</h3>
+<p>Tags are sets of permissions (similar to groups) that can be applied to public keys.
+Tags restrict the permissions of the public key that they are applied to. This allows
+users to have separate public keys for different permissions (and therefore services).
+In order to grant permissions to a tag, a user must have the {{permission(tag_edit)}}
+permission with the argument set to the tag's name. For most users, the only thing
+they need to do to use tags properly is to add the appropriate tag to the relevant
+public keys. If you have multiple tags on a single public key, the permissions of that
+public key are the intersection of the user's permissions and the permissions granted
+on the tags.</p>
+
 <h3>What if my questions aren't answered here?</h3>
 <p>This list isn't comprehensive. Please contact the admins of this site ({{
   how_to_get_help }}) for help and

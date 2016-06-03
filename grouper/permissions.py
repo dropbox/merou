@@ -19,6 +19,7 @@ from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.permission_request import PermissionRequest
 from grouper.models.permission_request_status_change import PermissionRequestStatusChange
+from grouper.models.tag_permission_map import TagPermissionMap
 from grouper.plugin import get_plugins
 from grouper.util import matches_glob
 
@@ -54,6 +55,31 @@ def grant_permission(session, group_id, permission_id, argument=''):
     assert re.match(ARGUMENT_VALIDATION, argument), 'Permission argument does not match regex.'
 
     mapping = PermissionMap(permission_id=permission_id, group_id=group_id, argument=argument)
+    mapping.add(session)
+
+    Counter.incr(session, "updates")
+
+    session.commit()
+
+
+def grant_permission_to_tag(session, tag_id, permission_id, argument=''):
+    # type: Session, int, int, str -> None
+    """
+    Grant a permission to this tag. This will fail if the (permission, argument) has already
+    been granted to this tag.
+
+    Args:
+        session(models.base.session.Sessioan): database session
+        tag_id(int): the id of the tag we're granting the permission to
+        permission_id(int): the id of the permission to be granted
+        argument(str): must match constants.ARGUMENT_VALIDATION
+
+    Throws:
+        AssertError if argument does not match ARGUMENT_VALIDATION regex
+    """
+    assert re.match(ARGUMENT_VALIDATION, argument), 'Permission argument does not match regex.'
+
+    mapping = TagPermissionMap(permission_id=permission_id, tag_id=tag_id, argument=argument)
     mapping.add(session)
 
     Counter.incr(session, "updates")

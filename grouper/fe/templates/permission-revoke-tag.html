@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import format_tag %}
+
+
+{% block heading %}
+    <a href="/tags">Tags</a>
+{% endblock %}
+
+{% block subheading %}
+    Revoke Permission
+{% endblock %}
+
+{% block content %}
+<div class="col-md-6 col-md-offset-3">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Revoke Permission</h3>
+       </div>
+        <div class="panel-body">
+            <form class="form-horizontal" role="form"
+                  method="post" action="/permissions/{{ mapping.permission.name}}/revoke_tag/{{ mapping.id }}">
+                <div class="form-group text-center">
+                    Revoke permission <strong>{{ mapping.permission.name }}:{{ mapping.argument }}</strong>
+                    from tag {{ format_tag(mapping.tag) }}</a>?
+                </div>
+                {{ xsrf_form() }}
+                <div class="form-group text-center">
+                    <button type="submit" class="btn btn-primary">Revoke Permission</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

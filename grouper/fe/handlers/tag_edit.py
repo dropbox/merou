@@ -36,6 +36,7 @@ class TagEdit(GrouperHandler):
             )
 
         tag.description = form.data["description"]
+        tag.enabled = form.data["enabled"]
         Counter.incr(self.session, "updates")
 
         try:

@@ -21,7 +21,8 @@ class PublicKeyAddTag(GrouperHandler):
             return self.notfound()
 
         form = PublicKeyAddTagForm()
-        for tag in self.session.query(PublicKeyTag).all():
+        form.tagname.choices = []
+        for tag in self.session.query(PublicKeyTag).filter_by(enabled=True).all():
             form.tagname.choices.append([tag.name, tag.name])
 
         self.render("public-key-add-tag.html", user=user, key=key, form=form)
@@ -40,7 +41,8 @@ class PublicKeyAddTag(GrouperHandler):
             return self.notfound()
 
         form = PublicKeyAddTagForm(self.request.arguments)
-        for tag in self.session.query(PublicKeyTag).all():
+        form.tagname.choices = []
+        for tag in self.session.query(PublicKeyTag).filter_by(enabled=True).all():
             form.tagname.choices.append([tag.name, tag.name])
 
         if not form.validate():

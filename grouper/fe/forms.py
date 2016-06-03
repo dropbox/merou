@@ -304,6 +304,7 @@ class TagCreateForm(Form):
 
 class TagEditForm(Form):
     description = TextAreaField("Description")
+    enabled = BooleanField("Enabled")
 
 
 class PermissionGrantTagForm(Form):

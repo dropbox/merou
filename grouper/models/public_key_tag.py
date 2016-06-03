@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, Text, Boolean
 from grouper.models.base.model_base import Model
 from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.tag_permission_map import TagPermissionMap
@@ -14,6 +14,7 @@ class PublicKeyTag(Model):
     id = Column(Integer, primary_key=True)
     name = Column(String(length=MAX_NAME_LENGTH), unique=True)
     description = Column(Text)
+    enabled = Column(Boolean, default=True)
 
     def my_permissions(self):
         """Returns the permissions granted to this tag.

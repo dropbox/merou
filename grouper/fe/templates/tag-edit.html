@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block heading %}
+    <a href="/groups">Tags</a>
+{% endblock %}
+
+{% block subheading %}
+    Edit ({{tag.name}})
+{% endblock %}
+
+{% block content %}
+<div class="col-md-6 col-md-offset-3">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Edit Tag</h3>
+       </div>
+        <div class="panel-body">
+            <form class="form-horizontal" role="form"
+                  method="post" action="/tags/{{tag.name}}/edit">
+                {% include "forms/tag-edit.html" %}
+                <div class="form-tag">
+                    <div class="col-sm-offset-3 col-sm-4">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

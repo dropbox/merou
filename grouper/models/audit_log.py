@@ -46,6 +46,8 @@ class AuditLog(Model):
     on_group = relationship("Group", foreign_keys=[on_group_id])
     on_permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=True)
     on_permission = relationship("Permission", foreign_keys=[on_permission_id])
+    on_tag_id = Column(Integer, ForeignKey("public_key_tags.id"), nullable=True)
+    on_tag = relationship("PublicKeyTag", foreign_keys=[on_tag_id])
 
     # The action and description columns are text. These are mostly displayed
     # to the user as-is, but we might provide filtering or something.
@@ -55,7 +57,7 @@ class AuditLog(Model):
 
     @staticmethod
     def log(session, actor_id, action, description,
-            on_user_id=None, on_group_id=None, on_permission_id=None,
+            on_user_id=None, on_group_id=None, on_permission_id=None, on_tag_id=None,
             category=AuditLogCategory.general):
         '''
         Log an event in the database.
@@ -78,6 +80,7 @@ class AuditLog(Model):
             on_user_id=on_user_id if on_user_id else None,
             on_group_id=on_group_id if on_group_id else None,
             on_permission_id=on_permission_id if on_permission_id else None,
+            on_tag_id=on_tag_id if on_tag_id else None,
             category=int(category),
         )
         try:
@@ -93,8 +96,8 @@ class AuditLog(Model):
 
     @staticmethod
     def get_entries(session, actor_id=None, on_user_id=None, on_group_id=None,
-                    on_permission_id=None, limit=None, offset=None, involve_user_id=None,
-                    category=None, action=None):
+                    on_permission_id=None, on_tag_id=None, limit=None, offset=None,
+                    involve_user_id=None, category=None, action=None):
         '''
         Flexible method for getting log entries. By default it returns all entries
         starting at the newest. Most recent first.
@@ -112,6 +115,8 @@ class AuditLog(Model):
             results = results.filter(AuditLog.on_group_id == on_group_id)
         if on_permission_id:
             results = results.filter(AuditLog.on_permission_id == on_permission_id)
+        if on_tag_id:
+            results = results.filter(AuditLog.on_tag_id == on_tag_id)
         if involve_user_id:
             results = results.filter(or_(
                 AuditLog.on_user_id == involve_user_id,

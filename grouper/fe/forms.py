@@ -42,7 +42,7 @@ class ValidateDate(object):
 class DaysTimeDeltaField(IntegerField):
 
     def process_data(self, value):
-        """Converting from TimeDelta notation to a simple integer"""
+        """Converts from TimeDelta notation to a simple integer"""
         # Do the check because groups with no expiration will result in value being None
         if hasattr(value, "days"):
             self.data = value.days

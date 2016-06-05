@@ -7,7 +7,7 @@ from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
 from grouper.group import get_all_groups
 from grouper.model_soup import Group
-from grouper.user import get_all_users, get_user_or_group
+from grouper.user import get_all_enabled_users, get_user_or_group
 from grouper.models.audit_log import AuditLog
 
 
@@ -36,7 +36,7 @@ class GroupAdd(GrouperHandler):
         ]
         user_choices = [
             (user.username, "User: " + user.username)  # (value, label)
-            for user in get_all_users(self.session)
+            for user in get_all_enabled_users(self.session)
         ]
 
         form.member.choices = [("", "")] + sorted(

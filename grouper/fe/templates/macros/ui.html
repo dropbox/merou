@@ -476,7 +476,6 @@ enabled. Membership in this group is regularly reviewed.
     </div>
 {%- endmacro %}
 
-
 {% macro tag_permission_panel(max_height, mappings, tag, can_grant=None) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
@@ -543,6 +542,54 @@ enabled. Membership in this group is regularly reviewed.
         </label>
         <div class="col-sm-{{field_width}}">
             {{ field(**kwargs) }}
+        </div>
+    </div>
+{%- endmacro %}
+
+{% macro one_user_password_row(password, username, can_control) -%}
+    <td>{{ password.name }}</td>
+    <td>{{ password.created_at | long_ago_str }}</td>
+    <td>
+    {% if can_control %}
+        <a class="btn btn-default btn-xs pull-right"
+           href="/users/{{ username }}/passwords/{{ password.id }}/delete">
+            <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span>
+        </a>
+    {% endif %}
+    </td>
+{%- endmacro %}
+
+{% macro passwords_panel(max_height, user, passwords, can_control=False) -%}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Passwords</h3>
+        </div>
+        <div class="table-responsive" style="max-height: {{max_height}}px; overflow-y: auto">
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th class="col-md-2">Name</th>
+                        <th class="col-md-1">Age</th>
+                        <th class="col-md-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for password in passwords %}
+                {% if password.enabled %}
+                    <tr>
+                        {{ one_user_password_row(password, user.name, can_control) }}
+                    </tr>
+                {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+            {% if can_control %}
+            <div class='panel-footer'>
+                <a class="btn btn-default btn-sm" href="/users/{{ user.name }}/passwords/add">
+                <span class="glyphicon glyphicon-plus"></span> Create Password
+                </a>
+            </div>
+            {% endif %}
         </div>
     </div>
 {%- endmacro %}

@@ -15,6 +15,7 @@ from grouper.models.permission_map import PermissionMap
 from grouper.models.public_key import PublicKey
 from grouper.models.user import User
 from grouper.models.user_metadata import UserMetadata
+from grouper.models.user_password import UserPassword
 from grouper.public_key import get_public_key_permissions, get_public_key_tags
 from grouper.util import singleton
 
@@ -143,25 +144,34 @@ class GroupGraph(object):
         '''
         Returns a dict of username: { dict of metadata }.
         '''
+
+        def user_indexify(data):
+            ret = {}
+            for item in data:
+                if item.user_id not in ret:
+                    ret[item.user_id] = []
+                ret[item.user_id].append(item)
+            return ret
+
         users = session.query(User)
 
-        public_keys = {}
-        for key in session.query(PublicKey):
-            if key.user_id not in public_keys:
-                public_keys[key.user_id] = []
-            public_keys[key.user_id].append(key)
-
-        user_metadata = {}
-        for row in session.query(UserMetadata):
-            if row.user_id not in user_metadata:
-                user_metadata[row.user_id] = []
-            user_metadata[row.user_id].append(row)
+        passwords = user_indexify(session.query(UserPassword).all())
+        public_keys = user_indexify(session.query(PublicKey).all())
+        user_metadata = user_indexify(session.query(UserMetadata).all())
 
         out = {}
         for user in users:
             out[user.username] = {
                 "enabled": user.enabled,
                 "role_user": user.role_user,
+                "passwords": [
+                    {
+                         "name": password.name,
+                         "hash": password.password,
+                         "salt": password.salt,
+                         "func": "SHA512",
+                    } for password in passwords.get(user.id, [])
+                ],
                 "public_keys": [
                     {
                         "public_key": key.public_key,

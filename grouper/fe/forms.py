@@ -6,6 +6,7 @@ from wtforms import (
         BooleanField,
         HiddenField,
         IntegerField,
+        PasswordField,
         SelectField,
         StringField,
         TextAreaField,
@@ -322,3 +323,12 @@ class PublicKeyAddTagForm(Form):
     tagname = SelectField("Tag", [
         validators.DataRequired(),
     ], choices=[["", "(select one)"]], default="")
+
+
+class UserPasswordForm(Form):
+    name = StringField("Password name", [
+        validators.DataRequired(),
+    ])
+    password = PasswordField("Password", [
+        validators.DataRequired(),
+    ])

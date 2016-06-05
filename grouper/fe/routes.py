@@ -45,6 +45,8 @@ from grouper.fe.handlers.tag_view import TagView
 from grouper.fe.handlers.tags_view import TagsView
 from grouper.fe.handlers.user_disable import UserDisable
 from grouper.fe.handlers.user_enable import UserEnable
+from grouper.fe.handlers.user_password_add import UserPasswordAdd
+from grouper.fe.handlers.user_password_delete import UserPasswordDelete
 from grouper.fe.handlers.user_requests import UserRequests
 from grouper.fe.handlers.user_shell import UserShell
 from grouper.fe.handlers.user_token_add import UserTokenAdd
@@ -103,6 +105,8 @@ for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
         ),
         (r"/users/{}/tokens/add".format(regex), UserTokenAdd),
         (r"/users/{}/tokens/(?P<token_id>[0-9]+)/disable".format(regex), UserTokenDisable),
+        (r"/users/{}/passwords/add".format(regex), UserPasswordAdd),
+        (r"/users/{}/passwords/(?P<pass_id>[0-9]+)/delete".format(regex), UserPasswordDelete),
     ])
 
 for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):

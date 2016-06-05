@@ -285,3 +285,9 @@ class UserTokenForm(Form):
     name = StringField("Token name", [
         validators.DataRequired(),
     ])
+
+
+class UserShellForm(Form):
+    shell = SelectField("Shell", [
+        validators.DataRequired(),
+    ])

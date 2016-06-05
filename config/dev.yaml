@@ -115,6 +115,13 @@ fe:
     # Type: str
     url: "http://127.0.0.1:8888"
 
+    # A list of lists of the shells that users are allowed to select. The first argument is
+    # the shell location (i.e. /bin/bash), and the second is a user readable format for the
+    # shell
+    shell:
+        - [/bin/bash, bash]
+        - [/bin/zsh, zsh]
+
 api:
     # The port to listen to requests on.
     # Type: int

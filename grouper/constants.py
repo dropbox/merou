@@ -71,3 +71,6 @@ RESERVED_NAMES = [
 
 # Maximum length a name can be. This applies to user names and permission arguments.
 MAX_NAME_LENGTH = 128
+
+# Grouper used UserMetadata data_keys
+SHELL_MD_KEY = "shell"

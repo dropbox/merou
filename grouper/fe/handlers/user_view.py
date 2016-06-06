@@ -1,11 +1,11 @@
 from grouper import group as group_biz
+from grouper.constants import SHELL_MD_KEY
 from grouper.fe.handlers.user_disable import UserDisable
 from grouper.fe.handlers.user_enable import UserEnable
 from grouper.fe.util import GrouperHandler
 from grouper.graph import NoSuchUser
 from grouper.model_soup import User
 from grouper.permissions import get_requests_by_owner
-from grouper.constants import SHELL_MD_KEY
 
 
 class UserView(GrouperHandler):
@@ -39,7 +39,8 @@ class UserView(GrouperHandler):
             # they're disabled, so we've excluded them from the in-memory graph.
             user_md = {}
 
-        shell = user.get_metadata(SHELL_MD_KEY).data_value if user.get_metadata(SHELL_MD_KEY) else "No shell configured"
+        shell = (user.get_metadata(SHELL_MD_KEY).data_value if user.get_metadata(SHELL_MD_KEY)
+            else "No shell configured")
         open_audits = user.my_open_audits()
         group_edge_list = group_biz.get_groups_by_user(self.session, user) if user.enabled else []
         groups = [{'name': g.name, 'type': 'Group', 'role': ge._role} for g, ge in group_edge_list]
@@ -59,5 +60,5 @@ class UserView(GrouperHandler):
                     num_pending_group_requests=num_pending_group_requests,
                     num_pending_perm_requests=num_pending_perm_requests,
                     open_audits=open_audits,
-                    shell = shell,
+                    shell=shell,
                     )

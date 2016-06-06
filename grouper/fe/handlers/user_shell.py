@@ -1,12 +1,10 @@
-from sqlalchemy.exc import IntegrityError
-from grouper.constants import USER_ADMIN, SHELL_MD_KEY
-from grouper.email_util import send_email
+from grouper.constants import SHELL_MD_KEY, USER_ADMIN
 from grouper.fe.forms import UserShellForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import User
-from grouper.models.user_metadata import UserMetadata
 from grouper.models.audit_log import AuditLog
+from grouper.models.user_metadata import UserMetadata
 
 
 class UserShell(GrouperHandler):
@@ -43,7 +41,8 @@ class UserShell(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors),
             )
 
-        m = self.session.query(UserMetadata).filter_by(user_id=user.id, data_key=SHELL_MD_KEY).scalar()
+        m = self.session.query(UserMetadata).filter_by(user_id=user.id,
+            data_key=SHELL_MD_KEY).scalar()
         if m:
             m.data_value = form.data["shell"]
             m.add(self.session)

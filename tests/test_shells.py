@@ -1,5 +1,6 @@
 import json
 from urllib import urlencode
+from mock import patch
 
 import pytest
 from tornado.httpclient import HTTPError
@@ -25,6 +26,7 @@ def test_shell(session, users, http_client, base_url):
 
     user = User.get(session, name=user.username)
 
+    assert user.get_metadata(SHELL_MD_KEY) is not None, "The user should have shell metadata"
     assert user.get_metadata(SHELL_MD_KEY).data_value == "/bin/bash"
 
     fe_url = url(base_url, '/users/{}/shell'.format(user.username))
@@ -35,8 +37,8 @@ def test_shell(session, users, http_client, base_url):
 
     user = User.get(session, name=user.username)
 
+    assert user.get_metadata(SHELL_MD_KEY) is not None, "The user should have shell metadata"
     assert user.get_metadata(SHELL_MD_KEY).data_value == "/bin/bash"
-
 
     fe_url = url(base_url, '/users/{}/shell'.format(user.username))
     resp = yield http_client.fetch(fe_url, method="POST",
@@ -46,5 +48,5 @@ def test_shell(session, users, http_client, base_url):
 
     user = User.get(session, name=user.username)
 
+    assert user.get_metadata(SHELL_MD_KEY) is not None, "The user should have shell metadata"
     assert user.get_metadata(SHELL_MD_KEY).data_value == "/bin/zsh"
-

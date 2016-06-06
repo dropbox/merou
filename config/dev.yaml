@@ -119,8 +119,7 @@ fe:
     # the shell location (i.e. /bin/bash), and the second is a user readable format for the
     # shell
     shell:
-        - [/bin/bash, bash]
-        - [/bin/zsh, zsh]
+        - [/bin/false, Your administrator has not configured Grouper for shell management]
 
 api:
     # The port to listen to requests on.

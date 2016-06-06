@@ -41,3 +41,19 @@ def get_all_users(session):
         a list of all User objects in the database
     """
     return session.query(User).all()
+
+
+def get_all_enabled_users(session):
+    # type: Session -> List[User]
+    """Returns all enabled users in the database.
+
+    At present, this is not cached at all and returns the full list of
+    users from the database each time it's called.
+
+    Args:
+        session (Session): Session to load data on.
+
+    Returns:
+        a list of all enabled User objects in the database
+    """
+    return session.query(User).filter_by(enabled=True).all()

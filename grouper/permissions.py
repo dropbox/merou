@@ -76,15 +76,23 @@ def grant_permission_to_tag(session, tag_id, permission_id, argument=''):
 
     Throws:
         AssertError if argument does not match ARGUMENT_VALIDATION regex
+
+    Returns:
+        bool indicating whether the function succeeded or not
     """
     assert re.match(ARGUMENT_VALIDATION, argument), 'Permission argument does not match regex.'
 
-    mapping = TagPermissionMap(permission_id=permission_id, tag_id=tag_id, argument=argument)
-    mapping.add(session)
+    try:
+        mapping = TagPermissionMap(permission_id=permission_id, tag_id=tag_id, argument=argument)
+        mapping.add(session)
 
-    Counter.incr(session, "updates")
+        Counter.incr(session, "updates")
+    except IntegrityError:
+        session.rollback()
+        return False
 
     session.commit()
+    return True
 
 
 def enable_permission_auditing(session, permission_name, actor_user_id):
@@ -596,3 +604,57 @@ def update_request(session, request, user, new_status, comment):
 
     send_email(session, [request.requester.name], subject, email_template,
             settings, email_context)
+
+
+def permission_list_to_dict(perms):
+    # type: List[Permission] -> Dict[str, Dict[str, Permission]]
+    """Converts a list of Permission objects into a dictionary indexed by the permission names.
+    That dictionary in turn holds another dictionary which is indexed by permission argument, and
+    stores the Permission object
+
+    Args:
+        perms: a list containing Permission objects
+
+    Returns:
+        a dictionary with the permission names as keys, and has as values another dictionary
+        with permission arguments as keys and Permission objects as values
+    """
+    ret = defaultdict(dict)
+    for perm in perms:
+        ret[perm.name][perm.argument] = perm
+    return ret
+
+
+def permission_intersection(perms_a, perms_b):
+    # type: List[Permission], List[Permission] -> Set[Permission]
+    """Returns the intersection of the two Permission lists, taking into account the special
+    handling of argument wildcards
+
+    Args:
+        perms_a: the first list of permissions
+        perms_b: the second list of permissions
+
+    Returns:
+        a set of all permissions that both perms_a and perms_b grant access to
+    """
+    pdict_b = permission_list_to_dict(perms_b)
+    ret = set()
+    for perm in perms_a:
+        if perm.name not in pdict_b:
+            continue
+        if perm.argument in pdict_b[perm.name]:
+            ret.add(perm)
+            continue
+        # Argument wildcard
+        if "*" in pdict_b[perm.name]:
+            ret.add(perm)
+            continue
+        # According to Group.has_permission, None as an argument counts as a wildcard too
+        if None in pdict_b[perm.name]:
+            ret.add(perm)
+            continue
+        # If this permission is a wildcard, we add all permissions with the same name from
+        # the other set
+        if perm.argument == "*" or perm.argument is None:
+            ret |= {p for p in pdict_b[perm.name].values()}
+    return ret

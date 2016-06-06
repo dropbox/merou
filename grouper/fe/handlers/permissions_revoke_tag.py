@@ -1,8 +1,8 @@
+from grouper.constants import TAG_EDIT
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.counter import Counter
 from grouper.models.tag_permission_map import TagPermissionMap
-from grouper.constants import TAG_EDIT
 
 
 class PermissionsRevokeTag(GrouperHandler):

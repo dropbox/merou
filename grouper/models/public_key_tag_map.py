@@ -1,6 +1,8 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, UniqueConstraint, ForeignKey, DateTime
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import relationship
+
 from grouper.models.base.model_base import Model
 from grouper.models.public_key_tag import PublicKeyTag
 

@@ -1,11 +1,10 @@
-from sqlalchemy.exc import IntegrityError
+from grouper.constants import TAG_EDIT
 from grouper.fe.forms import PermissionGrantTagForm
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
-from grouper.permissions import grant_permission_to_tag
 from grouper.models.permission import Permission
-from grouper.constants import TAG_EDIT
 from grouper.models.public_key_tag import PublicKeyTag
+from grouper.permissions import grant_permission_to_tag
 
 
 class PermissionsGrantTag(GrouperHandler):
@@ -51,20 +50,17 @@ class PermissionsGrantTag(GrouperHandler):
         if not permission:
             return self.notfound()  # Shouldn't happen.
 
-        try:
-            grant_permission_to_tag(self.session, tag.id, permission.id,
+        success = grant_permission_to_tag(self.session, tag.id, permission.id,
                                     argument=form.data["argument"])
-        except IntegrityError:
+
+        if not success:
             form.argument.errors.append(
                 "Permission and Argument already mapped to this tag."
             )
-            self.session.rollback()
             return self.render(
                 "permission-grant-tag.html", form=form, tag=tag,
                 alerts=self.get_form_alerts(form.errors),
             )
-
-        self.session.commit()
 
         AuditLog.log(self.session, self.current_user.id, 'grant_permission_tag',
                      'Granted permission with argument: {}'.format(form.data["argument"]),

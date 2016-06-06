@@ -1,10 +1,11 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean
-from grouper.models.base.model_base import Model
-from grouper.constants import MAX_NAME_LENGTH
-from grouper.models.tag_permission_map import TagPermissionMap
-from grouper.models.permission import Permission
+from sqlalchemy import Boolean, Column, Integer, String, Text
 from sqlalchemy.sql import label
+
+from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.audit_log import AuditLog
+from grouper.models.base.model_base import Model
+from grouper.models.permission import Permission
+from grouper.models.tag_permission_map import TagPermissionMap
 
 
 class PublicKeyTag(Model):

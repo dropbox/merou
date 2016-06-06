@@ -7,10 +7,11 @@ from tornado.httpclient import HTTPError
 from fixtures import fe_app as app
 from fixtures import standard_graph, users, graph, groups, session, permissions  # noqa
 from grouper.model_soup import Group, User
-from grouper.models.public_key import PublicKey, _permission_intersection
+from grouper.models.public_key import PublicKey
 from grouper.models.public_key_tag import PublicKeyTag
 from grouper.models.permission import Permission
 from grouper.constants import TAG_EDIT
+from grouper.permissions import permission_intersection
 from url_util import url
 from util import get_users, get_groups, add_member, grant_permission
 from collections import namedtuple
@@ -336,17 +337,17 @@ def test_permission_intersection(standard_graph, session, users, groups, permiss
     cstar = p("c", "*")
     cr = p("c", "r")
 
-    assert _permission_intersection([astar], [astar]) == set([astar]), "The intersection of two identical lists should be the set of the contents of the list"
-    assert _permission_intersection([ar], [ar]) == set([ar]), "The intersection of two identical lists should be the set of the contents of the list"
-    assert _permission_intersection([astar], [ar]) == set([ar]), "The intersection of perm, * with perm, blah should be perm, blah"
-    assert _permission_intersection([ar], [astar]) == set([ar]), "The intersection of perm, blah with perm, * should be perm, blah"
+    assert permission_intersection([astar], [astar]) == set([astar]), "The intersection of two identical lists should be the set of the contents of the list"
+    assert permission_intersection([ar], [ar]) == set([ar]), "The intersection of two identical lists should be the set of the contents of the list"
+    assert permission_intersection([astar], [ar]) == set([ar]), "The intersection of perm, * with perm, blah should be perm, blah"
+    assert permission_intersection([ar], [astar]) == set([ar]), "The intersection of perm, blah with perm, * should be perm, blah"
 
-    assert _permission_intersection([astar], [bstar]) == set(), "The intersection of two disjoint lists should be the empty set"
-    assert _permission_intersection([ar], [br]) == set(), "The intersection of two disjoint lists should be the empty set"
-    assert _permission_intersection([ar], [at]) == set(), "The intersection of two disjoint lists should be the empty set"
+    assert permission_intersection([astar], [bstar]) == set(), "The intersection of two disjoint lists should be the empty set"
+    assert permission_intersection([ar], [br]) == set(), "The intersection of two disjoint lists should be the empty set"
+    assert permission_intersection([ar], [at]) == set(), "The intersection of two disjoint lists should be the empty set"
 
-    assert _permission_intersection([astar], [ar, at]) == set([ar, at]), "Wildcards should result in all applicable permissions being in the result"
-    assert _permission_intersection([astar, ar, br, cr], [at, bstar, cr]) == set([at, br, cr]), "This should work"
+    assert permission_intersection([astar], [ar, at]) == set([ar, at]), "Wildcards should result in all applicable permissions being in the result"
+    assert permission_intersection([astar, ar, br, cr], [at, bstar, cr]) == set([at, br, cr]), "This should work"
 
 @pytest.mark.gen_test
 def test_revoke_permission_from_tag(users, http_client, base_url, session):

@@ -1,7 +1,9 @@
 from sqlalchemy.exc import IntegrityError
+
 from grouper.fe.forms import TagCreateForm
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
+from grouper.models.counter import Counter
 from grouper.models.public_key_tag import PublicKeyTag
 
 
@@ -50,6 +52,7 @@ class TagsView(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors)
             )
 
+        Counter.incr(self.session, "updates")
         self.session.commit()
 
         AuditLog.log(self.session, self.current_user.id, 'create_tag',

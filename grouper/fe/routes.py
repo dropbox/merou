@@ -41,9 +41,9 @@ from grouper.fe.handlers.public_key_add_tag import PublicKeyAddTag
 from grouper.fe.handlers.public_key_remove_tag import PublicKeyRemoveTag
 from grouper.fe.handlers.search import Search
 from grouper.fe.handlers.stats import Stats
-from grouper.fe.handlers.tags_view import TagsView
-from grouper.fe.handlers.tag_view import TagView
 from grouper.fe.handlers.tag_edit import TagEdit
+from grouper.fe.handlers.tag_view import TagView
+from grouper.fe.handlers.tags_view import TagsView
 from grouper.fe.handlers.user_disable import UserDisable
 from grouper.fe.handlers.user_enable import UserEnable
 from grouper.fe.handlers.user_requests import UserRequests

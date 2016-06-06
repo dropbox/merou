@@ -1,10 +1,11 @@
 from sqlalchemy.exc import IntegrityError
+
+from grouper.constants import TAG_EDIT
 from grouper.fe.forms import TagEditForm
 from grouper.fe.util import GrouperHandler
-from grouper.models.counter import Counter
 from grouper.models.audit_log import AuditLog
+from grouper.models.counter import Counter
 from grouper.models.public_key_tag import PublicKeyTag
-from grouper.constants import TAG_EDIT
 
 
 class TagEdit(GrouperHandler):

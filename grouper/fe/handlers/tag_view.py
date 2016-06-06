@@ -1,7 +1,7 @@
+from grouper.constants import TAG_EDIT
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import Permission
 from grouper.models.public_key_tag import PublicKeyTag
-from grouper.constants import TAG_EDIT
 
 
 class TagView(GrouperHandler):

@@ -1,9 +1,9 @@
+from grouper.fe.forms import PublicKeyAddTagForm
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
-from grouper.public_key import get_public_key, KeyNotFound, add_tag_to_public_key, DuplicateTag
-from grouper.fe.forms import PublicKeyAddTagForm
 from grouper.models.public_key_tag import PublicKeyTag
+from grouper.public_key import add_tag_to_public_key, DuplicateTag, get_public_key, KeyNotFound
 
 
 class PublicKeyAddTag(GrouperHandler):

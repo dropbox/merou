@@ -130,6 +130,7 @@ def add_tag_to_public_key(session, public_key, tag):
     mapping = PublicKeyTagMap(tag_id=tag.id, key_id=public_key.id)
     try:
         mapping.add(session)
+        Counter.incr(session, "updates")
         session.commit()
     except IntegrityError:
         session.rollback()
@@ -154,4 +155,5 @@ def remove_tag_from_public_key(session, public_key, tag):
         raise TagNotOnKey()
 
     mapping.delete(session)
+    Counter.incr(session, "updates")
     session.commit()

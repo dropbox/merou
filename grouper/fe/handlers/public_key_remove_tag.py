@@ -1,8 +1,8 @@
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
-from grouper.public_key import get_public_key, KeyNotFound, remove_tag_from_public_key, TagNotOnKey
 from grouper.models.public_key_tag import PublicKeyTag
+from grouper.public_key import get_public_key, KeyNotFound, remove_tag_from_public_key, TagNotOnKey
 
 
 class PublicKeyRemoveTag(GrouperHandler):

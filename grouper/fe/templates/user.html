@@ -10,7 +10,7 @@
         <code>{{ key.fingerprint }}</code>
     </td>
     <td>
-        {% for tag in key.tags() %}
+        {% for tag in key.tags %}
             {% if can_control %}
             <form action="/users/{{ username }}/public-key/{{ key.id }}/delete_tag/{{ tag.id }}" method="post" style="display: inline">
             {% endif %}
@@ -28,7 +28,7 @@
         <button class="btn btn-default btn-xs public-key" key-body="{{ key.public_key|escape }}">
             <i class="fa fa-search"></i>
         </button>
-        <button class="btn btn-default btn-xs public-key" key-body="{{ ",".join(key.pretty_my_permissions())|escape }}">
+        <button class="btn btn-default btn-xs public-key" key-body="{{ ",".join(key.pretty_permissions)|escape }}">
             <i class="fa fa-key"></i>
         </button>
     {% if can_control %}

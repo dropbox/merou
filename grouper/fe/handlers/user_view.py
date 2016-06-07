@@ -6,7 +6,7 @@ from grouper.fe.util import GrouperHandler
 from grouper.graph import NoSuchUser
 from grouper.models.user import User
 from grouper.permissions import get_requests_by_owner
-from grouper.public_key import get_public_keys_of_user
+from grouper.public_key import get_public_key_permissions, get_public_keys_of_user
 from grouper.user import get_log_entries_by_user, user_open_audits, user_requests_aggregate
 from grouper.user_metadata import get_user_metadata_by_key
 from grouper.user_permissions import user_is_user_admin
@@ -52,6 +52,11 @@ class UserView(GrouperHandler):
         group_edge_list = group_biz.get_groups_by_user(self.session, user) if user.enabled else []
         groups = [{'name': g.name, 'type': 'Group', 'role': ge._role} for g, ge in group_edge_list]
         public_keys = get_public_keys_of_user(self.session, user.id)
+        for key in public_keys:
+            key.tags = get_public_key_tags(self.session, key)
+            key.pretty_permissions = ["{} ({})".format(perm.name,
+               perm.argument if perm.argument else "unargumented")
+               for perm in get_public_key_permissions(self.session, key)]
         permissions = user_md.get('permissions', [])
         log_entries = get_log_entries_by_user(self.session, user)
         self.render("user.html",

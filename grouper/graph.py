@@ -15,6 +15,7 @@ from grouper.models.permission_map import PermissionMap
 from grouper.models.public_key import PublicKey
 from grouper.models.user import User
 from grouper.models.user_metadata import UserMetadata
+from grouper.public_key import get_public_key_permissions, get_public_key_tags
 from grouper.util import singleton
 
 
@@ -166,9 +167,9 @@ class GroupGraph(object):
                         "public_key": key.public_key,
                         "fingerprint": key.fingerprint,
                         "created_on": str(key.created_on),
-                        "tags": [tag.name for tag in key.tags()],
+                        "tags": [tag.name for tag in get_public_key_tags(session, key)],
                         "permissions": [(perm.name, perm.argument)
-                                        for perm in key.my_permissions()],
+                                        for perm in get_public_key_permissions(session, key)],
                     } for key in public_keys.get(user.id, [])
                 ],
                 "metadata": [

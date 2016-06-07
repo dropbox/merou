@@ -12,6 +12,7 @@ from grouper.models.public_key_tag import PublicKeyTag
 from grouper.models.permission import Permission
 from grouper.constants import TAG_EDIT
 from grouper.permissions import permission_intersection
+from grouper.public_key import get_public_key_permissions, get_public_key_tags, get_public_key_tag_permissions
 from url_util import url
 from util import get_users, get_groups, add_member, grant_permission
 from collections import namedtuple
@@ -78,7 +79,7 @@ def test_add_tag(users, http_client, base_url, session):
     tag = PublicKeyTag.get(session, name="tyler_was_here")
 
     key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
-    assert key.tags() == [], "No public keys should have a tag unless it's been added to the key"
+    assert get_public_key_tags(session, key) == [], "No public keys should have a tag unless it's been added to the key"
 
     fe_url = url(base_url, '/tags')
     resp = yield http_client.fetch(fe_url, method="POST",
@@ -88,7 +89,7 @@ def test_add_tag(users, http_client, base_url, session):
     tag = PublicKeyTag.get(session, name="dont_tag_me_bro")
 
     key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
-    assert key.tags() == [], "No public keys should have a tag unless it's been added to the key"
+    assert get_public_key_tags(session, key) == [], "No public keys should have a tag unless it's been added to the key"
 
     fe_url = url(base_url, '/users/{}/public-key/{}/tag'.format(user.username, key.id))
     resp = yield http_client.fetch(fe_url, method="POST",
@@ -97,11 +98,11 @@ def test_add_tag(users, http_client, base_url, session):
 
     assert resp.code == 200
     key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
-    assert len(key.tags()) == 1, "The key should have exactly 1 tag"
-    assert key.tags()[0].name == "tyler_was_here"
+    assert len(get_public_key_tags(session, key)) == 1, "The key should have exactly 1 tag"
+    assert get_public_key_tags(session, key)[0].name == "tyler_was_here"
 
     key2 = session.query(PublicKey).filter_by(public_key=key_2).scalar()
-    assert len(key2.tags()) == 0, "Keys other than the one with the added tag should not gain tags"
+    assert len(get_public_key_tags(session, key2)) == 0, "Keys other than the one with the added tag should not gain tags"
 
 @pytest.mark.gen_test
 def test_remove_tag(users, http_client, base_url, session):
@@ -134,7 +135,7 @@ def test_remove_tag(users, http_client, base_url, session):
     tag = PublicKeyTag.get(session, name="tyler_was_here")
 
     key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
-    assert key.tags() == [], "No public keys should have a tag unless it's been added to the key"
+    assert get_public_key_tags(session, key) == [], "No public keys should have a tag unless it's been added to the key"
 
     fe_url = url(base_url, '/tags')
     resp = yield http_client.fetch(fe_url, method="POST",
@@ -144,7 +145,7 @@ def test_remove_tag(users, http_client, base_url, session):
     tag2 = PublicKeyTag.get(session, name="dont_tag_me_bro")
 
     key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
-    assert key.tags() == [], "No public keys should have a tag unless it's been added to the key"
+    assert get_public_key_tags(session, key) == [], "No public keys should have a tag unless it's been added to the key"
 
     fe_url = url(base_url, '/users/{}/public-key/{}/tag'.format(user.username, key.id))
     resp = yield http_client.fetch(fe_url, method="POST",
@@ -153,11 +154,11 @@ def test_remove_tag(users, http_client, base_url, session):
 
     assert resp.code == 200
     key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
-    assert len(key.tags()) == 1, "The key should have exactly 1 tag"
-    assert key.tags()[0].name == "tyler_was_here"
+    assert len(get_public_key_tags(session, key)) == 1, "The key should have exactly 1 tag"
+    assert get_public_key_tags(session, key)[0].name == "tyler_was_here"
 
     key2 = session.query(PublicKey).filter_by(public_key=key_2).scalar()
-    assert len(key2.tags()) == 0, "Keys other than the one with the added tag should not gain tags"
+    assert len(get_public_key_tags(session, key2)) == 0, "Keys other than the one with the added tag should not gain tags"
 
     fe_url = url(base_url, '/users/{}/public-key/{}/tag'.format(user.username, key2.id))
     resp = yield http_client.fetch(fe_url, method="POST",
@@ -192,10 +193,10 @@ def test_remove_tag(users, http_client, base_url, session):
     assert resp.code == 200
 
     key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
-    assert len(key.tags()) == 0, "The key should have exactly 0 tags"
+    assert len(get_public_key_tags(session, key)) == 0, "The key should have exactly 0 tags"
 
     key2 = session.query(PublicKey).filter_by(public_key=key_2).scalar()
-    assert len(key2.tags()) == 1, "Removing a tag from one key should not affect other keys"
+    assert len(get_public_key_tags(session, key2)) == 1, "Removing a tag from one key should not affect other keys"
 
 @pytest.mark.gen_test
 def test_grant_permission_to_tag(users, http_client, base_url, session):
@@ -225,9 +226,9 @@ def test_grant_permission_to_tag(users, http_client, base_url, session):
     assert resp.code == 200
     tag = PublicKeyTag.get(session, name="tyler_was_here")
     perm = Permission.get(session, TAG_EDIT)
-    assert len(tag.my_permissions()) == 1, "The tag should have exactly 1 permission"
-    assert tag.my_permissions()[0].name == perm.name, "The tag's permission should be the one we added"
-    assert tag.my_permissions()[0].argument == "*", "The tag's permission should be the one we added"
+    assert len(get_public_key_tag_permissions(session, tag)) == 1, "The tag should have exactly 1 permission"
+    assert get_public_key_tag_permissions(session, tag)[0].name == perm.name, "The tag's permission should be the one we added"
+    assert get_public_key_tag_permissions(session, tag)[0].argument == "*", "The tag's permission should be the one we added"
 
     # Make sure trying to add a permission to a tag doesn't fail horribly if it's already there
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
@@ -238,7 +239,6 @@ def test_grant_permission_to_tag(users, http_client, base_url, session):
             headers={'X-Grouper-User': user.username})
 
     assert resp.code == 200
-
 
 
 @pytest.mark.gen_test
@@ -322,9 +322,9 @@ def test_permissions(users, http_client, base_url, session):
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
 
     key = session.query(PublicKey).filter_by(user_id=user.id).scalar()
-    assert len(key.my_permissions()) == 1, "The SSH Key should have only 1 permission"
-    assert key.my_permissions()[0].name == TAG_EDIT, "The SSH key's permission should be TAG_EDIT"
-    assert key.my_permissions()[0].argument == "prod", "The SSH key's permission argument should be restricted to the tag's argument"
+    assert len(get_public_key_permissions(session, key)) == 1, "The SSH Key should have only 1 permission"
+    assert get_public_key_permissions(session, key)[0].name == TAG_EDIT, "The SSH key's permission should be TAG_EDIT"
+    assert get_public_key_permissions(session, key)[0].argument == "prod", "The SSH key's permission argument should be restricted to the tag's argument"
     assert len(user.my_permissions()) > 1, "The user should have more than 1 permission"
 
 def test_permission_intersection(standard_graph, session, users, groups, permissions):
@@ -377,11 +377,11 @@ def test_revoke_permission_from_tag(users, http_client, base_url, session):
     assert resp.code == 200
     tag = PublicKeyTag.get(session, name="tyler_was_here")
     perm = Permission.get(session, TAG_EDIT)
-    assert len(tag.my_permissions()) == 1, "The tag should have exactly 1 permission"
+    assert len(get_public_key_tag_permissions(session, tag)) == 1, "The tag should have exactly 1 permission"
 
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
 
-    mapping = tag.my_permissions()[0]
+    mapping = get_public_key_tag_permissions(session, tag)[0]
     fe_url = url(base_url, '/permissions/{}/revoke_tag/{}'.format(TAG_EDIT, mapping.mapping_id))
     resp = yield http_client.fetch(fe_url, method="POST",
             body="",
@@ -389,4 +389,4 @@ def test_revoke_permission_from_tag(users, http_client, base_url, session):
 
     assert resp.code == 200
     tag = PublicKeyTag.get(session, name="tyler_was_here")
-    assert len(tag.my_permissions()) == 0, "The tag should have no permissions"
+    assert len(get_public_key_tag_permissions(session, tag)) == 0, "The tag should have no permissions"

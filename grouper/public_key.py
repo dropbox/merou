@@ -1,10 +1,13 @@
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.sql import label
 import sshpubkey
 from sshpubkey.exc import PublicKeyParseError  # noqa
 
 from grouper.models.counter import Counter
+from grouper.models.permission import Permission
 from grouper.models.public_key import PublicKey
 from grouper.models.public_key_tag_map import PublicKeyTagMap
+from grouper.models.tag_permission_map import TagPermissionMap
 
 
 class DuplicateKey(Exception):
@@ -78,7 +81,8 @@ def add_public_key(session, user, public_key_str):
 
 
 def delete_public_key(session, user_id, key_id):
-    """Delete a particular user's public key.
+    """Delete a particular user's public key. This will remove all
+        tags from the public key prior to deletion.
 
     Args:
         session(models.base.session.Session): database session
@@ -157,3 +161,54 @@ def remove_tag_from_public_key(session, public_key, tag):
     mapping.delete(session)
     Counter.incr(session, "updates")
     session.commit()
+
+
+def get_public_key_tags(session, public_key):
+    # type: Session, PublicKey -> List[PublicKeyTag]
+    """Returns the list of tags that are assigned to this public key
+
+    Returns:
+        a list that contains all of the PublicKeyTags that are assigned to this public key
+    """
+    mappings = session.query(PublicKeyTagMap).filter_by(key_id=public_key.id).all()
+    return [mapping.tag for mapping in mappings]
+
+
+def get_public_key_permissions(session, public_key):
+        # type: Session, PublicKey -> List[Permission]
+        """Returns the permissions that this public key has. Namely, this the set of permissions
+        that the public key's owner has, intersected with the permissions allowed by this key's
+        tags
+
+        Returns:
+            a list of all permissions this public key has
+        """
+        # TODO: Fix circular dependency
+        from grouper.permissions import permission_intersection
+        my_perms = public_key.user.my_permissions()
+        for tag in get_public_key_tags(session, public_key):
+            my_perms = permission_intersection(my_perms,
+                get_public_key_tag_permissions(session, tag))
+
+        return list(my_perms)
+
+
+def get_public_key_tag_permissions(session, tag):
+        """Returns the permissions granted to this tag.
+
+        Returns:
+            A list of namedtuple with the id, name, mapping_id, argument, and granted_on for each
+            permission
+        """
+        permissions = session.query(
+            Permission.id,
+            Permission.name,
+            label("mapping_id", TagPermissionMap.id),
+            TagPermissionMap.argument,
+            TagPermissionMap.granted_on,
+        ).filter(
+            TagPermissionMap.permission_id == Permission.id,
+            TagPermissionMap.tag_id == tag.id,
+        ).all()
+
+        return permissions

@@ -36,8 +36,8 @@ from grouper.fe.handlers.permissions_revoke import PermissionsRevoke
 from grouper.fe.handlers.permissions_revoke_tag import PermissionsRevokeTag
 from grouper.fe.handlers.permissions_view import PermissionsView
 from grouper.fe.handlers.public_key_add import PublicKeyAdd
-from grouper.fe.handlers.public_key_delete import PublicKeyDelete
 from grouper.fe.handlers.public_key_add_tag import PublicKeyAddTag
+from grouper.fe.handlers.public_key_delete import PublicKeyDelete
 from grouper.fe.handlers.public_key_remove_tag import PublicKeyRemoveTag
 from grouper.fe.handlers.search import Search
 from grouper.fe.handlers.stats import Stats

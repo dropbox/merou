@@ -1,11 +1,8 @@
 from sqlalchemy import Boolean, Column, Integer, String, Text
-from sqlalchemy.sql import label
 
 from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.model_base import Model
-from grouper.models.permission import Permission
-from grouper.models.tag_permission_map import TagPermissionMap
 
 
 class PublicKeyTag(Model):
@@ -16,26 +13,6 @@ class PublicKeyTag(Model):
     name = Column(String(length=MAX_NAME_LENGTH), unique=True)
     description = Column(Text)
     enabled = Column(Boolean, default=True)
-
-    def my_permissions(self):
-        """Returns the permissions granted to this tag.
-
-        Returns:
-            A list of namedtuple with the id, name, mapping_id, argument, and granted_on for each
-            permission
-        """
-        permissions = self.session.query(
-            Permission.id,
-            Permission.name,
-            label("mapping_id", TagPermissionMap.id),
-            TagPermissionMap.argument,
-            TagPermissionMap.granted_on,
-        ).filter(
-            TagPermissionMap.permission_id == Permission.id,
-            TagPermissionMap.tag_id == self.id,
-        ).all()
-
-        return permissions
 
     def my_log_entries(self):
         # type: () -> List[AuditLog]

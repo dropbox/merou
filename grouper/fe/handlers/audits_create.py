@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta
+
 from sqlalchemy.exc import IntegrityError
+
 from grouper.constants import AUDIT_MANAGER
-from grouper.email_util import send_email, send_async_email
+from grouper.email_util import send_async_email, send_email
 from grouper.fe.forms import AuditCreateForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import Audit, AuditMember, GROUP_EDGE_ROLES, Group
-from grouper.models.audit_log import AuditLogCategory, AuditLog
+from grouper.model_soup import Audit, AuditMember, Group, GROUP_EDGE_ROLES
+from grouper.models.audit_log import AuditLog, AuditLogCategory
 
 
 class AuditsCreate(GrouperHandler):

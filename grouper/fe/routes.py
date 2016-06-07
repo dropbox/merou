@@ -1,6 +1,6 @@
 from grouper.constants import (
-        NAME_VALIDATION,
         NAME2_VALIDATION,
+        NAME_VALIDATION,
         PERMISSION_VALIDATION,
         USERNAME_VALIDATION,
         )

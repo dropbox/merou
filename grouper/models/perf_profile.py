@@ -1,5 +1,7 @@
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Index, LargeBinary
+
+from sqlalchemy import Column, DateTime, Index, LargeBinary, String
+
 from grouper.models.base.model_base import Model
 
 

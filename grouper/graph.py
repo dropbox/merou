@@ -1,14 +1,14 @@
 from collections import defaultdict, namedtuple
 from datetime import datetime
-from networkx import DiGraph, single_source_shortest_path
-from threading import RLock
 import logging
+from threading import RLock
 
+from networkx import DiGraph, single_source_shortest_path
 from sqlalchemy import or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import label, literal
 
-from grouper.model_soup import GROUP_EDGE_ROLES, Group, GroupEdge, User
+from grouper.model_soup import Group, GROUP_EDGE_ROLES, GroupEdge, User
 from grouper.models.counter import Counter
 from grouper.models.permission import MappedPermission, Permission
 from grouper.models.permission_map import PermissionMap

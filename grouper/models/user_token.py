@@ -3,9 +3,10 @@ import hashlib
 import hmac
 import os
 
-from grouper.models.base.model_base import Model
-from sqlalchemy import Column, Integer, String, UniqueConstraint, ForeignKey, DateTime
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
+
+from grouper.models.base.model_base import Model
 
 
 def _make_secret():

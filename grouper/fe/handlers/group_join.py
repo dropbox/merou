@@ -1,15 +1,16 @@
 from datetime import datetime
+
 from grouper import group as group_biz
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.email_util import send_email
 from grouper.fe.forms import GroupJoinForm
 from grouper.fe.settings import settings
-from grouper.fe.util import GrouperHandler, Alert
+from grouper.fe.util import Alert, GrouperHandler
 from grouper.model_soup import (
         APPROVER_ROLE_INDICIES,
+        Group,
         GROUP_EDGE_ROLES,
         GROUP_JOIN_CHOICES,
-        Group,
         User,
         )
 from grouper.models.audit_log import AuditLog

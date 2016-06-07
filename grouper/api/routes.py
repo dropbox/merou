@@ -1,4 +1,4 @@
-from .handlers import Users, UsersPublicKeys, Groups, Permissions, Stats, NotFound, TokenValidate
+from .handlers import Groups, NotFound, Permissions, Stats, TokenValidate, Users, UsersPublicKeys
 from ..constants import NAME_VALIDATION, PERMISSION_VALIDATION
 
 HANDLERS = [

@@ -1,4 +1,4 @@
-from grouper.model_soup import User, Group
+from grouper.model_soup import Group, User
 
 
 def get_user_or_group(session, name, user_or_group=None):

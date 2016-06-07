@@ -1,7 +1,7 @@
 from datetime import datetime
 import re
-import sshpubkey
 
+import sshpubkey
 from wtforms import (
         BooleanField,
         HiddenField,

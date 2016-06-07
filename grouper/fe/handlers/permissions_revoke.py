@@ -1,8 +1,8 @@
 from grouper.fe.util import GrouperHandler
-from grouper.util import matches_glob
 from grouper.models.audit_log import AuditLog
 from grouper.models.counter import Counter
 from grouper.models.permission_map import PermissionMap
+from grouper.util import matches_glob
 
 
 class PermissionsRevoke(GrouperHandler):

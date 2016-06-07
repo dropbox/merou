@@ -1,4 +1,4 @@
-from grouper.constants import PERMISSION_GRANT, PERMISSION_CREATE, PERMISSION_AUDITOR
+from grouper.constants import PERMISSION_AUDITOR, PERMISSION_CREATE, PERMISSION_GRANT
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
 from grouper.models.permission import Permission

@@ -1,14 +1,13 @@
+from cStringIO import StringIO
 import csv
+from datetime import datetime
+import re
 import sys
 import traceback
 
-from cStringIO import StringIO
-from datetime import datetime
-
-import re
-import sshpubkey
 from expvar.stats import stats
-from tornado.web import RequestHandler, HTTPError
+import sshpubkey
+from tornado.web import HTTPError, RequestHandler
 
 from grouper.constants import TOKEN_FORMAT
 from grouper.model_soup import User

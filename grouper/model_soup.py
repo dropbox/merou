@@ -10,35 +10,34 @@ import json
 import logging
 import re
 
+from sqlalchemy import asc, desc, or_, union_all
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean,
-    ForeignKey, Enum, DateTime, SmallInteger, Index
+    Boolean, Column, DateTime, Enum, ForeignKey, Index,
+    Integer, SmallInteger, String, Text
 )
-from sqlalchemy import or_, union_all, asc, desc
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import label, literal
 
+from grouper.models.audit_log import AuditLog
+from grouper.models.base.constants import REQUEST_STATUS_CHOICES
+from grouper.models.base.model_base import Model
+from grouper.models.base.session import flush_transaction
+from grouper.models.comment import Comment
+from grouper.models.counter import Counter
+from grouper.models.permission import Permission
+from grouper.models.permission_map import PermissionMap
+from grouper.models.public_key import PublicKey
+from grouper.models.user_metadata import UserMetadata
+from grouper.models.user_token import UserToken
 from .constants import (
-    PERMISSION_GRANT, PERMISSION_CREATE, MAX_NAME_LENGTH,
-    PERMISSION_VALIDATION, ILLEGAL_NAME_CHARACTER, PERMISSION_ADMIN,
-    GROUP_ADMIN, USER_ADMIN
+    GROUP_ADMIN, ILLEGAL_NAME_CHARACTER, MAX_NAME_LENGTH, PERMISSION_ADMIN,
+    PERMISSION_CREATE, PERMISSION_GRANT, PERMISSION_VALIDATION, USER_ADMIN
 )
 from .email_util import send_async_email
 from .plugin import get_plugins
 from .settings import settings
-from grouper.models.base.constants import REQUEST_STATUS_CHOICES
-from grouper.models.base.model_base import Model
-from grouper.models.base.session import flush_transaction
-from grouper.models.counter import Counter
-from grouper.models.audit_log import AuditLog
-from grouper.models.comment import Comment
-from grouper.models.public_key import PublicKey
-from grouper.models.user_metadata import UserMetadata
-from grouper.models.user_token import UserToken
-from grouper.models.permission_map import PermissionMap
-from grouper.models.permission import Permission
 
 
 OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange", "PermissionRequestStatusChange")

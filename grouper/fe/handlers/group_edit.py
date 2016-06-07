@@ -38,6 +38,7 @@ class GroupEdit(GrouperHandler):
         group.groupname = form.data["groupname"]
         group.description = form.data["description"]
         group.canjoin = form.data["canjoin"]
+        group.auto_expire = form.data["auto_expire"]
         Counter.incr(self.session, "updates")
 
         try:

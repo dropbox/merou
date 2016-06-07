@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 
 import sshpubkey
@@ -37,6 +37,25 @@ class ValidateDate(object):
         except ValueError:
             raise ValidationError(
                 "{} does not match format 'MM/DD/YYYY'".format(field.data))
+
+
+class DaysTimeDeltaField(IntegerField):
+
+    def process_data(self, value):
+        """Converts from TimeDelta notation to a simple integer"""
+        # Do the check because groups with no expiration will result in value being None
+        if hasattr(value, "days"):
+            self.data = value.days
+        else:
+            self.data = None
+
+    def process_formdata(self, valuelist):
+        # We need to support None values for groups with no expiration
+        if valuelist and valuelist[0]:
+            super(DaysTimeDeltaField, self).process_formdata(valuelist)
+            self.data = timedelta(days=self.data)
+        else:
+            self.data = None
 
 
 class ValidatePublicKey(object):
@@ -89,6 +108,7 @@ class GroupCreateForm(Form):
         ("canjoin", "Anyone"), ("canask", "Must Ask"),
         ("nobody", "Nobody"),
     ], default="canask")
+    auto_expire = DaysTimeDeltaField("Default Expiration (Days)")
 
 
 class GroupEditForm(Form):
@@ -102,6 +122,7 @@ class GroupEditForm(Form):
         ("canjoin", "Anyone"), ("canask", "Must Ask"),
         ("nobody", "Nobody"),
     ], default="canask")
+    auto_expire = DaysTimeDeltaField("Default Expiration (Days)")
 
 
 class AuditCreateForm(Form):

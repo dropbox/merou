@@ -1,4 +1,4 @@
-from grouper.fe.util import GrouperHandler, Alert
+from grouper.fe.util import Alert, GrouperHandler
 from grouper.graph import NoSuchGroup
 from grouper.model_soup import (APPROVER_ROLE_INDICIES, AUDIT_STATUS_CHOICES,
         Group, OWNER_ROLE_INDICES)

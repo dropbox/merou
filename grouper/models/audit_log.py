@@ -1,7 +1,7 @@
 from datetime import datetime
-
 from enum import IntEnum
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, or_, desc
+
+from sqlalchemy import Column, DateTime, desc, ForeignKey, Integer, or_, String, Text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import relationship
 

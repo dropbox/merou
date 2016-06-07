@@ -1,7 +1,7 @@
 from collections import namedtuple
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, asc
+from sqlalchemy import asc, Boolean, Column, DateTime, Integer, String, Text
 
 from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.base.model_base import Model

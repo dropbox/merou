@@ -1,7 +1,8 @@
-from sqlalchemy.orm import sessionmaker, Session as _Session
-from sqlalchemy import create_engine
 import functools
 import logging
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session as _Session, sessionmaker
 
 
 def flush_transaction(method):

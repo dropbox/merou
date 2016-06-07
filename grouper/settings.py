@@ -1,10 +1,10 @@
-import os
 import logging
+import os
 import threading
 import time
-import yaml
 
 from expvar.stats import stats
+import yaml
 
 
 class Settings(object):

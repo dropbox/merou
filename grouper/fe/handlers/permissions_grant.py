@@ -1,12 +1,13 @@
 from sqlalchemy.exc import IntegrityError
+
 from grouper.audit import assert_controllers_are_auditors, UserNotAuditor
 from grouper.fe.forms import PermissionGrantForm
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import Group
-from grouper.util import matches_glob
 from grouper.models.audit_log import AuditLog
-from grouper.permissions import grant_permission
 from grouper.models.permission import Permission
+from grouper.permissions import grant_permission
+from grouper.util import matches_glob
 
 
 class PermissionsGrant(GrouperHandler):

@@ -11,7 +11,7 @@ from grouper.ctl import (
         user,
         user_proxy,
         )
-from grouper.settings import settings, default_settings_path
+from grouper.settings import default_settings_path, settings
 from grouper.util import get_loglevel
 
 

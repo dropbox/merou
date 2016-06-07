@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, ForeignKey, Enum, DateTime
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 
 from grouper.model_soup import CommentObjectMixin

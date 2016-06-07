@@ -9,9 +9,9 @@ from sqlalchemy.exc import OperationalError
 
 from grouper.email_util import notify_edge_expiration, process_async_emails
 from grouper.model_soup import Group, GroupEdge
+from grouper.models.base.session import get_db_engine, Session
 from grouper.perf_profile import prune_old_traces
 from grouper.util import get_database_url
-from grouper.models.base.session import Session, get_db_engine
 
 
 class BackgroundThread(Thread):

@@ -228,6 +228,9 @@ class User(Model, CommentObjectMixin):
 
         return md_items.all()
 
+    def get_metadata(self, key):
+        return self.session.query(UserMetadata).filter_by(user_id=self.id, data_key=key).scalar()
+
     def my_public_keys(self):
 
         keys = self.session.query(

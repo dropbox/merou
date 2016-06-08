@@ -40,6 +40,7 @@ from grouper.fe.handlers.stats import Stats
 from grouper.fe.handlers.user_disable import UserDisable
 from grouper.fe.handlers.user_enable import UserEnable
 from grouper.fe.handlers.user_requests import UserRequests
+from grouper.fe.handlers.user_shell import UserShell
 from grouper.fe.handlers.user_token_add import UserTokenAdd
 from grouper.fe.handlers.user_token_disable import UserTokenDisable
 from grouper.fe.handlers.user_view import UserView
@@ -78,6 +79,7 @@ for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
         (r"/users/{}".format(regex), UserView),
         (r"/users/{}/disable".format(regex), UserDisable),
         (r"/users/{}/enable".format(regex), UserEnable),
+        (r"/users/{}/shell".format(regex), UserShell),
         (r"/users/{}/public-key/add".format(regex), PublicKeyAdd),
         (
             r"/users/{}/public-key/(?P<key_id>[0-9]+)/delete".format(regex),

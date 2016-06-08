@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import group_panel, public_key_panel, permission_panel, log_entry_panel, tokens_panel %}
+{% from 'macros/ui.html' import group_panel, public_key_panel, permission_panel, log_entry_panel, tokens_panel, shell_panel %}
 
 {% block heading %}
     <a href="/users">Users</a>
@@ -102,6 +102,9 @@
     <div class="row">
         <div class="col-md-4">
             {{ tokens_panel(390, user, user_tokens, can_control) }}
+        </div>
+        <div class="col-md-4">
+            {{ shell_panel(390, user, shell, can_control) }}
         </div>
     </div>
 {% endif %}

@@ -1,4 +1,5 @@
 from grouper import group as group_biz
+from grouper.constants import USER_METADATA_SHELL_KEY
 from grouper.fe.handlers.user_disable import UserDisable
 from grouper.fe.handlers.user_enable import UserEnable
 from grouper.fe.util import GrouperHandler
@@ -38,6 +39,8 @@ class UserView(GrouperHandler):
             # they're disabled, so we've excluded them from the in-memory graph.
             user_md = {}
 
+        shell = (user.get_metadata(USER_METADATA_SHELL_KEY).data_value
+            if user.get_metadata(USER_METADATA_SHELL_KEY) else "No shell configured")
         open_audits = user.my_open_audits()
         group_edge_list = group_biz.get_groups_by_user(self.session, user) if user.enabled else []
         groups = [{'name': g.name, 'type': 'Group', 'role': ge._role} for g, ge in group_edge_list]
@@ -57,4 +60,5 @@ class UserView(GrouperHandler):
                     num_pending_group_requests=num_pending_group_requests,
                     num_pending_perm_requests=num_pending_perm_requests,
                     open_audits=open_audits,
+                    shell=shell,
                     )

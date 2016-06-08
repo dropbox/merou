@@ -25,6 +25,7 @@ settings = FeSettings.from_settings(base_settings, {
     "permission_request_text_help": None,
     "port": 8989,
     "refresh_interval": 60,
+    "shell": [["/bin/false", "Shell support in Grouper has not been setup by the administrator"]],
     "site_docs": None,
     "timezone": FeSettings.default_timezone,
     "url": "http://127.0.0.1:8888",

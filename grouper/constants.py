@@ -73,4 +73,4 @@ RESERVED_NAMES = [
 MAX_NAME_LENGTH = 128
 
 # Grouper used UserMetadata data_keys
-SHELL_MD_KEY = "shell"
+USER_METADATA_SHELL_KEY = "shell"

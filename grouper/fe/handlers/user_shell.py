@@ -1,10 +1,9 @@
-from grouper.constants import SHELL_MD_KEY, USER_ADMIN
+from grouper.constants import USER_ADMIN, USER_METADATA_SHELL_KEY
 from grouper.fe.forms import UserShellForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
-from grouper.models.user_metadata import UserMetadata
 
 
 class UserShell(GrouperHandler):
@@ -41,14 +40,8 @@ class UserShell(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors),
             )
 
-        m = self.session.query(UserMetadata).filter_by(user_id=user.id,
-            data_key=SHELL_MD_KEY).scalar()
-        if m:
-            m.data_value = form.data["shell"]
-            m.add(self.session)
-        else:
-            m = UserMetadata(user_id=user.id, data_key=SHELL_MD_KEY, data_value=form.data["shell"])
-            m.add(self.session)
+        user.set_metadata(USER_METADATA_SHELL_KEY, form.data["shell"])
+        user.add(self.session)
         self.session.commit()
 
         AuditLog.log(self.session, self.current_user.id, 'changed_shell',

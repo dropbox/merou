@@ -59,10 +59,17 @@ class UserPassword(Model):
     def password(self):
         return self._hashed_secret
 
+    @property
+    def password_hash(self):
+        return self.password
+
     @password.setter
     def password(self, new_password):
         self.salt = _make_salt()
         self._hashed_secret = hashlib.sha512(new_password + self.salt).hexdigest()
+
+    def set_password(self, new_password):
+        self.password = new_password
 
     def check_password(self, password_to_check):
         h = hashlib.sha512(password_to_check + self.salt).hexdigest()
@@ -71,7 +78,7 @@ class UserPassword(Model):
     def check_hash(self, hash_to_check):
         return self.enabled and hmac.compare_digest(
                 hash_to_check,
-                self.password.encode('utf-8'),
+                self.password_hash.encode('utf-8'),
         )
 
     @property

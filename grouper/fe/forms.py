@@ -3,14 +3,8 @@ import re
 
 import sshpubkey
 from wtforms import (
-        BooleanField,
-        HiddenField,
-        IntegerField,
-        PasswordField,
-        SelectField,
-        StringField,
-        TextAreaField,
-        validators,
+        BooleanField, HiddenField, IntegerField, PasswordField,
+        SelectField, StringField, TextAreaField, validators
         )
 from wtforms.validators import ValidationError
 from wtforms_tornado import Form

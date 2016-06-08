@@ -23,13 +23,13 @@ def add_new_user_password(session, password_name, password, user_id):
         user_id(int): the id of the user to add this password to
     """
     p = UserPassword(name=password_name, user_id=user_id)
-    p.password = password
+    p.set_password(password)
+    Counter.incr(session, "updates")
     p.add(session)
     try:
         session.commit()
     except IntegrityError:
         raise PasswordAlreadyExists()
-    Counter.incr(session, "updates")
 
 
 def delete_user_password(session, password_name, user_id):
@@ -45,8 +45,8 @@ def delete_user_password(session, password_name, user_id):
     if not p:
         raise PasswordDoesNotExist()
     p.delete(session)
-    session.commit()
     Counter.incr(session, "updates")
+    session.commit()
 
 
 def user_passwords(session, user):

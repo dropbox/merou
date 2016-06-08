@@ -146,10 +146,8 @@ class GroupGraph(object):
         '''
 
         def user_indexify(data):
-            ret = {}
+            ret = defaultdict(list)
             for item in data:
-                if item.user_id not in ret:
-                    ret[item.user_id] = []
                 ret[item.user_id].append(item)
             return ret
 
@@ -167,7 +165,7 @@ class GroupGraph(object):
                 "passwords": [
                     {
                          "name": password.name,
-                         "hash": password.password,
+                         "hash": password.password_hash,
                          "salt": password.salt,
                          "func": "SHA512",
                     } for password in passwords.get(user.id, [])

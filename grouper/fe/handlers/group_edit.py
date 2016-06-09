@@ -2,6 +2,7 @@ from sqlalchemy.exc import IntegrityError
 
 from grouper.fe.forms import GroupEditForm
 from grouper.fe.util import GrouperHandler
+from grouper.group import user_can_manage_group
 from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
 from grouper.models.counter import Counter
@@ -13,7 +14,7 @@ class GroupEdit(GrouperHandler):
         if not group:
             return self.notfound()
 
-        if not self.current_user.can_manage(group):
+        if not user_can_manage_group(self.session, group, self.current_user):
             return self.forbidden()
 
         form = GroupEditForm(obj=group)
@@ -25,7 +26,7 @@ class GroupEdit(GrouperHandler):
         if not group:
             return self.notfound()
 
-        if not self.current_user.can_manage(group):
+        if not user_can_manage_group(self.session, group, self.current_user):
             return self.forbidden()
 
         form = GroupEditForm(self.request.arguments, obj=group)

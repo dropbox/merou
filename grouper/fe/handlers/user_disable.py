@@ -2,14 +2,15 @@ from grouper.constants import USER_ADMIN, USER_DISABLE
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
+from grouper.user import disable_user, user_has_permission
 
 
 class UserDisable(GrouperHandler):
     @staticmethod
-    def check_access(actor, target):
+    def check_access(session, actor, target):
         return (
-            actor.has_permission(USER_ADMIN) or
-            actor.has_permission(USER_DISABLE, argument=target.name)
+            user_has_permission(session, actor, USER_ADMIN) or
+            user_has_permission(session, actor, USER_DISABLE, argument=target.name)
         )
 
     def post(self, user_id=None, name=None):
@@ -18,10 +19,10 @@ class UserDisable(GrouperHandler):
         if not user:
             return self.notfound()
 
-        if not self.check_access(self.current_user, user):
+        if not self.check_access(self.session, self.current_user, user):
             return self.forbidden()
 
-        user.disable()
+        disable_user(self.session, user)
         self.session.commit()
 
         AuditLog.log(self.session, self.current_user.id, 'disable_user',

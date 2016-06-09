@@ -9,12 +9,13 @@ from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import Audit, AuditMember, Group, GROUP_EDGE_ROLES
 from grouper.models.audit_log import AuditLog, AuditLogCategory
+from grouper.user import user_has_permission
 
 
 class AuditsCreate(GrouperHandler):
     def get(self):
         user = self.get_current_user()
-        if not user.has_permission(AUDIT_MANAGER):
+        if not user_has_permission(self.session, user, AUDIT_MANAGER):
             return self.forbidden()
 
         self.render(
@@ -30,7 +31,7 @@ class AuditsCreate(GrouperHandler):
             )
 
         user = self.get_current_user()
-        if not user.has_permission(AUDIT_MANAGER):
+        if not user_has_permission(self.session, user, AUDIT_MANAGER):
             return self.forbidden()
 
         # Step 1, detect if there are non-completed audits and fail if so.

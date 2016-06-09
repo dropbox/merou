@@ -18,6 +18,7 @@ from grouper.fe.settings import settings
 from grouper.graph import Graph
 from grouper.model_soup import User
 from grouper.models.base.session import get_db_engine, Session
+from grouper.user import user_permissions
 from grouper.util import get_database_url
 
 
@@ -238,7 +239,7 @@ def ensure_audit_security(perm_arg):
     def _wrapper(f):
         def _decorator(self, *args, **kwargs):
             if not any([name == AUDIT_SECURITY and argument == perm_arg for name, argument, _, _
-                    in self.current_user.my_permissions()]):
+                    in user_permissions(self.session, self.current_user)]):
                 return self.forbidden()
 
             return f(self, *args, **kwargs)

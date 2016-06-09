@@ -4,7 +4,8 @@ from grouper import public_key
 from grouper.ctl.util import ensure_valid_username, make_session
 from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
-from grouper.user import get_all_users
+from grouper.user import disable_user, enable_user, get_all_users
+from grouper.user_metadata import set_user_metadata
 
 
 def handle_command(args):
@@ -44,7 +45,7 @@ def user_command(args):
                 logging.info("{}: User already disabled. Doing nothing.".format(username))
             else:
                 logging.info("{}: User found, disabling...".format(username))
-                user.disable()
+                disable_user(session, user)
                 session.commit()
         return
 
@@ -57,7 +58,7 @@ def user_command(args):
                 logging.info("{}: User not disabled. Doing nothing.".format(username))
             else:
                 logging.info("{}: User found, enabling...".format(username))
-                user.enable(user, preserve_membership=args.preserve_membership)
+                enable_user(session, user, user, preserve_membership=args.preserve_membership)
                 session.commit()
         return
 
@@ -73,7 +74,7 @@ def user_command(args):
         print "Setting %s metadata: %s=%s" % (args.username, args.metadata_key, args.metadata_value)
         if args.metadata_value == "":
             args.metadata_value = None
-        user.set_metadata(args.metadata_key, args.metadata_value)
+        set_user_metadata(session, user.id, args.metadata_key, args.metadata_value)
         session.commit()
     elif args.subcommand == "add_public_key":
         print "Adding public key for user..."

@@ -4,12 +4,13 @@ from grouper.email_util import cancel_async_emails
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import Audit, AUDIT_STATUS_CHOICES
 from grouper.models.audit_log import AuditLog, AuditLogCategory
+from grouper.user import user_has_permission
 
 
 class AuditsComplete(GrouperHandler):
     def post(self, audit_id):
         user = self.get_current_user()
-        if not user.has_permission(PERMISSION_AUDITOR):
+        if not user_has_permission(self.session, user, PERMISSION_AUDITOR):
             return self.forbidden()
 
         audit = self.session.query(Audit).filter(Audit.id == audit_id).one()

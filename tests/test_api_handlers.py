@@ -8,6 +8,7 @@ from fixtures import api_app as app  # noqa
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from grouper.constants import USER_METADATA_SHELL_KEY
 from grouper.models.user_token import UserToken
+from grouper.user_metadata import get_user_metadata_by_key, set_user_metadata
 from grouper.user_token import add_new_user_token, disable_user_token
 from url_util import url
 
@@ -153,9 +154,9 @@ def test_groups(groups, http_client, base_url):
 @pytest.mark.gen_test
 def test_shell(session, users, http_client, base_url, graph):
     user = users['zorkian@a.co']
-    assert not user.get_metadata(USER_METADATA_SHELL_KEY)
+    assert not get_user_metadata_by_key(session, user.id, USER_METADATA_SHELL_KEY)
 
-    user.set_metadata(USER_METADATA_SHELL_KEY, "/bin/bash")
+    set_user_metadata(session, user.id, USER_METADATA_SHELL_KEY, "/bin/bash")
     graph.update_from_db(session)
 
     fe_url = url(base_url, '/users/{}'.format(user.username))
@@ -167,7 +168,7 @@ def test_shell(session, users, http_client, base_url, graph):
     assert body["data"]["user"]["metadata"][0]["data_key"] == "shell", "There should only be 1 metadata!"
     assert body["data"]["user"]["metadata"][0]["data_value"] == "/bin/bash", "The shell should be set to the correct value"
 
-    user.set_metadata(USER_METADATA_SHELL_KEY, "/bin/zsh")
+    set_user_metadata(session, user.id, USER_METADATA_SHELL_KEY, "/bin/zsh")
     graph.update_from_db(session)
 
     fe_url = url(base_url, '/users/{}'.format(user.username))

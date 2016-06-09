@@ -1,4 +1,5 @@
 from grouper.fe.util import GrouperHandler
+from grouper.user import user_creatable_permissions
 
 
 class PermissionsView(GrouperHandler):
@@ -17,7 +18,7 @@ class PermissionsView(GrouperHandler):
         total = len(permissions)
         permissions = permissions[offset:offset + limit]
 
-        can_create = self.current_user.my_creatable_permissions()
+        can_create = user_creatable_permissions(self.session, self.current_user)
 
         self.render(
             "permissions.html", permissions=permissions, offset=offset, limit=limit, total=total,

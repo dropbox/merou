@@ -84,3 +84,17 @@ def delete_public_key(session, user_id, key_id):
     Counter.incr(session, "updates")
 
     session.commit()
+
+
+def get_public_keys_of_user(session, user_id):
+    """Retrieve all public keys for user.
+
+    Args:
+        session(models.base.session.Session): database session
+        user_id(int): id of user in question
+
+    Returns:
+        List of PublicKey model object representing the keys
+    """
+    pkey = session.query(PublicKey).filter_by(user_id=user_id).all()
+    return pkey

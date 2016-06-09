@@ -6,6 +6,9 @@ from grouper.fe.util import GrouperHandler
 from grouper.graph import NoSuchUser
 from grouper.model_soup import User
 from grouper.permissions import get_requests_by_owner
+from grouper.public_key import get_public_keys_of_user
+from grouper.user import user_open_audits, user_requests_aggregate
+from grouper.user_metadata import get_user_metadata_by_key
 
 
 class UserView(GrouperHandler):
@@ -21,13 +24,14 @@ class UserView(GrouperHandler):
             return self.notfound()
 
         can_control = user.name == self.current_user.name or self.current_user.user_admin
-        can_disable = UserDisable.check_access(self.current_user, user)
-        can_enable = UserEnable.check_access(self.current_user, user)
+        can_disable = UserDisable.check_access(self.session, self.current_user, user)
+        can_enable = UserEnable.check_access(self.session, self.current_user, user)
 
         if user.id == self.current_user.id:
-            num_pending_group_requests = self.current_user.my_requests_aggregate().count()
+            num_pending_group_requests = user_requests_aggregate(self.session,
+                 self.current_user).count()
             _, num_pending_perm_requests = get_requests_by_owner(self.session, self.current_user,
-                    status='pending', limit=1, offset=0)
+                 status='pending', limit=1, offset=0)
         else:
             num_pending_group_requests = None
             num_pending_perm_requests = None
@@ -39,12 +43,13 @@ class UserView(GrouperHandler):
             # they're disabled, so we've excluded them from the in-memory graph.
             user_md = {}
 
-        shell = (user.get_metadata(USER_METADATA_SHELL_KEY).data_value
-            if user.get_metadata(USER_METADATA_SHELL_KEY) else "No shell configured")
-        open_audits = user.my_open_audits()
+        shell = (get_user_metadata_by_key(self.session, user.id, USER_METADATA_SHELL_KEY).data_value
+            if get_user_metadata_by_key(self.session, user.id, USER_METADATA_SHELL_KEY)
+            else "No shell configured")
+        open_audits = user_open_audits(self.session, user)
         group_edge_list = group_biz.get_groups_by_user(self.session, user) if user.enabled else []
         groups = [{'name': g.name, 'type': 'Group', 'role': ge._role} for g, ge in group_edge_list]
-        public_keys = user.my_public_keys()
+        public_keys = get_public_keys_of_user(self.session, user.id)
         permissions = user_md.get('permissions', [])
         log_entries = user.my_log_entries()
         self.render("user.html",

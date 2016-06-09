@@ -6,6 +6,7 @@ from grouper.fe.util import Alert, GrouperHandler
 from grouper.model_soup import Group, GroupEdge, Request
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import REQUEST_STATUS_CHOICES
+from grouper.user import user_role
 
 
 class GroupRequestUpdate(GrouperHandler):
@@ -15,7 +16,7 @@ class GroupRequestUpdate(GrouperHandler):
             return self.notfound()
 
         members = group.my_members()
-        my_role = self.current_user.my_role(members)
+        my_role = user_role(self.current_user, members)
         if my_role not in ("manager", "owner", "np-owner"):
             return self.forbidden()
 
@@ -39,7 +40,7 @@ class GroupRequestUpdate(GrouperHandler):
             return self.notfound()
 
         members = group.my_members()
-        my_role = self.current_user.my_role(members)
+        my_role = user_role(self.current_user, members)
         if my_role not in ("manager", "owner", "np-owner"):
             return self.forbidden()
 

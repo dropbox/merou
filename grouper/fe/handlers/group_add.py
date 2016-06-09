@@ -6,10 +6,10 @@ from grouper.email_util import send_email
 from grouper.fe.forms import GroupAddForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.group import get_all_groups
+from grouper.group import get_all_groups, user_can_manage_group
 from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
-from grouper.user import get_all_enabled_users, get_user_or_group
+from grouper.user import get_all_enabled_users, get_user_or_group, user_role
 
 
 class GroupAdd(GrouperHandler):
@@ -51,11 +51,11 @@ class GroupAdd(GrouperHandler):
         if not group:
             return self.notfound()
 
-        if not self.current_user.can_manage(group):
+        if not user_can_manage_group(self.session, group, self.current_user):
             return self.forbidden()
 
         members = group.my_members()
-        my_role = self.current_user.my_role(members)
+        my_role = user_role(self.current_user, members)
         return self.render(
             "group-add.html", form=self.get_form(role=my_role), group=group
         )
@@ -65,11 +65,11 @@ class GroupAdd(GrouperHandler):
         if not group:
             return self.notfound()
 
-        if not self.current_user.can_manage(group):
+        if not user_can_manage_group(self.session, group, self.current_user):
             return self.forbidden()
 
         members = group.my_members()
-        my_role = self.current_user.my_role(members)
+        my_role = user_role(self.current_user, members)
         form = self.get_form(role=my_role)
         if not form.validate():
             return self.render(

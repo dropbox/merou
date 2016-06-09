@@ -3,12 +3,14 @@ from grouper.constants import AUDIT_MANAGER, AUDIT_VIEWER
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import Audit
 from grouper.models.audit_log import AuditLog, AuditLogCategory
+from grouper.user import user_has_permission
 
 
 class AuditsView(GrouperHandler):
     def get(self):
         user = self.get_current_user()
-        if not (user.has_permission(AUDIT_VIEWER) or user.has_permission(AUDIT_MANAGER)):
+        if not (user_has_permission(self.session, user, AUDIT_VIEWER) or
+                user_has_permission(self.session, user, AUDIT_MANAGER)):
             return self.forbidden()
 
         offset = int(self.get_argument("offset", 0))
@@ -25,7 +27,7 @@ class AuditsView(GrouperHandler):
 
         open_audits = self.session.query(Audit).filter(
             Audit.complete == False).all()
-        can_start = user.has_permission(AUDIT_MANAGER)
+        can_start = user_has_permission(self.session, user, AUDIT_MANAGER)
 
         # FIXME(herb): make limit selected from ui
         audit_log_entries = AuditLog.get_entries(self.session, category=AuditLogCategory.audit,

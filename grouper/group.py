@@ -36,3 +36,23 @@ def get_groups_by_user(session, user):
             Group.enabled == True,
             or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
             ).all()
+
+
+def user_can_manage_group(session, group, user):
+    """Determine if this user can manage the given group
+
+    This returns true if this user object is a manager, owner, or np-owner of the given group.
+
+    Args:
+        group (Group): Group to check permissions against.
+
+    Returns:
+        bool: True or False on whether or not they can manage.
+    """
+    from grouper.user import user_role
+    if not group:
+        return False
+    members = group.my_members()
+    if user_role(user, members) in ("owner", "np-owner", "manager"):
+        return True
+    return False

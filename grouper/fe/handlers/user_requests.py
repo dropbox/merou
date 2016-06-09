@@ -1,5 +1,6 @@
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import Request
+from grouper.user import user_requests_aggregate
 
 
 class UserRequests(GrouperHandler):
@@ -10,7 +11,9 @@ class UserRequests(GrouperHandler):
         if limit > 9000:
             limit = 9000
 
-        requests = self.current_user.my_requests_aggregate().order_by(Request.requested_at.desc())
+        requests = user_requests_aggregate(self.session, self.current_user).order_by(
+            Request.requested_at.desc()
+        )
 
         total = requests.count()
         requests = requests.offset(offset).limit(limit)

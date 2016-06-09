@@ -2,12 +2,13 @@ from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.counter import Counter
 from grouper.models.permission_map import PermissionMap
+from grouper.user import user_grantable_permissions
 from grouper.util import matches_glob
 
 
 class PermissionsRevoke(GrouperHandler):
     def get(self, name=None, mapping_id=None):
-        grantable = self.current_user.my_grantable_permissions()
+        grantable = user_grantable_permissions(self.session, self.current_user)
         if not grantable:
             return self.forbidden()
 
@@ -26,7 +27,7 @@ class PermissionsRevoke(GrouperHandler):
         self.render("permission-revoke.html", mapping=mapping)
 
     def post(self, name=None, mapping_id=None):
-        grantable = self.current_user.my_grantable_permissions()
+        grantable = user_grantable_permissions(self.session, self.current_user)
         if not grantable:
             return self.forbidden()
 

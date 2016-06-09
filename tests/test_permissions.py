@@ -30,6 +30,7 @@ from grouper.permissions import (
         )
 from url_util import url
 from grouper.models.permission import Permission
+from grouper.user import user_grantable_permissions, user_has_permission
 
 
 @pytest.fixture
@@ -77,20 +78,20 @@ def test_basic_permission(standard_graph, session, users, groups, permissions): 
         "sudo:shell"]
 
 
-def test_has_permission(standard_graph, users):  # noqa
+def test_has_permission(session, standard_graph, users):  # noqa
     """ Tests the has_permission method of a user object. """
 
     # In our setup, zorkian has 'audited' with no arguments
-    assert users["zorkian@a.co"].has_permission("audited"), "zorkian has permission audited"
-    assert not users["zorkian@a.co"].has_permission("audited", argument='foo'), \
+    assert user_has_permission(session, users["zorkian@a.co"], "audited"), "zorkian has permission audited"
+    assert not user_has_permission(session, users["zorkian@a.co"], "audited", argument='foo'), \
         "zorkian has permission audited:foo"
-    assert not users["zorkian@a.co"].has_permission("audited", argument='*'), \
+    assert not user_has_permission(session, users["zorkian@a.co"], "audited", argument='*'), \
         "zorkian has permission audited:*"
 
     # zay has ssh:*
-    assert users["zay@a.co"].has_permission("ssh"), "zay has permission ssh"
-    assert users["zay@a.co"].has_permission("ssh", argument='foo'), "zay has permission ssh:foo"
-    assert users["zay@a.co"].has_permission("ssh", argument='*'), "zay has permission ssh:*"
+    assert user_has_permission(session, users["zay@a.co"], "ssh"), "zay has permission ssh"
+    assert user_has_permission(session, users["zay@a.co"], "ssh", argument='foo'), "zay has permission ssh:foo"
+    assert user_has_permission(session, users["zay@a.co"], "ssh", argument='*'), "zay has permission ssh:*"
 
 
 class PermissionTests(unittest.TestCase):
@@ -138,18 +139,18 @@ class PermissionTests(unittest.TestCase):
 def test_grantable_permissions(session, standard_graph, users, groups, grantable_permissions):
     perm_grant, perm0, perm1, _ = grantable_permissions
 
-    assert not users["zorkian@a.co"].my_grantable_permissions(), "start with none"
+    assert not user_grantable_permissions(session, users["zorkian@a.co"]), "start with none"
 
     grant_permission(groups["auditors"], perm_grant, argument="notgrantable.one")
-    assert not users["zorkian@a.co"].my_grantable_permissions(), "grant on non-existent is fine"
+    assert not user_grantable_permissions(session, users["zorkian@a.co"]), "grant on non-existent is fine"
 
     grant_permission(groups["auditors"], perm_grant, argument=perm0.name)
-    grants = users["zorkian@a.co"].my_grantable_permissions()
+    grants = user_grantable_permissions(session, users["zorkian@a.co"])
     assert len(grants) == 1, "only specific permission grant"
     assert grants[0][0].name == perm0.name, "only specific permission grant"
 
     grant_permission(groups["auditors"], perm_grant, argument="grantable.*")
-    grants = users["zorkian@a.co"].my_grantable_permissions()
+    grants = user_grantable_permissions(session, users["zorkian@a.co"])
     assert len(grants) == 3, "wildcard grant should grab appropriat amount"
     assert sorted([x[0].name for x in grants]) == ["grantable", "grantable.one", "grantable.two"]
 

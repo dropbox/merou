@@ -54,7 +54,7 @@
     {% endif %}
 
     <!-- Owners can't leave a group. -->
-    {% if current_user.my_role(members) in ("member", "manager") %}
+    {% if not current_user_role['is_owner'] %}
         <a href="/groups/{{group.name}}/leave"
            class="btn btn-danger"><i class="fa fa-sign-out"></i> Leave</a>
     {% endif %}
@@ -94,7 +94,7 @@
         {{ member_panel(390, group, members, current_user, current_user_role) }}
     </div>
     <div class="col-md-5">
-        {{ group_panel(390, groups, current_user.my_role(members)) }}
+        {{ group_panel(390, groups, current_user_role['role']) }}
     </div>
 </div>
 <div class="row">

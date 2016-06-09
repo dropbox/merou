@@ -8,6 +8,8 @@ from fixtures import standard_graph, graph, users, groups, session, permissions 
 from fixtures import fe_app as app  # noqa
 from grouper import public_key
 from grouper.model_soup import User, Request, AsyncNotification, Group, GroupEdge
+from grouper.model_soup import User, Request, AsyncNotification
+from grouper.public_key import get_public_keys_of_user
 from url_util import url
 from datetime import timedelta, datetime, date
 
@@ -40,7 +42,7 @@ def test_auth(users, http_client, base_url):
 @pytest.mark.gen_test
 def test_public_key(session, users, http_client, base_url):
     user = users['zorkian@a.co']
-    assert not user.my_public_keys()
+    assert not get_public_keys_of_user(session, user.id)
 
     good_key = ('ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDCUQeasspT/etEJR2WUoR+h2sMOQYbJgr0Q'
             'E+J8p97gEhmz107KWZ+3mbOwyIFzfWBcJZCEg9wy5Paj+YxbGONqbpXAhPdVQ2TLgxr41bNXvbcR'
@@ -66,7 +68,7 @@ def test_public_key(session, users, http_client, base_url):
     assert resp.code == 200
 
     user = User.get(session, name=user.username)
-    keys = user.my_public_keys()
+    keys = get_public_keys_of_user(session, user.id)
     assert len(keys) == 1
     assert keys[0].public_key == good_key
 
@@ -77,7 +79,7 @@ def test_public_key(session, users, http_client, base_url):
     assert resp.code == 200
 
     user = User.get(session, name=user.username)
-    assert not user.my_public_keys()
+    assert not get_public_keys_of_user(session, user.id)
 
 @pytest.mark.gen_test
 def test_usertokens(session, users, http_client, base_url):

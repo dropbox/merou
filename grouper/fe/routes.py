@@ -41,6 +41,7 @@ from grouper.fe.handlers.public_key_delete import PublicKeyDelete
 from grouper.fe.handlers.public_key_remove_tag import PublicKeyRemoveTag
 from grouper.fe.handlers.search import Search
 from grouper.fe.handlers.service_account_create import ServiceAccountCreate
+from grouper.fe.handlers.service_account_view import ServiceAccountView
 from grouper.fe.handlers.tag_edit import TagEdit
 from grouper.fe.handlers.tag_view import TagView
 from grouper.fe.handlers.tags_view import TagsView
@@ -80,6 +81,7 @@ HANDLERS = [
     ),
     (r"/search", Search),
     (r"/users", UsersView),
+    (r"/svc", UsersView),
     (r"/users/public-keys", UsersPublicKey),
     (r"/users/tokens", UsersUserTokens),
     (r"/users/service_create", ServiceAccountCreate),
@@ -109,6 +111,7 @@ for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
         (r"/users/{}/tokens/(?P<token_id>[0-9]+)/disable".format(regex), UserTokenDisable),
         (r"/users/{}/passwords/add".format(regex), UserPasswordAdd),
         (r"/users/{}/passwords/(?P<pass_id>[0-9]+)/delete".format(regex), UserPasswordDelete),
+        (r"/svc/{}".format(regex), ServiceAccountView),
     ])
 
 for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):

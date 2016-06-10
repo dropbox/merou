@@ -3,6 +3,7 @@ from grouper.fe.forms import UserEnableForm
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
+from grouper.service_account import can_manage_service_account
 from grouper.user import enable_user
 from grouper.user_permissions import user_has_permission
 
@@ -12,7 +13,8 @@ class UserEnable(GrouperHandler):
     def check_access(session, actor, target):
         return (
             user_has_permission(session, actor, USER_ADMIN) or
-            user_has_permission(session, actor, USER_ENABLE, argument=target.name)
+            user_has_permission(session, actor, USER_ENABLE, argument=target.name) or
+            (target.role_user and can_manage_role_account(session, actor, tgroup=target))
         )
 
     def post(self, user_id=None, name=None):

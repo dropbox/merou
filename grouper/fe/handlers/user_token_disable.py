@@ -1,3 +1,4 @@
+from grouper.constants import USER_ADMIN
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
@@ -7,13 +8,26 @@ from grouper.user_token import disable_user_token
 
 
 class UserTokenDisable(GrouperHandler):
+
+    @staticmethod
+    def check_access(session, actor, target):
+        if actor.name == target.name:
+            return True
+
+        if user_has_permission(session, actor, USER_ADMIN):
+            return True
+
+        if not target.role_user:
+            return False
+
+        return can_manage_service_account(session, actor, tuser=target)
+
     def get(self, user_id=None, name=None, token_id=None):
         user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
 
-        if ((user.name != self.current_user.name) and
-                not user_is_user_admin(self.session, self.current_user)):
+        if not self.check_access(self.session, self.current_user, user):
             return self.forbidden()
 
         token = UserToken.get(self.session, user=user, id=token_id)
@@ -24,8 +38,7 @@ class UserTokenDisable(GrouperHandler):
         if not user:
             return self.notfound()
 
-        if ((user.name != self.current_user.name) and
-                not user_is_user_admin(self.session, self.current_user)):
+        if not self.check_access(self.session, self.current_user, user):
             return self.forbidden()
 
         token = UserToken.get(self.session, user=user, id=token_id)

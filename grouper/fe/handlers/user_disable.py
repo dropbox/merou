@@ -13,7 +13,7 @@ class UserDisable(GrouperHandler):
         return (
             user_has_permission(session, actor, USER_ADMIN) or
             user_has_permission(session, actor, USER_DISABLE, argument=target.name) or
-            (target.role_user and can_manage_service_account(session, actor, tuser=target))
+            (target.role_user and is_owner_of_service_account(session, actor, tuser=target))
         )
 
     def post(self, user_id=None, name=None):

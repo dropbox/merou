@@ -121,6 +121,10 @@ fe:
     shell:
         - [/bin/false, Your administrator has not configured Grouper for shell management]
 
+    # The email domain that all service accounts must have
+    # Type: str
+    service_account_email_domain: "svc.localhost"
+
 api:
     # The port to listen to requests on.
     # Type: int

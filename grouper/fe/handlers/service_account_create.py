@@ -33,6 +33,13 @@ class ServiceAccountCreate(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors)
             )
 
+        if form.data["name"].split("@")[-1] != settings.service_account_email_domain:
+            form.name.errors.append("All service accounts must have a username ending in {}"
+                .format(settings.service_account_email_domain))
+            return self.render(
+                "service-account-create.html", form=form,
+                alerts=self.get_form_alerts(form.errors)
+            )
         
         user = User(username=form.data["name"], role_user=True)
         group = Group(groupname=form.data["name"], description=form.data["description"],

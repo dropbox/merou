@@ -10,6 +10,7 @@ from grouper import public_key
 from grouper.model_soup import  Request, AsyncNotification, Group, GroupEdge
 from grouper.models.user import User
 from grouper.public_key import get_public_keys_of_user
+from grouper.service_account import get_service_account, is_service_account
 from url_util import url
 from datetime import timedelta, datetime, date
 
@@ -339,3 +340,37 @@ def test_request_autoexpiration(graph, groups, permissions, session, standard_gr
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
     group_edge = session.query(GroupEdge).filter_by(group_id=sre.id, member_pk=user.id).scalar()
     assert group_edge.expiration is None, "The request should not have an expiration if none is provided and the user was edited by an approver"
+
+
+@pytest.mark.gen_test
+def test_add_service_account(session, users, http_client, base_url):
+    user = users['zorkian@a.co']
+
+    # Add account
+    fe_url = url(base_url, '/users/service_create')
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'name': 'bob@hello.com', "description": "Hi", "canjoin": "canjoin"}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    assert User.get(session, name="bob@hello.com") is None
+    assert Group.get(session, name="bob@hello.com") is None
+
+    # Add account
+    fe_url = url(base_url, '/users/service_create')
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'name': 'bob@svc.localhost', "description": "Hi", "canjoin": "canjoin"}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    u = User.get(session, name="bob@svc.localhost")
+    g = Group.get(session, name="bob@svc.localhost")
+
+    assert u is not None
+    assert g is not None
+    assert is_service_account(session, user=u)
+    assert is_service_account(session, group=g)
+    assert get_service_account(session, user=u)["group"].id == g.id
+    assert get_service_account(session, group=g)["user"].id == u.id
+    assert not is_service_account(session, user=user)
+    assert not is_service_account(session, group=Group.get(session, name="team-sre"))

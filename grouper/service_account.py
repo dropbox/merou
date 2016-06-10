@@ -28,7 +28,7 @@ def get_service_account(session, user=None, group=None):
     if not is_service_account(session, user, group):
         raise ServiceAccountNotFound()
 
-    name = user.name or group.name
+    name = user.name if user else group.name
     return {
         "user": User.get(session, name=name),
         "group": Group.get(session, name=name),

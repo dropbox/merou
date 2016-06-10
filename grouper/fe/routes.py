@@ -40,6 +40,7 @@ from grouper.fe.handlers.public_key_add_tag import PublicKeyAddTag
 from grouper.fe.handlers.public_key_delete import PublicKeyDelete
 from grouper.fe.handlers.public_key_remove_tag import PublicKeyRemoveTag
 from grouper.fe.handlers.search import Search
+from grouper.fe.handlers.service_account_create import ServiceAccountCreate
 from grouper.fe.handlers.tag_edit import TagEdit
 from grouper.fe.handlers.tag_view import TagView
 from grouper.fe.handlers.tags_view import TagsView
@@ -81,6 +82,7 @@ HANDLERS = [
     (r"/users", UsersView),
     (r"/users/public-keys", UsersPublicKey),
     (r"/users/tokens", UsersUserTokens),
+    (r"/users/service_create", ServiceAccountCreate),
     (r"/user/requests", UserRequests),
 ]
 

@@ -3,6 +3,7 @@ from grouper.graph import NoSuchGroup
 from grouper.model_soup import (APPROVER_ROLE_INDICIES, AUDIT_STATUS_CHOICES,
         Group, OWNER_ROLE_INDICES)
 from grouper.permissions import get_owner_arg_list, get_pending_request_by_group
+from grouper.service_account import is_service_account
 from grouper.user import user_role, user_role_index
 from grouper.user_permissions import user_grantable_permissions
 
@@ -13,6 +14,9 @@ class GroupView(GrouperHandler):
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
+
+        if is_service_account(self.session, group=group):
+            return self.redirect("/svc/{}".format(group.groupname))
 
         grantable = user_grantable_permissions(self.session, self.current_user)
 

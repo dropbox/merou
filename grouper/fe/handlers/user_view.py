@@ -26,6 +26,9 @@ class UserView(GrouperHandler):
         if not user:
             return self.notfound()
 
+        if user.role_user:
+            return self.redirect("/svc/{}".format(user_id or name))
+
         can_control = (user.name == self.current_user.name or
             user_is_user_admin(self.session, self.current_user))
         can_disable = UserDisable.check_access(self.session, self.current_user, user)

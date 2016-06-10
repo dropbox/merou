@@ -2,7 +2,7 @@ from grouper.constants import USER_ADMIN, USER_DISABLE
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
-from grouper.service_account import can_manage_service_account, disable_service_account
+from grouper.service_account import disable_service_account, is_owner_of_service_account
 from grouper.user import disable_user
 from grouper.user_permissions import user_has_permission
 

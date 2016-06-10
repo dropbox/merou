@@ -1,6 +1,5 @@
 from sqlalchemy.exc import IntegrityError
 
-from grouper.constants import USER_ADMIN
 from grouper.email_util import send_email
 from grouper.fe.forms import UserTokenForm
 from grouper.fe.settings import settings

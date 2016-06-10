@@ -3,7 +3,7 @@ from grouper.fe.forms import UserEnableForm
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
-from grouper.service_account import can_manage_service_account, enable_service_account
+from grouper.service_account import enable_service_account, is_owner_of_service_account
 from grouper.user import enable_user
 from grouper.user_permissions import user_has_permission
 

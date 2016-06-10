@@ -1,4 +1,4 @@
-from grouper.constants import USER_ADMIN, USER_METADATA_SHELL_KEY
+from grouper.constants import USER_METADATA_SHELL_KEY
 from grouper.fe.forms import UserShellForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler

@@ -3,7 +3,7 @@ from grouper.constants import USER_METADATA_SHELL_KEY
 from grouper.fe.handlers.user_disable import UserDisable
 from grouper.fe.handlers.user_enable import UserEnable
 from grouper.fe.util import GrouperHandler
-from grouper.graph import NoSuchUser
+from grouper.graph import NoSuchUser, NoSuchGroup
 from grouper.model_soup import (User, Group, APPROVER_ROLE_INDICIES, AUDIT_STATUS_CHOICES,
         OWNER_ROLE_INDICES)
 from grouper.permissions import get_requests_by_owner

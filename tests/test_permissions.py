@@ -31,7 +31,7 @@ from grouper.permissions import (
         )
 from url_util import url
 from grouper.models.permission import Permission
-from grouper.user import user_grantable_permissions, user_has_permission
+from grouper.user_permissions import user_grantable_permissions, user_has_permission
 
 
 @pytest.fixture

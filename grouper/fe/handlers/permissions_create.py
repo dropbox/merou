@@ -4,7 +4,7 @@ from grouper.fe.forms import PermissionCreateForm
 from grouper.fe.util import GrouperHandler, test_reserved_names
 from grouper.models.audit_log import AuditLog
 from grouper.models.permission import Permission
-from grouper.user import user_creatable_permissions
+from grouper.user_permissions import user_creatable_permissions
 from grouper.util import matches_glob
 
 

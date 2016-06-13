@@ -53,7 +53,6 @@ def set_user_metadata(session, user_id, data_key, data_value):
     assert re.match(PERMISSION_VALIDATION, data_key), 'proposed metadata key is valid'
 
     user_md = get_user_metadata_by_key(session, user_id, data_key)
-    print(user_md)
 
     if user_md:
         if data_value is None:

@@ -3,7 +3,8 @@ from grouper.graph import NoSuchGroup
 from grouper.model_soup import (APPROVER_ROLE_INDICIES, AUDIT_STATUS_CHOICES,
         Group, OWNER_ROLE_INDICES)
 from grouper.permissions import get_pending_request_by_group
-from grouper.user import user_grantable_permissions, user_role, user_role_index
+from grouper.user import user_role, user_role_index
+from grouper.user_permissions import user_grantable_permissions
 
 
 class GroupView(GrouperHandler):

@@ -7,7 +7,7 @@ from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
 from grouper.models.permission import Permission
 from grouper.permissions import grant_permission
-from grouper.user import user_grantable_permissions
+from grouper.user_permissions import user_grantable_permissions
 from grouper.util import matches_glob
 
 

@@ -3,7 +3,7 @@ from grouper.constants import AUDIT_MANAGER, AUDIT_VIEWER
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import Audit
 from grouper.models.audit_log import AuditLog, AuditLogCategory
-from grouper.user import user_has_permission
+from grouper.user_permissions import user_has_permission
 
 
 class AuditsView(GrouperHandler):

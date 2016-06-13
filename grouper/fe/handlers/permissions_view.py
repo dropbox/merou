@@ -1,5 +1,5 @@
 from grouper.fe.util import GrouperHandler
-from grouper.user import user_creatable_permissions
+from grouper.user_permissions import user_creatable_permissions
 
 
 class PermissionsView(GrouperHandler):

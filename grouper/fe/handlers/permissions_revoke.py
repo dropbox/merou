@@ -2,7 +2,7 @@ from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.counter import Counter
 from grouper.models.permission_map import PermissionMap
-from grouper.user import user_grantable_permissions
+from grouper.user_permissions import user_grantable_permissions
 from grouper.util import matches_glob
 
 

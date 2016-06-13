@@ -8,7 +8,7 @@ from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
 from grouper.models.user_token import UserToken
-from grouper.user import user_has_permission
+from grouper.user_permissions import user_has_permission
 from grouper.user_token import add_new_user_token
 
 

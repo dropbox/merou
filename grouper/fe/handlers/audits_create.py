@@ -9,7 +9,7 @@ from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import Audit, AuditMember, Group, GROUP_EDGE_ROLES
 from grouper.models.audit_log import AuditLog, AuditLogCategory
-from grouper.user import user_has_permission
+from grouper.user_permissions import user_has_permission
 
 
 class AuditsCreate(GrouperHandler):

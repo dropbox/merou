@@ -5,11 +5,9 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from grouper.constants import GROUP_ADMIN, MAX_NAME_LENGTH, PERMISSION_ADMIN, USER_ADMIN
-from grouper.models.audit_log import AuditLog
 from grouper.models.base.model_base import Model
 from grouper.models.comment import CommentObjectMixin
 from grouper.models.counter import Counter
-from grouper.models.user_token import UserToken
 from grouper.plugin import get_plugins
 
 
@@ -21,7 +19,7 @@ class User(Model, CommentObjectMixin):
     username = Column(String(length=MAX_NAME_LENGTH), unique=True, nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
     role_user = Column(Boolean, default=False, nullable=False)
-    tokens = relationship(UserToken, back_populates="user")
+    tokens = relationship("UserToken", back_populates="user")
 
     @hybrid_property
     def name(self):
@@ -54,17 +52,17 @@ class User(Model, CommentObjectMixin):
 
     @property
     def user_admin(self):
-        from grouper.user import user_has_permission
+        from grouper.user_permissions import user_has_permission
         return user_has_permission(self.session, self, USER_ADMIN)
 
     @property
     def group_admin(self):
-        from grouper.user import user_has_permission
+        from grouper.user_permissions import user_has_permission
         return user_has_permission(self.session, self, GROUP_ADMIN)
 
     @property
     def permission_admin(self):
-        from grouper.user import user_has_permission
+        from grouper.user_permissions import user_has_permission
         return user_has_permission(self.session, self, PERMISSION_ADMIN)
 
     def is_member(self, members):
@@ -76,7 +74,3 @@ class User(Model, CommentObjectMixin):
         logging.warning("User.set_metadata is deprecated."
             "Please switch to using grouper.user_metadata.set_user_metadata")
         set_user_metadata(self.session, self.id, key, value)
-
-    def my_log_entries(self):
-
-        return AuditLog.get_entries(self.session, involve_user_id=self.id, limit=20)

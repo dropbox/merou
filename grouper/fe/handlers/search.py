@@ -2,7 +2,8 @@ from sqlalchemy import union_all
 from sqlalchemy.sql import label, literal
 
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import Group, User
+from grouper.model_soup import Group
+from grouper.models.user import User
 
 
 class Search(GrouperHandler):

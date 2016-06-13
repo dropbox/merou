@@ -21,7 +21,8 @@ from grouper.constants import (
         )
 from grouper.fe.forms import ValidateRegex
 import grouper.fe.util
-from grouper.model_soup import AsyncNotification, Group, PermissionMap, User
+from grouper.model_soup import AsyncNotification, Group, PermissionMap
+from grouper.models.user import User
 from grouper.permissions import (
         get_grantable_permissions,
         get_owner_arg_list,

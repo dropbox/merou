@@ -4,7 +4,7 @@ from grouper.fe.handlers.user_disable import UserDisable
 from grouper.fe.handlers.user_enable import UserEnable
 from grouper.fe.util import GrouperHandler
 from grouper.graph import NoSuchUser
-from grouper.model_soup import User
+from grouper.models.user import User
 from grouper.permissions import get_requests_by_owner
 from grouper.public_key import get_public_keys_of_user
 from grouper.user import user_open_audits, user_requests_aggregate

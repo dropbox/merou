@@ -11,9 +11,9 @@ from grouper.model_soup import (
         Group,
         GROUP_EDGE_ROLES,
         GROUP_JOIN_CHOICES,
-        User,
         )
 from grouper.models.audit_log import AuditLog
+from grouper.models.user import User
 
 
 class GroupJoin(GrouperHandler):

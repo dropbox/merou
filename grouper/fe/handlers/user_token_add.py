@@ -5,8 +5,8 @@ from grouper.email_util import send_email
 from grouper.fe.forms import UserTokenForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
+from grouper.models.user import User
 from grouper.models.user_token import UserToken
 from grouper.user import user_has_permission
 from grouper.user_token import add_new_user_token

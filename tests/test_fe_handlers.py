@@ -7,8 +7,8 @@ from tornado.httpclient import HTTPError
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from fixtures import fe_app as app  # noqa
 from grouper import public_key
-from grouper.model_soup import User, Request, AsyncNotification, Group, GroupEdge
-from grouper.model_soup import User, Request, AsyncNotification
+from grouper.model_soup import  Request, AsyncNotification, Group, GroupEdge
+from grouper.models.user import User
 from grouper.public_key import get_public_keys_of_user
 from url_util import url
 from datetime import timedelta, datetime, date

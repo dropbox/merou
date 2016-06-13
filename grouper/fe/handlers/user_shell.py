@@ -2,8 +2,8 @@ from grouper.constants import USER_ADMIN, USER_METADATA_SHELL_KEY
 from grouper.fe.forms import UserShellForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
+from grouper.models.user import User
 from grouper.user import user_has_permission
 
 

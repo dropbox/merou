@@ -6,11 +6,12 @@ from sqlalchemy.sql import label, literal
 from grouper.constants import PERMISSION_CREATE, PERMISSION_GRANT
 from grouper.group import get_groups_by_user
 from grouper.model_soup import (APPROVER_ROLE_INDICIES, Audit, Group, GROUP_EDGE_ROLES, GroupEdge,
-    OWNER_ROLE_INDICES, Request, RequestStatusChange, User)
+    OWNER_ROLE_INDICES, Request, RequestStatusChange)
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
+from grouper.models.user import User
 
 
 def get_user_or_group(session, name, user_or_group=None):

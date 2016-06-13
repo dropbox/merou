@@ -1,7 +1,7 @@
 from grouper.constants import USER_ADMIN, USER_DISABLE
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
+from grouper.models.user import User
 from grouper.user import disable_user, user_has_permission
 
 

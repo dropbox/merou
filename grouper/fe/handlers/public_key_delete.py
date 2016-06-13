@@ -1,8 +1,8 @@
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
+from grouper.models.user import User
 from grouper.public_key import delete_public_key, get_public_key, KeyNotFound
 
 

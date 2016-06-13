@@ -8,7 +8,7 @@ from fixtures import fe_app as app  # noqa
 from url_util import url
 
 from grouper.constants import USER_METADATA_SHELL_KEY
-from grouper.model_soup import User
+from grouper.models.user import User
 from grouper.user_metadata import get_user_metadata_by_key
 
 

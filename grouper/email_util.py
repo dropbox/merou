@@ -155,8 +155,8 @@ def get_email_from_template(recipient_list, subject, template, settings, context
         "email/{}_html.tmpl".format(template)
     ).render(**context)
 
-    text = MIMEText(text_template, "plain")
-    html = MIMEText(html_template, "html")
+    text = MIMEText(text_template, "plain", "utf-8")
+    html = MIMEText(html_template, "html", "utf-8")
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject

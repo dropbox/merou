@@ -6,7 +6,8 @@ from grouper.fe.util import GrouperHandler
 from grouper.graph import NoSuchUser
 from grouper.models.user import User
 from grouper.permissions import get_requests_by_owner
-from grouper.public_key import get_public_key_permissions, get_public_keys_of_user
+from grouper.public_key import (get_public_key_permissions, get_public_key_tags,
+    get_public_keys_of_user)
 from grouper.user import get_log_entries_by_user, user_open_audits, user_requests_aggregate
 from grouper.user_metadata import get_user_metadata_by_key
 from grouper.user_permissions import user_is_user_admin

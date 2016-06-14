@@ -6,6 +6,7 @@ from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.counter import Counter
 from grouper.models.public_key_tag import PublicKeyTag
+from grouper.user_permissions import user_has_permission
 
 
 class TagEdit(GrouperHandler):
@@ -14,7 +15,7 @@ class TagEdit(GrouperHandler):
         if not tag:
             return self.notfound()
 
-        if not self.current_user.has_permission(TAG_EDIT, tag.name):
+        if not user_has_permission(self.session, self.current_user, TAG_EDIT, tag.name):
             return self.forbidden()
 
         form = TagEditForm(obj=tag)
@@ -26,7 +27,7 @@ class TagEdit(GrouperHandler):
         if not tag:
             return self.notfound()
 
-        if not self.current_user.has_permission(TAG_EDIT, tag.name):
+        if not user_has_permission(self.session, self.current_user, TAG_EDIT, tag.name):
             return self.forbidden()
 
         form = TagEditForm(self.request.arguments, obj=tag)

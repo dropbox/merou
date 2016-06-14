@@ -8,6 +8,7 @@ from grouper.models.permission import Permission
 from grouper.models.public_key import PublicKey
 from grouper.models.public_key_tag_map import PublicKeyTagMap
 from grouper.models.tag_permission_map import TagPermissionMap
+from grouper.user_permissions import user_permissions
 
 
 class DuplicateKey(Exception):
@@ -185,7 +186,7 @@ def get_public_key_permissions(session, public_key):
         """
         # TODO: Fix circular dependency
         from grouper.permissions import permission_intersection
-        my_perms = public_key.user.my_permissions()
+        my_perms = user_permissions(session, public_key.user)
         for tag in get_public_key_tags(session, public_key):
             my_perms = permission_intersection(my_perms,
                 get_public_key_tag_permissions(session, tag))

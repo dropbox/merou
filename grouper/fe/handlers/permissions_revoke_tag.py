@@ -3,6 +3,7 @@ from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.counter import Counter
 from grouper.models.tag_permission_map import TagPermissionMap
+from grouper.user_permissions import user_has_permission
 
 
 class PermissionsRevokeTag(GrouperHandler):
@@ -12,7 +13,7 @@ class PermissionsRevokeTag(GrouperHandler):
         if not mapping:
             return self.notfound()
 
-        if not self.current_user.has_permission(TAG_EDIT, mapping.tag.name):
+        if not user_has_permission(self.session, self.current_user, TAG_EDIT, mapping.tag.name):
             return self.forbidden()
 
         self.render("permission-revoke-tag.html", mapping=mapping)
@@ -22,7 +23,7 @@ class PermissionsRevokeTag(GrouperHandler):
         if not mapping:
             return self.notfound()
 
-        if not self.current_user.has_permission(TAG_EDIT, mapping.tag.name):
+        if not user_has_permission(self.session, self.current_user, TAG_EDIT, mapping.tag.name):
             return self.forbidden()
 
         permission = mapping.permission

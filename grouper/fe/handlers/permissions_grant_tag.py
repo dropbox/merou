@@ -5,6 +5,7 @@ from grouper.models.audit_log import AuditLog
 from grouper.models.permission import Permission
 from grouper.models.public_key_tag import PublicKeyTag
 from grouper.permissions import grant_permission_to_tag
+from grouper.user_permissions import user_has_permission
 
 
 class PermissionsGrantTag(GrouperHandler):
@@ -13,7 +14,7 @@ class PermissionsGrantTag(GrouperHandler):
         if not tag:
             return self.notfound()
 
-        if not self.current_user.has_permission(TAG_EDIT, tag.name):
+        if not user_has_permission(self.session, self.current_user, TAG_EDIT, tag.name):
             return self.forbidden()
 
         form = PermissionGrantTagForm()
@@ -31,7 +32,7 @@ class PermissionsGrantTag(GrouperHandler):
         if not tag:
             return self.notfound()
 
-        if not self.current_user.has_permission(TAG_EDIT, tag.name):
+        if not user_has_permission(self.session, self.current_user, TAG_EDIT, tag.name):
             return self.forbidden()
 
         form = PermissionGrantTagForm(self.request.arguments)

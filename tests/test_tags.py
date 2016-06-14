@@ -13,6 +13,7 @@ from grouper.models.permission import Permission
 from grouper.constants import TAG_EDIT
 from grouper.permissions import permission_intersection
 from grouper.public_key import get_public_key_permissions, get_public_key_tags, get_public_key_tag_permissions
+from grouper.user_permissions import user_permissions
 from url_util import url
 from util import get_users, get_groups, add_member, grant_permission
 from collections import namedtuple
@@ -325,7 +326,7 @@ def test_permissions(users, http_client, base_url, session):
     assert len(get_public_key_permissions(session, key)) == 1, "The SSH Key should have only 1 permission"
     assert get_public_key_permissions(session, key)[0].name == TAG_EDIT, "The SSH key's permission should be TAG_EDIT"
     assert get_public_key_permissions(session, key)[0].argument == "prod", "The SSH key's permission argument should be restricted to the tag's argument"
-    assert len(user.my_permissions()) > 1, "The user should have more than 1 permission"
+    assert len(user_permissions(session, user)) > 1, "The user should have more than 1 permission"
 
 def test_permission_intersection(standard_graph, session, users, groups, permissions):
     p = namedtuple("Permission", ["name", "argument"])

@@ -9,6 +9,7 @@ from grouper.permissions import get_requests_by_owner
 from grouper.public_key import get_public_keys_of_user
 from grouper.user import get_log_entries_by_user, user_open_audits, user_requests_aggregate
 from grouper.user_metadata import get_user_metadata_by_key
+from grouper.user_permissions import user_is_user_admin
 
 
 class UserView(GrouperHandler):
@@ -23,7 +24,8 @@ class UserView(GrouperHandler):
         if not user:
             return self.notfound()
 
-        can_control = user.name == self.current_user.name or self.current_user.user_admin
+        can_control = (user.name == self.current_user.name or
+            user_is_user_admin(self.session, self.current_user))
         can_disable = UserDisable.check_access(self.session, self.current_user, user)
         can_enable = UserEnable.check_access(self.session, self.current_user, user)
 

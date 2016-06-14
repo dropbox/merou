@@ -10,6 +10,7 @@ from grouper.models.audit_log import AuditLog
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
 from grouper.models.user import User
+from grouper.user_permissions import user_is_group_admin
 
 
 def get_user_or_group(session, name, user_or_group=None):
@@ -99,12 +100,12 @@ def disable_user(session, user):
 
 
 def user_role_index(user, members):
-        if user.group_admin:
-            return GROUP_EDGE_ROLES.index("owner")
-        member = members.get(("User", user.name))
-        if not member:
-            return None
-        return member.role
+    if user_is_group_admin(user.session, user):
+        return GROUP_EDGE_ROLES.index("owner")
+    member = members.get(("User", user.name))
+    if not member:
+        return None
+    return member.role
 
 
 def user_role(user, members):

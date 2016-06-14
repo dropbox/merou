@@ -2,7 +2,8 @@ from datetime import datetime
 
 from sqlalchemy import asc, or_
 
-from grouper.constants import PERMISSION_CREATE, PERMISSION_GRANT
+from grouper.constants import (GROUP_ADMIN, PERMISSION_ADMIN, PERMISSION_CREATE,
+    PERMISSION_GRANT, USER_ADMIN)
 from grouper.model_soup import Group, GroupEdge
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
@@ -77,7 +78,7 @@ def user_grantable_permissions(session, user):
 
     all_permissions = {permission.name: permission
                        for permission in Permission.get_all(session)}
-    if user.permission_admin:
+    if user_is_permission_admin(session, user):
         result = [(perm, '*') for perm in all_permissions.values()]
         return sorted(result, key=lambda x: x[0].name + x[1])
 
@@ -99,7 +100,7 @@ def user_creatable_permissions(session, user):
     Returns a list of strings that are to be interpreted as glob strings. You should use the
     util function matches_glob.
     '''
-    if user.permission_admin:
+    if user_is_permission_admin(session, user):
         return '*'
 
     # Someone can create a permission if they are a member of a group that has a permission
@@ -109,3 +110,15 @@ def user_creatable_permissions(session, user):
         for permission in user_permissions(session, user)
         if permission.name == PERMISSION_CREATE
     ]
+
+
+def user_is_user_admin(session, user):
+    return user_has_permission(session, user, USER_ADMIN)
+
+
+def user_is_group_admin(session, user):
+    return user_has_permission(session, user, GROUP_ADMIN)
+
+
+def user_is_permission_admin(session, user):
+    return user_has_permission(session, user, PERMISSION_ADMIN)

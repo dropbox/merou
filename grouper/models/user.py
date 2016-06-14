@@ -4,7 +4,7 @@ from sqlalchemy import Boolean, Column, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
-from grouper.constants import GROUP_ADMIN, MAX_NAME_LENGTH, PERMISSION_ADMIN, USER_ADMIN
+from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.base.model_base import Model
 from grouper.models.comment import CommentObjectMixin
 from grouper.models.counter import Counter
@@ -49,21 +49,6 @@ class User(Model, CommentObjectMixin):
         super(User, self).add(session)
         Counter.incr(session, "updates")
         return self
-
-    @property
-    def user_admin(self):
-        from grouper.user_permissions import user_has_permission
-        return user_has_permission(self.session, self, USER_ADMIN)
-
-    @property
-    def group_admin(self):
-        from grouper.user_permissions import user_has_permission
-        return user_has_permission(self.session, self, GROUP_ADMIN)
-
-    @property
-    def permission_admin(self):
-        from grouper.user_permissions import user_has_permission
-        return user_has_permission(self.session, self, PERMISSION_ADMIN)
 
     def is_member(self, members):
         return ("User", self.name) in members

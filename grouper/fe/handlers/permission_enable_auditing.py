@@ -1,10 +1,11 @@
 from grouper.fe.util import GrouperHandler
 from grouper.permissions import enable_permission_auditing, NoSuchPermission
+from grouper.user_permissions import user_is_permission_admin
 
 
 class PermissionEnableAuditing(GrouperHandler):
     def post(self, name=None):
-        if not self.current_user.permission_admin:
+        if not user_is_permission_admin(self.session, self.current_user):
             return self.forbidden()
 
         try:

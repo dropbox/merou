@@ -4,6 +4,7 @@ from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
 from grouper.public_key import delete_public_key, get_public_key, KeyNotFound
+from grouper.user_permissions import user_is_user_admin
 
 
 class PublicKeyDelete(GrouperHandler):
@@ -12,7 +13,8 @@ class PublicKeyDelete(GrouperHandler):
         if not user:
             return self.notfound()
 
-        if (user.name != self.current_user.name) and not self.current_user.user_admin:
+        if ((user.name != self.current_user.name) and
+                not user_is_user_admin(self.session, self.current_user)):
             return self.forbidden()
 
         try:
@@ -27,7 +29,8 @@ class PublicKeyDelete(GrouperHandler):
         if not user:
             return self.notfound()
 
-        if (user.name != self.current_user.name) and not self.current_user.user_admin:
+        if ((user.name != self.current_user.name) and
+                not user_is_user_admin(self.session, self.current_user)):
             return self.forbidden()
 
         try:

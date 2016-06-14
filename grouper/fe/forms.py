@@ -16,7 +16,7 @@ from .. import model_soup
 GROUP_CANJOIN_CHOICES = [
     ("canjoin", "Anyone"), ("canask", "Must Ask"),
     ("nobody", "Nobody"),
-    ]
+]
 
 
 class ValidateRegex(object):

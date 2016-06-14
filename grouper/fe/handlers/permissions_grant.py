@@ -89,6 +89,7 @@ class PermissionsGrant(GrouperHandler):
         try:
             grant_permission(self.session, group.id, permission.id, argument=form.data["argument"])
         except IntegrityError:
+            self.session.rollback()
             form.argument.errors.append(
                 "Permission and Argument already mapped to this group."
             )

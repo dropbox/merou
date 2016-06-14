@@ -3,6 +3,8 @@ from datetime import datetime
 from fnmatch import fnmatch
 import re
 
+from sqlalchemy.exc import IntegrityError
+
 from grouper.audit import assert_controllers_are_auditors
 from grouper.constants import ARGUMENT_VALIDATION, PERMISSION_ADMIN, PERMISSION_GRANT
 from grouper.email_util import send_email
@@ -534,11 +536,14 @@ def update_request(session, request, user, new_status, comment):
 
     # update permissionRequest status
     request.status = new_status
-    session.flush()
+    session.commit()
 
     if new_status == "actioned":
         # actually grant permission
-        grant_permission(session, request.group.id, request.permission.id, request.argument)
+        try:
+            grant_permission(session, request.group.id, request.permission.id, request.argument)
+        except IntegrityError:
+            session.rollback()
 
     # audit log
     AuditLog.log(session, user.id, "update_perm_request",

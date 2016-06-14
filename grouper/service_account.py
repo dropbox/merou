@@ -2,7 +2,8 @@ from grouper.constants import USER_ADMIN
 from grouper.group import user_can_manage_group
 from grouper.model_soup import Group
 from grouper.models.user import User
-from grouper.user import disable_user, enable_user, user_has_permission
+from grouper.user import disable_user, enable_user
+from grouper.user_permissions import user_has_permission
 
 
 class ServiceAccountNotFound(Exception):

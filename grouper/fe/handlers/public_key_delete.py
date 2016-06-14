@@ -5,7 +5,6 @@ from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
 from grouper.public_key import delete_public_key, get_public_key, KeyNotFound
 from grouper.service_account import can_manage_service_account
-from grouper.user_permissions import user_is_user_admin
 
 
 class PublicKeyDelete(GrouperHandler):

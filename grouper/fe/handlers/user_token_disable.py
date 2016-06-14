@@ -1,4 +1,3 @@
-from grouper.constants import USER_ADMIN
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
@@ -15,7 +14,7 @@ class UserTokenDisable(GrouperHandler):
         if actor.name == target.name:
             return True
 
-        if user_has_permission(session, actor, USER_ADMIN):
+        if user_is_user_admin(session, actor):
             return True
 
         if not target.role_user:

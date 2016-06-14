@@ -9,8 +9,9 @@ from grouper.model_soup import (APPROVER_ROLE_INDICIES, AUDIT_STATUS_CHOICES, Gr
 from grouper.permissions import get_pending_request_by_group
 from grouper.public_key import get_public_keys_of_user
 from grouper.service_account import can_manage_service_account
-from grouper.user import user_grantable_permissions, user_role, user_role_index
+from grouper.user import get_log_entries_by_user, user_role, user_role_index
 from grouper.user_metadata import get_user_metadata_by_key
+from grouper.user_permissions import user_grantable_permissions
 
 
 class ServiceAccountView(GrouperHandler):
@@ -57,7 +58,7 @@ class ServiceAccountView(GrouperHandler):
         groups = [{'name': g.name, 'type': 'Group', 'role': ge._role} for g, ge in group_edge_list]
         public_keys = get_public_keys_of_user(self.session, user.id)
         permissions = user_md.get('permissions', [])
-        log_entries = user.my_log_entries() + group.my_log_entries()
+        log_entries = get_log_entries_by_user(self.session, user) + group.my_log_entries()
         current_user_role = {
             'is_owner': user_role_index(self.current_user, members) in OWNER_ROLE_INDICES,
             'is_approver': user_role_index(self.current_user, members) in APPROVER_ROLE_INDICIES,

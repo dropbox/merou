@@ -5,7 +5,6 @@ from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
 from grouper.service_account import can_manage_service_account
-from grouper.user_permissions import user_has_permission
 
 
 class UserShell(GrouperHandler):

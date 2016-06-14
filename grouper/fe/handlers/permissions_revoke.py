@@ -1,4 +1,5 @@
 from grouper.fe.util import GrouperHandler
+from grouper.group import user_is_owner_of_group
 from grouper.models.audit_log import AuditLog
 from grouper.models.counter import Counter
 from grouper.models.permission_map import PermissionMap
@@ -7,40 +8,41 @@ from grouper.util import matches_glob
 
 
 class PermissionsRevoke(GrouperHandler):
-    def get(self, name=None, mapping_id=None):
-        grantable = user_grantable_permissions(self.session, self.current_user)
-        if not grantable:
-            return self.forbidden()
 
-        mapping = PermissionMap.get(self.session, id=mapping_id)
-        if not mapping:
-            return self.notfound()
+    @staticmethod
+    def check_access(session, mapping, user):
+        user_is_owner = user_is_owner_of_group(session, mapping.group, user)
 
-        allowed = False
+        if user_is_owner:
+            return True
+
+        grantable = user_grantable_permissions(session, user)
+
         for perm in grantable:
             if perm[0].name == mapping.permission.name:
                 if matches_glob(perm[1], mapping.argument):
-                    allowed = True
-        if not allowed:
+                    return True
+
+        return False
+
+    def get(self, name=None, mapping_id=None):
+        mapping = PermissionMap.get(self.session, id=mapping_id)
+
+        if not mapping:
+            return self.notfound()
+
+        if not self.check_access(self.session, mapping, self.current_user):
             return self.forbidden()
 
         self.render("permission-revoke.html", mapping=mapping)
 
     def post(self, name=None, mapping_id=None):
-        grantable = user_grantable_permissions(self.session, self.current_user)
-        if not grantable:
-            return self.forbidden()
-
         mapping = PermissionMap.get(self.session, id=mapping_id)
+
         if not mapping:
             return self.notfound()
 
-        allowed = False
-        for perm in grantable:
-            if perm[0].name == mapping.permission.name:
-                if matches_glob(perm[1], mapping.argument):
-                    allowed = True
-        if not allowed:
+        if not self.check_access(self.session, mapping, self.current_user):
             return self.forbidden()
 
         permission = mapping.permission

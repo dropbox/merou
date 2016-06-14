@@ -354,7 +354,7 @@ enabled. Membership in this group is regularly reviewed.
     </div>
 {%- endmacro %}
 
-{% macro permission_panel(max_height, mappings, group=None, can_grant=None, is_member=None, pending_requests=None) -%}
+{% macro permission_panel(max_height, mappings, group=None, can_grant=None, is_member=None, pending_requests=None, is_owner=False) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Permissions</h3>
@@ -367,7 +367,7 @@ enabled. Membership in this group is regularly reviewed.
                         <th class="col-sm-2">Argument</th>
                         <th class="col-sm-2">From Group</th>
                         <th class="col-sm-2">Granted</th>
-                        {% if can_grant %}
+                        {% if can_grant or is_owner %}
                             <th class="col-sm-2"></th>
                         {% endif %}
                     </tr>
@@ -387,7 +387,16 @@ enabled. Membership in this group is regularly reviewed.
                         <td class="col-sm-2" title="{{ map.granted_on|print_date }}">
                             {{ map.granted_on|long_ago_str }}
                         </td>
-                        {% if can_grant %}
+                        {% if is_owner %}
+                            <td class="col-sm-2">
+                            {% if map.distance == 0 %}
+                                <a class="btn btn-default btn-xs" href="/permissions/{{ map.permission }}/revoke/{{ map.mapping_id }}">
+                                <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span> Revoke
+                                </a>
+                            {% endif %}
+                            </td>
+                        {% endif %}
+                        {% if not is_owner and can_grant %}
                             <td class="col-sm-2">
                             {% if map.distance == 0 %}
                             {% for grantable in can_grant if grantable[0].name == map.permission %}

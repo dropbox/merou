@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import or_
 
-from grouper.model_soup import Group, GroupEdge
+from grouper.model_soup import Group, GroupEdge, OWNER_ROLE_INDICES
 
 
 def get_all_groups(session):
@@ -56,3 +56,21 @@ def user_can_manage_group(session, group, user):
     if user_role(user, members) in ("owner", "np-owner", "manager"):
         return True
     return False
+
+
+def user_is_owner_of_group(session, group, user):
+    """Determine if this user is an owner of the given group
+
+    This returns true if this user object is an owner or np-owner of the given group.
+
+    Args:
+        group (Group): Group to check permissions against.
+
+    Returns:
+        bool: True or False on whether or not they can manage.
+    """
+    from grouper.user import user_role_index
+    if not group:
+        return False
+    members = group.my_members()
+    return user_role_index(user, members) in OWNER_ROLE_INDICES

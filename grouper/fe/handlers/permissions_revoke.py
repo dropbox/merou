@@ -1,4 +1,5 @@
 from grouper.fe.util import GrouperHandler
+from grouper.group import user_is_owner_of_group
 from grouper.models.audit_log import AuditLog
 from grouper.models.counter import Counter
 from grouper.models.permission_map import PermissionMap
@@ -7,16 +8,19 @@ from grouper.util import matches_glob
 
 
 class PermissionsRevoke(GrouperHandler):
+
     def get(self, name=None, mapping_id=None):
         grantable = user_grantable_permissions(self.session, self.current_user)
-        if not grantable:
+        mapping = PermissionMap.get(self.session, id=mapping_id)
+        user_is_owner = mapping and user_is_owner_of_group(self.session, mapping.group,
+            self.current_user)
+        if not grantable and not user_is_owner:
             return self.forbidden()
 
-        mapping = PermissionMap.get(self.session, id=mapping_id)
         if not mapping:
             return self.notfound()
 
-        allowed = False
+        allowed = user_is_owner
         for perm in grantable:
             if perm[0].name == mapping.permission.name:
                 if matches_glob(perm[1], mapping.argument):
@@ -28,14 +32,16 @@ class PermissionsRevoke(GrouperHandler):
 
     def post(self, name=None, mapping_id=None):
         grantable = user_grantable_permissions(self.session, self.current_user)
-        if not grantable:
+        mapping = PermissionMap.get(self.session, id=mapping_id)
+        user_is_owner = mapping and user_is_owner_of_group(self.session, mapping.group,
+            self.current_user)
+        if not grantable and not user_is_owner:
             return self.forbidden()
 
-        mapping = PermissionMap.get(self.session, id=mapping_id)
         if not mapping:
             return self.notfound()
 
-        allowed = False
+        allowed = user_is_owner
         for perm in grantable:
             if perm[0].name == mapping.permission.name:
                 if matches_glob(perm[1], mapping.argument):

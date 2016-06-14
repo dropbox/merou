@@ -73,6 +73,4 @@ def user_is_owner_of_group(session, group, user):
     if not group:
         return False
     members = group.my_members()
-    if user_role_index(user, members) in OWNER_ROLE_INDICES:
-        return True
-    return False
+    return user_role_index(user, members) in OWNER_ROLE_INDICES

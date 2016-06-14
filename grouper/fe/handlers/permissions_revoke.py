@@ -18,13 +18,12 @@ class PermissionsRevoke(GrouperHandler):
 
         grantable = user_grantable_permissions(session, user)
 
-        can_grant = False
         for perm in grantable:
             if perm[0].name == mapping.permission.name:
                 if matches_glob(perm[1], mapping.argument):
-                    can_grant = True
+                    return True
 
-        return can_grant
+        return False
 
     def get(self, name=None, mapping_id=None):
         mapping = PermissionMap.get(self.session, id=mapping_id)

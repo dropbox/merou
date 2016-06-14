@@ -1,6 +1,8 @@
 from fixtures import graph, groups, permissions, session, standard_graph, users
 
-from grouper.model_soup import Group, Request, User
+from grouper.model_soup import Group, Request
+from grouper.models.user import User
+from grouper.user import user_requests_aggregate
 from util import add_member
 
 
@@ -32,7 +34,7 @@ def test_aggregate_request(graph, groups, permissions, session, standard_graph, 
     not_involved = [user for name,user in users.items() if name not in ("gary@a.co",
             "testuser@a.co")]
 
-    assert not any([u.my_requests_aggregate().all() for u in users.values()]), \
+    assert not any([user_requests_aggregate(session, u).all() for u in users.values()]), \
             "should have no pending requests to begin with"
 
     # one request to one team
@@ -40,8 +42,8 @@ def test_aggregate_request(graph, groups, permissions, session, standard_graph, 
             reason="for the lulz")
     session.commit()
 
-    assert len(gary.my_requests_aggregate().all()) == 1, "one pending request for owner"
-    assert not any([u.my_requests_aggregate().all() for u in not_involved]), \
+    assert len(user_requests_aggregate(session, gary).all()) == 1, "one pending request for owner"
+    assert not any([user_requests_aggregate(session, u).all() for u in not_involved]), \
             "no pending requests if you're not the owner"
 
     # two request to two teams, same owner
@@ -49,9 +51,9 @@ def test_aggregate_request(graph, groups, permissions, session, standard_graph, 
             reason="for the lulz")
     session.commit()
 
-    request_gary = gary.my_requests_aggregate().all()
+    request_gary = user_requests_aggregate(session, gary).all()
     assert len(request_gary) == 2, "two pending request for owner"
-    assert not any([u.my_requests_aggregate().all() for u in not_involved]), \
+    assert not any([user_requests_aggregate(session, u).all() for u in not_involved]), \
             "no pending requests if you're not the owner"
 
     # resolving one request should reflect
@@ -59,8 +61,8 @@ def test_aggregate_request(graph, groups, permissions, session, standard_graph, 
     request.update_status(users["gary@a.co"], "actioned", "for being a good person")
     session.commit()
 
-    assert len(gary.my_requests_aggregate().all()) == 1, "one pending request for owner"
-    assert not any([u.my_requests_aggregate().all() for u in not_involved]), \
+    assert len(user_requests_aggregate(session, gary).all()) == 1, "one pending request for owner"
+    assert not any([user_requests_aggregate(session, u).all() for u in not_involved]), \
             "no pending requests if you're not the owner"
 
     # requests to dependent teams should reflect apprpriately
@@ -68,20 +70,20 @@ def test_aggregate_request(graph, groups, permissions, session, standard_graph, 
             reason="for the lulz")
     session.commit()
 
-    assert len(gary.my_requests_aggregate().all()) == 1, "super owner should not get request"
-    assert len(users["oliver@a.co"].my_requests_aggregate().all()) == 1, "owner should get request"
+    assert len(user_requests_aggregate(session, gary).all()) == 1, "super owner should not get request"
+    assert len(user_requests_aggregate(session, users["oliver@a.co"]).all()) == 1, "owner should get request"
     user_not_gary_oliver = [u for n,u in users.items() if n not in ("gary@a.co","oliver@a.co")]
-    assert not any([u.my_requests_aggregate().all() for u in user_not_gary_oliver])
+    assert not any([user_requests_aggregate(session, u).all() for u in user_not_gary_oliver])
 
     # manager and np-owner should get requests
     figurehead = users["figurehead@a.co"]
     add_member(groups["audited-team"], figurehead, role="manager")
-    assert len(figurehead.my_requests_aggregate().all()) == 0, "no request for np-owner at first"
+    assert len(user_requests_aggregate(session, figurehead).all()) == 0, "no request for np-owner at first"
 
     groups["tech-ops"].add_member(users["testuser@a.co"], users["testuser@a.co"],
             reason="for the lulz")
-    assert len(figurehead.my_requests_aggregate().all()) == 1, "request for np-owner"
+    assert len(user_requests_aggregate(session, figurehead).all()) == 1, "request for np-owner"
 
     groups["audited-team"].add_member(users["testuser@a.co"], users["testuser@a.co"],
             reason="for the lulz")
-    assert len(figurehead.my_requests_aggregate().all()) == 2, "request for np-owner and manager"
+    assert len(user_requests_aggregate(session, figurehead).all()) == 2, "request for np-owner and manager"

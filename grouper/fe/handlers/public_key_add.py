@@ -3,8 +3,9 @@ from grouper.email_util import send_email
 from grouper.fe.forms import PublicKeyForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
+from grouper.models.user import User
+from grouper.user_permissions import user_is_user_admin
 
 
 class PublicKeyAdd(GrouperHandler):
@@ -13,7 +14,8 @@ class PublicKeyAdd(GrouperHandler):
         if not user:
             return self.notfound()
 
-        if (user.name != self.current_user.name) and not self.current_user.user_admin:
+        if ((user.name != self.current_user.name) and
+                not user_is_user_admin(self.session, self.current_user)):
             return self.forbidden()
 
         self.render("public-key-add.html", form=PublicKeyForm(), user=user)
@@ -23,7 +25,8 @@ class PublicKeyAdd(GrouperHandler):
         if not user:
             return self.notfound()
 
-        if (user.name != self.current_user.name) and not self.current_user.user_admin:
+        if ((user.name != self.current_user.name) and
+                not user_is_user_admin(self.session, self.current_user)):
             return self.forbidden()
 
         form = PublicKeyForm(self.request.arguments)

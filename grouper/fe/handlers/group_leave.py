@@ -1,6 +1,7 @@
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
+from grouper.user import user_role
 
 
 class GroupLeave(GrouperHandler):
@@ -10,7 +11,7 @@ class GroupLeave(GrouperHandler):
             return self.notfound()
 
         members = group.my_members()
-        if not self.current_user.my_role(members):
+        if not user_role(self.current_user, members):
             return self.forbidden()
 
         return self.render(
@@ -23,7 +24,7 @@ class GroupLeave(GrouperHandler):
             return self.notfound()
 
         members = group.my_members()
-        if not self.current_user.my_role(members):
+        if not user_role(self.current_user, members):
             return self.forbidden()
 
         group.revoke_member(self.current_user, self.current_user, "User self-revoked.")

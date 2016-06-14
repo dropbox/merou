@@ -10,9 +10,9 @@ import sshpubkey
 from tornado.web import HTTPError, RequestHandler
 
 from grouper.constants import TOKEN_FORMAT
-from grouper.model_soup import User
 from grouper.models.base.session import Session
 from grouper.models.public_key import PublicKey
+from grouper.models.user import User
 from grouper.models.user_token import UserToken
 from grouper.util import try_update
 

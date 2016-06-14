@@ -21,7 +21,7 @@ def test_basic_metadata(standard_graph, session, users, groups, permissions):  #
     graph = standard_graph  # noqa
     user_id = users["zorkian@a.co"].id
 
-    assert len(users["zorkian@a.co"].my_metadata()) == 0, "No metadata yet"
+    assert len(get_user_metadata(session, users["zorkian@a.co"].id)) == 0, "No metadata yet"
 
     # Test setting "foo" to 1 works, and we get "1" back (metadata is defined as strings)
     set_user_metadata(session, user_id, "foo", 1)

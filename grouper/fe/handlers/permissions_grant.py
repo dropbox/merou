@@ -7,12 +7,13 @@ from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
 from grouper.models.permission import Permission
 from grouper.permissions import grant_permission
+from grouper.user_permissions import user_grantable_permissions
 from grouper.util import matches_glob
 
 
 class PermissionsGrant(GrouperHandler):
     def get(self, name=None):
-        grantable = self.current_user.my_grantable_permissions()
+        grantable = user_grantable_permissions(self.session, self.current_user)
         if not grantable:
             return self.forbidden()
 
@@ -31,7 +32,7 @@ class PermissionsGrant(GrouperHandler):
         )
 
     def post(self, name=None):
-        grantable = self.current_user.my_grantable_permissions()
+        grantable = user_grantable_permissions(self.session, self.current_user)
         if not grantable:
             return self.forbidden()
 

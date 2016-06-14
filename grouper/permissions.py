@@ -11,8 +11,8 @@ from grouper.email_util import send_email
 from grouper.fe.settings import settings
 from grouper.group import get_groups_by_user
 from grouper.model_soup import Group
-from grouper.model_soup import OBJ_TYPES_IDX
 from grouper.models.audit_log import AuditLog
+from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
 from grouper.models.permission import Permission

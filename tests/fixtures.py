@@ -7,9 +7,10 @@ from grouper.constants import AUDIT_MANAGER, PERMISSION_AUDITOR
 from grouper.fe.routes import HANDLERS as FE_HANDLERS
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
-from grouper.model_soup import User, Group
+from grouper.model_soup import Group
 from grouper.models.base.model_base import Model
 from grouper.models.base.session import Session, get_db_engine
+from grouper.models.user import User
 from grouper.permissions import enable_permission_auditing
 from util import add_member, grant_permission
 from grouper.models.permission import Permission

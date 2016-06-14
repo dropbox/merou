@@ -4,12 +4,13 @@ from grouper.fe.forms import PermissionCreateForm
 from grouper.fe.util import GrouperHandler, test_reserved_names
 from grouper.models.audit_log import AuditLog
 from grouper.models.permission import Permission
+from grouper.user_permissions import user_creatable_permissions
 from grouper.util import matches_glob
 
 
 class PermissionsCreate(GrouperHandler):
     def get(self):
-        can_create = self.current_user.my_creatable_permissions()
+        can_create = user_creatable_permissions(self.session, self.current_user)
         if not can_create:
             return self.forbidden()
 
@@ -18,7 +19,7 @@ class PermissionsCreate(GrouperHandler):
         )
 
     def post(self):
-        can_create = self.current_user.my_creatable_permissions()
+        can_create = user_creatable_permissions(self.session, self.current_user)
         if not can_create:
             return self.forbidden()
 

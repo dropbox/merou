@@ -1,5 +1,6 @@
 from grouper.fe.forms import GroupRemoveForm
 from grouper.fe.util import GrouperHandler
+from grouper.group import user_can_manage_group
 from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
 from grouper.user import get_user_or_group
@@ -11,7 +12,7 @@ class GroupRemove(GrouperHandler):
         if not group:
             return self.notfound()
 
-        if not self.current_user.can_manage(group):
+        if not user_can_manage_group(self.session, group, self.current_user):
             return self.forbidden()
 
         form = GroupRemoveForm(self.request.arguments)

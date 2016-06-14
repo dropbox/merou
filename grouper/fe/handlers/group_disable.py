@@ -1,6 +1,7 @@
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
+from grouper.user import user_role
 
 
 class GroupDisable(GrouperHandler):
@@ -10,7 +11,7 @@ class GroupDisable(GrouperHandler):
             return self.notfound()
 
         members = group.my_members()
-        if not self.current_user.my_role(members) in ("owner", "np-owner"):
+        if not user_role(self.current_user, members) in ("owner", "np-owner"):
             return self.forbidden()
 
         group.disable()

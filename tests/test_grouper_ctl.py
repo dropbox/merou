@@ -10,8 +10,10 @@ from grouper.constants import (
 )
 
 from grouper.ctl.main import main
-from grouper.model_soup import Group, GROUP_EDGE_ROLES, User
+from grouper.model_soup import Group, GROUP_EDGE_ROLES
 from grouper.models.base.model_base import Model
+from grouper.models.user import User
+from grouper.public_key import get_public_keys_of_user
 
 
 noop = lambda *k: None
@@ -96,7 +98,7 @@ def test_user_public_key(make_session, session, users):
     call_main('user', 'add_public_key', username, good_key)
 
     user = User.get(session, name=username)
-    keys = user.my_public_keys()
+    keys = get_public_keys_of_user(session, user.id)
     assert len(keys) == 1
     assert keys[0].public_key == good_key
 
@@ -106,7 +108,7 @@ def test_user_public_key(make_session, session, users):
     call_main('user', 'add_public_key', username, good_key)
 
     user = User.get(session, name=username)
-    keys = user.my_public_keys()
+    keys = get_public_keys_of_user(session, user.id)
     assert len(keys) == 1
     assert keys[0].public_key == good_key
 

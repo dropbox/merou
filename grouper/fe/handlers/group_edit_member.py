@@ -3,7 +3,10 @@ from datetime import datetime
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.fe.forms import GroupEditMemberForm
 from grouper.fe.util import Alert, GrouperHandler
-from grouper.model_soup import Group, GroupEdge, OBJ_TYPES, User
+from grouper.model_soup import Group, GroupEdge
+from grouper.models.comment import OBJ_TYPES
+from grouper.models.user import User
+from grouper.user import user_role
 
 
 class GroupEditMember(GrouperHandler):
@@ -16,7 +19,7 @@ class GroupEditMember(GrouperHandler):
             return self.forbidden()
 
         members = group.my_members()
-        my_role = self.current_user.my_role(members)
+        my_role = user_role(self.current_user, members)
         if my_role not in ("manager", "owner", "np-owner"):
             return self.forbidden()
 
@@ -56,7 +59,7 @@ class GroupEditMember(GrouperHandler):
             return self.forbidden()
 
         members = group.my_members()
-        my_role = self.current_user.my_role(members)
+        my_role = user_role(self.current_user, members)
         if my_role not in ("manager", "owner", "np-owner"):
             return self.forbidden()
 

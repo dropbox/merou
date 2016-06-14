@@ -2,8 +2,9 @@ from grouper.constants import USER_ADMIN, USER_METADATA_SHELL_KEY
 from grouper.fe.forms import UserShellForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
+from grouper.models.user import User
+from grouper.user_permissions import user_has_permission
 
 
 class UserShell(GrouperHandler):
@@ -13,7 +14,7 @@ class UserShell(GrouperHandler):
             return self.notfound()
 
         if user.name != self.current_user.name and not (
-                self.current_user.has_permission(USER_ADMIN) and user.role_user
+                user_has_permission(self.session, self.current_user, USER_ADMIN) and user.role_user
         ):
             return self.forbidden()
 
@@ -28,7 +29,7 @@ class UserShell(GrouperHandler):
             return self.notfound()
 
         if user.name != self.current_user.name and not (
-                self.current_user.has_permission(USER_ADMIN) and user.role_user
+                user_has_permission(self.session, self.current_user, USER_ADMIN) and user.role_user
         ):
             return self.forbidden()
 

@@ -3,6 +3,8 @@ from grouper.graph import NoSuchGroup
 from grouper.model_soup import (APPROVER_ROLE_INDICIES, AUDIT_STATUS_CHOICES,
         Group, OWNER_ROLE_INDICES)
 from grouper.permissions import get_pending_request_by_group
+from grouper.user import user_role, user_role_index
+from grouper.user_permissions import user_grantable_permissions
 
 
 class GroupView(GrouperHandler):
@@ -12,7 +14,7 @@ class GroupView(GrouperHandler):
         if not group:
             return self.notfound()
 
-        grantable = self.current_user.my_grantable_permissions()
+        grantable = user_grantable_permissions(self.session, self.current_user)
 
         try:
             group_md = self.graph.get_group_details(group.name)
@@ -29,10 +31,11 @@ class GroupView(GrouperHandler):
         log_entries = group.my_log_entries()
         num_pending = group.my_requests("pending").count()
         current_user_role = {
-                'is_owner': self.current_user.my_role_index(members) in OWNER_ROLE_INDICES,
-                'is_approver': self.current_user.my_role_index(members) in APPROVER_ROLE_INDICIES,
-                'is_manager': self.current_user.my_role(members) == "manager",
-                }
+            'is_owner': user_role_index(self.current_user, members) in OWNER_ROLE_INDICES,
+            'is_approver': user_role_index(self.current_user, members) in APPROVER_ROLE_INDICIES,
+            'is_manager': user_role(self.current_user, members) == "manager",
+            'role': user_role(self.current_user, members),
+            }
 
         # Add mapping_id to permissions structure
         my_permissions = group.my_permissions()

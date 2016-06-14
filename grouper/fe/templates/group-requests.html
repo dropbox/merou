@@ -21,7 +21,7 @@
         <table class="table table-elist">
             <thead>
                 <tr>
-                    {% if current_user.my_role(members) in ("manager", "owner", "np-owner") %}
+                    {% if current_user_role['is_approver'] %}
                         <th class="col-sm-1">Modify</th>
                     {% endif %}
                     <th class="col-sm-2">Requested</th>
@@ -34,7 +34,7 @@
             <tbody>
                 {% for request in requests %}
                     <tr>
-                        {% if current_user.my_role(members) in ("manager", "owner", "np-owner") %}
+                        {% if current_user_role['is_approver'] %}
                             <td>
                                 <a href="/groups/{{group.groupname}}/requests/{{request.id}}"
                                    class="btn btn-default btn-xs">
@@ -51,7 +51,7 @@
                         <td>{{ request.expiration|print_date }}</td>
                     </tr>
                     <tr>
-                        {% if current_user.my_role(members) in ("manager", "owner", "np-owner") %}
+                        {% if current_user_role['is_approver'] %}
                             <td>&nbsp;</td>
                         {% endif %}
                         <td colspan="5">

@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block headingbuttons %}
-    {% if current_user.permission_admin %}
+    {% if can_change_audit_status %}
         {% if permission.audited %}
             <button class="btn btn-danger" data-toggle="modal" data-target="#disableModal">
                 <i class="fa fa-minus"></i> Disable Auditing

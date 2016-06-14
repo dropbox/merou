@@ -1,7 +1,8 @@
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
+from grouper.models.user import User
 from grouper.models.user_token import UserToken
+from grouper.user_permissions import user_is_user_admin
 from grouper.user_token import disable_user_token
 
 
@@ -11,8 +12,10 @@ class UserTokenDisable(GrouperHandler):
         if not user:
             return self.notfound()
 
-        if (user.name != self.current_user.name) and not self.current_user.user_admin:
+        if ((user.name != self.current_user.name) and
+                not user_is_user_admin(self.session, self.current_user)):
             return self.forbidden()
+
         token = UserToken.get(self.session, user=user, id=token_id)
         return self.render("user-token-disable.html", user=user, token=token)
 
@@ -21,7 +24,8 @@ class UserTokenDisable(GrouperHandler):
         if not user:
             return self.notfound()
 
-        if (user.name != self.current_user.name) and not self.current_user.user_admin:
+        if ((user.name != self.current_user.name) and
+                not user_is_user_admin(self.session, self.current_user)):
             return self.forbidden()
 
         token = UserToken.get(self.session, user=user, id=token_id)

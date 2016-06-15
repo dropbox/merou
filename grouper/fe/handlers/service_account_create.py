@@ -61,7 +61,7 @@ class ServiceAccountCreate(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors)
             )
 
-        group.add_member(self.current_user, self.current_user, "GroupCreator",
+        group.add_member(self.current_user, self.current_user, "Group Creator",
             "actioned", None, "np-owner")
         group.add_member(self.current_user, user, "Service Account",
             "actioned", None, "member")

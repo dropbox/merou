@@ -18,15 +18,8 @@ class ServiceAccountView(GrouperHandler):
     def get(self, user_id=None, name=None):
         self.handle_refresh()
         user = User.get(self.session, user_id, name)
-        if user_id is not None:
-            user = self.session.query(User).filter_by(id=user_id).scalar()
-        else:
-            user = self.session.query(User).filter_by(username=name).scalar()
 
-        if not user:
-            return self.notfound()
-
-        if not user.role_user:
+        if not user or not user.role_user:
             return self.notfound()
 
         can_control = can_manage_service_account(self.session, user=self.current_user, tuser=user)
@@ -65,13 +58,6 @@ class ServiceAccountView(GrouperHandler):
             'is_manager': user_role(self.current_user, members) == "manager",
             'role': user_role(self.current_user, members),
         }
-
-        try:
-            group_md = self.graph.get_group_details(group.name)
-        except NoSuchGroup:
-            # Very new group with no metadata yet, or it has been disabled and
-            # excluded from in-memory cache.
-            group_md = {}
 
         permission_requests_pending = get_pending_request_by_group(self.session, group)
         audited = group_md.get('audited', False)

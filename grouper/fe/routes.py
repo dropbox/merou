@@ -81,10 +81,10 @@ HANDLERS = [
     ),
     (r"/search", Search),
     (r"/users", UsersView),
-    (r"/svc", UsersView),
+    (r"/service", UsersView),
     (r"/users/public-keys", UsersPublicKey),
     (r"/users/tokens", UsersUserTokens),
-    (r"/users/service_create", ServiceAccountCreate),
+    (r"/service/create", ServiceAccountCreate),
     (r"/user/requests", UserRequests),
 ]
 
@@ -111,7 +111,7 @@ for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
         (r"/users/{}/tokens/(?P<token_id>[0-9]+)/disable".format(regex), UserTokenDisable),
         (r"/users/{}/passwords/add".format(regex), UserPasswordAdd),
         (r"/users/{}/passwords/(?P<pass_id>[0-9]+)/delete".format(regex), UserPasswordDelete),
-        (r"/svc/{}".format(regex), ServiceAccountView),
+        (r"/service/{}".format(regex), ServiceAccountView),
     ])
 
 for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):

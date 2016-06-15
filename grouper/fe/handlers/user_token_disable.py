@@ -11,14 +11,8 @@ class UserTokenDisable(GrouperHandler):
 
     @staticmethod
     def check_access(session, actor, target):
-        if actor.name == target.name:
-            return True
-
-        if user_is_user_admin(session, actor):
-            return True
-
-        if not target.role_user:
-            return False
+        return (actor.name == target.name or user_is_user_admin(session, actor) or
+            (target.role_user and can_manage_service_account(session, actor, tuser=target)))
 
         return can_manage_service_account(session, actor, tuser=target)
 

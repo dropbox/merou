@@ -16,7 +16,7 @@ class GroupView(GrouperHandler):
             return self.notfound()
 
         if is_service_account(self.session, group=group):
-            return self.redirect("/svc/{}".format(group.groupname))
+            return self.redirect("/service/{}".format(group.groupname))
 
         grantable = user_grantable_permissions(self.session, self.current_user)
 

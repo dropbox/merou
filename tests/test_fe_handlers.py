@@ -347,7 +347,7 @@ def test_add_service_account(session, users, http_client, base_url):
     user = users['zorkian@a.co']
 
     # Add account
-    fe_url = url(base_url, '/users/service_create')
+    fe_url = url(base_url, '/service/create')
     resp = yield http_client.fetch(fe_url, method="POST",
             body=urlencode({'name': 'bob@hello.com', "description": "Hi", "canjoin": "canjoin"}),
             headers={'X-Grouper-User': user.username})
@@ -357,7 +357,7 @@ def test_add_service_account(session, users, http_client, base_url):
     assert Group.get(session, name="bob@hello.com") is None
 
     # Add account
-    fe_url = url(base_url, '/users/service_create')
+    fe_url = url(base_url, '/service/create')
     resp = yield http_client.fetch(fe_url, method="POST",
             body=urlencode({'name': 'bob@svc.localhost', "description": "Hi", "canjoin": "canjoin"}),
             headers={'X-Grouper-User': user.username})

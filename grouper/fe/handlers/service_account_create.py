@@ -16,7 +16,11 @@ class ServiceAccountCreate(GrouperHandler):
         )
 
     def post(self):
+        if "@" not in self.request.arguments["name"][0]:
+            self.request.arguments["name"][0] += "@" + settings.service_account_email_domain
+
         form = ServiceAccountCreateForm(self.request.arguments)
+
         if not form.validate():
             return self.render(
                 "service-account-create.html", form=form,

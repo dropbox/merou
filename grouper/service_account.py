@@ -11,7 +11,7 @@ class ServiceAccountNotFound(Exception):
 
 
 def is_service_account(session, user=None, group=None):
-    # Type: Session, User, Group -> bool
+    # type: Session, User, Group -> bool
     """
     Takes in a User or a Group and returns a boolean indicating whether
     that User/Group is a component of a service account.
@@ -38,7 +38,7 @@ def is_service_account(session, user=None, group=None):
 
 
 def get_service_account(session, user=None, group=None):
-    # Type: Session, User, Group -> Dict[str, Union[User, Group]]
+    # type: Session, User, Group -> Dict[str, Union[User, Group]]
     """
     Takes in a User or a Group and returns a dictionary that contains
     all of the service account components for the service account that
@@ -68,7 +68,7 @@ def get_service_account(session, user=None, group=None):
 
 
 def can_manage_service_account(session, user, tuser=None, tgroup=None):
-    # Type: Session, User, User, Group -> bool
+    # type: Session, User, User, Group -> bool
     """
     Indicates whether the user has permission to manage the service account
     that tuser/tgroup is part of
@@ -97,7 +97,7 @@ def can_manage_service_account(session, user, tuser=None, tgroup=None):
 
 
 def is_owner_of_service_account(session, user, tuser=None, tgroup=None):
-    # Type: Session, User, User, Group -> bool
+    # type: Session, User, User, Group -> bool
     """
     Indicates whether the user is an owner of the service account
     that tuser/tgroup is part of
@@ -126,7 +126,7 @@ def is_owner_of_service_account(session, user, tuser=None, tgroup=None):
 
 
 def disable_service_account(session, user=None, group=None):
-    # Type: Session, User, Group -> None
+    # type: Session, User, Group -> None
     """
     Disables all components of the service account corresponding to user/group.
 
@@ -144,7 +144,7 @@ def disable_service_account(session, user=None, group=None):
 
 
 def enable_service_account(session, actor, preserve_membership, user=None, group=None):
-    # Type: Session, User, Group -> None
+    # type: Session, User, Group -> None
     """
     Enabled all components of the service account corresponding to user/group.
 

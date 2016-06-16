@@ -14,8 +14,6 @@ class UserTokenDisable(GrouperHandler):
         return (actor.name == target.name or user_is_user_admin(session, actor) or
             (target.role_user and can_manage_service_account(session, actor, tuser=target)))
 
-        return can_manage_service_account(session, actor, tuser=target)
-
     def get(self, user_id=None, name=None, token_id=None):
         user = User.get(self.session, user_id, name)
         if not user:

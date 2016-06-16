@@ -11,6 +11,8 @@ class PublicKeyDelete(GrouperHandler):
 
     @staticmethod
     def check_access(session, actor, target):
+        return (actor.name == target.name or
+            (target.role_user and can_manage_service_account(session, actor, tuser=target)))
         if actor.name == target.name:
             return True
 

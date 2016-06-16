@@ -11,13 +11,8 @@ class UserShell(GrouperHandler):
 
     @staticmethod
     def check_access(session, actor, target):
-        if actor.name == target.name:
-            return True
-
-        if not target.role_user:
-            return False
-
-        return can_manage_service_account(session, actor, tuser=target)
+        return (actor.name == target.name or
+            (target.role_user and can_manage_service_account(session, actor, tuser=target)))
 
     def get(self, user_id=None, name=None):
         user = User.get(self.session, user_id, name)

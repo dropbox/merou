@@ -5,9 +5,9 @@ from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.email_util import send_email
 from grouper.fe.forms import GroupAddForm
 from grouper.fe.settings import settings
-from grouper.fe.util import GrouperHandler
+from grouper.fe.util import Alert, GrouperHandler
 from grouper.group import get_all_groups, user_can_manage_group
-from grouper.model_soup import Group
+from grouper.model_soup import Group, InvalidRoleForMember
 from grouper.models.audit_log import AuditLog
 from grouper.user import get_all_enabled_users, get_user_or_group, user_role
 
@@ -105,14 +105,23 @@ class GroupAdd(GrouperHandler):
         if form.data["expiration"]:
             expiration = datetime.strptime(form.data["expiration"], "%m/%d/%Y")
 
-        group.add_member(
-            requester=self.current_user,
-            user_or_group=member,
-            reason=form.data["reason"],
-            status='actioned',
-            expiration=expiration,
-            role=form.data["role"]
-        )
+        try:
+            group.add_member(
+                requester=self.current_user,
+                user_or_group=member,
+                reason=form.data["reason"],
+                status='actioned',
+                expiration=expiration,
+                role=form.data["role"]
+            )
+        except InvalidRoleForMember as e:
+            return self.render(
+                "group-add.html", form=form, group=group,
+                alerts=[
+                    Alert('danger', e.message)
+                ]
+            )
+
         self.session.commit()
 
         AuditLog.log(self.session, self.current_user.id, 'join_group',

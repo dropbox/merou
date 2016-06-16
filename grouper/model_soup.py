@@ -77,6 +77,12 @@ class MemberNotFound(Exception):
     pass
 
 
+class InvalidRoleForMember(Exception):
+    """This exception is raised when trying to set the role for a member of a group, but that
+    member is not permitted to hold that role in the group"""
+    pass
+
+
 class Group(Model, CommentObjectMixin):
 
     __tablename__ = "groups"
@@ -176,9 +182,8 @@ class Group(Model, CommentObjectMixin):
         now = datetime.utcnow()
         member_type = user_or_group.member_type
 
-        # Force role to member when member is a group. Just in case.
-        if member_type == 1 and "role" in kwargs:
-            kwargs["role"] = "member"
+        if member_type == 1 and "role" in kwargs and kwargs["role"] != "member":
+            raise InvalidRoleForMember("Groups can only have the role of 'member'")
 
         logging.debug(
             "Editing member (%s) in %s", user_or_group.name, self.groupname
@@ -252,9 +257,8 @@ class Group(Model, CommentObjectMixin):
         now = datetime.utcnow()
         member_type = user_or_group.member_type
 
-        # Force role to member when member is a group.
-        if member_type == 1:
-            role = "member"
+        if member_type == 1 and role != "member":
+            raise InvalidRoleForMember("Groups can only have the role of 'member'")
 
         logging.debug(
             "Adding member (%s) to %s", user_or_group.name, self.groupname

@@ -3,6 +3,7 @@ import logging
 from grouper.ctl.util import ensure_valid_groupname, ensure_valid_username, make_session
 from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
+from grouper.models.user_token import UserToken  # noqa: HAX(herb) workaround user -> user_token dep
 from grouper.models.user import User
 
 

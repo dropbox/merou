@@ -3,6 +3,7 @@ import logging
 from grouper import public_key
 from grouper.ctl.util import ensure_valid_username, make_session
 from grouper.models.audit_log import AuditLog
+from grouper.models.user_token import UserToken  # noqa: HAX(herb) workaround user -> user_token dep
 from grouper.models.user import User
 from grouper.user import disable_user, enable_user, get_all_users
 from grouper.user_metadata import set_user_metadata

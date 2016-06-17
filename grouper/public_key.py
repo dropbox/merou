@@ -6,6 +6,7 @@ from sshpubkey.exc import PublicKeyParseError  # noqa
 from grouper.models.counter import Counter
 from grouper.models.permission import Permission
 from grouper.models.public_key import PublicKey
+from grouper.models.public_key_tag import PublicKeyTag  # noqa
 from grouper.models.public_key_tag_map import PublicKeyTagMap
 from grouper.models.tag_permission_map import TagPermissionMap
 from grouper.user_permissions import user_permissions

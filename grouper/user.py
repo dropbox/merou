@@ -56,7 +56,7 @@ def get_all_users(session):
 
 
 def get_all_enabled_users(session):
-    # type: Session -> List[User]
+    # type: (Session) -> List[User]
     """Returns all enabled users in the database.
 
     At present, this is not cached at all and returns the full list of

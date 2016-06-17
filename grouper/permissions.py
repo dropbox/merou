@@ -63,7 +63,7 @@ def grant_permission(session, group_id, permission_id, argument=''):
 
 
 def grant_permission_to_tag(session, tag_id, permission_id, argument=''):
-    # type: Session, int, int, str -> None
+    # type: (Session, int, int, str) -> boolean
     """
     Grant a permission to this tag. This will fail if the (permission, argument) has already
     been granted to this tag.
@@ -607,7 +607,7 @@ def update_request(session, request, user, new_status, comment):
 
 
 def permission_list_to_dict(perms):
-    # type: List[Permission] -> Dict[str, Dict[str, Permission]]
+    # type: (List[Permission]) -> Dict[str, Dict[str, Permission]]
     """Converts a list of Permission objects into a dictionary indexed by the permission names.
     That dictionary in turn holds another dictionary which is indexed by permission argument, and
     stores the Permission object
@@ -626,7 +626,7 @@ def permission_list_to_dict(perms):
 
 
 def permission_intersection(perms_a, perms_b):
-    # type: List[Permission], List[Permission] -> Set[Permission]
+    # type: (List[Permission], List[Permission]) -> Set[Permission]
     """Returns the intersection of the two Permission lists, taking into account the special
     handling of argument wildcards
 

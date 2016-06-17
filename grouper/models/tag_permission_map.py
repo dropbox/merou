@@ -33,7 +33,7 @@ class TagPermissionMap(Model):
 
     @staticmethod
     def get(session, id=None):
-        # type: Session, int -> TagPermissionMap
+        # type: (Session, int) -> TagPermissionMap
         if id is not None:
             return session.query(TagPermissionMap).filter_by(id=id).scalar()
         return None

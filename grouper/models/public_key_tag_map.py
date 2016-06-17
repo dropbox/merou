@@ -28,7 +28,7 @@ class PublicKeyTagMap(Model):
 
     @staticmethod
     def get(session, id=None):
-        # type: Session, int -> PublicKeyTagMap
+        # type: (Session, int) -> PublicKeyTagMap
         if id is not None:
             return session.query(PublicKeyTagMap).filter_by(id=id).scalar()
         return None

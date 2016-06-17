@@ -25,7 +25,7 @@ class PublicKeyTag(Model):
 
     @staticmethod
     def get(session, id=None, name=None):
-        # type: Session, int, str -> PublicKeyTag
+        # type: (Session, int, str) -> PublicKeyTag
         if id:
             return session.query(PublicKeyTag).filter_by(id=id).scalar()
         if name:

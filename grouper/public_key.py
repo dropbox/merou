@@ -121,7 +121,7 @@ def get_public_keys_of_user(session, user_id):
 
 
 def add_tag_to_public_key(session, public_key, tag):
-    # type: Session, PublicKey, PublicKeyTag -> None
+    # type: (Session, PublicKey, PublicKeyTag) -> None
     """Assigns the tag to the given public key.
 
     Args:
@@ -143,7 +143,7 @@ def add_tag_to_public_key(session, public_key, tag):
 
 
 def remove_tag_from_public_key(session, public_key, tag):
-    # type: Session, PublicKey, PublicKeyTag -> None
+    # type: (Session, PublicKey, PublicKeyTag) -> None
     """Removes the tag from the given public key.
 
     Args:
@@ -165,7 +165,7 @@ def remove_tag_from_public_key(session, public_key, tag):
 
 
 def get_public_key_tags(session, public_key):
-    # type: Session, PublicKey -> List[PublicKeyTag]
+    # type: (Session, PublicKey) -> List[PublicKeyTag]
     """Returns the list of tags that are assigned to this public key
 
     Returns:
@@ -176,7 +176,7 @@ def get_public_key_tags(session, public_key):
 
 
 def get_public_key_permissions(session, public_key):
-        # type: Session, PublicKey -> List[Permission]
+        # type: (Session, PublicKey) -> List[Permission]
         """Returns the permissions that this public key has. Namely, this the set of permissions
         that the public key's owner has, intersected with the permissions allowed by this key's
         tags

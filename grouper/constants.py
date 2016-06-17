@@ -38,6 +38,7 @@ AUDIT_MANAGER = "grouper.audit.manage"
 AUDIT_VIEWER = "grouper.audit.view"
 USER_DISABLE = "grouper.user.disable"
 USER_ENABLE = "grouper.user.enable"
+TAG_EDIT = "grouper.tag.edit"
 
 # Permissions that are always created and are reserved.
 SYSTEM_PERMISSIONS = [
@@ -52,6 +53,7 @@ SYSTEM_PERMISSIONS = [
     (AUDIT_VIEWER, "Ability to view audit results and status."),
     (USER_ENABLE, "Ability to enable a disabled user."),
     (USER_DISABLE, "Ability to disable an enabled user."),
+    (TAG_EDIT, "Ability to edit the permissions granted to a tag."),
 ]
 
 # Used to construct name tuples in notification engine.

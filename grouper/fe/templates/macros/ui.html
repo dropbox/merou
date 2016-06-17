@@ -1,25 +1,3 @@
-{% macro one_public_key_row(key, username, can_control) -%}
-    <td><span class="has-help" data-toggle="popover" data-content="{{ key.created_on|print_date }}">
-        {{ key.created_on|long_ago_str }}</span></td>
-    <td>{% if key.key_type %}{{ key.key_type }}{% endif %}</td>
-    <td>{% if key.key_size %}{{ key.key_size }}{% endif %}</td>
-    <td class="hidden-xs">
-        <code>{{ key.fingerprint }}</code>
-    </td>
-    <td>
-        <span class="pull-right">
-        <button class="btn btn-default btn-xs public-key" key-body="{{ key.public_key|escape }}">
-            <i class="fa fa-search"></i>
-        </button>
-    {% if can_control %}
-        <a class="btn btn-default btn-xs" href="/users/{{ username }}/public-key/{{ key.id }}/delete">
-            <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span>
-        </a>
-        </span>
-    {% endif %}
-    </td>
-{%- endmacro %}
-
 {% macro public_key_modal() -%}
     <div id="key-modal" class="modal fade">
         <div class="modal-dialog">
@@ -35,47 +13,6 @@
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
             </div>
-        </div>
-    </div>
-{%- endmacro %}
-
-{% macro public_key_panel(max_height, user, public_keys, can_control=False) -%}
-    {{ public_key_modal() }}
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">Public Keys</h3>
-        </div>
-        <div class="table-responsive" style="max-height: {{max_height}}px; overflow-y: auto">
-            <table class="table table-striped table-condensed">
-                <thead>
-                    <tr>
-                        <th class="col-sm-1">Age</th>
-                        <th class="col-sm-1">Type</th>
-                        <th class="col-sm-1">Size</th>
-                        <th class="col-sm-3 hidden-xs">Fingerprint</th>
-                        <th class="col-sm-2"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for key in public_keys %}
-                    <tr>
-                        {{ one_public_key_row(key, user.name, can_control) }}
-                    </tr>
-                {% endfor %}
-                {% if not public_keys %}
-                    <tr>
-                        <td colspan="5" class="text-center"><em>No Public Keys</em></td>
-                    </tr>
-                {% endif %}
-                </tbody>
-            </table>
-            {% if can_control %}
-            <div class='panel-footer'>
-                <a class="btn btn-default btn-sm" href="/users/{{ user.name }}/public-key/add">
-                <span class="glyphicon glyphicon-plus"></span> Add Public Key
-                </a>
-            </div>
-            {% endif %}
         </div>
     </div>
 {%- endmacro %}
@@ -238,6 +175,13 @@ enabled. Membership in this group is regularly reviewed.
 </a>
 {%- endmacro %}
 
+{% macro format_tag(t) -%}
+<a class="tag-link" href="/tags/{{t.name}}">
+    <i class="fa fa-tag hidden-xs"></i>
+    {{t.name}}
+</a>
+{%- endmacro %}
+
 {% macro member_row(group, member, members, current_user, current_user_role) -%}
     <tr>
         <td>
@@ -329,6 +273,9 @@ enabled. Membership in this group is regularly reviewed.
                         <td class="col-sm-2">{{ entry.action }}</td>
                         <td class="col-sm-2">{{ entry.description|escape }}</td>
                         <td class="col-sm-2">
+                            {% if entry.on_tag %}
+                                Tag: {{ format_tag(entry.on_tag) }}<br />
+                            {% endif %}
                             {% if entry.on_group %}
                                 Group: {{ account(entry.on_group) }}<br />
                             {% endif %}
@@ -506,3 +453,63 @@ enabled. Membership in this group is regularly reviewed.
         {% endif %}
     </div>
 {%- endmacro %}
+
+
+{% macro tag_permission_panel(max_height, mappings, tag, can_grant=None) -%}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Permissions</h3>
+        </div>
+        <div style="max-height: {{max_height}}px; overflow-y: auto">
+            <table class="{% if mappings %}datatable {% endif %}table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th class="col-sm-2">Permission</th>
+                        <th class="col-sm-2">Argument</th>
+                        <th class="col-sm-2">Granted</th>
+                        {% if can_grant %}
+                            <th class="col-sm-2"></th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for map in mappings %}
+                    <tr>
+                        <td>{{ permission(map) }}</td>
+                        <td class="col-sm-2">{{ map.argument|default("(unargumented)", True)|escape }}</td>
+                        <td class="col-sm-2" title="{{ map.granted_on|print_date }}">
+                            {{ map.granted_on|long_ago_str }}
+                        </td>
+                        {% if can_grant %}
+                            <td class="col-sm-2">
+                            {% for grantable in can_grant if grantable.name == map.name %}
+                                {% if loop.first %}
+                                    <a class="btn btn-default btn-xs" href="/permissions/{{ map.name }}/revoke_tag/{{ map.mapping_id }}">
+                                    <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span> Revoke
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                {% if not mappings and not pending_requests %}
+                    <tr>
+                        <td colspan="5" class="text-center">
+                            <em>No permissions found.</em>
+                        </td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+        {% if can_grant %}
+        <div class='panel-footer'>
+            <a class="btn btn-default btn-sm" href="/permissions/grant_tag/{{ tag.name }}">
+                <span class="glyphicon glyphicon-plus"></span> Add Permission
+            </a>
+        </div>
+        {% endif %}
+    </div>
+{%- endmacro %}
+

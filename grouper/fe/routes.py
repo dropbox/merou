@@ -29,14 +29,21 @@ from grouper.fe.handlers.permission_enable_auditing import PermissionEnableAudit
 from grouper.fe.handlers.permission_view import PermissionView
 from grouper.fe.handlers.permissions_create import PermissionsCreate
 from grouper.fe.handlers.permissions_grant import PermissionsGrant
+from grouper.fe.handlers.permissions_grant_tag import PermissionsGrantTag
 from grouper.fe.handlers.permissions_request_update import PermissionsRequestUpdate
 from grouper.fe.handlers.permissions_requests import PermissionsRequests
 from grouper.fe.handlers.permissions_revoke import PermissionsRevoke
+from grouper.fe.handlers.permissions_revoke_tag import PermissionsRevokeTag
 from grouper.fe.handlers.permissions_view import PermissionsView
 from grouper.fe.handlers.public_key_add import PublicKeyAdd
+from grouper.fe.handlers.public_key_add_tag import PublicKeyAddTag
 from grouper.fe.handlers.public_key_delete import PublicKeyDelete
+from grouper.fe.handlers.public_key_remove_tag import PublicKeyRemoveTag
 from grouper.fe.handlers.search import Search
 from grouper.fe.handlers.stats import Stats
+from grouper.fe.handlers.tag_edit import TagEdit
+from grouper.fe.handlers.tag_view import TagView
+from grouper.fe.handlers.tags_view import TagsView
 from grouper.fe.handlers.user_disable import UserDisable
 from grouper.fe.handlers.user_enable import UserEnable
 from grouper.fe.handlers.user_requests import UserRequests
@@ -55,6 +62,7 @@ HANDLERS = [
     (r"/audits/(?P<audit_id>[0-9]+)/complete", AuditsComplete),
     (r"/audits/create", AuditsCreate),
     (r"/groups", GroupsView),
+    (r"/tags", TagsView),
     (r"/permissions/create", PermissionsCreate),
     (r"/permissions/requests", PermissionsRequests),
     (r"/permissions/requests/(?P<request_id>[0-9]+)", PermissionsRequestUpdate),
@@ -85,6 +93,14 @@ for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
             r"/users/{}/public-key/(?P<key_id>[0-9]+)/delete".format(regex),
             PublicKeyDelete
         ),
+        (
+            r"/users/{}/public-key/(?P<key_id>[0-9]+)/tag".format(regex),
+            PublicKeyAddTag
+        ),
+        (
+            r"/users/{}/public-key/(?P<key_id>[0-9]+)/delete_tag/(?P<tag_id>[0-9]+)".format(regex),
+            PublicKeyRemoveTag
+        ),
         (r"/users/{}/tokens/add".format(regex), UserTokenAdd),
         (r"/users/{}/tokens/(?P<token_id>[0-9]+)/disable".format(regex), UserTokenDisable),
     ])
@@ -106,6 +122,18 @@ for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
             r"/groups/{}/edit/(?P<member_type>user|group)/{}".format(regex, NAME2_VALIDATION),
             GroupEditMember
         ),
+    ])
+
+for regex in (r"(?P<tag_id>[0-9]+)", NAME_VALIDATION):
+    HANDLERS.extend([
+        (r"/tags/{}".format(regex), TagView),
+        (r"/tags/{}/edit".format(regex), TagEdit),
+        (r"/permissions/grant_tag/{}".format(regex), PermissionsGrantTag),
+        (
+            r"/permissions/{}/revoke_tag/(?P<mapping_id>[0-9]+)".format(PERMISSION_VALIDATION),
+            PermissionsRevokeTag
+        ),
+
     ])
 
 HANDLERS += [

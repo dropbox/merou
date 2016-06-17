@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import account, paginator, format_tag, dropdown with context %}
+
+{% block heading %}
+    Tags
+{% endblock %}
+
+{% block subheading %}
+    {{total}} tag(s)
+{% endblock %}
+
+{% block headingbuttons %}
+    {{ dropdown("limit", limit, [100, 250, 500]) }}
+    {{ paginator(offset, limit, total) }}
+      <button class="btn btn-success" data-toggle="modal" data-target="#createModal">
+          <i class="fa fa-plus"></i> Create
+      </button>
+{% endblock %}
+
+{% block content %}
+    <div class="col-md-10 col-md-offset-1">
+        <table class="table table-elist">
+            <thead>
+                <tr>
+                    <th class="col-sm-2">Tagname</th>
+                    <th class="col-sm-4">Description</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for tag in tags %}
+                <tr>
+                    <td>{{ format_tag(tag) }}</td>
+                    <td>{{tag.description|default("", True)|escape}}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+<div class="modal fade" id="createModal" tabindex="-1" role="dialog"
+      aria-labelledby="createModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                    <span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">Create Group</h4>
+           </div>
+            <div class="modal-body">
+                <form id="createForm" class="form-horizontal" role="form"
+                      method="post" action="/tags">
+                    {% include "forms/tag.html" %}
+            </div>
+            <div class="modal-footer">
+                <button id="formSubmit" type="submit" class="btn btn-primary">
+                    Submit
+                </button>
+            </div>
+                </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+
+<script type="text/javascript">
+    $(function(){
+
+        $("#createModal").on("shown.bs.modal", function(){
+            $("#tagname").focus();
+        });
+        $("#formSubmit").click(function() {
+            $("#createFrom").submit();
+        });
+    });
+</script>
+{% endblock %}

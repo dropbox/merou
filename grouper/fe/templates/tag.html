@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import group_panel, member_panel, tag_permission_panel, log_entry_panel,
+                                help_for, account %}
+
+{% block heading %}
+    <a href="/tags">Tags</a>
+{% endblock %}
+
+{% block headingbuttons %}
+    
+    <!-- If user is an owner of this tag, allow them to add permissions -->
+    {% if is_owner %}
+        <a href="/tags/{{tag.name}}/edit"
+           class="btn btn-primary"><i class="fa fa-edit"></i> Edit</a>
+    {% endif %}
+
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <blockquote><p>
+            <em>{{tag.description|default("&nbsp;", True)|escape}}</em>
+        </p></blockquote>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        {{ tag_permission_panel(390, permissions, tag, can_grant) }}
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        {{ log_entry_panel(390, log_entries) }}
+    </div>
+</div>
+
+{% endblock %}

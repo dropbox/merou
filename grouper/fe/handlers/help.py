@@ -1,4 +1,4 @@
-from grouper.constants import PERMISSION_AUDITOR, PERMISSION_CREATE, PERMISSION_GRANT
+from grouper.constants import PERMISSION_AUDITOR, PERMISSION_CREATE, PERMISSION_GRANT, TAG_EDIT
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
 from grouper.models.permission import Permission
@@ -17,4 +17,5 @@ class Help(GrouperHandler):
                     site_docs=settings.site_docs,
                     grant_perm=d[PERMISSION_GRANT],
                     create_perm=d[PERMISSION_CREATE],
-                    audit_perm=d[PERMISSION_AUDITOR])
+                    audit_perm=d[PERMISSION_AUDITOR],
+                    tag_edit=d[TAG_EDIT])

@@ -11,6 +11,7 @@ from grouper.models.user_token import UserToken
 from grouper.user_metadata import get_user_metadata_by_key, set_user_metadata
 from grouper.user_token import add_new_user_token, disable_user_token
 from url_util import url
+from util import grant_permission
 
 
 @pytest.mark.gen_test

@@ -177,40 +177,40 @@ def get_public_key_tags(session, public_key):
 
 
 def get_public_key_permissions(session, public_key):
-        # type: (Session, PublicKey) -> List[Permission]
-        """Returns the permissions that this public key has. Namely, this the set of permissions
-        that the public key's owner has, intersected with the permissions allowed by this key's
-        tags
+    # type: (Session, PublicKey) -> List[Permission]
+    """Returns the permissions that this public key has. Namely, this the set of permissions
+    that the public key's owner has, intersected with the permissions allowed by this key's
+    tags
 
-        Returns:
-            a list of all permissions this public key has
-        """
-        # TODO: Fix circular dependency
-        from grouper.permissions import permission_intersection
-        my_perms = user_permissions(session, public_key.user)
-        for tag in get_public_key_tags(session, public_key):
-            my_perms = permission_intersection(my_perms,
-                get_public_key_tag_permissions(session, tag))
+    Returns:
+        a list of all permissions this public key has
+    """
+    # TODO: Fix circular dependency
+    from grouper.permissions import permission_intersection
+    my_perms = user_permissions(session, public_key.user)
+    for tag in get_public_key_tags(session, public_key):
+        my_perms = permission_intersection(my_perms,
+            get_public_key_tag_permissions(session, tag))
 
-        return list(my_perms)
+    return list(my_perms)
 
 
 def get_public_key_tag_permissions(session, tag):
-        """Returns the permissions granted to this tag.
+    """Returns the permissions granted to this tag.
 
-        Returns:
-            A list of namedtuple with the id, name, mapping_id, argument, and granted_on for each
-            permission
-        """
-        permissions = session.query(
-            Permission.id,
-            Permission.name,
-            label("mapping_id", TagPermissionMap.id),
-            TagPermissionMap.argument,
-            TagPermissionMap.granted_on,
-        ).filter(
-            TagPermissionMap.permission_id == Permission.id,
-            TagPermissionMap.tag_id == tag.id,
-        ).all()
+    Returns:
+        A list of namedtuple with the id, name, mapping_id, argument, and granted_on for each
+        permission
+    """
+    permissions = session.query(
+        Permission.id,
+        Permission.name,
+        label("mapping_id", TagPermissionMap.id),
+        TagPermissionMap.argument,
+        TagPermissionMap.granted_on,
+    ).filter(
+        TagPermissionMap.permission_id == Permission.id,
+        TagPermissionMap.tag_id == tag.id,
+    ).all()
 
-        return permissions
+    return permissions

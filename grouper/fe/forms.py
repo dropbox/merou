@@ -284,6 +284,7 @@ class UsersUserTokenForm(Form):
 class UserTokenForm(Form):
     name = StringField("Token name", [
         validators.DataRequired(),
+        ValidateRegex(constants.TOKEN_NAME_VALIDATION),
     ])
 
 

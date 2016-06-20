@@ -37,6 +37,7 @@ class GroupView(GrouperHandler):
             'is_member': user_role(self.current_user, members) is not None,
             'role': user_role(self.current_user, members),
             }
+        can_leave = current_user_role['is_member'] and not current_user_role['is_owner']
 
         # Add mapping_id to permissions structure
         my_permissions = group.my_permissions()
@@ -57,5 +58,5 @@ class GroupView(GrouperHandler):
             num_pending=num_pending, alerts=alerts, permissions=permissions,
             log_entries=log_entries, grantable=grantable, audited=audited,
             statuses=AUDIT_STATUS_CHOICES, current_user_role=current_user_role,
-            permission_requests_pending=permission_requests_pending
+            permission_requests_pending=permission_requests_pending, can_leave=can_leave,
         )

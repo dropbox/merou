@@ -53,8 +53,7 @@
            class="btn btn-primary"><i class="fa fa-edit"></i> Edit</a>
     {% endif %}
 
-    <!-- Owners can't leave a group. -->
-    {% if not current_user_role['is_owner'] %}
+    {% if can_leave %}
         <a href="/groups/{{group.name}}/leave"
            class="btn btn-danger"><i class="fa fa-sign-out"></i> Leave</a>
     {% endif %}

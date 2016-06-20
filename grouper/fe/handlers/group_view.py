@@ -34,6 +34,7 @@ class GroupView(GrouperHandler):
             'is_owner': user_role_index(self.current_user, members) in OWNER_ROLE_INDICES,
             'is_approver': user_role_index(self.current_user, members) in APPROVER_ROLE_INDICIES,
             'is_manager': user_role(self.current_user, members) == "manager",
+            'is_member': user_role(self.current_user, members) is not None,
             'role': user_role(self.current_user, members),
             }
 

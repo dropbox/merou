@@ -2,7 +2,7 @@ from grouper.fe.util import Alert, GrouperHandler
 from grouper.graph import NoSuchGroup
 from grouper.model_soup import (APPROVER_ROLE_INDICIES, AUDIT_STATUS_CHOICES,
         Group, OWNER_ROLE_INDICES)
-from grouper.permissions import get_pending_request_by_group
+from grouper.permissions import get_owner_arg_list, get_pending_request_by_group
 from grouper.user import user_role, user_role_index
 from grouper.user_permissions import user_grantable_permissions
 
@@ -26,7 +26,14 @@ class GroupView(GrouperHandler):
         members = group.my_members()
         groups = group.my_groups()
         permissions = group_md.get('permissions', [])
-        permission_requests_pending = get_pending_request_by_group(self.session, group)
+
+        permission_requests_pending = []
+        for req in get_pending_request_by_group(self.session, group):
+            granters = []
+            for owner, argument in get_owner_arg_list(self.session, req.permission, req.argument):
+                granters.append(owner.name)
+            permission_requests_pending.append((req, granters))
+
         audited = group_md.get('audited', False)
         log_entries = group.my_log_entries()
         num_pending = group.my_requests("pending").count()

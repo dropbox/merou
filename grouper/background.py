@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 from threading import Thread
 from time import sleep
@@ -7,10 +7,17 @@ from expvar.stats import stats
 from sqlalchemy import and_
 from sqlalchemy.exc import OperationalError
 
+from grouper.constants import PERMISSION_AUDITOR
 from grouper.email_util import notify_edge_expiration, process_async_emails
-from grouper.model_soup import Group, GroupEdge
+from grouper.graph import Graph
+from grouper.group import get_audited_groups
+from grouper.model_soup import APPROVER_ROLE_INDICIES, Group, GroupEdge
 from grouper.models.base.session import get_db_engine, Session
+from grouper.models.user import User
 from grouper.perf_profile import prune_old_traces
+from grouper.settings import settings
+from grouper.user import user_role_index
+from grouper.user_permissions import user_has_permission
 from grouper.util import get_database_url
 
 
@@ -67,12 +74,45 @@ class BackgroundThread(Thread):
             edge.active = False
             session.commit()
 
+    def expire_nonauditors(self, session):
+        """Checks all enabled audited groups and ensures that all approvers for that group have
+        the PERMISSION_AUDITOR permission. All approvers of audited groups that aren't auditors
+        have their membership in the audited group set to expire
+        settings.nonauditor_expiration_days days in the future.
+
+        Args:
+            session (Session): database session
+        """
+        now = datetime.utcnow()
+        graph = Graph()
+        exp_days = timedelta(days=settings.nonauditor_expiration_days)
+        # Hack to ensure the graph is loaded before we access it
+        graph.update_from_db(session)
+        for group in get_audited_groups(session):
+            members = group.my_members()
+            for (type_, member), edge in members.iteritems():
+                member = User.get(session, name=member)
+                if user_role_index(member, members) not in APPROVER_ROLE_INDICIES:
+                    continue
+                if user_has_permission(session, member, PERMISSION_AUDITOR):
+                    continue
+                if edge.expiration and edge.expiration < now + exp_days:
+                    continue
+                edge = GroupEdge.get(session, id=edge.edge_id)
+                edge.expiration = now + exp_days
+                edge.add(session)
+        # TODO(tyleromeara): Send notifications
+        session.commit()
+
+
     def run(self):
         while True:
             try:
                 session = Session()
                 logging.debug("Expiring edges....")
                 self.expire_edges(session)
+                logging.debug("Expiring nonauditor approvers in audited groups...")
+                self.expire_nonauditors(session)
                 logging.debug("Sending emails...")
                 process_async_emails(self.settings, session, datetime.utcnow())
                 logging.debug("Pruning old traces....")

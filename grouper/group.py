@@ -2,6 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import or_
 
+from grouper.graph import Graph, NoSuchGroup
 from grouper.model_soup import Group, GroupEdge, OWNER_ROLE_INDICES
 
 
@@ -18,6 +19,36 @@ def get_all_groups(session):
         a list of all Group objects in the database
     """
     return session.query(Group).filter(Group.enabled == True)
+
+
+def get_audited_groups(session):
+    # type: (Session) -> List[Group]
+    """Returns all audited enabled groups.
+
+    At present, this is not cached at all and returns the full list of
+    groups from the database each time it's called.
+
+    Args:
+        session (Session): Session to load data on.
+
+    Returns:
+        a list of all enabled and audited Group objects in the database
+    """
+    audited_groups = []
+    graph = Graph()
+    for group in get_all_groups(session):
+        try:
+            group_md = graph.get_group_details(group.name)
+        except NoSuchGroup:
+            # Very new group with no metadata yet, or it has been disabled and
+            # excluded from in-memory cache.
+            group_md = {}
+
+        audited = group_md.get('audited', False)
+        if audited:
+            audited_groups.append(group)
+
+    return audited_groups
 
 
 def get_groups_by_user(session, user):

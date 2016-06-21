@@ -8,7 +8,8 @@ from sqlalchemy import and_
 from sqlalchemy.exc import OperationalError
 
 from grouper.constants import PERMISSION_AUDITOR
-from grouper.email_util import notify_edge_expiration, process_async_emails
+from grouper.email_util import (notify_edge_expiration, notify_nonauditor_flagged,
+    process_async_emails)
 from grouper.graph import Graph
 from grouper.group import get_audited_groups
 from grouper.model_soup import APPROVER_ROLE_INDICIES, Group, GroupEdge
@@ -101,7 +102,7 @@ class BackgroundThread(Thread):
                 edge = GroupEdge.get(session, id=edge.edge_id)
                 edge.expiration = now + exp_days
                 edge.add(session)
-        # TODO(tyleromeara): Send notifications
+                notify_nonauditor_flagged(settings, session, edge)
         session.commit()
 
 

@@ -256,3 +256,56 @@ def notify_edge_expiration(settings, session, edge):
         settings=settings,
         context=email_context,
     )
+
+
+def notify_nonauditor_flagged(settings, session, edge):
+    """Send notification that a nonauditor in an audited group has had their membership
+    set to expire.
+
+    Handles email notification and audit logging.
+
+    Args:
+        settings (Settings): Grouper Settings object for current run.
+        session (Session): Object for db session.
+        edge (GroupEdge): The expiring edge.
+    """
+    # TODO(herb): get around circular depdendencies; long term remove call to
+    # send_async_email() from grouper.models
+    from grouper.model_soup import Group
+    from grouper.models.base.constants import OBJ_TYPES_IDX
+    from grouper.models.user import User
+
+    # TODO(rra): Arbitrarily use the first listed owner of the group from which membership expired
+    # as the actor, since we have to provide an actor and we didn't record who set the expiration on
+    # the edge originally.
+    actor_id = next(edge.group.my_owners().itervalues()).id
+
+    # Pull data about the edge and the affected user or group.
+    group_name = edge.group.name
+    assert OBJ_TYPES_IDX[edge.member_type] == "User"
+    user = User.get(session, pk=edge.member_pk)
+    member_name = user.username
+    recipients = [member_name]
+
+    # Log to the audit log.  How depends on whether a user's membership has expired or a group's
+    # membership has expired.
+    audit_data = {
+        "action": "nonauditor_flagged",
+        "actor_id": actor_id,
+        "description": "{} flagged as not an auditor in an audited group, set to expire".format(member_name),
+    }
+    AuditLog.log(session, on_user_id=user.id, on_group_id=edge.group_id, **audit_data)
+
+    # Send email notification to the affected people.
+    email_context = {
+        "group_name": group_name,
+        "member_name": member_name,
+    }
+    send_email(
+        session=session,
+        recipients=recipients,
+        subject="Membership in {} set to expire".format(group_name),
+        template="nonauditor",
+        settings=settings,
+        context=email_context,
+    )

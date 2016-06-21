@@ -36,8 +36,10 @@ class DbRefreshThread(Thread):
                 Session.configure(bind=get_db_engine(get_database_url(self.settings)))
                 logging.critical("Failed to connect to database.")
                 stats.set_gauge("successful-db-update", 0)
+                stats.set_gauge("failed-db-update", 1)
                 self.capture_exception()
             except:
                 stats.set_gauge("successful-db-update", 0)
+                stats.set_gauge("failed-db-update", 1)
                 self.capture_exception()
                 raise

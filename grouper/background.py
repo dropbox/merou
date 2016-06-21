@@ -84,9 +84,11 @@ class BackgroundThread(Thread):
                 Session.configure(bind=get_db_engine(get_database_url(self.settings)))
                 logging.critical("Failed to connect to database.")
                 stats.set_gauge("successful-background-run", 0)
+                stats.set_gauge("failed-background-run", 1)
                 self.capture_exception()
             except:
                 stats.set_gauge("successful-background-run", 0)
+                stats.set_gauge("failed-background-run", 1)
                 self.capture_exception()
                 raise
             sleep(60)

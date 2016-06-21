@@ -14,8 +14,8 @@ USERNAME_VALIDATION = r"(?P<name>\w+@\w+\.\w+)"
 
 # UserToken validators
 TOKEN_SECRET_VALIDATION = r"(?P<token_secret>[a-f0-9]{40})"
-TOKEN_NAME_VALIDATION = r"/(?P<token_name>[A-Za-z0-9]+)"
-TOKEN_FORMAT = r"^{}{}:{}$".format(
+TOKEN_NAME_VALIDATION = r"(?P<token_name>[A-Za-z0-9]+)"
+TOKEN_FORMAT = r"^{}/{}:{}$".format(
     USERNAME_VALIDATION,
     TOKEN_NAME_VALIDATION,
     TOKEN_SECRET_VALIDATION,

@@ -38,9 +38,9 @@
         {% endif %}
     </div>
 
-    <!-- Show the join button if the user isn't already a member and the group
-         isn't invite-only. -->
-    {% if not current_user_role['is_member'] and group.canjoin != "nobody" %}
+    <!-- Show the join button if the user isn't an approver (since they can directly add)
+         and the group isn't invite-only. -->
+    {% if not current_user_role['is_approver'] and group.canjoin != "nobody" %}
     <a href="/groups/{{group.name}}/join"
        class="btn btn-success"><i class="fa fa-user"></i> Join</a>
     {% endif %}

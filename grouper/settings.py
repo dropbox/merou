@@ -62,6 +62,7 @@ class Settings(object):
                     stats.set_gauge("successful-config-update", 1)
                 except (IOError, yaml.parser.ParserError):
                     stats.set_gauge("successful-config-update", 0)
+                    stats.set_gauge("failed-config-update", 1)
         thread = threading.Thread(target=refresh_config_loop)
         thread.daemon = True
         thread.start()

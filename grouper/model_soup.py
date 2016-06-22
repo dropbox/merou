@@ -823,8 +823,7 @@ class GroupEdge(Model):
                                                     member_name=member_name,
                                                     recipients=[recipient])
 
-    def apply_changes(self, request):
-        changes = json.loads(request.changes)
+    def apply_changes_dict(self, changes):
         for key, value in changes.items():
             if key == 'expiration':
                 group_name = self.group.name
@@ -860,6 +859,10 @@ class GroupEdge(Model):
                     setattr(self, key, None)
             else:
                 setattr(self, key, value)
+
+    def apply_changes(self, request):
+        changes = json.loads(request.changes)
+        return self.apply_changes_dict(changes)
 
     def __repr__(self):
         return "%s(group_id=%s, member_type=%s, member_pk=%s)" % (

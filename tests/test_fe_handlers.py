@@ -114,6 +114,22 @@ def test_usertokens(session, users, http_client, base_url):
     assert resp.code == 200
     assert "Disabled token: myFoobarToken" in resp.body
 
+    # Add invalid token
+    fe_url = url(base_url, '/users/{}/tokens/add'.format(user.username))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'name': 'my_Foobar_Token'}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    # Verify noadd
+    fe_url = url(base_url, '/users/{}'.format(user.username))
+    resp = yield http_client.fetch(fe_url, method="GET",
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+    assert "Added token: my_Foobar_Token" not in resp.body
+
+
+
 @pytest.mark.gen_test
 def test_request_emails(graph, groups, permissions, session, standard_graph, users, base_url,
                         http_client):

@@ -110,7 +110,7 @@ def user_role_index(user, members):
 
 def user_role(user, members):
     role_index = user_role_index(user, members)
-    if not role_index:
+    if role_index is None:
         return None
     else:
         return GROUP_EDGE_ROLES[role_index]

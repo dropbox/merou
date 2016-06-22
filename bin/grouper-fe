@@ -18,8 +18,9 @@ from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import load_plugins
-from grouper.util import get_loglevel, get_database_url
 from grouper.settings import default_settings_path
+from grouper.thread_watchdog import start_watchdog
+from grouper.util import get_loglevel, get_database_url
 
 
 try:
@@ -109,6 +110,11 @@ def main(argv):
     refresher = DbRefreshThread(settings, graph, settings.refresh_interval, sentry_client)
     refresher.daemon = True
     refresher.start()
+
+    threads = [
+            ('database/graph', refresher),
+            ]
+    start_watchdog(threads, sentry_client, settings.watchdog_wake_frequency_ms)
 
     address = args.address or settings.address
     port = args.port or settings.port

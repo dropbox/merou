@@ -89,22 +89,28 @@ class BackgroundThread(Thread):
         exp_days = timedelta(days=settings.nonauditor_expiration_days)
         # Hack to ensure the graph is loaded before we access it
         graph.update_from_db(session)
-        for group in get_audited_groups(session):
+        for group in get_audited_groups(session):  # TODO(tyleromeara): replace with graph call
             members = group.my_members()
             for (type_, member), edge in members.iteritems():
+                # Auditing is already inherited, so we don't need to handle that here
+                if type_ == "Group":
+                    continue
                 member = User.get(session, name=member)
                 if user_role_index(member, members) not in APPROVER_ROLE_INDICIES:
                     continue
                 if user_has_permission(session, member, PERMISSION_AUDITOR):
                     continue
+                edge = GroupEdge.get(session, id=edge.edge_id)
                 if edge.expiration and edge.expiration < now + exp_days:
                     continue
-                edge = GroupEdge.get(session, id=edge.edge_id)
-                edge.expiration = now + exp_days
+                exp = now + exp_days
+                exp = exp.date()
+                edge.apply_changes_dict(
+                    {"expiration": "{}/{}/{}".format(exp.month, exp.day, exp.year)}
+                )
                 edge.add(session)
                 notify_nonauditor_flagged(settings, session, edge)
         session.commit()
-
 
     def run(self):
         while True:

@@ -25,6 +25,8 @@ class DbRefreshThread(Thread):
     def run(self):
         while True:
             sleep(self.refresh_interval)
+            sleep(5)
+            break
 
             logging.debug("Updating Graph from Database.")
             try:

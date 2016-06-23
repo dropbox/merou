@@ -83,10 +83,6 @@ def main(argv):
     Session.configure(bind=get_db_engine(get_database_url(settings)))
 
     logging.info("Initilializing graph data.")
-    session = Session()
-    graph = Graph()
-    graph.update_from_db(session)
-    session.close()
 
     my_settings = {
         "db_session": Session,
@@ -106,6 +102,7 @@ def main(argv):
 
     application.sentry_client = sentry_client
 
+    graph = Graph()
     refresher = DbRefreshThread(settings, graph, settings.refresh_interval, sentry_client)
     refresher.daemon = True
     refresher.start()

@@ -53,6 +53,7 @@ class Settings(object):
         """
         assert not self._loading_thread_started, "start_config_thread called twice!"
         self._update_from_config(filename, section=section)
+        stats.set_gauge("successful-config-update", 1)
 
         def refresh_config_loop():
             while True:

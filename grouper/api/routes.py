@@ -1,5 +1,13 @@
-from .handlers import Groups, NotFound, Permissions, Stats, TokenValidate, Users, UsersPublicKeys
-from ..constants import NAME_VALIDATION, PERMISSION_VALIDATION
+from grouper.api.handlers import (
+        Groups,
+        NotFound,
+        Permissions,
+        TokenValidate,
+        Users,
+        UsersPublicKeys,
+        )
+from grouper.constants import NAME_VALIDATION, PERMISSION_VALIDATION
+from grouper.handlers.stats import Stats
 
 HANDLERS = [
 

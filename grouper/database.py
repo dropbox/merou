@@ -24,8 +24,6 @@ class DbRefreshThread(Thread):
 
     def run(self):
         while True:
-            sleep(self.refresh_interval)
-
             logging.debug("Updating Graph from Database.")
             try:
                 session = Session()
@@ -43,3 +41,5 @@ class DbRefreshThread(Thread):
                 stats.set_gauge("failed-db-update", 1)
                 self.capture_exception()
                 raise
+
+            sleep(self.refresh_interval)

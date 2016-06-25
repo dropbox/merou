@@ -121,6 +121,10 @@ fe:
     shell:
         - [/bin/false, Your administrator has not configured Grouper for shell management]
 
+    # Time in milliseconds to check health of background threads.
+    # Type: int
+    watchdog_wake_frequency_ms: 5000
+
 api:
     # The port to listen to requests on.
     # Type: int
@@ -148,3 +152,7 @@ api:
     # port if one is needed.
     # Type: str
     url: "http://127.0.0.1:8888"
+
+    # Time in milliseconds to check health of background threads.
+    # Type: int
+    watchdog_wake_frequency_ms: 5000

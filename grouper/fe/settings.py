@@ -30,4 +30,5 @@ settings = FeSettings.from_settings(base_settings, {
     "timezone": FeSettings.default_timezone,
     "url": "http://127.0.0.1:8888",
     "user_auth_header": "X-Grouper-User",
+    "watchdog_wake_frequency_ms": 5000,
 })

@@ -3,9 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from grouper.fe.forms import ServiceAccountCreateForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import Group
-from grouper.models.audit_log import AuditLog
-from grouper.models.user import User
+from grouper.service_account import create_service_account
 
 
 class ServiceAccountCreate(GrouperHandler):
@@ -35,39 +33,16 @@ class ServiceAccountCreate(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors)
             )
 
-        user = User(username=form.data["name"], role_user=True)
-        group = Group(groupname=form.data["name"], description=form.data["description"],
-            canjoin=form.data["canjoin"])
-
         try:
-            user.add(self.session)
-            self.session.flush()
+            create_service_account(self.session, self.current_user, form.data["name"],
+                form.data["description"], form.data["canjoin"])
         except IntegrityError:
             self.session.rollback()
-            form.name.errors.append("A user with name {} already exists".format(form.data["name"]))
+            form.name.errors.append("A user or group with name {} already exists"
+                                    .format(form.data["name"]))
             return self.render(
                 "service-account-create.html", form=form,
                 alerts=self.get_form_alerts(form.errors)
             )
 
-        try:
-            group.add(self.session)
-            self.session.flush()
-        except IntegrityError:
-            self.session.rollback()
-            form.name.errors.append("A group with name {} already exists".format(form.data["name"]))
-            return self.render(
-                "service-account-create.html", form=form,
-                alerts=self.get_form_alerts(form.errors)
-            )
-
-        group.add_member(self.current_user, self.current_user, "Group Creator",
-            "actioned", None, "np-owner")
-        group.add_member(self.current_user, user, "Service Account",
-            "actioned", None, "member")
-        self.session.commit()
-
-        AuditLog.log(self.session, self.current_user.id, 'create_group',
-                     'Created new service account.', on_group_id=group.id)
-
-        return self.redirect("/groups/{}?refresh=yes".format(group.name))
+        return self.redirect("/service/{}?refresh=yes".format(form.data["name"]))

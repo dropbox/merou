@@ -113,8 +113,8 @@ def test_sa_pubkeys(session, users, http_client, base_url):
     assert g is not None
     assert is_service_account(session, user=u)
     assert is_service_account(session, group=g)
-    assert get_service_account(session, user=u)["group"].id == g.id
-    assert get_service_account(session, group=g)["user"].id == u.id
+    assert get_service_account(session, user=u).group.id == g.id
+    assert get_service_account(session, group=g).user.id == u.id
     assert not is_service_account(session, user=user)
     assert not is_service_account(session, group=Group.get(session, name="team-sre"))
 
@@ -248,8 +248,8 @@ def test_sa_tokens(session, users, http_client, base_url):
     assert g is not None
     assert is_service_account(session, user=u)
     assert is_service_account(session, group=g)
-    assert get_service_account(session, user=u)["group"].id == g.id
-    assert get_service_account(session, group=g)["user"].id == u.id
+    assert get_service_account(session, user=u).group.id == g.id
+    assert get_service_account(session, group=g).user.id == u.id
     assert not is_service_account(session, user=user)
     assert not is_service_account(session, group=Group.get(session, name="team-sre"))
 
@@ -536,8 +536,8 @@ def test_add_service_account(session, users, http_client, base_url):
     assert g is not None
     assert is_service_account(session, user=u)
     assert is_service_account(session, group=g)
-    assert get_service_account(session, user=u)["group"].id == g.id
-    assert get_service_account(session, group=g)["user"].id == u.id
+    assert get_service_account(session, user=u).group.id == g.id
+    assert get_service_account(session, group=g).user.id == u.id
     assert not is_service_account(session, user=user)
     assert not is_service_account(session, group=Group.get(session, name="team-sre"))
 
@@ -570,8 +570,8 @@ def test_disable_service_account(session, users, http_client, base_url):
     assert g is not None
     assert is_service_account(session, user=u)
     assert is_service_account(session, group=g)
-    assert get_service_account(session, user=u)["group"].id == g.id
-    assert get_service_account(session, group=g)["user"].id == u.id
+    assert get_service_account(session, user=u).group.id == g.id
+    assert get_service_account(session, group=g).user.id == u.id
     assert not is_service_account(session, user=user)
     assert not is_service_account(session, group=Group.get(session, name="team-sre"))
 

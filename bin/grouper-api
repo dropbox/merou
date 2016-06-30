@@ -14,7 +14,7 @@ from grouper.api.settings import settings
 from grouper.app import Application
 from grouper.background import BackgroundThread
 from grouper.database import DbRefreshThread
-from grouper.graph import GroupGraph
+from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import load_plugins
 from grouper.settings import default_settings_path
@@ -65,22 +65,7 @@ def main(argv):
             sys.exit(1)
         load_plugins(settings.plugin_dir, service_name="grouper-api")
 
-    tornado_settings = {
-        "debug": settings.debug,
-    }
-
     Session.configure(bind=get_db_engine(get_database_url(settings)))
-
-    logging.info("Initilializing graph data.")
-    session = Session()
-    graph = GroupGraph.from_db(session)
-    session.close()
-
-    my_settings = {
-        "graph": graph,
-    }
-
-    application = Application(HANDLERS, my_settings=my_settings, **tornado_settings)
 
     sentry_client = None
     if settings.sentry_dsn:
@@ -91,7 +76,7 @@ def main(argv):
             logging.info("enabling sentry")
             sentry_client = AsyncSentryClient(settings.sentry_dsn)
 
-    application.sentry_client = sentry_client
+    graph = Graph()
 
     refresher = DbRefreshThread(settings, graph, settings.refresh_interval, sentry_client)
     refresher.daemon = True
@@ -100,6 +85,16 @@ def main(argv):
     background = BackgroundThread(settings, sentry_client)
     background.daemon = True
     background.start()
+
+    my_settings = {
+        "graph": graph,
+    }
+    tornado_settings = {
+        "debug": settings.debug,
+    }
+
+    application = Application(HANDLERS, my_settings=my_settings, **tornado_settings)
+    application.sentry_client = sentry_client
 
     address = args.address or settings.address
     port = args.port or settings.port

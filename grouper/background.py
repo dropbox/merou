@@ -91,4 +91,5 @@ class BackgroundThread(Thread):
                 stats.set_gauge("failed-background-run", 1)
                 self.capture_exception()
                 raise
+
             sleep(60)

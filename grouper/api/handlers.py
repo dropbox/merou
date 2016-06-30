@@ -223,13 +223,6 @@ class TokenValidate(GraphHandler):
         })
 
 
-# Don't use GraphHandler here as we don't want to count
-# these as requests.
-class Stats(RequestHandler):
-    def get(self):
-        return self.write(stats.to_dict())
-
-
 class NotFound(GraphHandler):
     def get(self):
         return self.notfound("Endpoint not found")

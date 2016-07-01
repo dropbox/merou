@@ -15,7 +15,7 @@ common:
     # Format for logging output.
     # See https://docs.python.org/2/library/logging.html#logrecord-attributes
     # Type: str
-    log_format: "%(asctime)-15s\t%(levelname)s\t%(message)s"
+    log_format: "%(asctime)-15s\t%(levelname)s\t%(message)s  [%(name)s]"
 
     # Directory for plugins. If set, load plugins from this directory. Plugins can affect the
     # behavior of Grouper.

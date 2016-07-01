@@ -12,96 +12,59 @@ import tornado.ioloop
 
 from grouper.app import Application
 from grouper.database import DbRefreshThread
+from grouper.error_reporting import get_sentry_client, SentryProxy, setup_signal_handlers
 import grouper.fe
 from grouper.fe.routes import HANDLERS
-from grouper.fe.settings import settings
+from grouper.fe.settings import Settings, settings
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import load_plugins
-from grouper.util import get_loglevel, get_database_url
 from grouper.settings import default_settings_path
+from grouper.setup import parse_args, setup_logging
+from grouper.util import get_loglevel, get_database_url
 
 
-try:
-    from raven.contrib.tornado import AsyncSentryClient
-    raven_installed = True
-except ImportError:
-    raven_installed = False
-
-sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
-
-
-def main(argv):
-
-    parser = argparse.ArgumentParser(description="Grouper Web Server.")
-    parser.add_argument("-c", "--config", default=default_settings_path(),
-                        help="Path to config file.")
-    parser.add_argument("-v", "--verbose", action="count", default=0,
-                        help="Increase logging verbosity.")
-    parser.add_argument("-q", "--quiet", action="count", default=0,
-                        help="Decrease logging verbosity.")
-    parser.add_argument("-V", "--version", action="version",
-                        version="%%(prog)s %s" % grouper.__version__,
-                        help="Display version information.")
-    parser.add_argument("-a", "--address", type=str, default=None,
-                        help="Override address in config.")
-    parser.add_argument("-p", "--port", type=int, default=None,
-                        help="Override port in config.")
-    parser.add_argument("-n", "--deployment-name", type=str, default="",
-                        help="Name of the deployment.")
-
-    args = parser.parse_args()
-    settings.start_config_thread(args.config, "fe")
-
-    if settings.debug and settings.num_processes > 1:
-        logging.fatal("Debug mode does not support multiple processes.")
-        sys.exit(1)
-
-    if settings.plugin_dir:
-        if not os.path.exists(settings.plugin_dir):
-            logging.fatal("Plugin directory does not exist")
-            sys.exit(1)
-        load_plugins(settings.plugin_dir, service_name="grouper-fe")
-
-    log_level = get_loglevel(args)
-    logging.basicConfig(
-        level=log_level,
-        format=settings.log_format,
-    )
-
-    if log_level < 0:
-        sa_log.setLevel(logging.INFO)
-
+def get_application(db_session_cls, settings, sentry_client, deployment_name):
+    # type: (Session, Settings, SentryProxy, str) -> Application
     tornado_settings = {
         "static_path": os.path.join(os.path.dirname(grouper.fe.__file__), "static"),
         "debug": settings.debug,
         "xsrf_cookies": True,
     }
 
-    template_env = get_template_env(deployment_name=args.deployment_name)
-
-    Session.configure(bind=get_db_engine(get_database_url(settings)))
-
-    logging.info("Initilializing graph data.")
-
     my_settings = {
         "db_session": Session,
-        "template_env": template_env,
+        "template_env": get_template_env(deployment_name=deployment_name),
     }
 
     application = Application(HANDLERS, my_settings=my_settings, **tornado_settings)
-
-    sentry_client = None
-    if settings.sentry_dsn:
-        logging.info("sentry DSN set")
-        if not raven_installed:
-            logging.warning("raven not installed, not enabling sentry")
-        else:
-            logging.info("enabling sentry")
-            sentry_client = AsyncSentryClient(settings.sentry_dsn)
-
     application.sentry_client = sentry_client
+
+    return application
+
+
+def main(args, sentry_client):
+    # type: (argparse.Namespace, SentryProxy) -> None
+
+    log_level = logging.getLevelName(logging.getLogger().level)
+    logging.info("begin. log_level={}".format(log_level))
+
+    assert not (settings.debug and settings.num_processes > 1), \
+            "debug mode does not support multiple processes"
+
+    if settings.plugin_dir:
+        logging.debug("loading plugins from {}".format(settings.plugin_dir))
+        assert os.path.exists(settings.plugin_dir), "Plugin directory does not exist"
+        load_plugins(settings.plugin_dir, service_name="grouper_api")
+
+    # setup database
+    logging.debug("configure database session")
+    Session.configure(bind=get_db_engine(get_database_url(settings)))
+
+    application = get_application(Session, settings, sentry_client, args.deployment_name)
+
+    settings.start_config_thread(args.config, "fe")
 
     with closing(Session()) as session:
         graph = Graph()
@@ -130,4 +93,27 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    setup_signal_handlers()
+    try:
+        # get arguments
+        parser = argparse.ArgumentParser(description="Grouper Web Server.")
+        args = parse_args(parser, default_settings_path())
+
+        # load settings
+        settings.update_from_config(args.config, "fe")
+
+        # setup logging
+        setup_logging(args, settings.log_format)
+
+        # setup sentry
+        sentry_client = get_sentry_client(settings.sentry_dsn)
+    except:
+        logging.exception('uncaught exception in startup')
+        sys.exit(1)
+
+    try:
+        main(args, sentry_client)
+    except:
+        sentry_client.captureException()
+    finally:
+        logging.info("end")

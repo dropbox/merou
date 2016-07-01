@@ -16,6 +16,7 @@ class DbRefreshThread(Thread):
         self.graph = graph
         self.refresh_interval = refresh_interval
         self.sentry_client = sentry_client
+        self.logger = logging.getLogger(__name__)
         Thread.__init__(self, *args, **kwargs)
 
     def capture_exception(self):
@@ -24,7 +25,7 @@ class DbRefreshThread(Thread):
 
     def run(self):
         while True:
-            logging.debug("Updating Graph from Database.")
+            self.logger.debug("Updating Graph from Database.")
             try:
                 session = Session()
                 self.graph.update_from_db(session)
@@ -32,7 +33,7 @@ class DbRefreshThread(Thread):
                 stats.set_gauge("successful-db-update", 1)
             except OperationalError:
                 Session.configure(bind=get_db_engine(get_database_url(self.settings)))
-                logging.critical("Failed to connect to database.")
+                self.logger.critical("Failed to connect to database.")
                 stats.set_gauge("successful-db-update", 0)
                 stats.set_gauge("failed-db-update", 1)
                 self.capture_exception()

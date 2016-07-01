@@ -71,6 +71,7 @@ def standard_graph(session, graph, users, groups, permissions):
     add_member(groups["team-sre"], users["zay@a.co"])
     add_member(groups["team-sre"], users["zorkian@a.co"])
     grant_permission(groups["team-sre"], permissions["ssh"], argument="*")
+    grant_permission(groups["team-sre"], permissions["team-sre"], argument="*")
 
     add_member(groups["serving-team"], users["zorkian@a.co"], role="owner")
     add_member(groups["serving-team"], groups["team-sre"])
@@ -162,7 +163,7 @@ def permissions(session, users):
     permissions = {
         permission: Permission.get_or_create(
             session, name=permission, description="{} permission".format(permission))[0]
-        for permission in ("ssh", "sudo", "audited", AUDIT_MANAGER, PERMISSION_AUDITOR)
+        for permission in ("ssh", "sudo", "audited", AUDIT_MANAGER, PERMISSION_AUDITOR, "team-sre")
     }
 
     enable_permission_auditing(session, permissions["audited"].name, users['zorkian@a.co'].id)

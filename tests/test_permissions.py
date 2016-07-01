@@ -62,18 +62,18 @@ def test_basic_permission(standard_graph, session, users, groups, permissions): 
 
     graph = standard_graph  # noqa
 
-    assert sorted(get_group_permissions(graph, "team-sre")) == ["audited:", "ssh:*", "sudo:shell"]
+    assert sorted(get_group_permissions(graph, "team-sre")) == ["audited:", "ssh:*", "sudo:shell", "team-sre:*"]
     assert sorted(get_group_permissions(graph, "tech-ops")) == [
         "audited:", "ssh:shell", "sudo:shell"]
     assert sorted(get_group_permissions(graph, "team-infra")) == ["sudo:shell"]
     assert sorted(get_group_permissions(graph, "all-teams")) == []
 
     assert sorted(get_user_permissions(graph, "gary@a.co")) == [
-        "audited:", "ssh:*", "ssh:shell", "sudo:shell"]
+        "audited:", "ssh:*", "ssh:shell", "sudo:shell", "team-sre:*"]
     assert sorted(get_user_permissions(graph, "zay@a.co")) == [
-        "audited:", "ssh:*", "ssh:shell", "sudo:shell"]
+        "audited:", "ssh:*", "ssh:shell", "sudo:shell", "team-sre:*"]
     assert sorted(get_user_permissions(graph, "zorkian@a.co")) == [
-        "audited:", AUDIT_MANAGER + ":", PERMISSION_AUDITOR + ":", "ssh:*", "sudo:shell"]
+        "audited:", AUDIT_MANAGER + ":", PERMISSION_AUDITOR + ":", "ssh:*", "sudo:shell", "team-sre:*"]
     assert sorted(get_user_permissions(graph, "testuser@a.co")) == []
     assert sorted(get_user_permissions(graph, "figurehead@a.co")) == [
         "sudo:shell"]

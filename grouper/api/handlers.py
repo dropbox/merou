@@ -187,7 +187,6 @@ class Permissions(GraphHandler):
             details = self.graph.get_permission_details(name)
 
             out = {"permission": {"name": name}}
-            try_update(out["permission"], self.graph.permission_metadata.get(name, {}))
             try_update(out, details)
             return self.success(out)
 

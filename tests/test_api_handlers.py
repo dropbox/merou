@@ -7,6 +7,7 @@ import pytest
 from fixtures import api_app as app  # noqa
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from grouper.constants import USER_METADATA_SHELL_KEY
+from grouper.models.permission import Permission
 from grouper.models.user_token import UserToken
 from grouper.user_metadata import get_user_metadata_by_key, set_user_metadata
 from grouper.user_token import add_new_user_token, disable_user_token
@@ -130,7 +131,7 @@ def test_usertokens(users, session, http_client, base_url):
 
 
 @pytest.mark.gen_test
-def test_permissions(permissions, http_client, base_url):
+def test_permissions(permissions, http_client, base_url, session, graph):
     api_url = url(base_url, '/permissions')
     resp = yield http_client.fetch(api_url)
     body = json.loads(resp.body)
@@ -138,6 +139,13 @@ def test_permissions(permissions, http_client, base_url):
     assert resp.code == 200
     assert body["status"] == "ok"
     assert sorted(body["data"]["permissions"]) == sorted(permissions)
+
+    api_url = url(base_url, '/permissions/{}'.format("team-sre"))
+    resp = yield http_client.fetch(api_url)
+    body = json.loads(resp.body)
+
+    assert resp.code == 200
+    assert body["status"] == "ok"
 
 
 @pytest.mark.gen_test

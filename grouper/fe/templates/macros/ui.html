@@ -394,10 +394,10 @@ enabled. Membership in this group is regularly reviewed.
                     <tr>
                         <td>
                             <i class="text-muted fa fa-question-circle hidden-xs" title="pending"></i>
-                            <i class="text-muted">{{ request.permission.name }}</i>
+                            <i class="text-muted">{{ request[0].permission.name }}</i>
                         </td>
-                        <td><i class="text-muted">{{ request.argument }}</i></td>
-                        <td><i class="text-muted">(direct)</i></td>
+                        <td><i class="text-muted">{{ request[0].argument }}</i></td>
+                        <td><i class="text-muted">{{ ", ".join(request[1]) }}</i></td>
                         <td><i class="text-muted">--</i></td>
                         <td>&nbsp;</td>
                     </tr>

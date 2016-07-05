@@ -43,6 +43,11 @@ common:
     # Type: str
     from_addr: "no-reply@grouper.local"
 
+    # Number of days for approvers of audited groups who are not auditors to become auditors
+    # before being expired out of the group
+    # Type: int
+    nonauditor_expiration_days: 5
+
     # Url is the location of the Grouper homepage, no trailing slash. This should include a
     # port if one is needed.
     # Type: str

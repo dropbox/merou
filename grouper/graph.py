@@ -481,7 +481,6 @@ class GroupGraph(object):
                         "distance": len(path) - 1,
                         "path": [elem[1] for elem in path],
                     })
-
             for permission in self.permission_metadata.get(groupname, []):
                 if show_permission is not None and permission.permission != show_permission:
                     continue

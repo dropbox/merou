@@ -92,6 +92,7 @@ settings = Settings({
     "database": None,
     "database_source": None,
     "expiration_notice_days": 7,
+    "nonauditor_expiration_days": 5,
     "from_addr": "no-reply@grouper.local",
     "log_format": "%(asctime)-15s\t%(levelname)s\t%(message)s",
     "oneoff_dir": None,

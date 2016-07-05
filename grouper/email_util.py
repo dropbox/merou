@@ -6,6 +6,8 @@ import smtplib
 
 from grouper.fe.template_util import get_template_env
 from grouper.models.audit_log import AuditLog
+from grouper.models.base.constants import OBJ_TYPES_IDX
+from grouper.models.user import User
 
 
 def send_email(session, recipients, subject, template, settings, context):
@@ -253,6 +255,45 @@ def notify_edge_expiration(settings, session, edge):
         recipients=recipients,
         subject="Membership in {} expired".format(group_name),
         template="expiration",
+        settings=settings,
+        context=email_context,
+    )
+
+
+def notify_nonauditor_flagged(settings, session, edge):
+    """Send notification that a nonauditor in an audited group has had their membership
+    set to expire.
+
+    Handles email notification and audit logging.
+
+    Args:
+        settings (Settings): Grouper Settings object for current run.
+        session (Session): Object for db session.
+        edge (GroupEdge): The expiring edge.
+    """
+    # Pull data about the edge and the affected user
+    group_name = edge.group.name
+    assert OBJ_TYPES_IDX[edge.member_type] == "User"
+    user = User.get(session, pk=edge.member_pk)
+    member_name = user.username
+    recipients = [member_name]
+
+    audit_data = {
+        "action": "nonauditor_flagged",
+        "actor_id": user.id,
+        "description": "Flagged {} as nonauditor approver in audited group".format(member_name),
+    }
+    AuditLog.log(session, on_user_id=user.id, on_group_id=edge.group_id, **audit_data)
+
+    email_context = {
+        "group_name": group_name,
+        "member_name": member_name,
+    }
+    send_email(
+        session=session,
+        recipients=recipients,
+        subject="Membership in {} set to expire".format(group_name),
+        template="nonauditor",
         settings=settings,
         context=email_context,
     )

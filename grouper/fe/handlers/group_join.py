@@ -1,6 +1,5 @@
 from datetime import datetime
 
-from grouper import group as group_biz
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.email_util import send_email
 from grouper.fe.forms import GroupJoinForm
@@ -14,6 +13,7 @@ from grouper.model_soup import (
         )
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
+from grouper.user_group import get_groups_by_user
 
 
 class GroupJoin(GrouperHandler):
@@ -149,7 +149,7 @@ class GroupJoin(GrouperHandler):
                 ("User: {}".format(self.current_user.name), ) * 2
             )
 
-        for _group, group_edge in group_biz.get_groups_by_user(self.session, self.current_user):
+        for _group, group_edge in get_groups_by_user(self.session, self.current_user):
             if group.name == _group.name:  # Don't add self.
                 continue
             if group_edge._role not in APPROVER_ROLE_INDICIES:  # manager, owner, and np-owner only.

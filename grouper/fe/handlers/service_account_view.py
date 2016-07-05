@@ -1,4 +1,3 @@
-from grouper import group as group_biz
 from grouper.constants import USER_METADATA_SHELL_KEY
 from grouper.fe.handlers.user_disable import UserDisable
 from grouper.fe.handlers.user_enable import UserEnable
@@ -10,6 +9,7 @@ from grouper.permissions import get_pending_request_by_group
 from grouper.public_key import get_public_keys_of_user
 from grouper.service_account import can_manage_service_account
 from grouper.user import get_log_entries_by_user, user_role, user_role_index
+from grouper.user_group import get_groups_by_user
 from grouper.user_metadata import get_user_metadata_by_key
 from grouper.user_permissions import user_grantable_permissions
 
@@ -47,7 +47,7 @@ class ServiceAccountView(GrouperHandler):
 
         grantable = user_grantable_permissions(self.session, self.current_user)
         members = group.my_members()
-        group_edge_list = group_biz.get_groups_by_user(self.session, user) if user.enabled else []
+        group_edge_list = get_groups_by_user(self.session, user) if user.enabled else []
         groups = [{'name': g.name, 'type': 'Group', 'role': ge._role} for g, ge in group_edge_list]
         public_keys = get_public_keys_of_user(self.session, user.id)
         permissions = user_md.get('permissions', [])

@@ -2,11 +2,11 @@ from sqlalchemy.exc import IntegrityError
 
 from grouper.fe.forms import GroupEditForm
 from grouper.fe.util import GrouperHandler
-from grouper.group import user_can_manage_group
 from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
 from grouper.models.counter import Counter
 from grouper.service_account import is_service_account
+from grouper.user_group import user_can_manage_group
 
 
 class GroupEdit(GrouperHandler):

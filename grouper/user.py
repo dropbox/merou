@@ -55,7 +55,7 @@ def get_all_users(session):
     return session.query(User).all()
 
 
-def get_all_enabled_users(session):
+def get_all_enabled_users(session, include_service_accounts=True):
     # type: (Session) -> List[User]
     """Returns all enabled users in the database.
 
@@ -68,7 +68,9 @@ def get_all_enabled_users(session):
     Returns:
         a list of all enabled User objects in the database
     """
-    return session.query(User).filter_by(enabled=True).all()
+    if include_service_accounts:
+        return session.query(User).filter_by(enabled=True).all()
+    return session.query(User).filter(User.enabled == True).filter(User.role_user == False).all()
 
 
 def enable_user(session, user, requester, preserve_membership):

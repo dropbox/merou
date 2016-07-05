@@ -10,6 +10,7 @@ from grouper.public_key import (get_public_key_permissions, get_public_key_tags,
     get_public_keys_of_user)
 from grouper.user import get_log_entries_by_user, user_open_audits, user_requests_aggregate
 from grouper.user_metadata import get_user_metadata_by_key
+from grouper.user_password import user_passwords
 from grouper.user_permissions import user_is_user_admin
 
 
@@ -52,6 +53,7 @@ class UserView(GrouperHandler):
         open_audits = user_open_audits(self.session, user)
         group_edge_list = group_biz.get_groups_by_user(self.session, user) if user.enabled else []
         groups = [{'name': g.name, 'type': 'Group', 'role': ge._role} for g, ge in group_edge_list]
+        passwords = user_passwords(self.session, user)
         public_keys = get_public_keys_of_user(self.session, user.id)
         for key in public_keys:
             key.tags = get_public_key_tags(self.session, key)
@@ -65,6 +67,7 @@ class UserView(GrouperHandler):
                     groups=groups,
                     public_keys=public_keys,
                     can_control=can_control,
+                    passwords=passwords,
                     permissions=permissions,
                     can_disable=can_disable,
                     can_enable=can_enable,

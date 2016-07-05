@@ -1,4 +1,5 @@
 import json
+import hashlib
 
 from urllib import urlencode
 
@@ -7,9 +8,11 @@ import pytest
 from fixtures import api_app as app  # noqa
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from grouper.constants import USER_METADATA_SHELL_KEY
+from grouper.models.counter import Counter
 from grouper.models.permission import Permission
 from grouper.models.user_token import UserToken
 from grouper.user_metadata import get_user_metadata_by_key, set_user_metadata
+from grouper.user_password import add_new_user_password, delete_user_password, user_passwords
 from grouper.user_token import add_new_user_token, disable_user_token
 from url_util import url
 from util import grant_permission
@@ -188,3 +191,32 @@ def test_shell(session, users, http_client, base_url, graph):
     assert body["data"]["user"]["metadata"][0]["data_key"] == "shell", "There should only be 1 metadata!"
     assert body["data"]["user"]["metadata"][0]["data_value"] == "/bin/zsh", "The shell should be set to the correct value"
     assert len(body["data"]["user"]["metadata"]) == 1, "There should only be 1 metadata!"
+
+@pytest.mark.gen_test
+def test_passwords_api(session, users, http_client, base_url, graph):
+    user = users['zorkian@a.co']
+    TEST_PASSWORD = "test_password_please_ignore"
+
+    add_new_user_password(session, "test", TEST_PASSWORD, user.id)
+    assert len(user_passwords(session, user)) == 1, "The user should only have a single password"
+
+    graph.update_from_db(session)
+    c = Counter.get(session, name="updates")
+    api_url = url(base_url, '/users/{}'.format(user.username))
+    resp = yield http_client.fetch(api_url)
+    body = json.loads(resp.body)
+    assert body["checkpoint"] == c.count, "The API response is not up to date"
+    assert body["data"]["user"]["passwords"] != [], "The user should not have an empty passwords field"
+    assert body["data"]["user"]["passwords"][0]["name"] == "test", "The password should have the same name"
+    assert body["data"]["user"]["passwords"][0]["func"] == "SHA512", "This test does not support any hash functions other than SHA512"
+    assert body["data"]["user"]["passwords"][0]["hash"] == hashlib.sha512(TEST_PASSWORD + body["data"]["user"]["passwords"][0]["salt"]).hexdigest(), "The hash should be the same as hashing the password and the salt together using the hashing function"
+    assert body["data"]["user"]["passwords"][0]["hash"] != hashlib.sha512("hello" + body["data"]["user"]["passwords"][0]["salt"]).hexdigest(), "The hash should not be the same as hashing the wrong password and the salt together using the hashing function"
+
+    delete_user_password(session, "test", user.id)
+    c = Counter.get(session, name="updates")
+    graph.update_from_db(session)
+    api_url = url(base_url, '/users/{}'.format(user.username))
+    resp = yield http_client.fetch(api_url)
+    body = json.loads(resp.body)
+    assert body["checkpoint"] == c.count, "The API response is not up to date"
+    assert body["data"]["user"]["passwords"] == [], "The user should not have any passwords"

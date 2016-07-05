@@ -271,11 +271,6 @@ def notify_nonauditor_flagged(settings, session, edge):
         session (Session): Object for db session.
         edge (GroupEdge): The expiring edge.
     """
-    # TODO(rra): Arbitrarily use the first listed owner of the group from which membership expired
-    # as the actor, since we have to provide an actor and we have no idea who (or what event) led
-    # to this user no longer being an auditor
-    actor_id = next(edge.group.my_owners().itervalues()).id
-
     # Pull data about the edge and the affected user
     group_name = edge.group.name
     assert OBJ_TYPES_IDX[edge.member_type] == "User"
@@ -285,7 +280,7 @@ def notify_nonauditor_flagged(settings, session, edge):
 
     audit_data = {
         "action": "nonauditor_flagged",
-        "actor_id": actor_id,
+        "actor_id": user.id,
         "description": "Flagged {} as nonauditor approver in audited group".format(member_name),
     }
     AuditLog.log(session, on_user_id=user.id, on_group_id=edge.group_id, **audit_data)

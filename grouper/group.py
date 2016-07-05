@@ -42,10 +42,9 @@ def get_audited_groups(session):
         except NoSuchGroup:
             # Very new group with no metadata yet, or it has been disabled and
             # excluded from in-memory cache.
-            group_md = {}
+            continue
 
-        audited = group_md.get('audited', False)
-        if audited:
+        if group_md.get('audited', False):
             audited_groups.append(group)
 
     return audited_groups

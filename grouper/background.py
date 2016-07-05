@@ -8,8 +8,11 @@ from sqlalchemy import and_
 from sqlalchemy.exc import OperationalError
 
 from grouper.constants import PERMISSION_AUDITOR
-from grouper.email_util import (notify_edge_expiration, notify_nonauditor_flagged,
-    process_async_emails)
+from grouper.email_util import (
+    notify_edge_expiration,
+    notify_nonauditor_flagged,
+    process_async_emails
+    )
 from grouper.graph import Graph
 from grouper.group import get_audited_groups
 from grouper.model_soup import APPROVER_ROLE_INDICIES, Group, GroupEdge
@@ -89,16 +92,19 @@ class BackgroundThread(Thread):
         exp_days = timedelta(days=settings.nonauditor_expiration_days)
         # Hack to ensure the graph is loaded before we access it
         graph.update_from_db(session)
-        for group in get_audited_groups(session):  # TODO(tyleromeara): replace with graph call
+        # TODO(tyleromeara): replace with graph call
+        for group in get_audited_groups(session):
             members = group.my_members()
+            # Go through every member of the group and set them to expire if they are an approver
+            # but not an auditor
             for (type_, member), edge in members.iteritems():
                 # Auditing is already inherited, so we don't need to handle that here
                 if type_ == "Group":
                     continue
                 member = User.get(session, name=member)
-                if user_role_index(member, members) not in APPROVER_ROLE_INDICIES:
-                    continue
-                if user_has_permission(session, member, PERMISSION_AUDITOR):
+                member_is_approver = user_role_index(member, members) in APPROVER_ROLE_INDICIES
+                member_is_auditor = user_has_permission(session, member, PERMISSION_AUDITOR)
+                if not member_is_approver or member_is_auditor:
                     continue
                 edge = GroupEdge.get(session, id=edge.edge_id)
                 if edge.expiration and edge.expiration < now + exp_days:

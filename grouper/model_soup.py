@@ -861,6 +861,7 @@ class GroupEdge(Model):
                 setattr(self, key, value)
 
     def apply_changes(self, request):
+        # TODO(tyleromeara): Move deserialization elsewhere
         changes = json.loads(request.changes)
         return self.apply_changes_dict(changes)
 

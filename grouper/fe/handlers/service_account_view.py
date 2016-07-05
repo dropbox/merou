@@ -51,7 +51,10 @@ class ServiceAccountView(GrouperHandler):
         groups = [{'name': g.name, 'type': 'Group', 'role': ge._role} for g, ge in group_edge_list]
         public_keys = get_public_keys_of_user(self.session, user.id)
         permissions = user_md.get('permissions', [])
-        log_entries = get_log_entries_by_user(self.session, user) + group.my_log_entries()
+        # Combine the logs from the User and Group component. Use set to remove any duplicates
+        # and sorted to sort the combined logs by log time
+        log_entries = sorted(set(get_log_entries_by_user(self.session, user) +
+            group.my_log_entries()), key=lambda x: x.log_time, reverse=True)
         current_user_role = {
             'is_owner': user_role_index(self.current_user, members) in OWNER_ROLE_INDICES,
             'is_approver': user_role_index(self.current_user, members) in APPROVER_ROLE_INDICIES,

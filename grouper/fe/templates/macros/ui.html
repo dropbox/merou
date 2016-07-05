@@ -207,7 +207,7 @@ enabled. Membership in this group is regularly reviewed.
 {% macro member_row(group, member, members, current_user, current_user_role) -%}
     <tr>
         <td>
-            {% if member.name != current_user.name and
+            {% if member.name != current_user.name and member.name != group.name and
                 (current_user_role['is_approver'] or
                  (current_user_role['is_manager'] and ROLES[member.role] == "member"))
             %}

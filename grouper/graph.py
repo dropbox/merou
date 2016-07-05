@@ -17,6 +17,7 @@ from grouper.models.user import User
 from grouper.models.user_metadata import UserMetadata
 from grouper.models.user_password import UserPassword
 from grouper.public_key import get_public_key_permissions, get_public_key_tags
+from grouper.service_account import is_service_account
 from grouper.util import singleton
 
 
@@ -39,7 +40,7 @@ PermissionTuple = namedtuple(
     ["id", "name", "description", "created_on", "audited"])
 GroupTuple = namedtuple(
     "GroupTuple",
-    ["id", "groupname", "name", "description", "canjoin", "enabled", "type"])
+    ["id", "groupname", "name", "description", "canjoin", "enabled", "service_account", "type"])
 
 
 # Raise these exceptions when asking about users or groups that are not cached.
@@ -274,6 +275,7 @@ class GroupGraph(object):
                 description=group.description,
                 canjoin=group.canjoin,
                 enabled=group.enabled,
+                service_account=is_service_account(session, group=group),
                 type="Group"
             )
         return out

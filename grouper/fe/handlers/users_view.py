@@ -8,12 +8,14 @@ class UsersView(GrouperHandler):
         offset = int(self.get_argument("offset", 0))
         limit = int(self.get_argument("limit", 100))
         enabled = bool(int(self.get_argument("enabled", 1)))
+        service = bool(int(self.get_argument("service", 0)))
         if limit > 9000:
             limit = 9000
 
         users = (
             self.session.query(User)
             .filter(User.enabled == enabled)
+            .filter(User.role_user == service)
             .order_by(User.username)
         )
         total = users.count()
@@ -21,5 +23,5 @@ class UsersView(GrouperHandler):
 
         self.render(
             "users.html", users=users, offset=offset, limit=limit, total=total,
-            enabled=enabled,
+            enabled=enabled, service=service,
         )

@@ -13,6 +13,12 @@ from .. import constants
 from .. import model_soup
 
 
+GROUP_CANJOIN_CHOICES = [
+    ("canjoin", "Anyone"), ("canask", "Must Ask"),
+    ("nobody", "Nobody"),
+]
+
+
 class ValidateRegex(object):
     def __init__(self, regex):
         # We assume any regex passed to us does not have line anchors.
@@ -99,10 +105,8 @@ class GroupCreateForm(Form):
         ValidateRegex(constants.NAME_VALIDATION),
     ])
     description = TextAreaField("Description")
-    canjoin = SelectField("Who Can Join?", choices=[
-        ("canjoin", "Anyone"), ("canask", "Must Ask"),
-        ("nobody", "Nobody"),
-    ], default="canask")
+    canjoin = SelectField("Who Can Join?", choices=GROUP_CANJOIN_CHOICES,
+        default="canask")
     auto_expire = DaysTimeDeltaField("Default Expiration (Days)")
 
 
@@ -113,10 +117,8 @@ class GroupEditForm(Form):
         ValidateRegex(constants.NAME_VALIDATION),
     ])
     description = TextAreaField("Description")
-    canjoin = SelectField("Who Can Join?", choices=[
-        ("canjoin", "Anyone"), ("canask", "Must Ask"),
-        ("nobody", "Nobody"),
-    ], default="canask")
+    canjoin = SelectField("Who Can Join?", choices=GROUP_CANJOIN_CHOICES,
+        default="canask")
     auto_expire = DaysTimeDeltaField("Default Expiration (Days)")
 
 
@@ -326,3 +328,15 @@ class UserPasswordForm(Form):
     password = PasswordField("Password", [
         validators.DataRequired(),
     ])
+
+
+class ServiceAccountCreateForm(Form):
+    name = StringField("Name", [
+        validators.Length(min=3, max=32),
+        validators.DataRequired(),
+        ValidateRegex(constants.NAME_VALIDATION),
+        ValidateRegex(constants.USERNAME_VALIDATION),
+    ])
+    description = TextAreaField("Description")
+    canjoin = SelectField("Who Can Join?", choices=GROUP_CANJOIN_CHOICES,
+    default="canask")

@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import group_panel, member_panel, permission_panel, log_entry_panel,
+                                help_for, account, shell_panel, tokens_panel, public_key_modal, %}
+
+{% macro one_public_key_row(key, username, can_control) -%}
+    <td><span class="has-help" data-toggle="popover" data-content="{{ key.created_on|print_date }}">
+        {{ key.created_on|long_ago_str }}</span></td>
+    <td>{% if key.key_type %}{{ key.key_type }}{% endif %}</td>
+    <td>{% if key.key_size %}{{ key.key_size }}{% endif %}</td>
+    <td class="hidden-xs">
+        <code>{{ key.fingerprint }}</code>
+    </td>
+    <td>
+        {% for tag in key.tags %}
+            {% if can_control %}
+            <form action="/users/{{ username }}/public-key/{{ key.id }}/delete_tag/{{ tag.id }}" method="post" style="display: inline">
+            {% endif %}
+                <button type="submit" class="btn btn-danger">
+                    {{ tag.name }}
+                </button>
+            {% if can_control %}
+                {{ xsrf_form() }}
+            </form>
+            {% endif %}
+        {% endfor %}
+    </td>
+    <td>
+        <span class="pull-right">
+        <button class="btn btn-default btn-xs public-key" key-body="{{ key.public_key|escape }}">
+            <i class="fa fa-search"></i>
+        </button>
+        <button class="btn btn-default btn-xs public-key" key-body="{{ ",".join(key.pretty_permissions)|escape }}">
+            <i class="fa fa-key"></i>
+        </button>
+    {% if can_control %}
+        <a class="btn btn-default btn-xs" href="/users/{{ username }}/public-key/{{ key.id }}/tag">
+            <span class="glyphicon glyphicon-tag" style="vertical-align: -1px"></span>
+        </a>
+        <a class="btn btn-default btn-xs" href="/users/{{ username }}/public-key/{{ key.id }}/delete">
+            <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span>
+        </a>
+        </span>
+    {% endif %}
+    </td>
+{%- endmacro %}
+
+{% macro public_key_panel(max_height, user, public_keys, can_control=False) -%}
+    {{ public_key_modal() }}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Public Keys</h3>
+        </div>
+        <div class="table-responsive" style="max-height: {{max_height}}px; overflow-y: auto">
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th class="col-sm-1">Age</th>
+                        <th class="col-sm-1">Type</th>
+                        <th class="col-sm-1">Size</th>
+                        <th class="col-sm-3 hidden-xs">Fingerprint</th>
+                        <th class="col-sm-1">Tags</th>
+                        <th class="col-sm-2"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for key in public_keys %}
+                    <tr>
+                        {{ one_public_key_row(key, user.name, can_control) }}
+                    </tr>
+                {% endfor %}
+                {% if not public_keys %}
+                    <tr>
+                        <td colspan="5" class="text-center"><em>No Public Keys</em></td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+            {% if can_control %}
+            <div class='panel-footer'>
+                <a class="btn btn-default btn-sm" href="/users/{{ user.name }}/public-key/add">
+                <span class="glyphicon glyphicon-plus"></span> Add Public Key
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{%- endmacro %}
+
+
+{% block heading %}
+    <a href="/service">Service Accounts</a>
+{% endblock %}
+
+{% block subheading %}
+    {{ user.username }}
+    {% if user.role_user %}<small>(service)</small>{% endif %}
+    {% if not user.enabled %}<small>(disabled)</small>{% endif %}
+
+    {% if group.audit and not group.audit.complete %}
+        <span class="label label-danger">AUDIT IN PROGRESS</i>
+    {% endif %}
+{% endblock %}
+
+{% block headingbuttons %}
+    <!-- Enable/Disable button. -->
+    {% if current_user_role['is_owner'] %}
+        {% if group.enabled %}
+            <button class="btn btn-danger" data-toggle="modal" data-target="#disableModal">
+                <i class="fa fa-minus"></i> Disable
+            </button>
+        {% else %}
+            <button class="btn btn-warning" data-toggle="modal" data-target="#enableModal">
+                <i class="fa fa-plus"></i> Enable
+            </button>
+        {% endif %}
+    {% endif %}
+
+    <!-- Approve members. -->
+    <div class="btn-group">
+        <a href="/groups/{{group.name}}/requests"
+           class="btn btn-default"><i class="fa fa-list"></i> Requests</a>
+        {% if current_user_role['is_approver'] and num_pending %}
+            <a href="/groups/{{group.name}}/requests?status=pending"
+               title="Pending Requests"
+               class="btn btn-default btn-pending">{{ num_pending }}</a>
+        {% endif %}
+    </div>
+
+    <!-- Show the join button if the user isn't already a member and the group
+         isn't invite-only. -->
+    {% if not current_user_role['is_approver'] and group.canjoin != "nobody" %}
+    <a href="/groups/{{group.name}}/join"
+       class="btn btn-success"><i class="fa fa-user"></i> Join</a>
+    {% endif %}
+
+    <!-- Add member or edit group -->
+    {% if current_user_role['is_approver'] %}
+        <a href="/groups/{{group.name}}/add"
+           class="btn btn-success"><i class="fa fa-plus-circle"></i> Add Member</a>
+        <a href="/groups/{{group.name}}/edit"
+           class="btn btn-primary"><i class="fa fa-edit"></i> Edit</a>
+    {% endif %}
+
+    <!-- Owners can't leave a group. -->
+    {% if not current_user_role['is_owner'] %}
+        <a href="/groups/{{group.name}}/leave"
+           class="btn btn-danger"><i class="fa fa-sign-out"></i> Leave</a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <blockquote><p>
+            <em>{{group.description|default("&nbsp;", True)|escape}}</em>
+        </p></blockquote>
+    </div>
+    <div class="col-md-6">
+        <h4>
+            {% if audited %}
+                <span class="label label-warning pull-right">
+                    <i class="fa fa-gavel"></i> <span {{ help_for("audited_group") }}>
+                        Auditing Enabled
+                    </span>
+                </span>
+            {% endif %}
+            {% if group.canjoin == "canjoin" %}
+                <span class="label label-success pull-right">
+                    <i class="fa fa-group"></i> Open Membership
+                </span>
+            {% else %}
+                <span class="label label-info pull-right">
+                    <i class="fa fa-group"></i> Requires Approval
+                </span>
+            {% endif %}
+        </h4>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-7">
+        {{ member_panel(390, group, members, current_user, current_user_role) }}
+    </div>
+    <div class="col-md-5">
+        {{ group_panel(390, groups, current_user_role['role']) }}
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        {{ public_key_panel(390, user, public_keys, can_control) }}
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        {{ permission_panel(390, permissions, group=group, can_grant=grantable, is_member=current_user.is_member(members), pending_requests=permission_requests_pending) }}
+    </div>
+</div>
+{% if can_control %}
+    <div class="row">
+        <div class="col-md-4">
+            {{ tokens_panel(390, user, user_tokens, can_control) }}
+        </div>
+        <div class="col-md-4">
+            {{ shell_panel(390, user, shell, can_control) }}
+        </div>
+    </div>
+{% endif %}
+<div class="row">
+    <div class="col-md-12">
+        {{ log_entry_panel(390, log_entries) }}
+    </div>
+</div>
+
+<div class="modal fade" id="enableModal" tabindex="-1" role="dialog"
+      aria-labelledby="enableModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                    <span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">Enable User</h4>
+           </div>
+            <form action="/users/{{user.id}}/enable" method="post">
+                <div class="modal-body">
+                    <p>Are you sure you want to enable this user?</p>
+                    <label class="checkbox" style="font-weight: normal">
+                        <i>preserve any pre-existing group membership (you don't want this)</i>
+                        <input type="checkbox" name="preserve_membership" value="true"/>
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default"
+                            data-dismiss="modal">Close</button>
+                    {{ xsrf_form() }}
+                    <button type="submit" class="btn btn-primary">Enable</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="disableModal" tabindex="-1" role="dialog"
+      aria-labelledby="disableModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                    <span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">Disable User</h4>
+           </div>
+            <div class="modal-body">
+                <p>Are you sure you want to disable this user?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default"
+                        data-dismiss="modal">Close</button>
+                <form action="/users/{{user.id}}/disable" method="post"
+                      style="display: inline;">
+                    {{ xsrf_form() }}
+                    <button type="submit" class="btn btn-primary">Disable</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="removeUserModal" tabindex="-1" role="dialog"
+      aria-labelledby="removeUserModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                    <span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">Remove User</h4>
+           </div>
+            <div class="modal-body">
+                <p>
+                    Are you sure you want to remove <span class="member-name"></span> from {{group.name}}?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default"
+                        data-dismiss="modal">Close</button>
+                <form class="remove-member-form"
+                      {# action is set dynamically in on("show.bs.modal") #}
+                      action="#" method="post"
+                      style="display: inline;">
+                    <input type="hidden" name="member"></input>
+                    <input type="hidden" name="member_type"></input>
+                    {{ xsrf_form() }}
+                    <button type="submit" class="btn btn-primary">Remove</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if group.audit and not group.audit.complete %}
+{# TODO(herb): audit db calls in this block #}
+
+{% macro audit_status(member) -%}
+    {% if member.member.name == current_user.name %}
+        <input type="hidden" name="audit_{{member.id}}" value="approved" />
+        approved
+    {% else %}
+        <select name="audit_{{member.id}}">
+            {% for status in statuses %}
+            <option {% if status == member.status %}selected{% endif %}>{{ status }}</option>
+            {% endfor %}
+        </select>
+    {% endif %}
+{% endmacro %}
+
+<div class="modal fade" id="auditModal" tabindex="-1" role="dialog"
+      aria-labelledby="auditModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <form action="/audits/{{ group.audit.id }}/complete" method="post"
+              style="display: inline;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                    <span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">Audit Group</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Your group has an outstanding audit that needs to be completed before
+                    <strong>{{ group.audit.ends_at|print_date }}</strong>, giving you
+                    {{ group.audit.ends_at|expires_when_str }} to complete the audit.
+                </p>
+                <table class="table table-striped table-condensed">
+                    <thead>
+                        <tr>
+                            <th class="col-sm-4">Member</th>
+                            <th class="col-sm-2">role</th>
+                            <th class="col-sm-2">Audit Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for member in group.audit.my_members() %}
+                        <tr>
+                            <td>{{ account(member.member) }}</a></td>
+                            <td>{{ member.edge.role }}</td>
+                            <td>
+                                {{ audit_status(member) }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default"
+                        data-dismiss="modal">Close</button>
+                    {{ xsrf_form() }}
+                    <button type="submit" class="btn btn-primary">Complete Audit</button>
+            </div>
+        </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block script %}
+{# The removeUserModal is generated once per page but could be used for any
+member being removed. So, when the modal shows up, make sure to populate its
+text and set its form actions to correspond to the selected user. #}
+<script type="text/javascript">
+    $(function () {
+        $("#removeUserModal").on("show.bs.modal", function(e) {
+            var button = $(e.relatedTarget);
+            var memberName = button.data("member-name");
+            var memberType = button.data("member-type");
+
+            var modal = $(e.currentTarget);
+            modal.find(".member-name").html(memberName);
+
+            var form = modal.find(".remove-member-form")
+            form.attr("action", "/groups/{{ group.id }}/remove");
+            form.find("input[name=member]").val(memberName);
+            form.find("input[name=member_type]").val(memberType);
+        });
+    });
+</script>
+
+{% if group.audit and not group.audit.complete and current_user_role['is_owner'] %}
+<script type="text/javascript">
+$(function () {
+    $('#auditModal').modal('show');
+});
+</script>
+{% endif %}
+{% endblock %}

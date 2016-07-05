@@ -1,6 +1,7 @@
 from grouper.fe.util import GrouperHandler
 from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
+from grouper.service_account import is_service_account
 from grouper.user import user_role
 
 
@@ -14,7 +15,14 @@ class GroupEnable(GrouperHandler):
         if not user_role(self.current_user, members) in ("owner", "np-owner"):
             return self.forbidden()
 
+        # Enabling and disabling service accounts via the group endpoints is forbidden
+        # because we need the preserve_membership data that is only available via the
+        # UserEnable form.
+        if is_service_account(self.session, group=group):
+            return self.forbidden()
+
         group.enable()
+
         self.session.commit()
 
         AuditLog.log(self.session, self.current_user.id, 'enable_group',

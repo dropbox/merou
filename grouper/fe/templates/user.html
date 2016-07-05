@@ -91,7 +91,7 @@
 
 {% block subheading %}
     {{user.username}}
-    {% if user.role_user %}<small>(role)</small>{% endif %}
+    {% if user.role_user %}<small>(service)</small>{% endif %}
     {% if not user.enabled %}<small>(disabled)</small>{% endif %}
 {% endblock %}
 

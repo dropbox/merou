@@ -5,6 +5,7 @@ from grouper.ctl.util import ensure_valid_username, make_session
 from grouper.models.audit_log import AuditLog
 from grouper.models.user_token import UserToken  # noqa: HAX(herb) workaround user -> user_token dep
 from grouper.models.user import User
+from grouper.service_account import disable_service_account, enable_service_account
 from grouper.user import disable_user, enable_user, get_all_users
 from grouper.user_metadata import set_user_metadata
 
@@ -46,7 +47,10 @@ def user_command(args):
                 logging.info("{}: User already disabled. Doing nothing.".format(username))
             else:
                 logging.info("{}: User found, disabling...".format(username))
-                disable_user(session, user)
+                if user.role_user:
+                    disable_service_account(session, user)
+                else:
+                    disable_user(session, user)
                 session.commit()
         return
 
@@ -59,7 +63,11 @@ def user_command(args):
                 logging.info("{}: User not disabled. Doing nothing.".format(username))
             else:
                 logging.info("{}: User found, enabling...".format(username))
-                enable_user(session, user, user, preserve_membership=args.preserve_membership)
+                if user.role_user:
+                    enable_service_account(session, user,
+                        preserve_membership=args.preserve_membership, user=user)
+                else:
+                    enable_user(session, user, user, preserve_membership=args.preserve_membership)
                 session.commit()
         return
 

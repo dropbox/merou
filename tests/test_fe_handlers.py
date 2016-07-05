@@ -10,8 +10,11 @@ from grouper import public_key
 from grouper.model_soup import  Request, AsyncNotification, Group, GroupEdge
 from grouper.models.user import User
 from grouper.public_key import get_public_keys_of_user
+from grouper.service_account import (get_service_account, is_service_account,
+    disable_service_account, enable_service_account)
 from url_util import url
 from datetime import timedelta, datetime, date
+from util import add_member
 
 
 def _get_unsent_and_mark_as_sent_emails_with_username(session, username):
@@ -81,6 +84,93 @@ def test_public_key(session, users, http_client, base_url):
     user = User.get(session, name=user.username)
     assert not get_public_keys_of_user(session, user.id)
 
+
+@pytest.mark.gen_test
+def test_sa_pubkeys(session, users, http_client, base_url):
+    user = users['zorkian@a.co']
+
+    # Add account
+    fe_url = url(base_url, '/service/create')
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'name': 'bob@hello.com', "description": "Hi", "canjoin": "canjoin"}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    assert User.get(session, name="bob@hello.com") is None
+    assert Group.get(session, name="bob@hello.com") is None
+
+    # Add account
+    fe_url = url(base_url, '/service/create')
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'name': 'bob@svc.localhost', "description": "Hi", "canjoin": "canjoin"}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    u = User.get(session, name="bob@svc.localhost")
+    g = Group.get(session, name="bob@svc.localhost")
+
+    assert u is not None
+    assert g is not None
+    assert is_service_account(session, user=u)
+    assert is_service_account(session, group=g)
+    assert get_service_account(session, user=u).group.id == g.id
+    assert get_service_account(session, group=g).user.id == u.id
+    assert not is_service_account(session, user=user)
+    assert not is_service_account(session, group=Group.get(session, name="team-sre"))
+
+    assert not get_public_keys_of_user(session, user.id)
+
+    good_key = ('ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDCUQeasspT/etEJR2WUoR+h2sMOQYbJgr0Q'
+            'E+J8p97gEhmz107KWZ+3mbOwyIFzfWBcJZCEg9wy5Paj+YxbGONqbpXAhPdVQ2TLgxr41bNXvbcR'
+            'AxZC+Q12UZywR4Klb2kungKz4qkcmSZzouaKK12UxzGB3xQ0N+3osKFj3xA1+B6HqrVreU19XdVo'
+            'AJh0xLZwhw17/NDM+dAcEdMZ9V89KyjwjraXtOVfFhQF0EDF0ame8d6UkayGrAiXC2He0P2Cja+J'
+            '371P27AlNLHFJij8WGxvcGGSeAxMLoVSDOOllLCYH5UieV8mNpX1kNe2LeA58ciZb0AXHaipSmCH'
+            'gh/ some-comment')
+
+    bad_key = 'ssh-rsa AAAblahblahkey some-comment'
+
+    with pytest.raises(HTTPError):
+        # add it
+        fe_url = url(base_url, '/users/{}/public-key/add'.format("bob@svc.localhost"))
+        resp = yield http_client.fetch(fe_url, method="POST",
+                body=urlencode({'public_key': good_key}),
+                headers={'X-Grouper-User': "gary@a.co"})
+
+    # add it
+    fe_url = url(base_url, '/users/{}/public-key/add'.format("bob@svc.localhost"))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'public_key': good_key}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    # add bad key -- shouldn't add
+    fe_url = url(base_url, '/users/{}/public-key/add'.format("bob@svc.localhost"))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'public_key': bad_key}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    sa = User.get(session, name="bob@svc.localhost")
+    keys = get_public_keys_of_user(session, sa.id)
+    assert len(keys) == 1
+    assert keys[0].public_key == good_key
+
+    with pytest.raises(HTTPError):
+        # delete it
+        fe_url = url(base_url, '/users/{}/public-key/{}/delete'.format("bob@svc.localhost", keys[0].id))
+        resp = yield http_client.fetch(fe_url, method="POST", body='',
+                headers={'X-Grouper-User': "gary@a.co"})
+
+    # delete it
+    fe_url = url(base_url, '/users/{}/public-key/{}/delete'.format("bob@svc.localhost", keys[0].id))
+    resp = yield http_client.fetch(fe_url, method="POST", body='',
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    sa = User.get(session, name="bob@svc.localhost")
+    assert not get_public_keys_of_user(session, sa.id)
+
+
 @pytest.mark.gen_test
 def test_usertokens(session, users, http_client, base_url):
     user = users['zorkian@a.co']
@@ -127,6 +217,83 @@ def test_usertokens(session, users, http_client, base_url):
             headers={'X-Grouper-User': user.username})
     assert resp.code == 200
     assert "Added token: my_Foobar_Token" not in resp.body
+
+
+
+@pytest.mark.gen_test
+def test_sa_tokens(session, users, http_client, base_url):
+    user = users['zorkian@a.co']
+
+    # Add account
+    fe_url = url(base_url, '/service/create')
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'name': 'bob@hello.com', "description": "Hi", "canjoin": "canjoin"}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    assert User.get(session, name="bob@hello.com") is None
+    assert Group.get(session, name="bob@hello.com") is None
+
+    # Add account
+    fe_url = url(base_url, '/service/create')
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'name': 'bob@svc.localhost', "description": "Hi", "canjoin": "canjoin"}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    u = User.get(session, name="bob@svc.localhost")
+    g = Group.get(session, name="bob@svc.localhost")
+
+    assert u is not None
+    assert g is not None
+    assert is_service_account(session, user=u)
+    assert is_service_account(session, group=g)
+    assert get_service_account(session, user=u).group.id == g.id
+    assert get_service_account(session, group=g).user.id == u.id
+    assert not is_service_account(session, user=user)
+    assert not is_service_account(session, group=Group.get(session, name="team-sre"))
+
+    with pytest.raises(HTTPError):
+        # Add token
+        fe_url = url(base_url, '/users/{}/tokens/add'.format("bob@svc.localhost"))
+        resp = yield http_client.fetch(fe_url, method="POST",
+                body=urlencode({'name': 'myDHDToken'}),
+                headers={'X-Grouper-User': "gary@a.co"})
+
+    # Add token
+    fe_url = url(base_url, '/users/{}/tokens/add'.format("bob@svc.localhost"))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'name': 'myDHDToken'}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    # Verify add
+    fe_url = url(base_url, '/users/{}'.format("bob@svc.localhost"))
+    resp = yield http_client.fetch(fe_url, method="GET",
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+    assert "Added token: myDHDToken" in resp.body
+
+    with pytest.raises(HTTPError):
+        # Disable token
+        fe_url = url(base_url, '/users/{}/tokens/1/disable'.format("bob@svc.localhost"))
+        resp = yield http_client.fetch(fe_url, method="POST",
+                body="",
+                headers={'X-Grouper-User': "gary@a.co"})
+
+    # Disable token
+    fe_url = url(base_url, '/users/{}/tokens/1/disable'.format("bob@svc.localhost"))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body="",
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    # Verify disable
+    fe_url = url(base_url, '/users/{}'.format("bob@svc.localhost"))
+    resp = yield http_client.fetch(fe_url, method="GET",
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+    assert "Disabled token: myDHDToken" in resp.body
 
 
 
@@ -339,3 +506,115 @@ def test_request_autoexpiration(graph, groups, permissions, session, standard_gr
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
     group_edge = session.query(GroupEdge).filter_by(group_id=sre.id, member_pk=user.id).scalar()
     assert group_edge.expiration is None, "The request should not have an expiration if none is provided and the user was edited by an approver"
+
+
+@pytest.mark.gen_test
+def test_add_service_account(session, users, http_client, base_url):
+    user = users['zorkian@a.co']
+
+    # Add account
+    fe_url = url(base_url, '/service/create')
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'name': 'bob@hello.com', "description": "Hi", "canjoin": "canjoin"}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    assert User.get(session, name="bob@hello.com") is None
+    assert Group.get(session, name="bob@hello.com") is None
+
+    # Add account
+    fe_url = url(base_url, '/service/create')
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'name': 'bob@svc.localhost', "description": "Hi", "canjoin": "canjoin"}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    u = User.get(session, name="bob@svc.localhost")
+    g = Group.get(session, name="bob@svc.localhost")
+
+    assert u is not None
+    assert g is not None
+    assert is_service_account(session, user=u)
+    assert is_service_account(session, group=g)
+    assert get_service_account(session, user=u).group.id == g.id
+    assert get_service_account(session, group=g).user.id == u.id
+    assert not is_service_account(session, user=user)
+    assert not is_service_account(session, group=Group.get(session, name="team-sre"))
+
+
+@pytest.mark.gen_test
+def test_disable_service_account(session, users, http_client, base_url):
+    user = users['zorkian@a.co']
+
+    # Add account
+    fe_url = url(base_url, '/service/create')
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'name': 'bob@hello.com', "description": "Hi", "canjoin": "canjoin"}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    assert User.get(session, name="bob@hello.com") is None
+    assert Group.get(session, name="bob@hello.com") is None
+
+    # Add account
+    fe_url = url(base_url, '/service/create')
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'name': 'bob@svc.localhost', "description": "Hi", "canjoin": "canjoin"}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    u = User.get(session, name="bob@svc.localhost")
+    g = Group.get(session, name="bob@svc.localhost")
+
+    assert u is not None
+    assert g is not None
+    assert is_service_account(session, user=u)
+    assert is_service_account(session, group=g)
+    assert get_service_account(session, user=u).group.id == g.id
+    assert get_service_account(session, group=g).user.id == u.id
+    assert not is_service_account(session, user=user)
+    assert not is_service_account(session, group=Group.get(session, name="team-sre"))
+
+    disable_service_account(session, user=u)
+    u = User.get(session, name="bob@svc.localhost")
+    assert not u.enabled, "The SA User should be disabled"
+    g = Group.get(session, name="bob@svc.localhost")
+    assert not g.enabled, "The SA Group should be disabled"
+
+    enable_service_account(session, actor=user, group=g, preserve_membership=True)
+    u = User.get(session, name="bob@svc.localhost")
+    assert u.enabled, "The SA User should be enabled"
+    g = Group.get(session, name="bob@svc.localhost")
+    assert g.enabled, "The SA Group should be enabled"
+
+    with pytest.raises(HTTPError):
+        fe_url = url(base_url, '/groups/{}/disable'.format("bob@svc.localhost"))
+        resp = yield http_client.fetch(fe_url, method="POST",
+                body="",
+                headers={'X-Grouper-User': user.username})
+
+    u = User.get(session, name="bob@svc.localhost")
+    assert u.enabled, "Attempting to disable SAs through groups/disable should not work"
+    g = Group.get(session, name="bob@svc.localhost")
+    assert g.enabled, "Attempting to disable SAs through groups/disable should not work"
+
+    fe_url = url(base_url, '/users/{}/disable'.format("bob@svc.localhost"))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body="",
+            headers={'X-Grouper-User': user.username})
+
+    u = User.get(session, name="bob@svc.localhost")
+    assert not u.enabled, "The SA User should be disabled"
+    g = Group.get(session, name="bob@svc.localhost")
+    assert not g.enabled, "The SA Group should be disabled"
+
+    with pytest.raises(HTTPError):
+        fe_url = url(base_url, '/groups/{}/enable'.format("bob@svc.localhost"))
+        resp = yield http_client.fetch(fe_url, method="POST",
+                body="",
+                headers={'X-Grouper-User': user.username})
+
+    u = User.get(session, name="bob@svc.localhost")
+    assert not u.enabled, "Attempting to enable SAs through groups/enable should not work"
+    g = Group.get(session, name="bob@svc.localhost")
+    assert not g.enabled, "Attempting to enable SAs through groups/enable should not work"

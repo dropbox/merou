@@ -37,7 +37,7 @@ class GroupAdd(GrouperHandler):
         ]
         user_choices = [
             (user.username, "User: " + user.username)  # (value, label)
-            for user in get_all_enabled_users(self.session)
+            for user in get_all_enabled_users(self.session, include_service_accounts=False)
         ]
 
         form.member.choices = [("", "")] + sorted(

@@ -3,13 +3,13 @@ from datetime import datetime
 from sqlalchemy import or_
 from sqlalchemy.sql import label, literal
 
-from grouper.group import get_groups_by_user
 from grouper.model_soup import (APPROVER_ROLE_INDICIES, Audit, Group, GROUP_EDGE_ROLES, GroupEdge,
     OWNER_ROLE_INDICES, Request, RequestStatusChange)
 from grouper.models.audit_log import AuditLog
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
 from grouper.models.user import User
+from grouper.user_group import get_groups_by_user
 from grouper.user_permissions import user_is_group_admin
 
 

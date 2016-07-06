@@ -6,10 +6,11 @@ from grouper.email_util import send_email
 from grouper.fe.forms import GroupAddForm
 from grouper.fe.settings import settings
 from grouper.fe.util import Alert, GrouperHandler
-from grouper.group import get_all_groups, user_can_manage_group
+from grouper.group import get_all_groups
 from grouper.model_soup import Group, InvalidRoleForMember
 from grouper.models.audit_log import AuditLog
 from grouper.user import get_all_enabled_users, get_user_or_group, user_role
+from grouper.user_group import user_can_manage_group
 
 
 class GroupAdd(GrouperHandler):

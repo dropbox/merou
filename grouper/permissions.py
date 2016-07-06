@@ -9,7 +9,6 @@ from grouper.audit import assert_controllers_are_auditors
 from grouper.constants import ARGUMENT_VALIDATION, PERMISSION_ADMIN, PERMISSION_GRANT
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
-from grouper.group import get_groups_by_user
 from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
@@ -21,6 +20,7 @@ from grouper.models.permission_request import PermissionRequest
 from grouper.models.permission_request_status_change import PermissionRequestStatusChange
 from grouper.models.tag_permission_map import TagPermissionMap
 from grouper.plugin import get_plugins
+from grouper.user_group import get_groups_by_user
 from grouper.util import matches_glob
 
 

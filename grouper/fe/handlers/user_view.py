@@ -1,4 +1,3 @@
-from grouper import group as group_biz
 from grouper.constants import USER_METADATA_SHELL_KEY
 from grouper.fe.handlers.user_disable import UserDisable
 from grouper.fe.handlers.user_enable import UserEnable
@@ -9,6 +8,7 @@ from grouper.permissions import get_requests_by_owner
 from grouper.public_key import (get_public_key_permissions, get_public_key_tags,
     get_public_keys_of_user)
 from grouper.user import get_log_entries_by_user, user_open_audits, user_requests_aggregate
+from grouper.user_group import get_groups_by_user
 from grouper.user_metadata import get_user_metadata_by_key
 from grouper.user_password import user_passwords
 from grouper.user_permissions import user_is_user_admin
@@ -54,7 +54,7 @@ class UserView(GrouperHandler):
             if get_user_metadata_by_key(self.session, user.id, USER_METADATA_SHELL_KEY)
             else "No shell configured")
         open_audits = user_open_audits(self.session, user)
-        group_edge_list = group_biz.get_groups_by_user(self.session, user) if user.enabled else []
+        group_edge_list = get_groups_by_user(self.session, user) if user.enabled else []
         groups = [{'name': g.name, 'type': 'Group', 'role': ge._role} for g, ge in group_edge_list]
         passwords = user_passwords(self.session, user)
         public_keys = get_public_keys_of_user(self.session, user.id)

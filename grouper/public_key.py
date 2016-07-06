@@ -5,6 +5,7 @@ from sqlalchemy.sql import label
 import sshpubkey
 from sshpubkey.exc import PublicKeyParseError  # noqa
 
+from grouper.models.base.session import Session  # noqa
 from grouper.models.counter import Counter
 from grouper.models.permission import Permission
 from grouper.models.public_key import PublicKey
@@ -23,14 +24,14 @@ class DuplicateTag(Exception):
 
 
 class KeyNotFound(Exception):
-    key_id = None
-    user_id = None
+    key_id = None  # type: int
+    user_id = None  # type: int
     """Particular user's specific key was not found."""
 
 
 class TagNotOnKey(Exception):
-    key_id = None
-    tag_id = None
+    key_id = None  # type: int
+    tag_id = None  # type: int
 
 
 def get_public_key(session, user_id, key_id):
@@ -177,7 +178,7 @@ def get_all_public_key_tags(session):
     Returns:
         A dictionary that has all PublicKeyTags assigned to any public key
     """
-    ret = defaultdict(list)
+    ret = defaultdict(list)  # type: Dict[int, List[PublicKeyTag]]
     for mapping in session.query(PublicKeyTagMap).all():
         ret[mapping.key.id].append(mapping.tag)
     return ret

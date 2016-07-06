@@ -1,5 +1,6 @@
 from grouper.graph import Graph, NoSuchGroup
 from grouper.model_soup import Group
+from grouper.models.base.session import Session  # noqa
 
 
 def get_all_groups(session):

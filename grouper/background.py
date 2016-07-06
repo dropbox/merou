@@ -1,3 +1,4 @@
+from contextlib import closing
 from datetime import datetime, timedelta
 import logging
 from threading import Thread
@@ -122,17 +123,17 @@ class BackgroundThread(Thread):
     def run(self):
         while True:
             try:
-                session = Session()
-                self.logger.debug("Expiring edges....")
-                self.expire_edges(session)
-                self.logger.debug("Expiring nonauditor approvers in audited groups...")
-                self.expire_nonauditors(session)
-                self.logger.debug("Sending emails...")
-                process_async_emails(self.settings, session, datetime.utcnow())
-                self.logger.debug("Pruning old traces....")
-                prune_old_traces(session)
-                session.commit()
-                session.close()
+                with closing(Session()) as session:
+                    self.logger.debug("Expiring edges....")
+                    self.expire_edges(session)
+                    self.logger.debug("Expiring nonauditor approvers in audited groups...")
+                    self.expire_nonauditors(session)
+                    self.logger.debug("Sending emails...")
+                    process_async_emails(self.settings, session, datetime.utcnow())
+                    self.logger.debug("Pruning old traces....")
+                    prune_old_traces(session)
+                    session.commit()
+
                 stats.set_gauge("successful-background-update", 1)
             except OperationalError:
                 Session.configure(bind=get_db_engine(get_database_url(self.settings)))

@@ -1,3 +1,4 @@
+from contextlib import closing
 import logging
 from threading import Thread
 from time import sleep
@@ -27,9 +28,9 @@ class DbRefreshThread(Thread):
         while True:
             self.logger.debug("Updating Graph from Database.")
             try:
-                session = Session()
-                self.graph.update_from_db(session)
-                session.close()
+                with closing(Session()) as session:
+                    self.graph.update_from_db(session)
+
                 stats.set_gauge("successful-db-update", 1)
             except OperationalError:
                 Session.configure(bind=get_db_engine(get_database_url(self.settings)))

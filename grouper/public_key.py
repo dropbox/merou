@@ -96,9 +96,9 @@ def delete_public_key(session, user_id, key_id):
     """
     pkey = get_public_key(session, user_id, key_id)
 
-    tags = session.query(PublicKeyTagMap).filter_by(key_id=key_id).all()
-    for tag in tags:
-        remove_tag_from_public_key(session, pkey, tag)
+    tag_mappings = session.query(PublicKeyTagMap).filter_by(key_id=key_id).all()
+    for mapping in tag_mappings:
+        remove_tag_from_public_key(session, pkey, mapping.tag)
 
     pkey.delete(session)
 
@@ -150,7 +150,7 @@ def remove_tag_from_public_key(session, public_key, tag):
     Args:
         session(models.base.session.Session): database session
         public_key(models.public_key.PublicKey): the public key to be tagged
-        tag(models.public_key_tag.PublicKeyTag): the tag to be assigned to the public key
+        tag(models.public_key_tag.PublicKeyTag): the tag to be removed from the public key
 
     Throws:
         TagNotOnKey if the tag was already assigned to the public key

@@ -190,13 +190,11 @@
         <div class="col-md-4">
             {{ shell_panel(390, user, shell, can_control) }}
         </div>
+        <div class="col-md-4">
+            {{ passwords_panel(390, user, passwords, can_control) }}
+        </div>
     </div>
 {% endif %}
-<div class="row">
-    <div class="col-md-12">
-        {{ passwords_panel(390, user, passwords, can_control) }}
-    </div>
-</div>
 
 <div class="row">
     <div class="col-md-12">

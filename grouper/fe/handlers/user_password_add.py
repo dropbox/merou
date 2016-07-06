@@ -59,7 +59,7 @@ class UserPasswordAdd(GrouperHandler):
         email_context = {
                 "actioner": self.current_user.name,
                 "changed_user": user.name,
-                "password": password,
+                "pass_name": pass_name,
                 }
         send_email(self.session, [user.name], 'User password created', 'user_password_created',
                 settings, email_context)

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from 'macros/ui.html' import group_panel, member_panel, permission_panel, log_entry_panel,
-                                help_for, account, shell_panel, tokens_panel, public_key_modal, %}
+                                help_for, account, shell_panel, tokens_panel, public_key_modal,
+                                passwords_panel, %}
 
 {% macro one_public_key_row(key, username, can_control) -%}
     <td><span class="has-help" data-toggle="popover" data-content="{{ key.created_on|print_date }}">
@@ -201,6 +202,9 @@
         </div>
         <div class="col-md-4">
             {{ shell_panel(390, user, shell, can_control) }}
+        </div>
+        <div class="col-md-4">
+            {{ passwords_panel(390, user, passwords, can_control) }}
         </div>
     </div>
 {% endif %}

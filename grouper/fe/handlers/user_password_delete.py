@@ -2,16 +2,24 @@ from grouper.fe.util import GrouperHandler
 from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
 from grouper.models.user_password import UserPassword
+from grouper.service_account import can_manage_service_account
 from grouper.user_password import delete_user_password, PasswordDoesNotExist
+from grouper.user_permissions import user_is_user_admin
 
 
 class UserPasswordDelete(GrouperHandler):
+
+    @staticmethod
+    def check_access(session, actor, target):
+        return (actor.name == target.name or user_is_user_admin(session, actor) or
+            (target.role_user and can_manage_service_account(session, actor, tuser=target)))
+
     def get(self, user_id=None, name=None, pass_id=None):
         user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
 
-        if (user.name != self.current_user.name) and not self.current_user.user_admin:
+        if not self.check_access(self.session, self.current_user, user):
             return self.forbidden()
         password = UserPassword.get(self.session, user=user, id=pass_id)
         return self.render("user-password-delete.html", user=user, password=password)
@@ -21,7 +29,7 @@ class UserPasswordDelete(GrouperHandler):
         if not user:
             return self.notfound()
 
-        if (user.name != self.current_user.name) and not self.current_user.user_admin:
+        if not self.check_access(self.session, self.current_user, user):
             return self.forbidden()
 
         password = UserPassword.get(self.session, user=user, id=pass_id)

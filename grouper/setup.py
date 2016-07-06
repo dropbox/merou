@@ -1,6 +1,5 @@
 from argparse import ArgumentParser, Namespace  # noqa
 import logging
-import os.path
 
 
 from grouper import __version__
@@ -41,9 +40,3 @@ def setup_logging(args, log_format):
     logging.basicConfig(level=log_level, format=log_format)
     if log_level < 0:
         sa_log.setLevel(logging.INFO)
-
-
-def load_plugins(settings, service_name):
-    if settings.plugin_dir:
-        assert os.path.exists(settings.plugin_dir), "Plugin directory does not exist"
-        load_plugins(settings.plugin_dir, service_name=service_name)

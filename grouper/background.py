@@ -41,6 +41,7 @@ class BackgroundThread(Thread):
         """
         self.settings = settings
         self.sentry_client = sentry_client
+        self.logger = logging.getLogger(__name__)
         Thread.__init__(self, *args, **kwargs)
 
     def capture_exception(self):
@@ -122,20 +123,20 @@ class BackgroundThread(Thread):
         while True:
             try:
                 session = Session()
-                logging.debug("Expiring edges....")
+                self.logger.debug("Expiring edges....")
                 self.expire_edges(session)
-                logging.debug("Expiring nonauditor approvers in audited groups...")
+                self.logger.debug("Expiring nonauditor approvers in audited groups...")
                 self.expire_nonauditors(session)
-                logging.debug("Sending emails...")
+                self.logger.debug("Sending emails...")
                 process_async_emails(self.settings, session, datetime.utcnow())
-                logging.debug("Pruning old traces....")
+                self.logger.debug("Pruning old traces....")
                 prune_old_traces(session)
                 session.commit()
                 session.close()
                 stats.set_gauge("successful-background-update", 1)
             except OperationalError:
                 Session.configure(bind=get_db_engine(get_database_url(self.settings)))
-                logging.critical("Failed to connect to database.")
+                self.logger.critical("Failed to connect to database.")
                 stats.set_gauge("successful-background-update", 0)
                 stats.set_gauge("failed-background-update", 1)
                 self.capture_exception()

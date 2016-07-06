@@ -54,7 +54,7 @@ class NoSuchGroup(Exception):
 
 class GroupGraph(object):
     def __init__(self):
-        logging.info('Created graph object.')
+        self.logger = logging.getLogger(__name__)
         self._graph = None
         self._rgraph = None
         self.lock = RLock()  # Graph structure.
@@ -92,9 +92,9 @@ class GroupGraph(object):
         with self.update_lock:
             checkpoint, checkpoint_time = self._get_checkpoint(session)
             if checkpoint == self.checkpoint:
-                logging.debug("Checkpoint hasn't changed. Not Updating.")
+                self.logger.debug("Checkpoint hasn't changed. Not Updating.")
                 return
-            logging.debug("Checkpoint changed; updating!")
+            self.logger.debug("Checkpoint changed; updating!")
 
             new_graph = DiGraph()
             new_graph.add_nodes_from(self._get_nodes_from_db(session))

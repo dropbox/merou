@@ -48,6 +48,7 @@ def main(sys_argv=sys.argv, start_config_thread=True):
     args = parser.parse_args(sys_argv[1:])
 
     if start_config_thread:
+        settings.update_from_config(args.config)
         settings.start_config_thread(args.config)
 
     log_level = get_loglevel(args)

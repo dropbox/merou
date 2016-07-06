@@ -22,7 +22,7 @@ class Settings(object):
             _settings.update(initial_settings)
         return cls(_settings)
 
-    def _update_from_config(self, filename, section=None):
+    def update_from_config(self, filename, section=None):
         self.logger.info("Loading " + filename)
         with open(filename) as config:
             data = yaml.safe_load(config.read())
@@ -45,6 +45,8 @@ class Settings(object):
 
             self[key] = value
 
+        stats.set_gauge("successful-config-update", 1)
+
     def start_config_thread(self, filename, section=None, refresh_config_seconds=10):
         """
         Start a daemon thread to reload the given config file and section periodically.
@@ -52,18 +54,17 @@ class Settings(object):
         most once.
         """
         assert not self._loading_thread_started, "start_config_thread called twice!"
-        self._update_from_config(filename, section=section)
-        stats.set_gauge("successful-config-update", 1)
 
         def refresh_config_loop():
             while True:
-                time.sleep(refresh_config_seconds)
                 try:
-                    self._update_from_config(filename, section=section)
-                    stats.set_gauge("successful-config-update", 1)
+                    self.update_from_config(filename, section=section)
                 except (IOError, yaml.parser.ParserError):
                     stats.set_gauge("successful-config-update", 0)
                     stats.set_gauge("failed-config-update", 1)
+
+                time.sleep(refresh_config_seconds)
+
         thread = threading.Thread(target=refresh_config_loop)
         thread.daemon = True
         thread.start()

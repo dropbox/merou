@@ -15,67 +15,46 @@ from grouper.api.settings import settings
 from grouper.app import Application
 from grouper.background import BackgroundThread
 from grouper.database import DbRefreshThread
-from grouper.graph import Graph
+from grouper.error_reporting import get_sentry_client, SentryProxy, setup_signal_handlers
+from grouper.graph import Graph, GroupGraph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import load_plugins
 from grouper.settings import default_settings_path
+from grouper.setup import parse_args, setup_logging
 from grouper.util import get_loglevel, get_database_url
 
 
-sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
+def get_application(graph, settings, sentry_client):
+    # type: (GroupGraph, Settings, SentryProxy, str) -> Application
+    my_settings = {
+        "graph": graph,
+    }
+
+    tornado_settings = {
+        "debug": settings.debug,
+    }
+
+    application = Application(HANDLERS, my_settings=my_settings, **tornado_settings)
+    application.sentry_client = sentry_client
+
+    return application
 
 
-try:
-    from raven.contrib.tornado import AsyncSentryClient
-    raven_installed = True
-except ImportError:
-    raven_installed = False
+def main(args, sentry_client):
+    # type: (argparse.Namespace, SentryProxy) -> None
 
-
-def main(argv):
-
-    parser = argparse.ArgumentParser(description="Grouper Web Server.")
-    parser.add_argument("-c", "--config", default=default_settings_path(),
-                        help="Path to config file.")
-    parser.add_argument("-v", "--verbose", action="count", default=0,
-                        help="Increase logging verbosity.")
-    parser.add_argument("-q", "--quiet", action="count", default=0,
-                        help="Decrease logging verbosity.")
-    parser.add_argument("-V", "--version", action="version",
-                        version="%%(prog)s %s" % grouper.__version__,
-                        help="Display version information.")
-    parser.add_argument("-a", "--address", type=str, default=None,
-                        help="Override address in config.")
-    parser.add_argument("-p", "--port", type=int, default=None,
-                        help="Override port in config.")
-    args = parser.parse_args()
-    settings.start_config_thread(args.config, "api")
-
-    log_level = get_loglevel(args)
-    logging.basicConfig(
-        level=log_level,
-        format=settings.log_format,
-    )
-
-    if log_level < 0:
-        sa_log.setLevel(logging.INFO)
+    log_level = logging.getLevelName(logging.getLogger().level)
+    logging.info("begin. log_level={}".format(log_level))
 
     if settings.plugin_dir:
-        if not os.path.exists(settings.plugin_dir):
-            logging.fatal("Plugin directory does not exist")
-            sys.exit(1)
-        load_plugins(settings.plugin_dir, service_name="grouper-api")
+        assert os.path.exists(settings.plugin_dir), "Plugin directory does not exist"
+        load_plugins(settings.plugin_dir, service_name="grouper_api")
 
+    # setup database
+    logging.debug("configure database session")
     Session.configure(bind=get_db_engine(get_database_url(settings)))
 
-    sentry_client = None
-    if settings.sentry_dsn:
-        logging.info("sentry DSN set")
-        if not raven_installed:
-            logging.warning("raven not installed, not enabling sentry")
-        else:
-            logging.info("enabling sentry")
-            sentry_client = AsyncSentryClient(settings.sentry_dsn)
+    settings.start_config_thread(args.config, "api")
 
     with closing(Session()) as session:
         graph = Graph()
@@ -89,15 +68,7 @@ def main(argv):
     background.daemon = True
     background.start()
 
-    my_settings = {
-        "graph": graph,
-    }
-    tornado_settings = {
-        "debug": settings.debug,
-    }
-
-    application = Application(HANDLERS, my_settings=my_settings, **tornado_settings)
-    application.sentry_client = sentry_client
+    application = get_application(graph, settings, sentry_client)
 
     address = args.address or settings.address
     port = args.port or settings.port
@@ -115,4 +86,27 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    setup_signal_handlers()
+    try:
+        # get arguments
+        parser = argparse.ArgumentParser(description="Grouper API Server.")
+        args = parse_args(parser, default_settings_path())
+
+        # load settings
+        settings.update_from_config(args.config, "api")
+
+        # setup logging
+        setup_logging(args, settings.log_format)
+
+        # setup sentry
+        sentry_client = get_sentry_client(settings.sentry_dsn)
+    except:
+        logging.exception('uncaught exception in startup')
+        sys.exit(1)
+
+    try:
+        main(args, sentry_client)
+    except:
+        sentry_client.captureException()
+    finally:
+        logging.info("end")

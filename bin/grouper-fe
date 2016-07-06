@@ -19,9 +19,8 @@ from grouper.fe.settings import Settings, settings
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
-from grouper.plugin import load_plugins
 from grouper.settings import default_settings_path
-from grouper.setup import parse_args, setup_logging
+from grouper.setup import load_plugins, parse_args, setup_logging
 from grouper.util import get_loglevel, get_database_url
 
 
@@ -53,10 +52,7 @@ def main(args, sentry_client):
     assert not (settings.debug and settings.num_processes > 1), \
             "debug mode does not support multiple processes"
 
-    if settings.plugin_dir:
-        logging.debug("loading plugins from {}".format(settings.plugin_dir))
-        assert os.path.exists(settings.plugin_dir), "Plugin directory does not exist"
-        load_plugins(settings.plugin_dir, service_name="grouper_api")
+    load_plugins(settings, service_name="grouper_api")
 
     # setup database
     logging.debug("configure database session")

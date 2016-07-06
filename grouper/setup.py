@@ -30,6 +30,8 @@ def parse_args(parser, default_config_path):
 def setup_logging(args, log_format):
     # type: (Namespace, str) -> None
 
+    # `logging` levels are integer multiples of 10. so each verbose/quiet level
+    # is multiplied by 10
     verbose = args.verbose * 10
     quiet = args.quiet * 10
     log_level = logging.getLogger().level - verbose + quiet

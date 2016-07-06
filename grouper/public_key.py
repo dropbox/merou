@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label
 import sshpubkey
@@ -163,6 +165,22 @@ def remove_tag_from_public_key(session, public_key, tag):
     mapping.delete(session)
     Counter.incr(session, "updates")
     session.commit()
+
+
+def get_all_public_key_tags(session):
+    # type: (Session) -> Dict[int, List[PublicKeyTag]]
+    """Returns a dict with all tags that are assigned to each public key
+
+    Args:
+        session: database session
+
+    Returns:
+        A dictionary that has all PublicKeyTags assigned to any public key
+    """
+    ret = defaultdict(list)
+    for mapping in session.query(PublicKeyTagMap).all():
+        ret[mapping.key.id].append(mapping.tag)
+    return ret
 
 
 def get_public_key_tags(session, public_key):

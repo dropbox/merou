@@ -16,7 +16,7 @@ from grouper.models.public_key import PublicKey
 from grouper.models.user import User
 from grouper.models.user_metadata import UserMetadata
 from grouper.models.user_password import UserPassword
-from grouper.public_key import get_public_key_permissions, get_public_key_tags
+from grouper.public_key import get_all_public_key_tags
 from grouper.service_account import is_service_account
 from grouper.util import singleton
 
@@ -157,6 +157,7 @@ class GroupGraph(object):
         passwords = user_indexify(session.query(UserPassword).all())
         public_keys = user_indexify(session.query(PublicKey).all())
         user_metadata = user_indexify(session.query(UserMetadata).all())
+        public_key_tags = get_all_public_key_tags(session)
 
         out = {}
         for user in users:
@@ -176,9 +177,7 @@ class GroupGraph(object):
                         "public_key": key.public_key,
                         "fingerprint": key.fingerprint,
                         "created_on": str(key.created_on),
-                        "tags": [tag.name for tag in get_public_key_tags(session, key)],
-                        "permissions": [(perm.name, perm.argument)
-                                        for perm in get_public_key_permissions(session, key)],
+                        "tags": [tag.name for tag in public_key_tags.get(key.id, [])],
                     } for key in public_keys.get(user.id, [])
                 ],
                 "metadata": [

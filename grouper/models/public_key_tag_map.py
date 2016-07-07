@@ -4,6 +4,7 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from grouper.models.base.model_base import Model
+from grouper.models.base.session import Session  # noqa
 from grouper.models.public_key_tag import PublicKeyTag
 
 

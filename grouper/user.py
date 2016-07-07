@@ -6,6 +6,7 @@ from sqlalchemy.sql import label, literal
 from grouper.model_soup import (APPROVER_ROLE_INDICIES, Audit, Group, GROUP_EDGE_ROLES, GroupEdge,
     OWNER_ROLE_INDICES, Request, RequestStatusChange)
 from grouper.models.audit_log import AuditLog
+from grouper.models.base.session import Session  # noqa
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
 from grouper.models.user import User
@@ -56,7 +57,7 @@ def get_all_users(session):
 
 
 def get_all_enabled_users(session, include_service_accounts=True):
-    # type: (Session) -> List[User]
+    # type: (Session, bool) -> List[User]
     """Returns all enabled users in the database.
 
     At present, this is not cached at all and returns the full list of

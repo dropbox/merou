@@ -1,16 +1,21 @@
 language: python
 python:
-- '2.7'
+- 2.7
+- 3.5
 sudo: false
 cache:
   directories:
     - $HOME/.cache/pip
 install:
-- pip install -r requirements-dev.txt
-- pip install -r requirements.txt
+- if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then pip install -r requirements-dev.txt; fi
+- if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then pip install -r requirements.txt; fi
+
+# only for mypy
+- if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then pip install -r requirements3.txt; fi
 script:
-- PYTHONPATH=`pwd` py.test -v tests/
-- flake8 --count grouper/
+- if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then PYTHONPATH=`pwd` py.test -v tests/; fi
+- if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then flake8 --count grouper/; fi
+- if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then ./mypy.sh; fi
 notifications:
   slack:
     secure: glh+QNow84MLh3SXM+5l1C0Mxz7aYWLmE+iShUixbwQzv702rneznGutyjyN8oR42T5EEg5ilN5WR0Ni0xIFVc81ZtVDJkndjNHgXp6SgizWI0qpBQj9m1/3yrXMh5SAd168ZXtc3Y5sOOYWFs/8mrBcdYEFE3k+wkX1/GwGD3A=

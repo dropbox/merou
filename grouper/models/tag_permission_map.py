@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 
 from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.base.model_base import Model
+from grouper.models.base.session import Session  # noqa
 
 
 class TagPermissionMap(Model):

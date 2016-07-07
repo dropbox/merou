@@ -12,6 +12,7 @@ from grouper.fe.settings import settings
 from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
+from grouper.models.base.session import Session  # noqa
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
 from grouper.models.permission import Permission
@@ -36,7 +37,7 @@ Grant = namedtuple('Grant', 'name, argument')
 
 class NoSuchPermission(Exception):
     """No permission by this name exists."""
-    name = None
+    name = None  # type: str
 
 
 def grant_permission(session, group_id, permission_id, argument=''):
@@ -63,7 +64,7 @@ def grant_permission(session, group_id, permission_id, argument=''):
 
 
 def grant_permission_to_tag(session, tag_id, permission_id, argument=''):
-    # type: (Session, int, int, str) -> boolean
+    # type: (Session, int, int, str) -> bool
     """
     Grant a permission to this tag. This will fail if the (permission, argument) has already
     been granted to this tag.
@@ -619,7 +620,7 @@ def permission_list_to_dict(perms):
         a dictionary with the permission names as keys, and has as values another dictionary
         with permission arguments as keys and Permission objects as values
     """
-    ret = defaultdict(dict)
+    ret = defaultdict(dict)  # type: Dict[str, Dict[str, Permission]]
     for perm in perms:
         ret[perm.name][perm.argument] = perm
     return ret

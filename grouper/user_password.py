@@ -1,6 +1,8 @@
 from sqlalchemy.exc import IntegrityError
 
+from grouper.models.base.session import Session  # noqa
 from grouper.models.counter import Counter
+from grouper.models.user import User  # noqa
 from grouper.models.user_password import UserPassword
 
 
@@ -13,7 +15,7 @@ class PasswordDoesNotExist(Exception):
 
 
 def add_new_user_password(session, password_name, password, user_id):
-    # type: Session, str, str, int -> None
+    # type: (Session, str, str, int) -> None
     """Add the new user password specified.
 
     Args:
@@ -33,7 +35,7 @@ def add_new_user_password(session, password_name, password, user_id):
 
 
 def delete_user_password(session, password_name, user_id):
-    # type: Session, str, int -> None
+    # type: (Session, str, int) -> None
     """Delete the specified UserPassword.
 
     Args:

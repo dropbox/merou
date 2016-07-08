@@ -1,3 +1,4 @@
+import crypt
 import json
 import hashlib
 
@@ -208,9 +209,9 @@ def test_passwords_api(session, users, http_client, base_url, graph):
     assert body["checkpoint"] == c.count, "The API response is not up to date"
     assert body["data"]["user"]["passwords"] != [], "The user should not have an empty passwords field"
     assert body["data"]["user"]["passwords"][0]["name"] == "test", "The password should have the same name"
-    assert body["data"]["user"]["passwords"][0]["func"] == "SHA512", "This test does not support any hash functions other than SHA512"
-    assert body["data"]["user"]["passwords"][0]["hash"] == hashlib.sha512(TEST_PASSWORD + body["data"]["user"]["passwords"][0]["salt"]).hexdigest(), "The hash should be the same as hashing the password and the salt together using the hashing function"
-    assert body["data"]["user"]["passwords"][0]["hash"] != hashlib.sha512("hello" + body["data"]["user"]["passwords"][0]["salt"]).hexdigest(), "The hash should not be the same as hashing the wrong password and the salt together using the hashing function"
+    assert body["data"]["user"]["passwords"][0]["func"] == "crypt(3)-$6$", "This test does not support any hash functions other than crypt(3)-$6$"
+    assert body["data"]["user"]["passwords"][0]["hash"] == crypt.crypt(TEST_PASSWORD, body["data"]["user"]["passwords"][0]["salt"]), "The hash should be the same as hashing the password and the salt together using the hashing function"
+    assert body["data"]["user"]["passwords"][0]["hash"] != crypt.crypt("hello", body["data"]["user"]["passwords"][0]["salt"]), "The hash should not be the same as hashing the wrong password and the salt together using the hashing function"
 
     delete_user_password(session, "test", user.id)
     c = Counter.get(session, name="updates")

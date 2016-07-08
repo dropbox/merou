@@ -15,6 +15,49 @@ from grouper.user_permissions import user_is_user_admin
 
 
 class UserView(GrouperHandler):
+
+    @staticmethod
+    def get_template_vars(session, actor, user, graph):
+        ret = {}
+        ret["can_control"] = (user.name == actor.name or user_is_user_admin(session, actor))
+        ret["can_disable"] = UserDisable.check_access(session, actor, user)
+        ret["can_enable"] = UserEnable.check_access(session, actor, user)
+
+        if user.id == actor.id:
+            ret["num_pending_group_requests"] = user_requests_aggregate(session, actor).count()
+            _, ret["num_pending_perm_requests"] = get_requests_by_owner(session, actor,
+                 status='pending', limit=1, offset=0)
+        else:
+            ret["num_pending_group_requests"] = None
+            ret["num_pending_perm_requests"] = None
+
+        try:
+            user_md = graph.get_user_details(user.name)
+        except NoSuchUser:
+            # Either user is probably very new, so they have no metadata yet, or
+            # they're disabled, so we've excluded them from the in-memory graph.
+            user_md = {}
+
+        shell = (get_user_metadata_by_key(session, user.id, USER_METADATA_SHELL_KEY).data_value
+            if get_user_metadata_by_key(session, user.id, USER_METADATA_SHELL_KEY)
+            else "No shell configured")
+        ret["shell"] = shell
+        ret["open_audits"] = user_open_audits(session, user)
+        group_edge_list = get_groups_by_user(session, user) if user.enabled else []
+        ret["groups"] = [{'name': g.name, 'type': 'Group', 'role': ge._role}
+            for g, ge in group_edge_list]
+        ret["passwords"] = user_passwords(session, user)
+        ret["public_keys"] = get_public_keys_of_user(session, user.id)
+        for key in ret["public_keys"]:
+            key.tags = get_public_key_tags(session, key)
+            key.pretty_permissions = ["{} ({})".format(perm.name,
+               perm.argument if perm.argument else "unargumented")
+               for perm in get_public_key_permissions(session, key)]
+        ret["permissions"] = user_md.get('permissions', [])
+        ret["log_entries"] = get_log_entries_by_user(session, user)
+
+        return ret
+
     def get(self, user_id=None, name=None):
         self.handle_refresh()
         user = User.get(self.session, user_id, name)
@@ -29,55 +72,7 @@ class UserView(GrouperHandler):
         if user.role_user:
             return self.redirect("/service/{}".format(user_id or name))
 
-        can_control = (user.name == self.current_user.name or
-            user_is_user_admin(self.session, self.current_user))
-        can_disable = UserDisable.check_access(self.session, self.current_user, user)
-        can_enable = UserEnable.check_access(self.session, self.current_user, user)
-
-        if user.id == self.current_user.id:
-            num_pending_group_requests = user_requests_aggregate(self.session,
-                 self.current_user).count()
-            _, num_pending_perm_requests = get_requests_by_owner(self.session, self.current_user,
-                 status='pending', limit=1, offset=0)
-        else:
-            num_pending_group_requests = None
-            num_pending_perm_requests = None
-
-        try:
-            user_md = self.graph.get_user_details(user.name)
-        except NoSuchUser:
-            # Either user is probably very new, so they have no metadata yet, or
-            # they're disabled, so we've excluded them from the in-memory graph.
-            user_md = {}
-
-        shell = (get_user_metadata_by_key(self.session, user.id, USER_METADATA_SHELL_KEY).data_value
-            if get_user_metadata_by_key(self.session, user.id, USER_METADATA_SHELL_KEY)
-            else "No shell configured")
-        open_audits = user_open_audits(self.session, user)
-        group_edge_list = get_groups_by_user(self.session, user) if user.enabled else []
-        groups = [{'name': g.name, 'type': 'Group', 'role': ge._role} for g, ge in group_edge_list]
-        passwords = user_passwords(self.session, user)
-        public_keys = get_public_keys_of_user(self.session, user.id)
-        for key in public_keys:
-            key.tags = get_public_key_tags(self.session, key)
-            key.pretty_permissions = ["{} ({})".format(perm.name,
-               perm.argument if perm.argument else "unargumented")
-               for perm in get_public_key_permissions(self.session, key)]
-        permissions = user_md.get('permissions', [])
-        log_entries = get_log_entries_by_user(self.session, user)
         self.render("user.html",
                     user=user,
-                    groups=groups,
-                    public_keys=public_keys,
-                    can_control=can_control,
-                    passwords=passwords,
-                    permissions=permissions,
-                    can_disable=can_disable,
-                    can_enable=can_enable,
-                    user_tokens=user.tokens,
-                    log_entries=log_entries,
-                    num_pending_group_requests=num_pending_group_requests,
-                    num_pending_perm_requests=num_pending_perm_requests,
-                    open_audits=open_audits,
-                    shell=shell,
+                    **self.get_template_vars(self.session, self.current_user, user, self.graph)
                     )

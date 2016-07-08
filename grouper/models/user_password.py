@@ -1,5 +1,5 @@
+import crypt
 from datetime import datetime
-import hashlib
 import hmac
 import os
 
@@ -65,14 +65,15 @@ class UserPassword(Model):
 
     @password.setter
     def password(self, new_password):
-        self.salt = _make_salt()
-        self._hashed_secret = hashlib.sha512(new_password + self.salt).hexdigest()
+        # Unix SHA512 passwords have a salt that starts with $6$ to indicate SHA512
+        self.salt = "$6$" + _make_salt()
+        self._hashed_secret = crypt.crypt(new_password, self.salt)
 
     def set_password(self, new_password):
         self.password = new_password
 
     def check_password(self, password_to_check):
-        h = hashlib.sha512(password_to_check + self.salt).hexdigest()
+        h = crypt.crypt(password_to_check, self.salt)
         return self.check_hash(h)
 
     def check_hash(self, hash_to_check):

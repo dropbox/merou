@@ -169,7 +169,7 @@ class GroupGraph(object):
                          "name": password.name,
                          "hash": password.password_hash,
                          "salt": password.salt,
-                         "func": "SHA512",
+                         "func": "crypt(3)-$6$",
                     } for password in passwords.get(user.id, [])
                 ],
                 "public_keys": [

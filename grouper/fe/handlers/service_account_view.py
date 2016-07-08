@@ -5,7 +5,7 @@ from grouper.fe.util import Alert, GrouperHandler
 from grouper.graph import NoSuchGroup, NoSuchUser
 from grouper.model_soup import (APPROVER_ROLE_INDICIES, AUDIT_STATUS_CHOICES, Group,
     OWNER_ROLE_INDICES, User)
-from grouper.permissions import get_pending_request_by_group
+from grouper.permissions import get_owner_arg_list, get_pending_request_by_group
 from grouper.public_key import get_public_keys_of_user
 from grouper.service_account import can_manage_service_account
 from grouper.user import get_log_entries_by_user, user_role, user_role_index
@@ -62,7 +62,13 @@ class ServiceAccountView(GrouperHandler):
             'role': user_role(self.current_user, members),
         }
 
-        permission_requests_pending = get_pending_request_by_group(self.session, group)
+        permission_requests_pending = []
+        for req in get_pending_request_by_group(self.session, group):
+            granters = []
+            for owner, argument in get_owner_arg_list(self.session, req.permission, req.argument):
+                granters.append(owner.name)
+            permission_requests_pending.append((req, granters))
+
         audited = group_md.get('audited', False)
         num_pending = group.my_requests("pending").count()
 

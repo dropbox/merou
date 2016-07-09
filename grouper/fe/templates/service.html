@@ -192,7 +192,7 @@
 </div>
 <div class="row">
     <div class="col-md-12">
-        {{ permission_panel(390, permissions, group=group, can_grant=grantable, is_member=current_user.is_member(members), pending_requests=permission_requests_pending) }}
+        {{ permission_panel(390, permissions, group=group, can_grant=grantable, is_member=current_user.is_member(members), pending_requests=permission_requests_pending, is_owner=current_user_role["is_owner"]) }}
     </div>
 </div>
 {% if can_control %}

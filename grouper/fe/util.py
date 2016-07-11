@@ -4,6 +4,7 @@ import logging
 import re
 import sys
 import urllib
+import urlparse
 from uuid import uuid4
 
 from expvar.stats import stats
@@ -84,12 +85,28 @@ class GrouperHandler(RequestHandler):
                     }))
         self.finish()
 
+    def is_refresh(self):
+        # type: () -> bool
+        """Indicates whether the refresh argument for this handler has been
+        set to yes. This is used to force a refresh of the cached graph so
+        that we don't show inconsistent state to the user.
+
+        Returns:
+            a boolean indicating whether this handler should refresh the graph
+        """
+        return self.get_argument("refresh", "no").lower() == "yes"
+
     # The refresh argument can be added to any page.  If the handler for that
     # route calls this function, it will sync its graph from the database if
     # requested.
     def handle_refresh(self):
-        if self.get_argument("refresh", "no").lower() == "yes":
+        if self.is_refresh():
             self.graph.update_from_db(self.session)
+
+    def redirect(self, url, *args, **kwargs):
+        if self.is_refresh():
+            url = urlparse.urljoin(url, "?refresh=yes")
+        return super(GrouperHandler, self).redirect(url, *args, **kwargs)
 
     def get_current_user(self):
         username = self.request.headers.get(settings.user_auth_header)

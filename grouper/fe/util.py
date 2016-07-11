@@ -49,7 +49,7 @@ except ImportError:
 else:
     class SentryHandler(SentryMixin, RequestHandler):
         pass
-    RequestHandler = SentryHandler
+    RequestHandler = SentryHandler  # type: ignore # no support for conditional declarations #1152
 
 
 class GrouperHandler(RequestHandler):

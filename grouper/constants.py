@@ -10,7 +10,7 @@ NAME_VALIDATION = _NAME_VALIDATION.format("name")
 NAME2_VALIDATION = _NAME_VALIDATION.format("name2")
 
 # This regex is specifically to validate usernames.
-USERNAME_VALIDATION = r"(?P<name>\w+@\w+[\.\w]+)"
+USERNAME_VALIDATION = r"(?P<name>[\w\-]+@\w+[\.\w]+)"
 
 # UserToken validators
 TOKEN_SECRET_VALIDATION = r"(?P<token_secret>[a-f0-9]{40})"

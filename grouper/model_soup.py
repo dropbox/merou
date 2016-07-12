@@ -88,7 +88,7 @@ class Group(Model, CommentObjectMixin):
     __tablename__ = "groups"
 
     id = Column(Integer, primary_key=True)
-    groupname = Column(String(length=32), unique=True, nullable=False)
+    groupname = Column(String(length=MAX_NAME_LENGTH), unique=True, nullable=False)
     description = Column(Text)
     canjoin = Column(Enum(*GROUP_JOIN_CHOICES), default="canask")
     enabled = Column(Boolean, default=True, nullable=False)

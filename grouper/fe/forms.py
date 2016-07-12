@@ -100,7 +100,7 @@ class GroupCreateForm(Form):
             ("owner", "Owner"), ("np-owner", "No-Permissions Owner"),
             ], default="owner")
     groupname = StringField("Name", [
-        validators.Length(min=3, max=32),
+        validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
         validators.DataRequired(),
         ValidateRegex(constants.NAME_VALIDATION),
     ])
@@ -112,7 +112,7 @@ class GroupCreateForm(Form):
 
 class GroupEditForm(Form):
     groupname = StringField("Name", [
-        validators.Length(min=3, max=32),
+        validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
         validators.DataRequired(),
         ValidateRegex(constants.NAME_VALIDATION),
     ])
@@ -332,7 +332,7 @@ class UserPasswordForm(Form):
 
 class ServiceAccountCreateForm(Form):
     name = StringField("Name", [
-        validators.Length(min=3, max=32),
+        validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
         validators.DataRequired(),
         ValidateRegex(constants.NAME_VALIDATION),
         ValidateRegex(constants.USERNAME_VALIDATION),

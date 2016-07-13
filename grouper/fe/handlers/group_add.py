@@ -9,6 +9,7 @@ from grouper.fe.util import Alert, GrouperHandler
 from grouper.group import get_all_groups
 from grouper.model_soup import Group, InvalidRoleForMember
 from grouper.models.audit_log import AuditLog
+from grouper.service_account import get_service_account, is_service_account
 from grouper.user import get_all_enabled_users, get_user_or_group, user_role
 from grouper.user_group import user_can_manage_group
 
@@ -79,6 +80,9 @@ class GroupAdd(GrouperHandler):
             )
 
         member = get_user_or_group(self.session, form.data["member"])
+        if is_service_account(self.session, member):
+            # For service accounts, we want to always add the group to other groups, not the user
+            member = get_service_account(self.session, user=member).group
         if not member:
             form.member.errors.append("User or group not found.")
         elif (member.type, member.name) in group.my_members():

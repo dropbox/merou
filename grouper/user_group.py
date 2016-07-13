@@ -1,8 +1,10 @@
 from datetime import datetime
 
 from sqlalchemy import or_
+from sqlalchemy.orm import Session  # noqa
 
 from grouper.model_soup import Group, GroupEdge, OWNER_ROLE_INDICES
+from grouper.models.user import User  # noqa
 
 
 def get_groups_by_user(session, user):
@@ -21,6 +23,22 @@ def get_groups_by_user(session, user):
             Group.enabled == True,
             or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
             ).all()
+
+
+def get_all_groups_by_user(session, user):
+    # type: (Session, User) -> List[tuple[Group, int]]
+    """Return groups a given user is a member of along with the user's role.
+
+    This includes groups inherited from other groups, unlike get_groups_by_user.
+
+    Args:
+        session(): database session
+        user(models.User): model for user in question
+    """
+    from grouper.graph import Graph
+    grps = Graph().get_user_details(username=user.name)["groups"]
+    groups = session.query(Group).filter(Group.name.in_(grps.keys())).all()
+    return [(group, grps[group.name]["role"]) for group in groups]
 
 
 def user_can_manage_group(session, group, user):

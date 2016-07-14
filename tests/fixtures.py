@@ -3,7 +3,7 @@ import pytest
 from grouper import model_soup
 from grouper.api.routes import HANDLERS as API_HANDLERS
 from grouper.app import Application
-from grouper.constants import AUDIT_MANAGER, PERMISSION_AUDITOR
+from grouper.constants import AUDIT_MANAGER, PERMISSION_AUDITOR, USER_ADMIN
 from grouper.fe.routes import HANDLERS as FE_HANDLERS
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
@@ -63,6 +63,12 @@ def standard_graph(session, graph, users, groups, permissions):
     |    * zorkian (o)      |
     |                       |
     +-----------------------+
+    +-----------------------+
+    |                       |
+    |  user-admins          |
+    |    * tyleromeara(o)   |
+    |                       |
+    +-----------------------+
 
     Arrows denote member of the source in the destination group. (o) for
     owners, (np) for non-permissioned owners.
@@ -104,6 +110,9 @@ def standard_graph(session, graph, users, groups, permissions):
     add_member(groups["all-teams"], users["testuser@a.co"], role="owner")
     add_member(groups["all-teams"], groups["team-infra"])
 
+    add_member(groups["user-admins"], users["tyleromeara@a.co"], role="owner")
+    grant_permission(groups["user-admins"], permissions[USER_ADMIN])
+
     session.commit()
     graph.update_from_db(session)
 
@@ -140,7 +149,7 @@ def users(session):
     users = {
         username: User.get_or_create(session, username=username)[0]
         for username in ("gary@a.co", "zay@a.co", "zorkian@a.co", "oliver@a.co", "testuser@a.co",
-                "figurehead@a.co", "zebu@a.co")
+                "figurehead@a.co", "zebu@a.co", "tyleromeara@a.co")
     }
     users["role@a.co"] = User.get_or_create(session, username="role@a.co", role_user=True)[0]
     session.commit()
@@ -152,7 +161,7 @@ def groups(session):
     groups = {
         groupname: Group.get_or_create(session, groupname=groupname)[0]
         for groupname in ("team-sre", "tech-ops", "team-infra", "all-teams", "serving-team",
-                          "security-team", "auditors", "sad-team", "audited-team")
+                          "security-team", "auditors", "sad-team", "audited-team", "user-admins")
     }
     session.commit()
     return groups
@@ -163,7 +172,8 @@ def permissions(session, users):
     permissions = {
         permission: Permission.get_or_create(
             session, name=permission, description="{} permission".format(permission))[0]
-        for permission in ("ssh", "sudo", "audited", AUDIT_MANAGER, PERMISSION_AUDITOR, "team-sre")
+        for permission in ("ssh", "sudo", "audited", AUDIT_MANAGER, PERMISSION_AUDITOR, "team-sre",
+            USER_ADMIN,)
     }
 
     enable_permission_auditing(session, permissions["audited"].name, users['zorkian@a.co'].id)

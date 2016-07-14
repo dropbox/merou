@@ -80,7 +80,7 @@ class GroupAdd(GrouperHandler):
             )
 
         member = get_user_or_group(self.session, form.data["member"])
-        if is_service_account(self.session, member):
+        if member.type == "User" and is_service_account(self.session, member):
             # For service accounts, we want to always add the group to other groups, not the user
             member = get_service_account(self.session, user=member).group
         if not member:

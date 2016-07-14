@@ -289,3 +289,21 @@ def paginate_results(handler, results):
         limit = 9000
 
     return total, offset, limit, results[offset:offset + limit]
+
+
+def form_http_verbs(function):
+    """This decorator is used to support forms submitted using POST as if they were
+    submitted using less common HTTP verbs, such as delete. After annotating the
+    post function in the handler, all forms that have the appropriate field
+    (HTTP_VERB) will have their requests routed through the appropriate function
+    instead of the annotated function. This allows us to use these HTTP verbs
+    where possible, and then fall back to using forms via POST while still using
+    the same code path. See the http_verb macro in macros/ui.html for implementing
+    the form field.
+    """
+    def inner(self, *args, **kwargs):
+        if "HTTP_VERB" in self.request.arguments:
+            func = getattr(self, self.request.arguments["HTTP_VERB"][0].lower())
+            return func(*args, **kwargs)
+        return function(self, *args, **kwargs)
+    return inner

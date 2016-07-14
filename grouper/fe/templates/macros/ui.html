@@ -600,3 +600,7 @@ enabled. Membership in this group is regularly reviewed.
         </div>
     </div>
 {%- endmacro %}
+
+{% macro http_verb(verb) -%}
+    <input type="hidden" name="HTTP_VERB" value="{{ verb }}">
+{%- endmacro %}

@@ -3,6 +3,7 @@ from functools import wraps
 import logging
 import re
 import sys
+from typing import TypeVar
 import urllib
 import urlparse
 from uuid import uuid4
@@ -39,6 +40,9 @@ class DatabaseFailure(Exception):
 
 class InvalidUser(Exception):
     pass
+
+
+T = TypeVar('T')  # noqa
 
 
 # if raven library around, pull in SentryMixin
@@ -264,3 +268,24 @@ def ensure_audit_security(perm_arg):
         return wraps(f)(_decorator)
 
     return _wrapper
+
+
+def paginate_results(handler, results):
+    # type: (GrouperHandler, List[T]) -> tuple[int, int, int, List[T]]
+    """Limits the number of results to display for handlers/templates the paginate lists
+
+    Args:
+        handler: the GrouperHandler for the request being paginated
+        results: the entire list of possible results
+
+    Returns:
+        the total number of results, the offset, the limit, and the limited results to show
+            for this page
+    """
+    total = len(results)
+    offset = int(handler.get_argument("offset", 0))
+    limit = int(handler.get_argument("limit", 100))
+    if limit > 9000:
+        limit = 9000
+
+    return total, offset, limit, results[offset:offset + limit]

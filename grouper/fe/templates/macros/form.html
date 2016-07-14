@@ -1,0 +1,58 @@
+{% macro form_field(field, label_width, field_width) -%}
+    <div class="form-group {% if field.errors %}has-error{% endif %}">
+        <label for="{{field.label.field_id}}"
+               class="col-sm-{{label_width}} control-label">
+            {{ field.label.text }} {% if field.flags.required %}*{% endif %}
+        </label>
+        <div class="col-sm-{{field_width}}">
+            {{ field(**kwargs) }}
+        </div>
+    </div>
+{%- endmacro %}
+
+{% macro form(f, ignore=[]) -%}
+
+    {% for field in f._fields %}
+
+        {% if field not in ignore %}
+
+             {{ form_field(f[field], 3, 8, class_="form-control") }}
+
+        {% else %}
+
+            {{ f[field]() }}
+
+        {% endif %}
+
+    {% endfor %}
+
+{%- endmacro %}
+
+{% macro form_modal(id, title, action, submit_text, disp_form, xsrf_form, ignore=[]) -%}
+<div class="modal fade" id="{{id}}" tabindex="-1" role="dialog"
+      aria-labelledby="{{id}}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                    <span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">{{title}}</h4>
+           </div>
+            <div class="modal-body">
+                <form id="{{id + 'form'}}" class="form-horizontal" role="form"
+                      method="post" action="{{action}}">
+                {{ form(disp_form, ignore) }}
+                {{ xsrf_form }}
+            </div>
+            <div class="modal-footer">
+                <button id="{{id + 'Submit'}}" type="submit" class="btn btn-primary">
+                    Submit
+                </button>
+            </div>
+                </form>
+        </div>
+    </div>
+</div>
+{%- endmacro %}

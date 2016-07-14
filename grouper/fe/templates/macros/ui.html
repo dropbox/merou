@@ -204,6 +204,13 @@ enabled. Membership in this group is regularly reviewed.
 </a>
 {%- endmacro %}
 
+{% macro format_secret(s) -%}
+<a class="secret-link" href="/secrets/{{ s.name }}">
+    <i class="fa fa-lock hidden-xs"></i>
+    {{ s.name }}
+</a>
+{%- endmacro %}
+
 {% macro member_row(group, member, members, current_user, current_user_role) -%}
     <tr>
         <td>

@@ -40,6 +40,7 @@ from grouper.fe.handlers.public_key_add_tag import PublicKeyAddTag
 from grouper.fe.handlers.public_key_delete import PublicKeyDelete
 from grouper.fe.handlers.public_key_remove_tag import PublicKeyRemoveTag
 from grouper.fe.handlers.search import Search
+from grouper.fe.handlers.secrets_view import SecretsView
 from grouper.fe.handlers.service_account_create import ServiceAccountCreate
 from grouper.fe.handlers.service_account_view import ServiceAccountView
 from grouper.fe.handlers.service_accounts_view import ServiceAccountsView
@@ -67,6 +68,7 @@ HANDLERS = [
     (r"/audits/(?P<audit_id>[0-9]+)/complete", AuditsComplete),
     (r"/audits/create", AuditsCreate),
     (r"/groups", GroupsView),
+    (r"/secrets", SecretsView),
     (r"/tags", TagsView),
     (r"/permissions/create", PermissionsCreate),
     (r"/permissions/requests", PermissionsRequests),
@@ -145,6 +147,7 @@ for regex in (r"(?P<tag_id>[0-9]+)", NAME_VALIDATION):
         ),
 
     ])
+
 
 HANDLERS += [
     (r"/help", Help),

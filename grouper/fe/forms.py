@@ -341,3 +341,24 @@ class ServiceAccountCreateForm(Form):
     description = TextAreaField("Description")
     canjoin = SelectField("Who Can Join?", choices=GROUP_CANJOIN_CHOICES,
     default="canask")
+
+
+class SecretForm(Form):
+    name = StringField("Name", [
+        validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
+        validators.DataRequired(),
+        ValidateRegex(constants.NAME_VALIDATION),
+    ])
+    distribution = TextAreaField("Distribution", [
+        validators.DataRequired(),
+    ])
+    owner = SelectField("Owner", [
+        validators.DataRequired(),
+    ], choices=[[-1, "(select one)"]], default=-1, coerce=int)
+    notes = TextAreaField("Notes")
+    risk_level = SelectField("Risk Level", [
+        validators.DataRequired(),
+    ], choices=[[-1, "(select one)"]], default=-1, coerce=int)
+    risk_info = TextAreaField("Risk Info")
+    uses = TextAreaField("Uses")
+    type = HiddenField(default="Secret")

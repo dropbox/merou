@@ -95,7 +95,8 @@ def test_user_tok_acls(session, graph, users, user_admin_perm_to_auditors, http_
 @pytest.fixture
 def user_admin_perm_to_auditors(session, groups):
     """Adds a USER_ADMIN permission to the "auditors" group"""
-    user_admin_perm, is_new = Permission.get_or_create(session, name=USER_ADMIN, description="")
+    user_admin_perm, is_new = Permission.get_or_create(session, name=USER_ADMIN,
+        description="grouper.admin.users permission")
     session.commit()
 
     grant_permission(groups["auditors"], user_admin_perm)

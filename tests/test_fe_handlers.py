@@ -84,6 +84,27 @@ def test_public_key(session, users, http_client, base_url):
     user = User.get(session, name=user.username)
     assert not get_public_keys_of_user(session, user.id)
 
+    # add it
+    fe_url = url(base_url, '/users/{}/public-key/add'.format(user.username))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'public_key': good_key}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    user = User.get(session, name=user.username)
+    keys = get_public_keys_of_user(session, user.id)
+    assert len(keys) == 1
+    assert keys[0].public_key == good_key
+
+    # have an admin delete it
+    fe_url = url(base_url, '/users/{}/public-key/{}/delete'.format(user.username, keys[0].id))
+    resp = yield http_client.fetch(fe_url, method="POST", body='',
+            headers={'X-Grouper-User': "tyleromeara@a.co"})
+    assert resp.code == 200
+
+    user = User.get(session, name=user.username)
+    assert not get_public_keys_of_user(session, user.id)
+
 
 @pytest.mark.gen_test
 def test_sa_pubkeys(session, users, http_client, base_url):

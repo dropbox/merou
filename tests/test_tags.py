@@ -333,6 +333,7 @@ def test_permission_intersection(standard_graph, session, users, groups, permiss
     astar = p("a", "*")
     ar = p("a", "r")
     at = p("a", "t")
+    aundef = p("a", "")
     bstar = p("b", "*")
     br = p("b", "r")
     cstar = p("c", "*")
@@ -348,6 +349,8 @@ def test_permission_intersection(standard_graph, session, users, groups, permiss
     assert permission_intersection([ar], [at]) == set(), "The intersection of two disjoint lists should be the empty set"
 
     assert permission_intersection([astar], [ar, at]) == set([ar, at]), "Wildcards should result in all applicable permissions being in the result"
+    assert permission_intersection([aundef], [ar, at]) == set([aundef]), "Unargumented permissions are always granted by argumented permissions"
+    assert permission_intersection([ar, at], [aundef]) == set([aundef]), "Unargumented permissions are always granted by argumented permissions"
     assert permission_intersection([astar, ar, br, cr], [at, bstar, cr]) == set([at, br, cr]), "This should work"
 
 @pytest.mark.gen_test

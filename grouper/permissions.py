@@ -646,16 +646,20 @@ def permission_intersection(perms_a, perms_b):
         if perm.argument in pdict_b[perm.name]:
             ret.add(perm)
             continue
+        # Unargumented permissions are granted by any permission with the same name
+        if perm.argument == "":
+            ret.add(perm)
+            continue
         # Argument wildcard
         if "*" in pdict_b[perm.name]:
             ret.add(perm)
             continue
-        # According to Group.has_permission, None as an argument counts as a wildcard too
-        if None in pdict_b[perm.name]:
-            ret.add(perm)
+        # Unargumented permissions are granted by any permission with the same name
+        if "" in pdict_b[perm.name]:
+            ret.add(pdict_b[perm.name][""])
             continue
         # If this permission is a wildcard, we add all permissions with the same name from
         # the other set
-        if perm.argument == "*" or perm.argument is None:
+        if perm.argument == "*":
             ret |= {p for p in pdict_b[perm.name].values()}
     return ret

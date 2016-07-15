@@ -169,6 +169,18 @@ class Secret(object):
 
     @classmethod
     def args_from_form(cls, session, form, new):
+        # type: (Session, SecretForm, bool) -> Dict[str, Any]
+        """Returns a dictionary that can be used as kwargs to construct a
+        Secret derived from the values in the form.
+
+        Args:
+            session: database session
+            form: the form with the necessary values
+            new: whether this is a new Secret
+
+        Returns:
+            A dictionary filled out with the data in the form
+        """
         return {
             "name": form.data["name"],
             "distribution": form.data["distribution"].split("\r\n"),

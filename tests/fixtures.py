@@ -66,7 +66,7 @@ def standard_graph(session, graph, users, groups, permissions):
     +-----------------------+
     |                       |
     |  user-admins          |
-    |    * tyleromeara(o)   |
+    |    * tyleromeara (o)  |
     |                       |
     +-----------------------+
 

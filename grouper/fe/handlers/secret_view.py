@@ -69,6 +69,15 @@ class SecretView(GrouperHandler):
                 can_edit=can_edit, risks=SecretRiskLevel,
             )
 
+        secret_type = type(secret).__name__
+        if secret_type != form.data["type"]:
+            msg = "You cannot change the type of secrets"
+            form.name.errors.append(msg)
+            return self.render(
+                "secret.html", form=form, secret=secret, alerts=[Alert("danger", msg)],
+                can_edit=can_edit, risks=SecretRiskLevel,
+            )
+
         secret = secret.secret_from_form(self.session, form, new=False)
 
         try:

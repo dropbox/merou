@@ -28,6 +28,30 @@ else:
     RequestHandler = SentryHandler
 
 
+def get_individual_user_info(handler, name, cutoff, service_account):
+    acc = "Service Account" if service_account else "User"
+    with handler.graph.lock:
+        if name in handler.graph.user_metadata:
+            md = handler.graph.user_metadata[name]
+            details = handler.graph.get_user_details(name, cutoff)
+            if md["role_user"] != service_account:
+                return handler.notfound("{} ({}) not found.".format(acc, name))
+        else:
+            return handler.notfound("{} ({}) not found.".format(acc, name))
+
+        for key in md["public_keys"]:
+            db_key = PublicKey.get(handler.session, id=key["id"])
+            perms = get_public_key_permissions(handler.session, db_key)
+
+            # Convert to set to remove duplicates, then back to list for json-serializability
+            key["permissions"] = list(set([(perm.name, perm.argument) for perm in perms]))
+
+        out = {"user": {"name": name}}
+        try_update(out["user"], md)
+        try_update(out, details)
+        return handler.success(out)
+
+
 class GraphHandler(RequestHandler):
     def initialize(self):
         self.graph = self.application.my_settings.get("graph")
@@ -97,32 +121,15 @@ class GraphHandler(RequestHandler):
 class Users(GraphHandler):
     def get(self, name=None):
         cutoff = int(self.get_argument("cutoff", 100))
-        include_role_users = self.get_argument("include_role_users", "no") == "yes"
+        if name is not None:
+            return get_individual_user_info(self, name, cutoff, service_account=False)
 
         with self.graph.lock:
-            if not name:
-                return self.success({
-                    "users": sorted([k
-                                     for k, v in self.graph.user_metadata.iteritems()
-                                     if include_role_users or (not v["role_user"])]),
-                })
-
-            if name in self.graph.user_metadata:
-                md = self.graph.user_metadata[name]
-                details = self.graph.get_user_details(name, cutoff)
-            else:
-                return self.notfound("User (%s) not found." % name)
-            for key in md["public_keys"]:
-                db_key = PublicKey.get(self.session, id=key["id"])
-                perms = get_public_key_permissions(self.session, db_key)
-
-                # Convert to set to remove duplicates, then back to list for json-serializability
-                key["permissions"] = list(set([(perm.name, perm.argument) for perm in perms]))
-
-            out = {"user": {"name": name}}
-            try_update(out["user"], md)
-            try_update(out, details)
-            return self.success(out)
+            return self.success({
+                "users": sorted([k
+                                for k, v in self.graph.user_metadata.iteritems()
+                                if not v["role_user"]]),
+            })
 
 
 class UsersPublicKeys(GraphHandler):
@@ -229,6 +236,20 @@ class TokenValidate(GraphHandler):
             "act_as_owner": True,
             "valid": True,
         })
+
+
+class ServiceAccounts(GraphHandler):
+    def get(self, name=None):
+        cutoff = int(self.get_argument("cutoff", 100))
+        if name is not None:
+            return get_individual_user_info(self, name, cutoff, service_account=True)
+
+        with self.graph.lock:
+            return self.success({
+                "users": sorted([k
+                                for k, v in self.graph.user_metadata.iteritems()
+                                if v["role_user"]]),
+            })
 
 
 class NotFound(GraphHandler):

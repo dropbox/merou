@@ -2,6 +2,7 @@ from grouper.api.handlers import (
         Groups,
         NotFound,
         Permissions,
+        ServiceAccounts,
         TokenValidate,
         Users,
         UsersPublicKeys,
@@ -23,6 +24,9 @@ HANDLERS = [
 
     (r"/permissions", Permissions),
     (r"/permissions/{}".format(PERMISSION_VALIDATION), Permissions),
+
+    (r"/service_accounts", ServiceAccounts),
+    (r"/service_accounts/{}".format(NAME_VALIDATION), ServiceAccounts),
 
     (r"/debug/stats", Stats),
 

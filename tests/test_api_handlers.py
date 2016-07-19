@@ -44,7 +44,7 @@ def test_service_accounts(users, http_client, base_url):
 
     assert resp.code == 200
     assert body["status"] == "ok"
-    assert sorted(body["data"]["users"]) == service_accounts
+    assert sorted(body["data"]["service_accounts"]) == service_accounts
 
 
 @pytest.mark.gen_test

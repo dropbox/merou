@@ -246,7 +246,7 @@ class ServiceAccounts(GraphHandler):
 
         with self.graph.lock:
             return self.success({
-                "users": sorted([k
+                "service_accounts": sorted([k
                                 for k, v in self.graph.user_metadata.iteritems()
                                 if v["role_user"]]),
             })

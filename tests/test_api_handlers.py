@@ -21,7 +21,6 @@ from util import grant_permission
 
 @pytest.mark.gen_test
 def test_users(users, http_client, base_url):
-    # without role users
     api_url = url(base_url, '/users')
     resp = yield http_client.fetch(api_url)
     body = json.loads(resp.body)
@@ -33,17 +32,20 @@ def test_users(users, http_client, base_url):
     assert body["status"] == "ok"
     assert sorted(body["data"]["users"]) == users_wo_role
 
-    # with role users
-    api_url = url(base_url, '/users', {'include_role_users': 'yes'})
+    # TODO: test cutoff
+
+
+@pytest.mark.gen_test
+def test_service_accounts(users, http_client, base_url):
+    api_url = url(base_url, '/service_accounts')
     resp = yield http_client.fetch(api_url)
     body = json.loads(resp.body)
-    users_w_role = sorted(users)
+    service_accounts = sorted([user.name for user in users.values() if user.role_user])
 
     assert resp.code == 200
     assert body["status"] == "ok"
-    assert sorted(body["data"]["users"]) == users_w_role
+    assert sorted(body["data"]["users"]) == service_accounts
 
-    # TODO: test cutoff
 
 @pytest.mark.gen_test
 def test_usertokens(users, session, http_client, base_url):

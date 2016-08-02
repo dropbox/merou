@@ -105,6 +105,30 @@ def test_add_tag(users, http_client, base_url, session):
     key2 = session.query(PublicKey).filter_by(public_key=key_2).scalar()
     assert len(get_public_key_tags(session, key2)) == 0, "Keys other than the one with the added tag should not gain tags"
 
+    # Non-admin and not user adding tag should fail
+    fe_url = url(base_url, '/users/{}/public-key/{}/tag'.format(user.username, key.id))
+    with pytest.raises(HTTPError):
+        resp = yield http_client.fetch(fe_url, method="POST",
+                body=urlencode({'tagname': "tyler_was_here"}),
+                headers={'X-Grouper-User': "zorkian@a.co"})
+
+    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    assert len(get_public_key_tags(session, key)) == 1, "The key should have exactly 1 tag"
+    assert get_public_key_tags(session, key)[0].name == "tyler_was_here"
+
+    # User admins test
+    fe_url = url(base_url, '/users/{}/public-key/{}/tag'.format(user.username, key.id))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'tagname': "dont_tag_me_bro"}),
+            headers={'X-Grouper-User': "tyleromeara@a.co"})
+
+    assert resp.code == 200
+    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    assert len(get_public_key_tags(session, key)) == 2, "The key should have 2 tags now"
+    assert set([x.name for x in get_public_key_tags(session, key)]) == set(["tyler_was_here",
+        "dont_tag_me_bro"])
+
+
 @pytest.mark.gen_test
 def test_remove_tag(users, http_client, base_url, session):
 
@@ -167,7 +191,7 @@ def test_remove_tag(users, http_client, base_url, session):
             headers={'X-Grouper-User': user.username})
 
     key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
-    # Remove tag
+    # Fail Remove tag
     tag = PublicKeyTag.get(session, name="dont_tag_me_bro")
     fe_url = url(base_url, '/users/{}/public-key/{}/delete_tag/{}'.format(user.username, key.id, tag.id))
     with pytest.raises(HTTPError):
@@ -175,7 +199,7 @@ def test_remove_tag(users, http_client, base_url, session):
                 body="",
                 headers={'X-Grouper-User': "oliver@a.co"})
 
-    # Remove tag
+    # Remove tag that isn't on key: should fail silently
     tag = PublicKeyTag.get(session, name="dont_tag_me_bro")
     fe_url = url(base_url, '/users/{}/public-key/{}/delete_tag/{}'.format(user.username, key.id, tag.id))
     resp = yield http_client.fetch(fe_url, method="POST",
@@ -198,6 +222,43 @@ def test_remove_tag(users, http_client, base_url, session):
 
     key2 = session.query(PublicKey).filter_by(public_key=key_2).scalar()
     assert len(get_public_key_tags(session, key2)) == 1, "Removing a tag from one key should not affect other keys"
+
+    # User admin remove tag
+
+    # readd tag
+    fe_url = url(base_url, '/users/{}/public-key/{}/tag'.format(user.username, key.id))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'tagname': "tyler_was_here"}),
+            headers={'X-Grouper-User': user.username})
+
+    assert resp.code == 200
+    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    assert len(get_public_key_tags(session, key)) == 1, "The key should have exactly 1 tag"
+    assert get_public_key_tags(session, key)[0].name == "tyler_was_here"
+
+    # Nonuser admin fail Remove tag
+    tag = PublicKeyTag.get(session, name="tyler_was_here")
+    fe_url = url(base_url, '/users/{}/public-key/{}/delete_tag/{}'.format(user.username, key.id, tag.id))
+    with pytest.raises(HTTPError):
+        resp = yield http_client.fetch(fe_url, method="POST",
+                body="",
+                headers={'X-Grouper-User': "oliver@a.co"})
+
+    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    assert len(get_public_key_tags(session, key)) == 1, "The key should have exactly 1 tags"
+
+    # Remove tag
+    tag = PublicKeyTag.get(session, name="tyler_was_here")
+    fe_url = url(base_url, '/users/{}/public-key/{}/delete_tag/{}'.format(user.username, key.id, tag.id))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body="",
+            headers={'X-Grouper-User': "tyleromeara@a.co"})
+
+    assert resp.code == 200
+
+    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    assert len(get_public_key_tags(session, key)) == 0, "The key should have exactly 0 tags"
+
 
 @pytest.mark.gen_test
 def test_grant_permission_to_tag(users, http_client, base_url, session):

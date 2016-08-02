@@ -193,4 +193,4 @@ class Secret(object):
         }
 
     def __repr__(self):
-        "{}({})".format(self.__name__, self.name)
+        return "{}({})".format(type(self).__name__, self.name)

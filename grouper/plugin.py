@@ -78,14 +78,15 @@ class BasePlugin(object):
         """
         return []
 
-    def commit_secret(self, session, secret):
-        # type: (Session, grouper.secret.Secret) -> None
+    def commit_secret(self, session, secret, actor):
+        # type: (Session, grouper.secret.Secret, grouper.models.user.User) -> None
         """Passes a Secret object to the plugin for processing, saving, distribution, and all of
         the other things secret management systems do when creating or updating a secret.
 
         Args:
             session: database session
             secret: the Secret to be committed
+            actor: the User who made the change to this secret
 
         Throws:
             Any exceptions should be a subclass of SecretError
@@ -95,14 +96,15 @@ class BasePlugin(object):
         """
         pass
 
-    def delete_secret(self, session, secret):
-        # type: (Session, grouper.secret.Secret) -> None
+    def delete_secret(self, session, secret, actor):
+        # type: (Session, grouper.secret.Secret, grouper.models.user.User) -> None
         """Passes a Secret object to the plugin to be deleted and removed from the secret
         management sysmte.
 
         Args:
             session: database session
             secret: the Secret to be deleted
+            actor: the User who deleted this secret
 
         Throws:
             Any exceptions should be a subclass of SecretError

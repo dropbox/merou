@@ -56,7 +56,7 @@ class SecretsView(GrouperHandler):
         secret = secret_type.secret_from_form(self.session, form, new=True)
 
         try:
-            commit_secret(self.session, secret)
+            commit_secret(self.session, secret, self.current_user)
         except SecretError as e:
             form.name.errors.append(
                 e.message

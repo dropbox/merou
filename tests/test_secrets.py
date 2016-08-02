@@ -56,10 +56,10 @@ class SecretTestPlugin(BasePlugin):
     def get_secret_forms(self):
         return [Secret, TestSecret]
 
-    def commit_secret(self, session, secret):
+    def commit_secret(self, session, secret, actor):
         self.secrets[secret.name] = secret
 
-    def delete_secret(self, session, secret):
+    def delete_secret(self, session, secret, actor):
         del self.secrets[secret.name]
 
     def get_secrets(self, session):

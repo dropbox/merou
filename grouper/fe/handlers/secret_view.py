@@ -81,7 +81,7 @@ class SecretView(GrouperHandler):
         secret = secret.secret_from_form(self.session, form, new=False)
 
         try:
-            commit_secret(self.session, secret)
+            commit_secret(self.session, secret, self.current_user)
         except SecretError as e:
             form.name.errors.append(
                 e.message
@@ -109,7 +109,7 @@ class SecretView(GrouperHandler):
         form.validate()
 
         try:
-            delete_secret(self.session, secret)
+            delete_secret(self.session, secret, self.current_user)
         except SecretError as e:
             form.name.errors.append(
                 e.message

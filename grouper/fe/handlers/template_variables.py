@@ -109,6 +109,7 @@ def get_user_view_template_vars(session, actor, user, graph):
             for perm in get_public_key_permissions(session, key)]
     ret["permissions"] = user_md.get('permissions', [])
     ret["log_entries"] = get_log_entries_by_user(session, user)
+    ret["user_tokens"] = user.tokens
 
     return ret
 

@@ -1,4 +1,3 @@
-import copy
 from enum import Enum
 from sqlalchemy.orm import Session  # noqa
 from typing import Any  # noqa
@@ -42,7 +41,7 @@ class Secret(object):
                  risk_level,      # type: int
                  risk_info,       # type: str
                  uses,            # type: str
-                 new=False        # type: boolean
+                 new=False        # type: bool
                  ):
         # type: (...) -> None
         """Creates a new secret object obviously.
@@ -66,6 +65,27 @@ class Secret(object):
         self.uses = uses
         self.new = new
 
+    def get_form_args(self):
+        # type: () -> Dict[str, List[unicode]]
+        """This converts from a Secret type to a dictionary that is equivalent to the request
+        arguments we'd get from a filled out SecretForm. This is used to seed the SecretForm that
+        is returned to the user when they edit this secret.
+
+        Returns:
+            A dictionary with this secret's attributes converted into the form we use for
+            SecretForms
+        """
+        return {
+            'name': [self.name],
+            'distribution': ["\r\n".join(self.distribution)],
+            'owner': [unicode(self.owner.id)],
+            'notes': [self.notes],
+            'risk_level': [unicode(self.risk_level)],
+            'risk_info': [self.risk_info],
+            'uses': [self.uses],
+            'new': [unicode(self.new)],
+        }
+
     def get_secrets_form(self, session, user):
         # type: (Session, User) -> SecretForm
         """Returns the SecretForm representation of this secret object.
@@ -82,7 +102,7 @@ class Secret(object):
         Returns:
             A SecretForm with fields prefilled by this object's values
         """
-        return self._get_secrets_form_generic(session, user, obj=self)
+        return self._get_secrets_form_generic(session, user, self.get_form_args())
 
     @classmethod
     def get_secrets_form_args(cls, session, user, args):
@@ -105,8 +125,8 @@ class Secret(object):
         return cls._get_secrets_form_generic(session, user, args)
 
     @classmethod
-    def _get_secrets_form_generic(cls, session, user, args={}, obj=None):
-        # type: (Session, User, Dict[str, Any], Secret) -> SecretForm
+    def _get_secrets_form_generic(cls, session, user, args={}):
+        # type: (Session, User, Dict[str, Any]) -> SecretForm
         """Returns a SecretForm filled out with either args or obj.
 
         The returned value may be a subclass of SecretForm, and is used for
@@ -123,14 +143,7 @@ class Secret(object):
         Returns:
             A SecretForm with fields prefilled by either the object's or arg's values
         """
-        if obj:
-            # Don't want to modify the object we're given
-            obj = copy.copy(obj)
-            # The form expects the owner to be an id, not a Group
-            obj.owner = obj.owner.id
-            # The form expects the distribution to be a single string with newlines
-            obj.distribution = "\r\n".join(obj.distribution)
-        form = cls.form(args, obj=obj)
+        form = cls.form(args)
 
         form.owner.choices = [[-1, "(select one)"]]
         user_groups = [group for group, group_edge in get_groups_by_user(session, user)]
@@ -147,7 +160,7 @@ class Secret(object):
                     form.owner.choices.append([int(group.id), group.name])
 
         form.risk_level.choices = [[-1, "(select one)"]]
-        for level in SecretRiskLevel:  # type: ignore: iterating through enums is well defined
+        for level in SecretRiskLevel:  # type: ignore # iterating through enums is well defined
             form.risk_level.choices.append([level.value, level.name])
 
         return form

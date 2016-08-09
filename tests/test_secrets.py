@@ -7,7 +7,8 @@ from wtforms import HiddenField, StringField, validators
 from fixtures import fe_app as app  # noqa
 from fixtures import standard_graph, users, graph, groups, session, permissions  # noqa
 from grouper.fe.forms import SecretForm
-from grouper.model_soup import User
+from grouper.model_soup import Group  # noqa
+from grouper.models.user import User
 from grouper.plugin import BasePlugin
 from grouper.secret import Secret
 from url_util import url
@@ -33,8 +34,9 @@ class TestSecret(Secret):
                  risk_info,       # type: str
                  uses,            # type: str
                  path,            # type: str
-                 new=False        # type: boolean
+                 new=False        # type: bool
                  ):
+        # type: (...) -> None
         super(TestSecret, self).__init__(name, distribution, owner,
             notes, risk_level, risk_info, uses, new=new)
         self.path = path

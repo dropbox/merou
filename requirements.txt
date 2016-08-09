@@ -16,4 +16,5 @@ python-dateutil==2.4.2
 pytz==2014.2
 sshpubkey==0.1.2
 tornado==3.2
+typing==3.5.2.2
 wtforms-tornado==0.0.1

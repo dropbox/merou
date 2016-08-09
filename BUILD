@@ -50,6 +50,7 @@ dbx_py_library(
         ':template_files',
     ],
     deps = [
+        '//pip/typing',
         '//thirdparty:annex',
         '//thirdparty:argparse',
         '//thirdparty:enum34',

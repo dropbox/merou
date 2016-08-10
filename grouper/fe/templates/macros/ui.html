@@ -51,6 +51,7 @@
     {% endif %}
     </td>
 {%- endmacro %}
+
 {% macro tokens_panel(max_height, user, tokens, can_control=False) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
@@ -79,6 +80,11 @@
             <div class='panel-footer'>
                 <a class="btn btn-default btn-sm" href="/users/{{ user.name }}/tokens/add">
                 <span class="glyphicon glyphicon-plus"></span> Create access token
+                </a>
+            </div>
+            <div class='panel-footer'>
+                <a class="btn btn-default btn-sm" href="/users/{{ user.name }}/tokens/create">
+                <span class="glyphicon glyphicon-plus"></span> Create access token and add as secret
                 </a>
             </div>
             {% endif %}

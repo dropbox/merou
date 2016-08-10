@@ -25,7 +25,8 @@
                 IT and security teams.
             </p>
             <form class="form-horizontal" role="form"
-                  method="post" action="/users/{{user.name}}/tokens/add">
+                  method="post" action={{ action if action else
+                  "/users/{}/tokens/add".format(user.name)}}>
                 {% include "forms/user-token.html" %}
                 <div class="form-group">
                     <div class="col-sm-offset-3 col-sm-4">

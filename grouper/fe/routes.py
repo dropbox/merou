@@ -37,6 +37,7 @@ from grouper.fe.handlers.permissions_revoke_tag import PermissionsRevokeTag
 from grouper.fe.handlers.permissions_view import PermissionsView
 from grouper.fe.handlers.public_key_add import PublicKeyAdd
 from grouper.fe.handlers.public_key_add_tag import PublicKeyAddTag
+from grouper.fe.handlers.public_key_create import PublicKeyCreate
 from grouper.fe.handlers.public_key_delete import PublicKeyDelete
 from grouper.fe.handlers.public_key_remove_tag import PublicKeyRemoveTag
 from grouper.fe.handlers.search import Search
@@ -55,6 +56,7 @@ from grouper.fe.handlers.user_password_delete import UserPasswordDelete
 from grouper.fe.handlers.user_requests import UserRequests
 from grouper.fe.handlers.user_shell import UserShell
 from grouper.fe.handlers.user_token_add import UserTokenAdd
+from grouper.fe.handlers.user_token_create import UserTokenCreate
 from grouper.fe.handlers.user_token_disable import UserTokenDisable
 from grouper.fe.handlers.user_view import UserView
 from grouper.fe.handlers.users_public_key import UsersPublicKey
@@ -99,6 +101,7 @@ for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
         (r"/users/{}/enable".format(regex), UserEnable),
         (r"/users/{}/shell".format(regex), UserShell),
         (r"/users/{}/public-key/add".format(regex), PublicKeyAdd),
+        (r"/users/{}/public-key/create".format(regex), PublicKeyCreate),
         (
             r"/users/{}/public-key/(?P<key_id>[0-9]+)/delete".format(regex),
             PublicKeyDelete
@@ -112,6 +115,7 @@ for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
             PublicKeyRemoveTag
         ),
         (r"/users/{}/tokens/add".format(regex), UserTokenAdd),
+        (r"/users/{}/tokens/create".format(regex), UserTokenCreate),
         (r"/users/{}/tokens/(?P<token_id>[0-9]+)/disable".format(regex), UserTokenDisable),
         (r"/users/{}/passwords/add".format(regex), UserPasswordAdd),
         (r"/users/{}/passwords/(?P<pass_id>[0-9]+)/delete".format(regex), UserPasswordDelete),

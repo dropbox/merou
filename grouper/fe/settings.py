@@ -19,6 +19,8 @@ settings = FeSettings.from_settings(base_settings, {
     "cdnjs_prefix": "//cdnjs.cloudflare.com",
     "date_format": "%Y-%m-%d %I:%M %p",
     "debug": False,
+    "default_ssh_key_type": "rsa",
+    "default_ssh_key_size": 4096,
     "how_to_get_help": None,
     "num_processes": 1,
     "permission_request_dropdown_help": None,

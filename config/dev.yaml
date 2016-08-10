@@ -130,6 +130,15 @@ fe:
     # Type: str
     service_account_email_domain: "svc.localhost"
 
+    # The default type to use for Grouper generated SSH Keys. Must be in a format acceptable by
+    # ssh-keygen. See SSH-kEYGEN(1) for information on acceptable types
+    # type: str
+    default_ssh_key_type: "rsa"
+
+    # The default size (in bits) to use for Grouper generated SSH Keys.
+    # Type: int
+    default_ssh_key_size: 4096
+
 api:
     # The port to listen to requests on.
     # Type: int

@@ -82,6 +82,14 @@
                 <span class="glyphicon glyphicon-plus"></span> Add Public Key
                 </a>
             </div>
+            <div class='panel-footer'>
+                <form action="/users/{{ user.name }}/public-key/create" method="POST">
+                    <button class="btn btn-default btn-sm">
+                        <span class="glyphicon glyphicon-plus"></span> Generate Key Pair
+                    </button>
+                    {{ xsrf_form() }}
+                </form>
+            </div>
             {% endif %}
         </div>
     </div>

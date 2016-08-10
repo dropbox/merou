@@ -1,4 +1,5 @@
 from collections import defaultdict
+import subprocess
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label
@@ -233,3 +234,17 @@ def get_public_key_tag_permissions(session, tag):
     ).all()
 
     return permissions
+
+
+def generate_key_pair(ssh_type, size):
+    try:
+        subprocess.check_output(["yes | ssh-keygen -t {} -b {} -f /dev/stdout".format(ssh_type,
+        size)], shell=True)
+    # ssh-keygen will try to output the public key to /dev/stdout.pub, which doesn't exist and
+    # which it doesn't have permission to make
+    except subprocess.CalledProcessError as e:
+        output = e.output
+        private_key = output[output.index("-"):]  # Select the key
+        public_key = subprocess.check_output(["echo '{}' | ssh-keygen -y -f /dev/stdin"
+            .format(private_key)], shell=True)
+        return public_key, private_key

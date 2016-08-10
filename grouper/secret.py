@@ -84,6 +84,7 @@ class Secret(object):
             'risk_info': [self.risk_info],
             'uses': [self.uses],
             'new': [unicode(self.new)],
+            'type': [type(self).__name__],
         }
 
     def get_secrets_form(self, session, user):

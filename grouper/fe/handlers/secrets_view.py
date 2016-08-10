@@ -1,4 +1,5 @@
 from grouper.fe.util import Alert, GrouperHandler, paginate_results
+from grouper.model_soup import Group
 from grouper.plugin import get_secret_forms
 from grouper.secret import SecretError, SecretRiskLevel
 from grouper.secret_plugin import commit_secret, get_all_secrets
@@ -39,6 +40,15 @@ class SecretsView(GrouperHandler):
         if form.data["name"] in all_secrets:
             msg = "A secret with the name {} already exists".format(form.data["name"])
             form.name.errors.append(msg)
+            return self.render(
+                "secrets.html", forms=forms, secrets=secrets, offset=offset, limit=limit,
+                total=total, alerts=[Alert("danger", msg)], risks=SecretRiskLevel,
+            )
+
+        group = Group.get(self.session, form.data["owner"])
+        if group is None:
+            msg = "Invalid owner selected"
+            form.owner.errors.append(msg)
             return self.render(
                 "secrets.html", forms=forms, secrets=secrets, offset=offset, limit=limit,
                 total=total, alerts=[Alert("danger", msg)], risks=SecretRiskLevel,

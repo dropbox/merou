@@ -50,3 +50,19 @@ def get_all_secrets(session):
     for plugin in get_plugins():
         ret.update(plugin.get_secrets(session))
     return ret
+
+
+def get_token_secret_form():
+    for plugin in get_plugins():
+        ret = plugin.get_token_secret_form()
+        if ret:
+            return ret
+    return None
+
+
+def get_ssh_key_secret_form():
+    for plugin in get_plugins():
+        ret = plugin.get_ssh_key_secret_form()
+        if ret:
+            return ret
+    return None

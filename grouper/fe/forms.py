@@ -361,4 +361,6 @@ class SecretForm(Form):
     ], choices=[[-1, "(select one)"]], default=-1, coerce=int)
     risk_info = TextAreaField("Risk Info")
     uses = TextAreaField("Uses")
-    type = HiddenField(default="Secret")
+    type = HiddenField(default="Secret", validators=[
+        validators.DataRequired(),
+    ])

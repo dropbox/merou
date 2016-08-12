@@ -182,9 +182,10 @@ def permissions(session, users):
 
 
 @pytest.fixture
-def api_app(standard_graph):
+def api_app(session, standard_graph):
     my_settings = {
             "graph": standard_graph,
+            "db_session": lambda: session,
             }
     return Application(API_HANDLERS, my_settings=my_settings)
 

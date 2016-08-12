@@ -14,6 +14,7 @@ from grouper.models.base.session import Session
 from grouper.models.public_key import PublicKey
 from grouper.models.user import User
 from grouper.models.user_token import UserToken
+from grouper.public_key import get_public_key_permissions
 from grouper.util import try_update
 
 # if raven library around, pull in SentryMixin
@@ -30,6 +31,7 @@ else:
 class GraphHandler(RequestHandler):
     def initialize(self):
         self.graph = self.application.my_settings.get("graph")
+        self.session = self.application.my_settings.get("db_session")()
 
         self._request_start_time = datetime.utcnow()
         stats.incr("requests")
@@ -110,6 +112,13 @@ class Users(GraphHandler):
                 details = self.graph.get_user_details(name, cutoff)
             else:
                 return self.notfound("User (%s) not found." % name)
+            for key in md["public_keys"]:
+                db_key = PublicKey.get(self.session, id=key["id"])
+                perms = get_public_key_permissions(self.session, db_key)
+
+                # Convert to set to remove duplicates, then back to list for json-serializability
+                key["permissions"] = list(set([(perm.name, perm.argument) for perm in perms]))
+
             out = {"user": {"name": name}}
             try_update(out["user"], md)
             try_update(out, details)

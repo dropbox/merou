@@ -76,7 +76,7 @@ def test_assert_controllers_are_auditors(groups):  # noqa
 
 
 @pytest.mark.gen_test
-def test_audit_end_to_end(session, users, groups, http_client, base_url):  # noqa
+def test_audit_end_to_end(session, users, groups, http_client, base_url, graph):  # noqa
     """ Tests an end-to-end audit cycle. """
     groupname = 'audited-team'
 
@@ -92,6 +92,8 @@ def test_audit_end_to_end(session, users, groups, http_client, base_url):  # noq
     # add some users to test removal
     add_member(groups[groupname], users["zay@a.co"])
     add_member(groups[groupname], users["gary@a.co"])
+
+    graph.update_from_db(session)
 
     # start the audit
     end_at_str = (datetime.now() + timedelta(days=10)).strftime('%m/%d/%Y')

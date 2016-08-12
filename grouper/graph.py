@@ -178,6 +178,7 @@ class GroupGraph(object):
                         "fingerprint": key.fingerprint,
                         "created_on": str(key.created_on),
                         "tags": [tag.name for tag in public_key_tags.get(key.id, [])],
+                        "id": key.id,
                     } for key in public_keys.get(user.id, [])
                 ],
                 "metadata": [

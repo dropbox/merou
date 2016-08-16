@@ -17,6 +17,10 @@ from grouper.util import get_database_url
 
 
 def sync_db_command(args):
+    # Models not implicitly or explictly imported above are explicitly imported
+    # here:
+    from grouper.models.perf_profile import PerfProfile  # noqa
+
     db_engine = get_db_engine(get_database_url(settings))
     Model.metadata.create_all(db_engine)
 

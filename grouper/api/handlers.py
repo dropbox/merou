@@ -15,7 +15,6 @@ from grouper.models.base.session import Session
 from grouper.models.public_key import PublicKey
 from grouper.models.user import User
 from grouper.models.user_token import UserToken
-from grouper.public_key import get_public_key_permissions
 from grouper.util import try_update
 
 # if raven library around, pull in SentryMixin
@@ -51,13 +50,6 @@ def get_individual_user_info(handler, name, cutoff, service_account):
         md = handler.graph.user_metadata[name]
         if service_account is not None and md["role_user"] != service_account:
             return handler.notfound("{} ({}) not found.".format(acc, name))
-
-        for key in md["public_keys"]:
-            db_key = PublicKey.get(handler.session, id=key["id"])
-            perms = get_public_key_permissions(handler.session, db_key)
-
-            # Convert to set to remove duplicates, then back to list for json-serializability
-            key["permissions"] = list(set([(perm.name, perm.argument) for perm in perms]))
 
         details = handler.graph.get_user_details(name, cutoff)
         out = {"user": {"name": name}}

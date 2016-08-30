@@ -4,10 +4,9 @@ from sqlalchemy import asc, or_
 
 from grouper.constants import (GROUP_ADMIN, PERMISSION_ADMIN, PERMISSION_CREATE,
     PERMISSION_GRANT, USER_ADMIN)
-from grouper.model_soup import Group, GROUP_EDGE_ROLES, GroupEdge
+from grouper.model_soup import Group, GroupEdge
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
-from grouper.user_group import get_all_groups_by_user
 
 
 def user_has_permission(session, user, permission, argument=None):
@@ -36,9 +35,7 @@ def user_has_permission(session, user, permission, argument=None):
 
 def user_permissions(session, user):
 
-    user_groups = get_all_groups_by_user(session, user)
-    non_np = [grp.name for grp, role in user_groups if role != GROUP_EDGE_ROLES.index("np-owner")]
-
+    # TODO: Make this walk the tree, so we can get a user's entire set of permissions.
     now = datetime.utcnow()
     permissions = session.query(
         Permission.name,
@@ -49,10 +46,11 @@ def user_permissions(session, user):
         PermissionMap.permission_id == Permission.id,
         PermissionMap.group_id == Group.id,
         GroupEdge.group_id == Group.id,
+        GroupEdge.member_pk == user.id,
+        GroupEdge.member_type == 0,
         GroupEdge.active == True,
         user.enabled == True,
         Group.enabled == True,
-        Group.name.in_(non_np),
         or_(
             GroupEdge.expiration > now,
             GroupEdge.expiration == None

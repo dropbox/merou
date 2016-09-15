@@ -133,9 +133,10 @@ class Users(GraphHandler):
         include_service_accounts = self.get_argument("include_role_users", "no") == "yes"
 
         if name is not None:
-            # None gets us both users and service accounts, False just users
-            service_account = None if include_service_accounts else False
-            return get_individual_user_info(self, name, cutoff, service_account=service_account)
+            # We don't require `include_service_accounts` when querying for a specific user,
+            # because there are too many existing integrations that expect the
+            # /users/foo@example.com endpoint to work for both. :(
+            return get_individual_user_info(self, name, cutoff, service_account=None)
 
         with self.graph.lock:
             return self.success({

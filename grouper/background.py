@@ -135,6 +135,7 @@ class BackgroundThread(Thread):
                     session.commit()
 
                 stats.set_gauge("successful-background-update", 1)
+                stats.set_gauge("failed-background-update", 0)
             except OperationalError:
                 Session.configure(bind=get_db_engine(get_database_url(self.settings)))
                 self.logger.critical("Failed to connect to database.")

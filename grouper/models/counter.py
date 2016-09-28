@@ -19,9 +19,10 @@ class Counter(Model):
         counter = session.query(cls).filter_by(name=name).scalar()
         if counter is None:
             counter = cls(name=name, count=count).add(session)
-            session.flush()
-            return counter
-        counter.count = cls.count + count
+        else:
+            counter.count = cls.count + count
+            counter.last_modified = datetime.utcnow()
+
         session.flush()
         return counter
 

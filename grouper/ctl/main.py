@@ -11,6 +11,7 @@ from grouper.ctl import (
         user,
         user_proxy,
         )
+from grouper.plugin import load_plugins
 from grouper.settings import default_settings_path, settings
 from grouper.util import get_loglevel
 
@@ -19,7 +20,6 @@ sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
 
 def main(sys_argv=sys.argv, start_config_thread=True):
-
     description_msg = "Grouper Control"
     parser = argparse.ArgumentParser(description=description_msg)
 
@@ -53,6 +53,8 @@ def main(sys_argv=sys.argv, start_config_thread=True):
 
     log_level = get_loglevel(args)
     logging.basicConfig(level=log_level, format=settings.log_format)
+
+    load_plugins(settings["plugin_dir"], service_name="grouper-ctl")
 
     if log_level < 0:
         sa_log.setLevel(logging.INFO)

@@ -30,7 +30,7 @@ dbx_py_bin(
     py_excludes = [],
 )
 
-dbx_py_par(
+dbx_py_bin(
     name = 'grouper-ctl',
     main = 'bin/grouper-ctl',
     deps = [

@@ -21,7 +21,8 @@ class Counter(Model):
             counter = cls(name=name, count=count).add(session)
         else:
             counter.count = cls.count + count
-            counter.last_modified = datetime.utcnow()
+            # TODO(herb): reenable after it's safe
+            # counter.last_modified = datetime.utcnow()
 
         session.flush()
         return counter

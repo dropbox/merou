@@ -8,6 +8,17 @@
     Grant Permission to {{ group.name }}
 {% endblock %}
 
+{% block head %}
+    {# chosen.css covers the basic Chosen UI; chosen.bootstrap.min.css adds the
+       extra classes to make it look compatible with Bootstrap. Both are required.  #}
+    <link href="{{cdnjs_prefix}}/ajax/libs/chosen/1.4.2/chosen.css"
+          rel="stylesheet"
+          media="screen">
+    <link href="/static/css/ext/chosen-bootstrap-1.0.4/chosen.bootstrap.min.css"
+          rel="stylesheet"
+          media="screen">
+{% endblock %}
+
 {% block content %}
 <div class="col-md-6 col-md-offset-3">
     <div class="panel panel-default">
@@ -27,4 +38,18 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block script %}
+
+<script src="{{cdnjs_prefix}}/ajax/libs/chosen/1.4.2/chosen.jquery.min.js"></script>
+
+<script type="text/javascript">
+    $(function () {
+        $("select#permission")
+        .attr("data-placeholder", "Select a user or group")
+        .chosen();
+    });
+</script>
+
 {% endblock %}

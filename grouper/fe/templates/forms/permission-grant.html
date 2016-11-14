@@ -1,6 +1,23 @@
 {% from 'macros/ui.html' import form_field -%}
 
-{{ form_field(form.permission, 3, 8, class_="form-control") }}
-{{ form_field(form.argument, 3, 8, class_="form-control") }}
+<div class="form-group {% if form.permission.errors %}has-error{% endif %}">
+    <label for="{{form.permission.label.field_id}}"
+           class="col-sm-3 control-label">
+        {{ form.permission.label.text }} {% if form.permission.flags.required %}*{% endif %}
+    </label>
+    <div class="col-sm-7">
+        {{ form.permission(class_="form-control") }}
+    </div>
+</div>
+
+<div class="form-group {% if form.argument.errors %}has-error{% endif %}">
+    <label for="{{form.argument.label.field_id}}"
+           class="col-sm-3 control-label">
+        {{ form.argument.label.text }} {% if form.argument.flags.required %}*{% endif %}
+    </label>
+    <div class="col-sm-7">
+        {{ form.argument(class_="form-control") }}
+    </div>
+</div>
 
 {{ xsrf_form() }}

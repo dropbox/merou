@@ -129,10 +129,11 @@ class GroupAdd(GrouperHandler):
 
         self.session.commit()
 
+        on_user_id = member.id if member.type == "User" else None
         AuditLog.log(self.session, self.current_user.id, 'join_group',
                      '{} added to group with role: {}'.format(
                          member.name, form.data["role"]),
-                     on_group_id=group.id)
+                     on_group_id=group.id, on_user_id=on_user_id)
 
         if member.type == "User":
             send_email(

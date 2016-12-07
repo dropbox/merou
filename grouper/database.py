@@ -32,6 +32,7 @@ class DbRefreshThread(Thread):
                     self.graph.update_from_db(session)
 
                 stats.set_gauge("successful-db-update", 1)
+                stats.set_gauge("failed-db-update", 0)
             except OperationalError:
                 Session.configure(bind=get_db_engine(get_database_url(self.settings)))
                 self.logger.critical("Failed to connect to database.")

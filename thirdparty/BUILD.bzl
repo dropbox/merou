@@ -1,6 +1,7 @@
 package(default_visibility = ['//visibility:public'])
 
-load('//build_tools/bazel/py', 'dbx_py_pypi_piplib')
+#load('//build_tools/bazel/py', 'dbx_py_pypi_piplib')
+#load('//build_tools/bazel/py', 'dbx_py_pypi_piplib')
 
 dbx_py_pypi_piplib(
     name = 'annex',
@@ -124,7 +125,7 @@ dbx_py_pypi_piplib(
 
 dbx_py_pypi_piplib(
     name = 'raven',
-    pip_deps = ['raven==5.7.1'],
+    pip_deps = ['raven==5.27.1'],
     deps = [
         '//pip/setuptools',
     ],

@@ -2,9 +2,11 @@ import fnmatch
 import functools
 import logging
 import random as insecure_random
+import re
 import subprocess
 import threading
 import time
+from typing import Dict, Pattern  # noqa
 
 _TRUTHY = set([
     "true", "yes", "1", ""
@@ -59,9 +61,21 @@ def get_database_url(settings, retries=3, retry_wait_seconds=1):
                 time.sleep(retry_wait_seconds)
 
 
+# TODO(lfaraone): Consider moving this to a LRU cache to avoid memory leaks
+_regex_cache = {}  # type: Dict[str, Pattern]
+
+
 def matches_glob(glob, text):
     """Returns True/False on if text matches glob."""
-    return fnmatch.fnmatch(text, glob)
+    # type: (str, str) -> bool
+    if "*" not in glob:
+        return text == glob
+    try:
+        regex = _regex_cache[glob]
+    except KeyError:
+        regex = re.compile(fnmatch.translate(glob))
+        _regex_cache[glob] = regex
+    return regex.match(text) is not None
 
 
 def singleton(f):

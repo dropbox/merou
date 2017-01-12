@@ -1,8 +1,6 @@
 from collections import defaultdict, namedtuple
 from datetime import datetime
-import fnmatch
 import re
-from typing import Pattern  # noqa
 
 from sqlalchemy.exc import IntegrityError
 
@@ -294,21 +292,6 @@ def get_grantable_permissions(session, restricted_ownership_permissions):
     return {p: _reduce_args(p, a) for p, a in args_by_perm.items()}
 
 
-_regex_cache = {}  # type: Dict[str, Pattern]
-
-
-def _cached_almost_fnmatch(haystack, needle):
-    # type: (str, str) -> bool
-    if "*" not in needle:
-        return haystack == needle
-    try:
-        regex = _regex_cache[needle]
-    except KeyError:
-        regex = re.compile(fnmatch.translate(needle))
-        _regex_cache[needle] = regex
-    return regex.match(haystack) is not None
-
-
 def get_owner_arg_list(session, permission, argument, owners_by_arg_by_perm=None):
     """Return the grouper group(s) responsible for approving a request for the
     given permission + argument along with the actual argument they were
@@ -329,7 +312,7 @@ def get_owner_arg_list(session, permission, argument, owners_by_arg_by_perm=None
     all_owner_arg_list = []
     owners_by_arg = owners_by_arg_by_perm[permission.name]
     for arg, owners in owners_by_arg.items():
-        if _cached_almost_fnmatch(argument, arg):
+        if matches_glob(arg, argument):
             all_owner_arg_list += [(owner, arg) for owner in owners]
 
     return all_owner_arg_list

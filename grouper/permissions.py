@@ -1,6 +1,5 @@
 from collections import defaultdict, namedtuple
 from datetime import datetime
-from fnmatch import fnmatch
 import re
 
 from sqlalchemy.exc import IntegrityError
@@ -313,7 +312,7 @@ def get_owner_arg_list(session, permission, argument, owners_by_arg_by_perm=None
     all_owner_arg_list = []
     owners_by_arg = owners_by_arg_by_perm[permission.name]
     for arg, owners in owners_by_arg.items():
-        if fnmatch(argument, arg):
+        if matches_glob(arg, argument):
             all_owner_arg_list += [(owner, arg) for owner in owners]
 
     return all_owner_arg_list

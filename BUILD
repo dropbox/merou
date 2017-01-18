@@ -1,6 +1,6 @@
 package(default_visibility = ['//visibility:public'])
 
-load('/build_tools/bazel/py', 'dbx_py_bin', 'dbx_py_par', 'dbx_py_library')
+load('/build_tools/bazel/py', 'dbx_py_bin', 'dbx_py_library')
 
 dbx_py_bin(
     name = 'grouper-fe',

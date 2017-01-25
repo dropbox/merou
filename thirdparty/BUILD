@@ -201,7 +201,14 @@ dbx_py_pypi_piplib(
             '_mysql_exceptions.py',
         ],
     },
+    deps = [
+        '//dpkg:libmysqlclient',
+        '//dpkg:usr/bin/mysql_config',
+    ],
     pip_deps = ['MySQL-python==1.2.5'],
+    env = {
+        'MYSQL_CONFIG': '$(ROOT)/$(location //dpkg:usr/bin/mysql_config)',
+    },
 )
 
 dbx_py_pypi_piplib(

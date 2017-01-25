@@ -18,7 +18,14 @@ dbx_py_pypi_piplib(
 
 dbx_py_pypi_piplib(
     name = 'mysql-python',
+    deps = [
+        '//dpkg:libmysqlclient',
+        '//dpkg:usr/bin/mysql_config',
+    ],
     pip_deps = ['MySQL-python==1.2.5'],
+    env = {
+        'MYSQL_CONFIG': '$(ROOT)/$(location //dpkg:usr/bin/mysql_config)',
+    },
 )
 
 dbx_py_pypi_piplib(

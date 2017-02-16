@@ -905,29 +905,29 @@ dbx_py_pypi_piplib(
   name = 'expvar',
     contents = {
         'cpython-27-drte-v1': [
-            'expvar-0.0.2.dist-info/DESCRIPTION.rst',
-            'expvar-0.0.2.dist-info/METADATA',
-            'expvar-0.0.2.dist-info/RECORD',
-            'expvar-0.0.2.dist-info/WHEEL',
-            'expvar-0.0.2.dist-info/metadata.json',
-            'expvar-0.0.2.dist-info/top_level.txt',
+            'expvar-0.1.0.dist-info/DESCRIPTION.rst',
+            'expvar-0.1.0.dist-info/METADATA',
+            'expvar-0.1.0.dist-info/RECORD',
+            'expvar-0.1.0.dist-info/WHEEL',
+            'expvar-0.1.0.dist-info/metadata.json',
+            'expvar-0.1.0.dist-info/top_level.txt',
             'expvar/__init__.py',
             'expvar/stats.py',
             'expvar/version.py',
         ],
         'pypy-27-abi-41': [
-            'expvar-0.0.2.dist-info/DESCRIPTION.rst',
-            'expvar-0.0.2.dist-info/METADATA',
-            'expvar-0.0.2.dist-info/RECORD',
-            'expvar-0.0.2.dist-info/WHEEL',
-            'expvar-0.0.2.dist-info/metadata.json',
-            'expvar-0.0.2.dist-info/top_level.txt',
+            'expvar-0.1.0.dist-info/DESCRIPTION.rst',
+            'expvar-0.1.0.dist-info/METADATA',
+            'expvar-0.1.0.dist-info/RECORD',
+            'expvar-0.1.0.dist-info/WHEEL',
+            'expvar-0.1.0.dist-info/metadata.json',
+            'expvar-0.1.0.dist-info/top_level.txt',
             'expvar/__init__.py',
             'expvar/stats.py',
             'expvar/version.py',
         ],
     },
-    pip_deps = ['expvar==0.0.2'],
+    pip_deps = ['expvar==0.1.0'],
 )
 
 dbx_py_pypi_piplib(
@@ -5646,4 +5646,132 @@ dbx_py_pypi_piplib(
     },
     pip_deps = ['ipython==3.2.1'],
     py_excludes = [],
+)
+
+dbx_py_pypi_piplib(
+  name = 'dbx-stopwatch',
+    contents = {
+        'cpython-27-drte-v1': [
+            'dbx_stopwatch-1.0.dist-info/DESCRIPTION.rst',
+            'dbx_stopwatch-1.0.dist-info/METADATA',
+            'dbx_stopwatch-1.0.dist-info/RECORD',
+            'dbx_stopwatch-1.0.dist-info/WHEEL',
+            'dbx_stopwatch-1.0.dist-info/metadata.json',
+            'dbx_stopwatch-1.0.dist-info/top_level.txt',
+            'stopwatch.py',
+        ],
+        'pypy-27-abi-41': [
+            'dbx_stopwatch-1.0.dist-info/DESCRIPTION.rst',
+            'dbx_stopwatch-1.0.dist-info/METADATA',
+            'dbx_stopwatch-1.0.dist-info/RECORD',
+            'dbx_stopwatch-1.0.dist-info/WHEEL',
+            'dbx_stopwatch-1.0.dist-info/metadata.json',
+            'dbx_stopwatch-1.0.dist-info/top_level.txt',
+            'stopwatch.py',
+        ],
+    },
+    pip_deps = ['dbx-stopwatch==1.0'],
+    deps = [
+        ':appdirs',
+        ':packaging',
+        ':pyparsing',
+        ':six',
+    ],
+)
+
+dbx_py_pypi_piplib(
+  name = 'appdirs',
+    contents = {
+        'cpython-27-drte-v1': [
+            'appdirs-1.4.0.dist-info/DESCRIPTION.rst',
+            'appdirs-1.4.0.dist-info/METADATA',
+            'appdirs-1.4.0.dist-info/RECORD',
+            'appdirs-1.4.0.dist-info/WHEEL',
+            'appdirs-1.4.0.dist-info/metadata.json',
+            'appdirs-1.4.0.dist-info/top_level.txt',
+            'appdirs.py',
+        ],
+        'pypy-27-abi-41': [
+            'appdirs-1.4.0.dist-info/DESCRIPTION.rst',
+            'appdirs-1.4.0.dist-info/METADATA',
+            'appdirs-1.4.0.dist-info/RECORD',
+            'appdirs-1.4.0.dist-info/WHEEL',
+            'appdirs-1.4.0.dist-info/metadata.json',
+            'appdirs-1.4.0.dist-info/top_level.txt',
+            'appdirs.py',
+        ],
+    },
+    pip_deps = ['appdirs==1.4.0'],
+    deps = [
+    ],
+)
+
+dbx_py_pypi_piplib(
+  name = 'packaging',
+    contents = {
+        'cpython-27-drte-v1': [
+            'packaging-16.8.dist-info/DESCRIPTION.rst',
+            'packaging-16.8.dist-info/METADATA',
+            'packaging-16.8.dist-info/RECORD',
+            'packaging-16.8.dist-info/WHEEL',
+            'packaging-16.8.dist-info/metadata.json',
+            'packaging-16.8.dist-info/top_level.txt',
+            'packaging/__about__.py',
+            'packaging/__init__.py',
+            'packaging/_compat.py',
+            'packaging/_structures.py',
+            'packaging/markers.py',
+            'packaging/requirements.py',
+            'packaging/specifiers.py',
+            'packaging/utils.py',
+            'packaging/version.py',
+        ],
+        'pypy-27-abi-41': [
+            'packaging-16.8.dist-info/DESCRIPTION.rst',
+            'packaging-16.8.dist-info/METADATA',
+            'packaging-16.8.dist-info/RECORD',
+            'packaging-16.8.dist-info/WHEEL',
+            'packaging-16.8.dist-info/metadata.json',
+            'packaging-16.8.dist-info/top_level.txt',
+            'packaging/__about__.py',
+            'packaging/__init__.py',
+            'packaging/_compat.py',
+            'packaging/_structures.py',
+            'packaging/markers.py',
+            'packaging/requirements.py',
+            'packaging/specifiers.py',
+            'packaging/utils.py',
+            'packaging/version.py',
+        ],
+    },
+    pip_deps = ['packaging==16.8'],
+    deps = [
+    ],
+)
+
+dbx_py_pypi_piplib(
+  name = 'pyparsing',
+    contents = {
+        'cpython-27-drte-v1': [
+            'pyparsing-2.1.10.dist-info/DESCRIPTION.rst',
+            'pyparsing-2.1.10.dist-info/METADATA',
+            'pyparsing-2.1.10.dist-info/RECORD',
+            'pyparsing-2.1.10.dist-info/WHEEL',
+            'pyparsing-2.1.10.dist-info/metadata.json',
+            'pyparsing-2.1.10.dist-info/top_level.txt',
+            'pyparsing.py',
+        ],
+        'pypy-27-abi-41': [
+            'pyparsing-2.1.10.dist-info/DESCRIPTION.rst',
+            'pyparsing-2.1.10.dist-info/METADATA',
+            'pyparsing-2.1.10.dist-info/RECORD',
+            'pyparsing-2.1.10.dist-info/WHEEL',
+            'pyparsing-2.1.10.dist-info/metadata.json',
+            'pyparsing-2.1.10.dist-info/top_level.txt',
+            'pyparsing.py',
+        ],
+    },
+    pip_deps = ['pyparsing==2.1.10'],
+    deps = [
+    ],
 )

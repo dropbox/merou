@@ -68,7 +68,7 @@ dbx_py_pypi_piplib(
 
 dbx_py_pypi_piplib(
     name = 'expvar',
-    pip_deps = ['expvar==0.0.2'],
+    pip_deps = ['expvar==0.1.0'],
 )
 
 dbx_py_pypi_piplib(
@@ -145,4 +145,36 @@ dbx_py_pypi_piplib(
     # 'testing' (specifically 'testing.skipdoctest' when importing 'embed')
     # which bazel filters by default
     py_excludes = [],
+)
+
+dbx_py_pypi_piplib(
+    name = 'dbx-stopwatch',
+    pip_deps = ['dbx-stopwatch==1.0'],
+    deps = [
+        ':appdirs',
+        ':packaging',
+        ':pyparsing',
+        ':six',
+    ],
+)
+
+dbx_py_pypi_piplib(
+    name = 'appdirs',
+    pip_deps = ['appdirs==1.4.0'],
+    deps = [
+    ],
+)
+
+dbx_py_pypi_piplib(
+    name = 'packaging',
+    pip_deps = ['packaging==16.8'],
+    deps = [
+    ],
+)
+
+dbx_py_pypi_piplib(
+    name = 'pyparsing',
+    pip_deps = ['pyparsing==2.1.10'],
+    deps = [
+    ],
 )

@@ -19,7 +19,7 @@ from grouper.group import get_audited_groups
 from grouper.model_soup import APPROVER_ROLE_INDICIES, Group, GroupEdge
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.user import User
-from grouper.perf_profile import prune_old_traces
+from grouper.perf_profile import init_stopwatch, prune_old_traces
 from grouper.settings import settings
 from grouper.user import user_role_index
 from grouper.user_permissions import user_has_permission
@@ -121,6 +121,9 @@ class BackgroundThread(Thread):
         session.commit()
 
     def run(self):
+        # get a new stopwatch context for this thread
+        init_stopwatch()
+
         while True:
             try:
                 with closing(Session()) as session:

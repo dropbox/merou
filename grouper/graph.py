@@ -16,6 +16,7 @@ from grouper.models.public_key import PublicKey
 from grouper.models.user import User
 from grouper.models.user_metadata import UserMetadata
 from grouper.models.user_password import UserPassword
+from grouper.perf_profile import sw_func, get_stopwatch as sw
 from grouper.public_key import get_all_public_key_tags
 from grouper.service_account import is_service_account
 from grouper.util import singleton
@@ -88,12 +89,13 @@ class GroupGraph(object):
         return inst
 
     def update_from_db(self, session):
-        # Only allow one thread at a time to construct a fresh graph.
-        with self.update_lock:
+        # - only allow one thread at a time to construct a fresh graph.
+        # - only start a stopwatch if we can grab update_lock
+        with self.update_lock, sw().timer('graph_update_from_db'):
             checkpoint, checkpoint_time = self._get_checkpoint(session)
             if checkpoint == self.checkpoint:
                 self.logger.debug("Checkpoint hasn't changed. Not Updating.")
-                return
+                #return
             self.logger.debug("Checkpoint changed; updating!")
 
             new_graph = DiGraph()
@@ -133,15 +135,14 @@ class GroupGraph(object):
                 self.group_tuples = group_tuples
                 self.disabled_group_tuples = disabled_group_tuples
 
-    @staticmethod
-    def _get_checkpoint(session):
+    def _get_checkpoint(self, session):
         counter = session.query(Counter).filter_by(name="updates").scalar()
         if counter is None:
             return 0, 0
         return counter.count, int(counter.last_modified.strftime("%s"))
 
-    @staticmethod
-    def _get_user_metadata(session):
+    @sw_func('graph_get_user_metadata')
+    def _get_user_metadata(self, session):
         '''
         Returns a dict of username: { dict of metadata }.
         '''
@@ -193,8 +194,8 @@ class GroupGraph(object):
 
     # This describes how permissions are assigned to groups, NOT the intrinsic
     # metadata for a permission.
-    @staticmethod
-    def _get_permission_metadata(session):
+    @sw_func('graph_get_permission_metadata')
+    def _get_permission_metadata(self, session):
         '''
         Returns a dict of groupname: { list of permissions }.
         '''
@@ -214,8 +215,8 @@ class GroupGraph(object):
             ))
         return out
 
-    @staticmethod
-    def _get_permission_tuples(session):
+    @sw_func('graph_get_permission_tuples')
+    def _get_permission_tuples(self, session):
         '''
         Returns a set of PermissionTuple instances.
         '''
@@ -234,8 +235,8 @@ class GroupGraph(object):
             ))
         return out
 
-    @staticmethod
-    def _get_group_metadata(session, permission_metadata):
+    @sw_func('graph_get_group_metadata')
+    def _get_group_metadata(self, session, permission_metadata):
         '''
         Returns a dict of groupname: { dict of metadata }.
         '''
@@ -255,8 +256,8 @@ class GroupGraph(object):
             }
         return out
 
-    @staticmethod
-    def _get_group_tuples(session, enabled=True):
+    @sw_func('graph-get_group_tuples')
+    def _get_group_tuples(self, session, enabled=True):
         '''
         Returns a dict of groupname: GroupTuple.
         '''
@@ -280,22 +281,23 @@ class GroupGraph(object):
             )
         return out
 
-    @staticmethod
-    def _get_nodes_from_db(session):
-        return session.query(
-            label("type", literal("User")),
-            label("name", User.username)
-        ).filter(
-            User.enabled == True
-        ).union(session.query(
-            label("type", literal("Group")),
-            label("name", Group.groupname)
-        ).filter(
-            Group.enabled == True
-        )).all()
+    @sw_func('graph_get_nodes_from_db')
+    def _get_nodes_from_db(self, session):
+        with sw().timer('graph-get_nodes_from_db'):
+            return session.query(
+                label("type", literal("User")),
+                label("name", User.username)
+            ).filter(
+                User.enabled == True
+            ).union(session.query(
+                label("type", literal("Group")),
+                label("name", Group.groupname)
+            ).filter(
+                Group.enabled == True
+            )).all()
 
-    @staticmethod
-    def _get_edges_from_db(session):
+    @sw_func('graph-get_edges_from_db')
+    def _get_edges_from_db(self, session):
 
         parent = aliased(Group)
         group_member = aliased(Group)

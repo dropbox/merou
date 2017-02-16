@@ -53,6 +53,7 @@ dbx_py_library(
         '//pip/typing',
         '//thirdparty:annex',
         '//thirdparty:argparse',
+        '//thirdparty:dbx-stopwatch',
         '//thirdparty:enum34',
         '//thirdparty:expvar',
         '//thirdparty:jinja2',

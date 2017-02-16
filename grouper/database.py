@@ -7,6 +7,7 @@ from expvar.stats import stats
 from sqlalchemy.exc import OperationalError
 
 from grouper.models.base.session import get_db_engine, Session
+from grouper.perf_profile import init_stopwatch, stopwatch_emit_stats, get_stopwatch as sw
 from grouper.util import get_database_url
 
 
@@ -25,11 +26,16 @@ class DbRefreshThread(Thread):
             self.sentry_client.captureException()
 
     def run(self):
+        # get a new stopwatch context for this thread
+        init_stopwatch()
+
         while True:
             self.logger.debug("Updating Graph from Database.")
             try:
-                with closing(Session()) as session:
+                with closing(Session()) as session, sw().timer('sw-db_refresh_thread'):
                     self.graph.update_from_db(session)
+
+                stopwatch_emit_stats()
 
                 stats.set_gauge("successful-db-update", 1)
                 stats.set_gauge("failed-db-update", 0)

@@ -1,31 +1,19 @@
 from cStringIO import StringIO
 import csv
-from datetime import datetime
 import re
-import sys
-import traceback
 
-from expvar.stats import stats
 import sshpubkey
-from tornado.web import HTTPError, RequestHandler
 from typing import Optional  # noqa
 
+from grouper.api.handler_base import GraphHandler
 from grouper.constants import TOKEN_FORMAT
 from grouper.models.base.session import Session
 from grouper.models.public_key import PublicKey
 from grouper.models.user import User
 from grouper.models.user_token import UserToken
+from grouper.perf_profile import get_stopwatch as sw
 from grouper.util import try_update
 
-# if raven library around, pull in SentryMixin
-try:
-    from raven.contrib.tornado import SentryMixin
-except ImportError:
-    pass
-else:
-    class SentryHandler(SentryMixin, RequestHandler):
-        pass
-    RequestHandler = SentryHandler  # type: ignore # no support for conditional declarations #1152
 
 
 def get_individual_user_info(handler, name, cutoff, service_account):
@@ -44,7 +32,7 @@ def get_individual_user_info(handler, name, cutoff, service_account):
         None
     """
     acc = "Service Account" if service_account else "User"
-    with handler.graph.lock:
+    with handler.graph.lock, sw().timer('single_user_info'):
         if name not in handler.graph.user_metadata:
             return handler.notfound("{} ({}) not found.".format(acc, name))
         md = handler.graph.user_metadata[name]
@@ -58,72 +46,6 @@ def get_individual_user_info(handler, name, cutoff, service_account):
         # Updates the output with the user's details (such as permissions)
         try_update(out, details)
         return handler.success(out)
-
-
-class GraphHandler(RequestHandler):
-    def initialize(self):
-        self.graph = self.application.my_settings.get("graph")
-        self.session = self.application.my_settings.get("db_session")()
-
-        self._request_start_time = datetime.utcnow()
-        stats.incr("requests")
-        stats.incr("requests_{}".format(self.__class__.__name__))
-
-    def on_finish(self):
-        # log request duration
-        duration = datetime.utcnow() - self._request_start_time
-        duration_ms = int(duration.total_seconds() * 1000)
-        stats.incr("duration_ms", duration_ms)
-        stats.incr("duration_ms_{}".format(self.__class__.__name__), duration_ms)
-
-        # log response status code
-        response_status = self.get_status()
-        stats.incr("response_status_{}".format(response_status))
-        stats.incr("response_status_{}_{}".format(self.__class__.__name__, response_status))
-
-    def error(self, errors):
-        errors = [
-            {"code": code, "message": message} for code, message in errors
-        ]
-        with self.graph.lock:
-            checkpoint = self.graph.checkpoint
-            checkpoint_time = self.graph.checkpoint_time
-            self.write({
-                "status": "error",
-                "errors": errors,
-                "checkpoint": checkpoint,
-                "checkpoint_time": checkpoint_time,
-            })
-
-    def success(self, data):
-        with self.graph.lock:
-            checkpoint = self.graph.checkpoint
-            checkpoint_time = self.graph.checkpoint_time
-            self.write({
-                "status": "ok",
-                "data": data,
-                "checkpoint": checkpoint,
-                "checkpoint_time": checkpoint_time,
-            })
-
-    def raise_and_log_exception(self, exc):
-        try:
-            raise exc
-        except Exception:
-            self.log_exception(*sys.exc_info())
-
-    def notfound(self, message):
-        self.set_status(404)
-        self.raise_and_log_exception(HTTPError(404))
-        self.error([(404, message)])
-
-    def write_error(self, status_code, **kwargs):
-        """Overrides tornado's uncaught exception handler to return JSON results."""
-        if "exc_info" in kwargs:
-            typ, value, _ = kwargs["exc_info"]
-            self.error([(status_code, traceback.format_exception_only(typ, value))])
-        else:
-            self.error([(status_code, None)])
 
 
 class Users(GraphHandler):

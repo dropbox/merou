@@ -19,6 +19,7 @@ from grouper.fe.settings import settings
 from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.user import User
+from grouper.perf_profile import get_stopwatch as sw, stopwatch_emit_stats, sw_func
 from grouper.user_permissions import user_permissions
 from grouper.util import get_database_url
 
@@ -68,6 +69,8 @@ class GrouperHandler(RequestHandler):
         self._request_start_time = datetime.utcnow()
         stats.incr("requests")
         stats.incr("requests_{}".format(self.__class__.__name__))
+
+        sw().start('sw-{}'.format(self.__class__.__name__))
 
     def write_error(self, status_code, **kwargs):
         """Override for custom error page."""
@@ -158,6 +161,10 @@ class GrouperHandler(RequestHandler):
         stats.incr("response_status_{}".format(response_status))
         stats.incr("response_status_{}_{}".format(self.__class__.__name__, response_status))
 
+        # log stopwatch metrics
+        sw().end('sw-{}'.format(self.__class__.__name__))
+        stopwatch_emit_stats()
+
     def update_qs(self, **kwargs):
         qs = self.request.arguments.copy()
         qs.update(kwargs)
@@ -185,6 +192,7 @@ class GrouperHandler(RequestHandler):
         content = template.render(kwargs)
         return content
 
+    @sw_func('render')
     def render(self, template_name, **kwargs):
         context = {}
         context.update(self.get_template_namespace())

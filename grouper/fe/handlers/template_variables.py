@@ -4,6 +4,7 @@ from grouper.fe.handlers.user_enable import UserEnable
 from grouper.fe.util import Alert
 from grouper.graph import NoSuchGroup, NoSuchUser
 from grouper.model_soup import APPROVER_ROLE_INDICIES, AUDIT_STATUS_CHOICES, OWNER_ROLE_INDICES
+from grouper.perf_profile import sw_func
 from grouper.permissions import (get_owner_arg_list, get_pending_request_by_group,
     get_requests_by_owner)
 from grouper.public_key import (get_public_key_permissions, get_public_key_tags,
@@ -71,6 +72,7 @@ def get_group_view_template_vars(session, actor, group, graph):
     return ret
 
 
+@sw_func('get_user_view_template_vars')
 def get_user_view_template_vars(session, actor, user, graph):
     ret = {}
     ret["can_control"] = (user.name == actor.name or user_is_user_admin(session, actor))

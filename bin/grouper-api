@@ -18,6 +18,7 @@ from grouper.database import DbRefreshThread
 from grouper.error_reporting import get_sentry_client, SentryProxy, setup_signal_handlers
 from grouper.graph import Graph, GroupGraph
 from grouper.models.base.session import get_db_engine, Session
+from grouper.perf_profile import init_stopwatch
 from grouper.plugin import load_plugins
 from grouper.settings import default_settings_path
 from grouper.setup import parse_args, setup_logging
@@ -56,6 +57,8 @@ def main(args, sentry_client):
     Session.configure(bind=get_db_engine(get_database_url(settings)))
 
     settings.start_config_thread(args.config, "api")
+
+    init_stopwatch()
 
     with closing(Session()) as session:
         graph = Graph()

@@ -1,7 +1,10 @@
 from datetime import datetime, timedelta
+from functools import wraps
 
+from expvar.stats import stats
 from plop.collector import FlamegraphFormatter, PlopFormatter
 from pyflamegraph import generate
+import stopwatch
 
 from grouper.models.perf_profile import PerfProfile
 
@@ -61,3 +64,32 @@ def get_flamegraph_svg(session, trace_uuid):
     plop_input, flamegraph_input = get_trace(session, trace_uuid)
 
     return generate(flamegraph_input)
+
+
+_sw_obj = None
+def get_stopwatch():
+    # type: () -> stopwatch.StopWatch
+    assert _sw_obj, 'stopwatch not initialized'
+    return _sw_obj
+
+
+def init_stopwatch():
+    global _sw_obj
+    _sw_obj = stopwatch.StopWatch()
+
+
+def stopwatch_emit_stats():
+    # type: () -> None
+    report = get_stopwatch().get_last_aggregated_report()
+    for name, (time_sec, _, _) in report.aggregated_values.items():
+        stats.incr(name, time_sec)
+
+
+def sw_func(scope_name):
+    def decorator(func):
+        @wraps(func)
+        def f(*args, **kwargs):
+            with get_stopwatch().timer(scope_name):
+                return func(*args, **kwargs)
+        return f
+    return decorator

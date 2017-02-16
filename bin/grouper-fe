@@ -19,6 +19,7 @@ from grouper.fe.settings import Settings, settings
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
+from grouper.perf_profile import init_stopwatch
 from grouper.plugin import load_plugins
 from grouper.settings import default_settings_path
 from grouper.setup import parse_args, setup_logging
@@ -64,6 +65,8 @@ def main(args, sentry_client):
     application = get_application(Session, settings, sentry_client, args.deployment_name)
 
     settings.start_config_thread(args.config, "fe")
+
+    init_stopwatch()
 
     with closing(Session()) as session:
         graph = Graph()

@@ -1,8 +1,8 @@
 package(default_visibility = ['//visibility:public'])
 
-load('/build_tools/bazel/py', 'dbx_py_bin', 'dbx_py_library')
+load('/build_tools/bazel/py', 'dbx_py_binary', 'dbx_py_library')
 
-dbx_py_bin(
+dbx_py_binary(
     name = 'grouper-fe',
     main = 'bin/grouper-fe',
     deps = [
@@ -16,7 +16,7 @@ dbx_py_bin(
     py_excludes = [],
 )
 
-dbx_py_bin(
+dbx_py_binary(
     name = 'grouper-api',
     main = 'bin/grouper-api',
     deps = [
@@ -30,7 +30,7 @@ dbx_py_bin(
     py_excludes = [],
 )
 
-dbx_py_bin(
+dbx_py_binary(
     name = 'grouper-ctl',
     main = 'bin/grouper-ctl',
     deps = [

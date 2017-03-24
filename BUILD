@@ -64,7 +64,7 @@ dbx_py_library(
         '//thirdparty:pyyaml',
         '//thirdparty:sqlalchemy',
         '//thirdparty:sshpubkey',
-        '//thirdparty:ssl-match-hostname',
+        '//thirdparty:backports.ssl_match_hostname',
         '//thirdparty:tornado',
         '//thirdparty:wtforms',
         '//thirdparty:wtforms-tornado',

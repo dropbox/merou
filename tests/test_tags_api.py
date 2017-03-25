@@ -75,6 +75,7 @@ def test_tags(session, users, http_client, base_url, graph):
     body = json.loads(resp.body)
     pub_key = body['data']['user']['public_keys'][0]
     assert len(pub_key['tags']) == 1, "The public key should only have 1 tag"
+    assert pub_key['fingerprint'] == 'e9:ae:c5:8f:39:9b:3a:9c:6a:b8:33:6b:cb:6f:ba:35'
     assert pub_key['tags'][0] == 'tyler_was_here', "The public key should have the tag we gave it"
     #assert len(pub_key['permissions']) == 1, "The public key should only have 1 permission"
     #assert pub_key['permissions'][0] == [TAG_EDIT, "prod"], "The public key should only have permissions that are the intersection of the user's permissions and the tag's permissions"

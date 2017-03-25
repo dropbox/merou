@@ -1,12 +1,13 @@
 from cStringIO import StringIO
 import csv
 from datetime import datetime
+import logging
 import re
 import sys
 import traceback
 
 from expvar.stats import stats
-import sshpubkey
+import sshpubkeys
 from tornado.web import HTTPError, RequestHandler
 from typing import Optional  # noqa
 
@@ -163,13 +164,22 @@ class UsersPublicKeys(GraphHandler):
 
         user_key_list = Session().query(PublicKey, User).filter(User.id == PublicKey.user_id)
         for key, user in user_key_list:
+            pub_key = sshpubkeys.SSHKey(key.public_key, strict=True)
+            try:
+                pub_key.parse()
+                comment = pub_key.comment
+            except sshpubkeys.InvalidKeyException:
+                logging.warning("invalid public key: public_key_id={}, user_id=".format(
+                        pub_key.id, user.id))
+                comment = None
+
             w_csv.writerow([
                 user.name,
                 key.created_on.isoformat(),
                 key.key_type,
                 key.key_size,
                 key.fingerprint,
-                sshpubkey.PublicKey.from_str(key.public_key).comment,
+                comment,
                 ])
 
         self.set_header("Content-Type", "text/csv")

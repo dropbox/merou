@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import re
 
-import sshpubkey
+import sshpubkeys
 from wtforms import (
         BooleanField, HiddenField, IntegerField, PasswordField,
         SelectField, StringField, TextAreaField, validators
@@ -64,8 +64,9 @@ class ValidatePublicKey(object):
     # for what kind of keys are allowed.
     def __call__(self, form, field):
         try:
-            sshpubkey.PublicKey.from_str(field.data)
-        except sshpubkey.exc.PublicKeyParseError:
+            pubkey = sshpubkeys.SSHKey(field.data, strict=True)
+            pubkey.parse()
+        except sshpubkeys.InvalidKeyException:
             raise ValidationError("Public key appears to be invalid.")
 
 

@@ -57,8 +57,8 @@ dbx_py_pypi_piplib(
 )
 
 dbx_py_pypi_piplib(
-    name = 'ssl-match-hostname',
-    pip_deps = ['backports.ssl-match-hostname==3.4.0.2'],
+    name = 'backports.ssl_match_hostname',
+    pip_deps = ['backports.ssl_match_hostname==3.4.0.2'],
 )
 
 dbx_py_pypi_piplib(
@@ -111,11 +111,6 @@ dbx_py_pypi_piplib(
 )
 
 dbx_py_pypi_piplib(
-    name = 'sshpubkey',
-    pip_deps = ['sshpubkey==0.1.2'],
-)
-
-dbx_py_pypi_piplib(
     name = 'tornado',
     pip_deps = ['tornado==3.2'],
 )
@@ -136,6 +131,29 @@ dbx_py_pypi_piplib(
     deps = [
         '//pip/setuptools',
     ],
+)
+
+dbx_py_pypi_piplib(
+    name = 'Crypto',
+    pip_deps = ['pycrypto==2.6.1'],
+)
+
+dbx_py_pypi_piplib(
+    name = 'ecdsa',
+    pip_deps = ['ecdsa==0.13'],
+    deps = [':six'],
+)
+
+dbx_py_pypi_piplib(
+  deps = ['//pip/setuptools'],
+  name = 'typing',
+  pip_deps = ['typing==3.5.2.2'],
+)
+
+dbx_py_pypi_piplib(
+    name = 'sshpubkeys',
+    pip_deps = ['sshpubkeys==2.2.0'],
+    deps = [':Crypto', ':ecdsa'],
 )
 
 dbx_py_pypi_piplib(

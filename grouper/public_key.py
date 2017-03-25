@@ -2,8 +2,7 @@ from collections import defaultdict
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label
-import sshpubkey
-from sshpubkey.exc import PublicKeyParseError  # noqa
+import sshpubkeys
 
 from grouper.models.base.session import Session  # noqa
 from grouper.models.counter import Counter
@@ -65,12 +64,14 @@ def add_public_key(session, user, public_key_str):
 
     Return created PublicKey model or raises DuplicateKey if key is already in use.
     """
-    pubkey = sshpubkey.PublicKey.from_str(public_key_str)
+    pubkey = sshpubkeys.SSHKey(public_key_str, strict=True)
+    pubkey.parse()
+
     db_pubkey = PublicKey(
         user=user,
-        public_key='%s %s %s' % (pubkey.key_type, pubkey.key, pubkey.comment),
-        fingerprint=pubkey.fingerprint,
-        key_size=pubkey.key_size,
+        public_key=pubkey.keydata.strip(),
+        fingerprint=pubkey.hash_md5().replace(b"MD5:", b""),
+        key_size=pubkey.bits,
         key_type=pubkey.key_type,
     )
     try:

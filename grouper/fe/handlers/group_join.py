@@ -110,7 +110,9 @@ class GroupJoin(GrouperHandler):
                     "expiration": expiration,
                     "role": form.data["role"],
                     }
-            send_email(self.session, mail_to, 'Request to join: {}'.format(group.name),
+
+            subj = self.render_template('pending_request_subject', group=group.name, user=user.name)
+            send_email(self.session, mail_to, subj,
                     'pending_request', settings, email_context)
 
         elif group.canjoin == 'canjoin':

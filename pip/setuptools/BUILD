@@ -136,6 +136,6 @@ dbx_py_pypi_piplib(
         ],
     },
     deps = [],
-    pip_deps = ['setuptools==18.4'],
+    pip_req = 'setuptools==18.4',
     provides = ['pkg_resources'],
 )

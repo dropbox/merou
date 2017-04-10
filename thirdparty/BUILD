@@ -29,7 +29,7 @@ dbx_py_pypi_piplib(
             'annex/version.py',
         ],
     },
-    pip_deps = ['annex==0.3.1'],
+    pip_req = 'annex==0.3.1',
 )
 
 dbx_py_pypi_piplib(
@@ -142,7 +142,7 @@ dbx_py_pypi_piplib(
             'jinja2/visitor.py',
         ],
     },
-    pip_deps = ['Jinja2==2.7.3'],
+    pip_req = 'Jinja2==2.7.3',
     deps = [
         '//pip/setuptools',
     ],
@@ -201,7 +201,7 @@ dbx_py_pypi_piplib(
     env = {
         'MYSQL_CONFIG': '$(ROOT)/$(location //dpkg:usr/bin/mysql_config)',
     },
-    pip_deps = ['MySQL-python==1.2.5'],
+    pip_req = 'MySQL-python==1.2.5',
     deps = [
         '//dpkg:libmysqlclient',
         '//dpkg:usr/bin/mysql_config',
@@ -241,7 +241,7 @@ dbx_py_pypi_piplib(
             'markupsafe/tests.py',
         ],
     },
-    pip_deps = ['MarkupSafe==0.23'],
+    pip_req = 'MarkupSafe==0.23',
 )
 
 dbx_py_pypi_piplib(
@@ -298,7 +298,7 @@ dbx_py_pypi_piplib(
             'yaml/tokens.py',
         ],
     },
-    pip_deps = ['PyYAML==3.10'],
+    pip_req = 'PyYAML==3.10',
 )
 
 dbx_py_pypi_piplib(
@@ -620,7 +620,7 @@ dbx_py_pypi_piplib(
             'sqlalchemy/util/topological.py',
         ],
     },
-    pip_deps = ['SQLAlchemy==0.9.1'],
+    pip_req = 'SQLAlchemy==0.9.1',
     deps = [
         '//pip/setuptools',
     ],
@@ -804,7 +804,7 @@ dbx_py_pypi_piplib(
             'wtforms/widgets/html5.py',
         ],
     },
-    pip_deps = ['WTForms==2.0.1'],
+    pip_req = 'WTForms==2.0.1',
 )
 
 dbx_py_pypi_piplib(
@@ -829,7 +829,7 @@ dbx_py_pypi_piplib(
             'argparse.py',
         ],
     },
-    pip_deps = ['argparse==1.2.1'],
+    pip_req = 'argparse==1.2.1',
 )
 
 dbx_py_pypi_piplib(
@@ -860,7 +860,7 @@ dbx_py_pypi_piplib(
             'backports/ssl_match_hostname/__init__.py',
         ],
     },
-    pip_deps = ['backports.ssl_match_hostname==3.4.0.2'],
+    pip_req = 'backports.ssl_match_hostname==3.4.0.2',
 )
 
 dbx_py_pypi_piplib(
@@ -895,7 +895,7 @@ dbx_py_pypi_piplib(
             'enum34-1.0.4.dist-info/top_level.txt',
         ],
     },
-    pip_deps = ['enum34==1.0.4'],
+    pip_req = 'enum34==1.0.4',
 )
 
 dbx_py_pypi_piplib(
@@ -924,7 +924,7 @@ dbx_py_pypi_piplib(
             'expvar/version.py',
         ],
     },
-    pip_deps = ['expvar==0.0.2'],
+    pip_req = 'expvar==0.0.2',
 )
 
 dbx_py_pypi_piplib(
@@ -1553,7 +1553,7 @@ dbx_py_pypi_piplib(
             'networkx/version.py',
         ],
     },
-    pip_deps = ['networkx==1.8.1'],
+    pip_req = 'networkx==1.8.1',
     # NOTE(herb): this is to get around networkx including tests in its main package
     # which bazel filters by default
     py_excludes = [],
@@ -1599,7 +1599,7 @@ dbx_py_pypi_piplib(
             'plop/viewer.py',
         ],
     },
-    pip_deps = ['plop==0.3.0'],
+    pip_req = 'plop==0.3.0',
 )
 
 dbx_py_pypi_piplib(
@@ -1630,7 +1630,7 @@ dbx_py_pypi_piplib(
             'pyflamegraph/version.py',
         ],
     },
-    pip_deps = ['pyflamegraph==0.0.2'],
+    pip_req = 'pyflamegraph==0.0.2',
 )
 
 dbx_py_pypi_piplib(
@@ -1673,7 +1673,7 @@ dbx_py_pypi_piplib(
             'python_dateutil-2.4.2.dist-info/zip-safe',
         ],
     },
-    pip_deps = ['python-dateutil==2.4.2'],
+    pip_req = 'python-dateutil==2.4.2',
     deps = [
         ':six',
     ],
@@ -2881,7 +2881,7 @@ dbx_py_pypi_piplib(
             'pytz/zoneinfo/zone.tab',
         ],
     },
-    pip_deps = ['pytz==2014.2'],
+    pip_req = 'pytz==2014.2',
     deps = [
         '//pip/setuptools',
     ],
@@ -2909,7 +2909,7 @@ dbx_py_pypi_piplib(
             'six.py',
         ],
     },
-    pip_deps = ['six==1.10.0'],
+    pip_req = 'six==1.10.0',
 )
 
 dbx_py_pypi_piplib(
@@ -3011,7 +3011,7 @@ dbx_py_pypi_piplib(
             'tornado/wsgi.py',
         ],
     },
-    pip_deps = ['tornado==3.2'],
+    pip_req = 'tornado==3.2',
 )
 
 dbx_py_pypi_piplib(
@@ -3040,7 +3040,7 @@ dbx_py_pypi_piplib(
             'wtforms_tornado/i18n.py',
         ],
     },
-    pip_deps = ['wtforms-tornado==0.0.1'],
+    pip_req = 'wtforms-tornado==0.0.1',
 )
 
 dbx_py_pypi_piplib(
@@ -3067,7 +3067,7 @@ dbx_py_pypi_piplib(
             'mrproxy/version.py',
         ],
     },
-    pip_deps = ['mrproxy==0.3.2'],
+    pip_req = 'mrproxy==0.3.2',
 )
 
 dbx_py_pypi_piplib(
@@ -3276,7 +3276,7 @@ dbx_py_pypi_piplib(
             'raven/versioning.py',
         ],
     },
-    pip_deps = ['raven==5.27.1'],
+    pip_req = 'raven==5.27.1',
     deps = [
         '//pip/setuptools',
     ],
@@ -3462,7 +3462,7 @@ dbx_py_pypi_piplib(
             'pycrypto-2.6.1.dist-info/top_level.txt',
         ],
     },
-    pip_deps = ['pycrypto==2.6.1'],
+    pip_req = 'pycrypto==2.6.1',
 )
 
 dbx_py_pypi_piplib(
@@ -3509,7 +3509,7 @@ dbx_py_pypi_piplib(
             'ecdsa/util.py',
         ],
     },
-    pip_deps = ['ecdsa==0.13'],
+    pip_req = 'ecdsa==0.13',
     deps = [':six'],
 )
 
@@ -3535,7 +3535,7 @@ dbx_py_pypi_piplib(
             'typing.py',
         ],
     },
-    pip_deps = ['typing==3.5.2.2'],
+    pip_req = 'typing==3.5.2.2',
     deps = ['//pip/setuptools'],
 )
 
@@ -3563,7 +3563,7 @@ dbx_py_pypi_piplib(
             'sshpubkeys/exceptions.py',
         ],
     },
-    pip_deps = ['sshpubkeys==2.2.0'],
+    pip_req = 'sshpubkeys==2.2.0',
     deps = [
         ':Crypto',
         ':ecdsa',
@@ -5902,7 +5902,7 @@ dbx_py_pypi_piplib(
             'ipython-3.2.1.dist-info/top_level.txt',
         ],
     },
-    pip_deps = ['ipython==3.2.1'],
+    pip_req = 'ipython==3.2.1',
     # NOTE(herb): this is to get around ipython including a package called
     # 'testing' (specifically 'testing.skipdoctest' when importing 'embed')
     # which bazel filters by default

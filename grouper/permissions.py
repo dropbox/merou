@@ -8,6 +8,7 @@ from grouper.audit import assert_controllers_are_auditors
 from grouper.constants import ARGUMENT_VALIDATION, PERMISSION_ADMIN, PERMISSION_GRANT
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
+from grouper.fe.template_util import get_template_env
 from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
@@ -431,7 +432,11 @@ def create_request(session, user, group, permission, argument, reason):
 
     for owner, arg in mailto_owner_arg_list:
         mail_to += [u for t, u in owner.my_members() if t == 'User']
-    send_email(session, set(mail_to), "Request for permission: {}".format(permission.name),
+
+    subj = get_template_env().get_template('email/pending_request_subj.tmpl').render(
+        permission=permission.name, group=group.name
+    )
+    send_email(session, set(mail_to), subj,
             "pending_permission_request", settings, email_context)
 
 

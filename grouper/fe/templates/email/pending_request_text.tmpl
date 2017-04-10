@@ -3,16 +3,14 @@
 {% block subject %}Membership Request{% endblock %}
 
 {% block content %}
-{{ requester }} has requested to join {{ group_name }}. To action this request, please visit the
-pending requests queue:
-
-    {{url}}/groups/{{group_name}}/requests?status=pending
-
-More details about the request:
+{{ requester }} has requested to join {{ group_name }}.
 
     Role: {{ role }}
     Expiration: {{ expiration|expires_when_str }}
     Reason: {{ reason|escape }}
+
+Take action:
+    {{url}}/groups/{{group_name}}/requests/requests/{{ request_id }}
 
 {% if requester != requested_by %}This request was made by {{ requested_by }}.{% endif %}
 {% endblock %}

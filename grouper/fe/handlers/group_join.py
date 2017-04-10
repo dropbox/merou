@@ -80,7 +80,7 @@ class GroupJoin(GrouperHandler):
         elif group.auto_expire:
             expiration = datetime.utcnow() + group.auto_expire
 
-        group.add_member(
+        request_id = group.add_member(
             requester=self.current_user,
             user_or_group=member,
             reason=form.data["reason"],
@@ -105,13 +105,18 @@ class GroupJoin(GrouperHandler):
             email_context = {
                     "requester": member.name,
                     "requested_by": self.current_user.name,
+                    "request_id": request_id,
                     "group_name": group.name,
                     "reason": form.data["reason"],
                     "expiration": expiration,
                     "role": form.data["role"],
                     }
 
-            subj = self.render_template('pending_request_subject', group=group.name, user=user.name)
+            subj = self.render_template(
+                'email/pending_request_subj.tmpl',
+                group=group.name,
+                user=user.name
+            )
             send_email(self.session, mail_to, subj,
                     'pending_request', settings, email_context)
 

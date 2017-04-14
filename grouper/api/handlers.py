@@ -169,8 +169,8 @@ class UsersPublicKeys(GraphHandler):
                 pub_key.parse()
                 comment = pub_key.comment
             except sshpubkeys.InvalidKeyException:
-                logging.warning("invalid public key: public_key_id={}, user_id=".format(
-                        pub_key.id, user.id))
+                logging.warning("invalid public key: public_key_id={}, user_id=".format(key.id,
+                    user.id))
                 comment = None
 
             w_csv.writerow([

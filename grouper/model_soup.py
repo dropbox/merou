@@ -314,6 +314,8 @@ class Group(Model, CommentObjectMixin):
 
         Counter.incr(self.session, "updates")
 
+        return request.id
+
     def my_permissions(self):
 
         permissions = self.session.query(

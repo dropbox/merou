@@ -53,6 +53,14 @@ class GroupRequestUpdate(GrouperHandler):
 
         updates = request.my_status_updates()
 
+        if not form.status.choices:
+            alerts = (Alert("info", "Request has already been processed"),)
+            return self.render(
+                "group-request-update.html", group=group, request=request,
+                members=members, form=form, alerts=alerts,
+                statuses=REQUEST_STATUS_CHOICES, updates=updates
+            )
+
         if not form.validate():
             return self.render(
                 "group-request-update.html", group=group, request=request,
@@ -155,7 +163,7 @@ class GroupRequestUpdate(GrouperHandler):
             return self.redirect("/groups/{}/requests".format(group.name))
 
     def _get_choices(self, current_status):
-        return [["", ""]] + [
+        return [
             [status] * 2
             for status in REQUEST_STATUS_CHOICES[current_status]
         ]

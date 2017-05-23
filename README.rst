@@ -14,10 +14,10 @@ Merou is an application to allow users to create and manage
 memberships to their own groups.
 
 **Note**: We recently renamed the project to avoid 
-[a namespace conflict](https://github.com/Internet2/grouper),
+`a namespace conflict <https://github.com/Internet2/grouper>`_,
 but it isn't reflected in the codebase yet.
 
-To get updates about Merou, [join our mailing list](https://goo.gl/forms/mbw70IQ26Mj188pi1).
+To get updates about Merou, `join our mailing list <https://goo.gl/forms/mbw70IQ26Mj188pi1>`_.
 
 Installation
 ------------

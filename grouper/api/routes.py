@@ -7,7 +7,7 @@ from grouper.api.handlers import (
         Users,
         UsersPublicKeys,
         )
-from grouper.constants import NAME_VALIDATION, PERMISSION_VALIDATION
+from grouper.constants import DEBUG_ROUTE_PATH, NAME_VALIDATION, PERMISSION_VALIDATION
 from grouper.handlers.stats import Stats
 
 HANDLERS = [
@@ -28,7 +28,7 @@ HANDLERS = [
     (r"/service_accounts", ServiceAccounts),
     (r"/service_accounts/{}".format(NAME_VALIDATION), ServiceAccounts),
 
-    (r"/debug/stats", Stats),
+    (DEBUG_ROUTE_PATH, Stats),
 
     (r"/.*", NotFound),
 

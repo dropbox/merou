@@ -229,7 +229,7 @@ class GrouperHandler(RequestHandler):
     def get_sentry_user_info(self):
         user = self.get_current_user()
         return {
-                'username': user.name,
+                'username': user.username,
                 }
 
 

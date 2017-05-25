@@ -1,4 +1,5 @@
 from grouper.constants import (
+        DEBUG_ROUTE_PATH,
         NAME2_VALIDATION,
         NAME_VALIDATION,
         PERMISSION_VALIDATION,
@@ -148,7 +149,7 @@ for regex in (r"(?P<tag_id>[0-9]+)", NAME_VALIDATION):
 
 HANDLERS += [
     (r"/help", Help),
-    (r"/debug/stats", Stats),
+    (DEBUG_ROUTE_PATH, Stats),
     (r"/debug/profile/(?P<trace_uuid>[\-\w]+)", PerfProfile),
 
     (r"/.*", NotFound),

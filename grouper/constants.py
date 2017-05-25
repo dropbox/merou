@@ -76,3 +76,6 @@ MAX_NAME_LENGTH = 128
 
 # Grouper used UserMetadata data_keys
 USER_METADATA_SHELL_KEY = "shell"
+
+# uri path for debug/monitoring
+DEBUG_ROUTE_PATH = "/debug/stats"

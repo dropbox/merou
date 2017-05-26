@@ -23,7 +23,7 @@ class Settings(object):
         return cls(_settings)
 
     def update_from_config(self, filename, section=None):
-        self.logger.info("Loading " + filename)
+        self.logger.debug("Loading " + filename)
         with open(filename) as config:
             data = yaml.safe_load(config.read())
 

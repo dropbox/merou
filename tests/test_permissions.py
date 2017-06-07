@@ -358,6 +358,35 @@ def test_limited_permissions(session, standard_graph, groups, grantable_permissi
             "only security-team members get notification"
 
 @pytest.mark.gen_test
+def test_limited_permissions_global_approvers(session, standard_graph, groups, grantable_permissions,
+        http_client, base_url):
+    """Test that notifications are not sent to global approvers."""
+    perm_grant, _, perm1, _ = grantable_permissions
+    perm_admin, _ = Permission.get_or_create(session, name=PERMISSION_ADMIN, description="")
+    session.commit()
+    # one circuit-breaking admin grant, one wildcard grant
+    grant_permission(groups["sad-team"], perm_admin, argument="")
+    grant_permission(groups["security-team"], perm_grant, argument="grantable.*")
+
+    security_team_members = {name for (t, name) in groups['security-team'].my_members().keys()
+            if t == 'User'}
+
+    # SPECIFIC REQUEST: 'grantable.one', 'specific_arg' for 'sad-team'
+    groupname = "sad-team"
+    username = "zorkian@a.co"
+    fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"permission_name": perm1.name, "argument": "specific_arg",
+                "reason": "blah blah black sheep", "argument_type": "text"}),
+            headers={'X-Grouper-User': username})
+    assert resp.code == 200
+
+    emails = _get_unsent_and_mark_as_sent_emails(session)
+    assert len(emails) == 2, "email only sent to security-team"
+    assert not security_team_members.difference(e.email for e in emails), \
+            "only security-team members get notification"
+
+@pytest.mark.gen_test
 def test_grant_and_revoke(session, standard_graph, graph, groups, permissions,
         http_client, base_url):
     """Test that permission grant and revokes are reflected correctly."""

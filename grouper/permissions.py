@@ -383,7 +383,13 @@ def create_request(session, user, group, permission, argument, reason):
         raise RequestAlreadyExists()
 
     # determine owner(s)
-    owner_arg_list = get_owner_arg_list(session, permission, argument)
+    owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
+    owner_arg_list = get_owner_arg_list(
+        session,
+        permission,
+        argument,
+        owners_by_arg_by_perm=owners_by_arg_by_perm,
+    )
 
     if not owner_arg_list:
         raise NoOwnersAvailable()
@@ -432,10 +438,14 @@ def create_request(session, user, group, permission, argument, reason):
     # that's causing this notification
 
     mail_to = []
-    non_wildcard_owners = [(owner, arg) for owner, arg in owner_arg_list if arg != "*"]
+    global_owners = owners_by_arg_by_perm[GLOBAL_OWNERS]["*"]
+    non_wildcard_owners = filter(lambda grant: grant[1] != '*', owner_arg_list)
+    non_global_owners = filter(lambda grant: grant[0] not in global_owners, owner_arg_list)
     if any(non_wildcard_owners):
         # non-wildcard owners should get all the notifications
         mailto_owner_arg_list = non_wildcard_owners
+    elif any(non_global_owners):
+        mailto_owner_arg_list = non_global_owners
     else:
         # only the wildcards so they get the notifications
         mailto_owner_arg_list = owner_arg_list

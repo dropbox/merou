@@ -25,6 +25,9 @@ from grouper.user_group import get_groups_by_user
 from grouper.util import matches_glob
 
 
+# Singleton
+GLOBAL_OWNERS = object()
+
 # represents all information we care about for a list of permission requests
 Requests = namedtuple('Requests', ['requests', 'status_change_by_request_id',
         'comment_by_status_change_id'])
@@ -244,6 +247,7 @@ def get_owners_by_grantable_permission(session):
         # special case permission admins
         group_permissions = grants_by_group[group.id]
         if any(filter(lambda g: g.name == PERMISSION_ADMIN, group_permissions)):
+            owners_by_arg_by_perm[GLOBAL_OWNERS]["*"].append(group)
             for perm_name in all_permissions:
                 owners_by_arg_by_perm[perm_name]["*"].append(group)
             continue

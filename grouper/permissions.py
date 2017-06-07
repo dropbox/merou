@@ -224,19 +224,25 @@ def get_owners_by_grantable_permission(session):
     all_groups = session.query(Group).filter(Group.enabled == True).all()
 
     owners_by_arg_by_perm = defaultdict(lambda: defaultdict(list))
-    for group in all_groups:
-        group_permissions = session.query(
-                Permission.name,
-                PermissionMap.argument,
-                PermissionMap.granted_on,
-                Group,
-        ).filter(
-                PermissionMap.group_id == Group.id,
-                Group.id == group.id,
-                Permission.id == PermissionMap.permission_id,
-        ).all()
 
+    all_group_permissions = session.query(
+            Permission.name,
+            PermissionMap.argument,
+            PermissionMap.granted_on,
+            Group,
+    ).filter(
+            PermissionMap.group_id == Group.id,
+            Permission.id == PermissionMap.permission_id,
+    ).all()
+
+    grants_by_group = defaultdict(list)
+
+    for grant in all_group_permissions:
+        grants_by_group[grant.Group.id].append(grant)
+
+    for group in all_groups:
         # special case permission admins
+        group_permissions = grants_by_group[group.id]
         if any(filter(lambda g: g.name == PERMISSION_ADMIN, group_permissions)):
             for perm_name in all_permissions:
                 owners_by_arg_by_perm[perm_name]["*"].append(group)

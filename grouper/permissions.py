@@ -605,9 +605,12 @@ def update_request(session, request, user, new_status, comment):
             session.rollback()
 
     # audit log
-    AuditLog.log(session, user.id, "update_perm_request",
-            "updated permission request to status: {}".format(new_status),
-            on_group_id=request.group_id, on_user_id=request.requester_id)
+    AuditLog.log(
+        session, user.id, "update_perm_request",
+        "updated permission request to status: {}".format(new_status),
+        on_group_id=request.group_id, on_user_id=request.requester_id,
+        on_permission_id=request.permission.id,
+    )
 
     session.commit()
 

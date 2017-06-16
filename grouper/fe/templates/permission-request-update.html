@@ -56,23 +56,40 @@
 <div class="col-md-6 col-md-offset-3">
 
     {% if statuses[request.status] %}
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">Update Request</h3>
-       </div>
-        <div class="panel-body">
-            <form class="form-horizontal" role="form"
-                  method="post" action="/permissions/requests/{{request.id}}">
-                {% include "forms/permission-request-update.html" %}
-                <div class="form-group">
-                    <div class="col-sm-offset-3 col-sm-4">
-                        <button type="submit" class="btn btn-primary">Submit</button>
-                    </div>
-                </div>
+        {% if can_approve_request  %}
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Update Request</h3>
+               </div>
+                <div class="panel-body">
+                    <form class="form-horizontal" role="form"
+                          method="post" action="/permissions/requests/{{request.id}}">
+                        {% include "forms/permission-request-update.html" %}
+                        <div class="form-group">
+                            <div class="col-sm-offset-3 col-sm-4">
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                            </div>
+                        </div>
 
-            </form>
-        </div>
-    </div>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Waiting for approval</h3>
+               </div>
+                <div class="panel-body">
+                    This request is pending approval from one of the following groups:
+                    <ul>
+                        {% for approver in approvers %}
+                            <li><a href="/groups/{{ approver }}">{{ approver }}</a></li>
+                        {% endfor %}
+                    </ul>
+
+                </div>
+            </div>
+        {% endif %}
     {% endif %}
 
 

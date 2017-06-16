@@ -460,6 +460,8 @@ def create_request(session, user, group, permission, argument, reason):
     send_email(session, set(mail_to), subj,
             "pending_permission_request", settings, email_context)
 
+    return request
+
 
 def get_pending_request_by_group(session, group):
     """Load pending request for a particular group.
@@ -476,6 +478,15 @@ def get_pending_request_by_group(session, group):
             PermissionRequest.status == "pending",
             PermissionRequest.group_id == group.id,
             ).all()
+
+
+def can_approve_request(session, request, owner, group_ids=None, owners_by_arg_by_perm=None):
+    owner_arg_list = get_owner_arg_list(session, request.permission, request.argument,
+            owners_by_arg_by_perm)
+    if group_ids is None:
+        group_ids = {g.id for g, _ in get_groups_by_user(session, owner)}
+
+    return group_ids.intersection([o.id for o, arg in owner_arg_list])
 
 
 def get_requests_by_owner(session, owner, status, limit, offset):
@@ -508,9 +519,8 @@ def get_requests_by_owner(session, owner, status, limit, offset):
 
     requests = []
     for request in all_requests:
-        owner_arg_list = get_owner_arg_list(session, request.permission, request.argument,
-                owners_by_arg_by_perm)
-        if group_ids.intersection([o.id for o, arg in owner_arg_list]):
+        if can_approve_request(session, request, owner, group_ids=group_ids,
+                               owners_by_arg_by_perm=owners_by_arg_by_perm):
             requests.append(request)
 
     total = len(requests)
@@ -546,6 +556,22 @@ def get_request_by_id(session, request_id):
         model.PermissionRequest object or None if no request by that ID.
     """
     return session.query(PermissionRequest).filter(PermissionRequest.id == request_id).one()
+
+
+def get_changes_by_request_id(session, request_id):
+        status_changes = session.query(PermissionRequestStatusChange).filter(
+            PermissionRequestStatusChange.request_id == request_id,
+        ).all()
+
+        comments = session.query(Comment).filter(
+            Comment.obj_type == OBJ_TYPES_IDX.index("PermissionRequestStatusChange"),
+            Comment.obj_pk.in_([s.id for s in status_changes]),
+        ).all()
+        comment_by_status_change_id = {c.obj_pk: c for c in comments}
+
+        return [
+            (sc, comment_by_status_change_id[sc.id]) for sc in status_changes
+        ]
 
 
 def update_request(session, request, user, new_status, comment):

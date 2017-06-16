@@ -82,7 +82,7 @@ class GroupPermissionRequest(GrouperHandler):
 
         # save off request
         try:
-            permissions.create_request(self.session, self.current_user, group,
+            request = permissions.create_request(self.session, self.current_user, group,
                     permission, form.argument.data, form.reason.data)
         except permissions.RequestAlreadyGranted:
             alerts = [Alert("danger", "This group already has this permission and argument.")]
@@ -104,4 +104,4 @@ class GroupPermissionRequest(GrouperHandler):
                     alerts=alerts,
                     )
         else:
-            return self.redirect("/groups/{}".format(group.name))
+            return self.redirect("/permissions/requests/{}".format(request.id))

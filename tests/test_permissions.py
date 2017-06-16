@@ -387,6 +387,22 @@ def test_limited_permissions_global_approvers(session, standard_graph, groups, g
             "only security-team members get notification"
 
 @pytest.mark.gen_test
+def test_regress_permreq_global_approvers(session, standard_graph, groups, grantable_permissions,
+        http_client, base_url):
+    """Validates that we can render a permission request form where a global approver exists"""
+    perm_grant, _, perm1, _ = grantable_permissions
+    perm_admin, _ = Permission.get_or_create(session, name=PERMISSION_ADMIN, description="")
+    session.commit()
+    grant_permission(groups["security-team"], perm_admin)
+
+    groupname = "sad-team"
+    username = "zorkian@a.co"
+    fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
+    resp = yield http_client.fetch(fe_url, method="GET",
+            headers={'X-Grouper-User': username})
+    assert resp.code == 200
+
+@pytest.mark.gen_test
 def test_grant_and_revoke(session, standard_graph, graph, groups, permissions,
         http_client, base_url):
     """Test that permission grant and revokes are reflected correctly."""

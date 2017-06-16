@@ -209,7 +209,7 @@ def filter_grantable_permissions(session, grants, all_permissions=None):
     return sorted(result, key=lambda x: x[0].name + x[1])
 
 
-def get_owners_by_grantable_permission(session):
+def get_owners_by_grantable_permission(session, separate_global=False):
     """
     Returns all known permission arguments with owners. This consolidates
     permission grants supported by grouper itself as well as any grants
@@ -247,9 +247,10 @@ def get_owners_by_grantable_permission(session):
         # special case permission admins
         group_permissions = grants_by_group[group.id]
         if any(filter(lambda g: g.name == PERMISSION_ADMIN, group_permissions)):
-            owners_by_arg_by_perm[GLOBAL_OWNERS]["*"].append(group)
             for perm_name in all_permissions:
                 owners_by_arg_by_perm[perm_name]["*"].append(group)
+            if separate_global:
+                owners_by_arg_by_perm[GLOBAL_OWNERS]["*"].append(group)
             continue
 
         grants = [gp for gp in group_permissions if gp.name == PERMISSION_GRANT]
@@ -383,7 +384,7 @@ def create_request(session, user, group, permission, argument, reason):
         raise RequestAlreadyExists()
 
     # determine owner(s)
-    owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
+    owners_by_arg_by_perm = get_owners_by_grantable_permission(session, separate_global=True)
     owner_arg_list = get_owner_arg_list(
         session,
         permission,

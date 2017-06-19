@@ -642,11 +642,15 @@ def update_request(session, request, user, new_status, comment):
     session.commit()
 
     # send notification
+
+    subj_template = 'email/pending_permission_request_subj.tmpl'
+    subject = "Re: " + get_template_env().get_template(subj_template).render(
+        permission=request.permission.name, group=request.group.name
+    )
+
     if new_status == "actioned":
-        subject = "Request for Permission Actioned"
         email_template = "permission_request_actioned"
     else:
-        subject = "Request for Permission Cancelled"
         email_template = "permission_request_cancelled"
 
     email_context = {

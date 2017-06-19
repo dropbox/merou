@@ -108,11 +108,16 @@ class GroupRequestUpdate(GrouperHandler):
             if user.name != self.current_user.name and user.name != request.requester.username
         ]
 
+        subj = "Re: " + self.render_template(
+            'email/pending_request_subj.tmpl',
+            group=group.name,
+            user=self.current_user.name
+        )
+
         send_email(
             self.session,
             approver_mail_to,
-            "Request to join {} by {} has been {}".format(group.groupname,
-                request.requester.name, form.data['status']),
+            subj,
             "approver_request_updated",
             settings,
             {

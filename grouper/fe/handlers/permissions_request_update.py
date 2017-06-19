@@ -72,4 +72,4 @@ class PermissionsRequestUpdate(GrouperHandler):
                     change_comment_list=change_comment_list, statuses=REQUEST_STATUS_CHOICES,
                     alerts=alerts)
 
-        return self.redirect("/permissions/requests")
+        return self.redirect("/permissions/requests?status=pending")

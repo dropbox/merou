@@ -5,6 +5,8 @@ from sqlalchemy.orm import relationship
 
 from grouper.models.base.constants import REQUEST_STATUS_CHOICES
 from grouper.models.base.model_base import Model
+from grouper.settings import settings
+from grouper.util import reference_id
 
 
 class PermissionRequest(Model):
@@ -29,3 +31,8 @@ class PermissionRequest(Model):
     requested_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     status = Column(Enum(*REQUEST_STATUS_CHOICES), default="pending", nullable=False)
+
+    @property
+    def reference_id(self):
+        # type: () -> str
+        return reference_id(settings, "permission", self)

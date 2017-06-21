@@ -318,6 +318,28 @@ def test_sa_tokens(session, users, http_client, base_url):
     assert "Disabled token: myDHDToken" in resp.body
 
 
+@pytest.mark.gen_test
+def test_request_emails_reference(session, groups, permissions, users, base_url,
+                        http_client):
+    tech = groups["tech-ops"]
+
+    tech.canjoin = "canask"
+    tech.add(session)
+    session.commit()
+
+    # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
+    user = session.query(User).filter_by(username="testuser@a.co").scalar()
+    fe_url = url(base_url, '/groups/{}/join'.format(tech.groupname))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"reason": "Test Request Please Ignore", "member": "User: {}".format(user.name)}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+
+    zay_emails = _get_unsent_and_mark_as_sent_emails_with_username(session, "zay@a.co")
+    assert any(
+        ["References: " in email.body
+         for email in zay_emails]
+    )
 
 @pytest.mark.gen_test
 def test_request_emails(graph, groups, permissions, session, standard_graph, users, base_url,

@@ -110,6 +110,7 @@ class GroupJoin(GrouperHandler):
                     "reason": form.data["reason"],
                     "expiration": expiration,
                     "role": form.data["role"],
+                    "references_header": request.reference_id,
                     }
 
             subj = self.render_template(

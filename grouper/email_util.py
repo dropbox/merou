@@ -167,6 +167,9 @@ def get_email_from_template(recipient_list, subject, template, settings, context
     msg.attach(text)
     msg.attach(html)
 
+    if "references_header" in context:
+        msg["References"] = msg["In-Reply-To"] = context["references_header"]
+
     return msg
 
 

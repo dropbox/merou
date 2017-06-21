@@ -28,6 +28,7 @@ from grouper.models.counter import Counter
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
+from grouper.util import reference_id
 from .constants import ILLEGAL_NAME_CHARACTER, MAX_NAME_LENGTH
 from .email_util import send_async_email
 from .settings import settings
@@ -682,6 +683,11 @@ class Request(Model, CommentObjectMixin):
     )
 
     changes = Column(Text, nullable=False)
+
+    @property
+    def reference_id(self):
+        # type: () -> str
+        return reference_id(settings, "group", self)
 
     def get_on_behalf(self):
         obj_type = OBJ_TYPES_IDX[self.on_behalf_obj_type]

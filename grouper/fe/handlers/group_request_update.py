@@ -127,6 +127,7 @@ class GroupRequestUpdate(GrouperHandler):
                 'status': form.data['status'],
                 'role': edge.role,
                 'reason': form.data['reason'],
+                'references_header': request.reference_id,
             },
         )
 

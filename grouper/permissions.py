@@ -433,6 +433,7 @@ def create_request(session, user, group, permission, argument, reason):
             "argument": argument,
             "reason": reason,
             "request_id": request.id,
+            "references_header": request.reference_id,
             }
 
     # TODO: would be nicer if it told you which group you're an approver of

@@ -80,7 +80,7 @@ class GroupJoin(GrouperHandler):
         elif group.auto_expire:
             expiration = datetime.utcnow() + group.auto_expire
 
-        request_id = group.add_member(
+        request = group.add_member(
             requester=self.current_user,
             user_or_group=member,
             reason=form.data["reason"],
@@ -105,7 +105,7 @@ class GroupJoin(GrouperHandler):
             email_context = {
                     "requester": member.name,
                     "requested_by": self.current_user.name,
-                    "request_id": request_id,
+                    "request_id": request.id,
                     "group_name": group.name,
                     "reason": form.data["reason"],
                     "expiration": expiration,

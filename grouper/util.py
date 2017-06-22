@@ -104,10 +104,10 @@ def reference_id(settings, request_type, request):
         domain = settings['service_account_email_domain']
     except KeyError:
         domain = "grouper.local"
-    return "{type}.{id}.{ts}@{prefix}.{domain}".format(
+    return "<{type}.{id}.{ts}@{prefix}.{domain}>".format(
         type=request_type,
         id=request.id,
-        ts=request.requested_at,
+        ts=request.requested_at.strftime('%Y%m%d%H%M%S'),
         prefix="grouper-internal",
         domain=domain,
     )

@@ -111,7 +111,7 @@ class GroupRequestUpdate(GrouperHandler):
         subj = "Re: " + self.render_template(
             'email/pending_request_subj.tmpl',
             group=group.name,
-            user=self.current_user.name
+            user=request.requester.username
         )
 
         send_email(

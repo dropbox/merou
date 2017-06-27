@@ -46,6 +46,7 @@ class GroupEdit(GrouperHandler):
             )
 
         group.groupname = form.data["groupname"]
+        group.email_address = form.data["email_address"]
         group.description = form.data["description"]
         group.canjoin = form.data["canjoin"]
         group.auto_expire = form.data["auto_expire"]

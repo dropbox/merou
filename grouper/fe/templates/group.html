@@ -11,6 +11,12 @@
     {% if group.audit and not group.audit.complete %}
         <span class="label label-danger">AUDIT IN PROGRESS</i>
     {% endif %}
+    {% if group.email_address %}
+        <a href="mailto:{{ group.email_address }}">
+            <i class="fa fa-envelope" aria-hidden="true"></i>
+            <span class="sr-only">Send email</span>
+        </a>
+    {% endif %}
 {% endblock %}
 
 {% block headingbuttons %}

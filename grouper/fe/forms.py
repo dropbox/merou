@@ -117,6 +117,9 @@ class GroupEditForm(Form):
         validators.DataRequired(),
         ValidateRegex(constants.NAME_VALIDATION),
     ])
+    email_address = StringField("Email address", [
+        validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
+    ])
     description = TextAreaField("Description")
     canjoin = SelectField("Who Can Join?", choices=GROUP_CANJOIN_CHOICES,
         default="canask")

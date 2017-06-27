@@ -90,6 +90,7 @@ class Group(Model, CommentObjectMixin):
 
     id = Column(Integer, primary_key=True)
     groupname = Column(String(length=MAX_NAME_LENGTH), unique=True, nullable=False)
+    email_address = Column(String(length=MAX_NAME_LENGTH), unique=False, nullable=True,)
     description = Column(Text)
     canjoin = Column(Enum(*GROUP_JOIN_CHOICES), default="canask")
     enabled = Column(Boolean, default=True, nullable=False)

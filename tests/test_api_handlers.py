@@ -166,6 +166,23 @@ def test_groups(groups, http_client, base_url):
 
     # TODO: test cutoff
 
+
+@pytest.mark.gen_test
+def test_groups_email(groups, session, graph, http_client, base_url):
+    expected_address = "sad-team@example.com"
+    sad = groups['sad-team']
+    sad.email_address = expected_address
+    session.commit()
+    Counter.incr(session, "updates")
+    graph.update_from_db(session)
+
+    api_url = url(base_url, '/groups/{}'.format(sad.name))
+    resp = yield http_client.fetch(api_url)
+    body = json.loads(resp.body)
+
+    assert body["data"]["group"]["contacts"]["email"] == expected_address
+
+
 @pytest.mark.gen_test
 def test_shell(session, users, http_client, base_url, graph):
     user = users['zorkian@a.co']

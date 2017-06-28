@@ -252,6 +252,10 @@ class GroupGraph(object):
                         "argument": permission.argument,
                     } for permission in permission_metadata[group.id]
                 ],
+                "contacts": {
+                    "email": group.email_address,
+                },
+
             }
         return out
 

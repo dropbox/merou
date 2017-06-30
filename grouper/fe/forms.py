@@ -106,6 +106,7 @@ class GroupCreateForm(Form):
         ValidateRegex(constants.NAME_VALIDATION),
     ])
     email_address = StringField("Group contact email address", [
+        validators.Optional(),
         validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
     ])
     description = TextAreaField("Description")
@@ -121,6 +122,7 @@ class GroupEditForm(Form):
         ValidateRegex(constants.NAME_VALIDATION),
     ])
     email_address = StringField("Group contact email address", [
+        validators.Optional(),
         validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
     ])
     description = TextAreaField("Description")

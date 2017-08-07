@@ -51,6 +51,9 @@ def user_command(args):
                     disable_service_account(session, user)
                 else:
                     disable_user(session, user)
+                AuditLog.log(session, user.id, 'disable_user',
+                        '(Administrative) User disabled via grouper-ctl',
+                        on_user_id=user.id)
                 session.commit()
         return
 
@@ -68,6 +71,9 @@ def user_command(args):
                         preserve_membership=args.preserve_membership, user=user)
                 else:
                     enable_user(session, user, user, preserve_membership=args.preserve_membership)
+                AuditLog.log(session, user.id, 'enable_user',
+                        '(Administrative) User enabled via grouper-ctl',
+                        on_user_id=user.id)
                 session.commit()
         return
 

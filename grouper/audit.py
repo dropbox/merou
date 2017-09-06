@@ -103,8 +103,9 @@ def assert_can_join(group, user_or_group, role="member"):
         if user_is_auditor(user_or_group.name):
             return True
         raise UserNotAuditor(
-            "User {} lacks auditing permission, so may only have the member role.".format(
-                user_or_group.name))
+            settings.audited_group_role_change_denied_message or \
+            "The user lacks auditing permission, so may only have the "
+            "\"member\" role in this audited group.")
 
     # No, this is a group-joining-group case. In this situation we must walk the entire group
     # subtree and ensure that all owners/np-owners/managers are considered auditors. This data

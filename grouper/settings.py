@@ -90,10 +90,6 @@ def default_settings_path():
     return os.environ.get("GROUPER_SETTINGS", "/etc/grouper.yaml")
 
 settings = Settings({
-    # optional custom message when rejecting an attempt to give a
-    # non-auditor user a non-member role in an audited group
-    "audited_group_role_change_denied_message": None,
-
     "database": None,
     "database_source": None,
     "expiration_notice_days": 7,

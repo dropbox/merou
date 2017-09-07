@@ -58,8 +58,9 @@ def assert_controllers_are_auditors(group):
                     checked.add(chk_user)
                 else:
                     raise UserNotAuditor(
-                        "User {} has role {} of the {} group, but is not an auditor.".format(
-                            chk_user, info["rolename"], cur_group))
+                        "User {} has role '{}' in the group {} but lacks the auditing "
+                        "permission ('{}').".format(
+                            chk_user, info["rolename"], cur_group, PERMISSION_AUDITOR))
         # Now put subgroups into the queue to examine.
         for chk_group, info in details["subgroups"].iteritems():
             if info["distance"] == 1:
@@ -103,8 +104,9 @@ def assert_can_join(group, user_or_group, role="member"):
         if user_is_auditor(user_or_group.name):
             return True
         raise UserNotAuditor(
-            "User {} lacks auditing permission, so may only have the member role.".format(
-                user_or_group.name))
+            "User {} lacks the auditing permission ('{}') so may only have the "
+            "'member' role in this audited group.".format(
+                user_or_group.name, PERMISSION_AUDITOR))
 
     # No, this is a group-joining-group case. In this situation we must walk the entire group
     # subtree and ensure that all owners/np-owners/managers are considered auditors. This data

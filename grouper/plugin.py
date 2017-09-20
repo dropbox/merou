@@ -52,6 +52,12 @@ class BasePlugin(object):
         """
         pass
 
+    def get_ssl_context(self):
+        """
+        Called to get the ssl.SSLContext for the application.
+        """
+        pass
+
     def log_exception(self, request, status, exception, stack):
         """
         Called when responding with statuses 400, 403, 404, and 500.

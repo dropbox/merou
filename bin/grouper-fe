@@ -19,7 +19,7 @@ from grouper.fe.settings import Settings, settings
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
-from grouper.plugin import load_plugins
+from grouper.plugin import get_plugins, load_plugins
 from grouper.settings import default_settings_path
 from grouper.setup import parse_args, setup_logging
 from grouper.util import get_loglevel, get_database_url
@@ -76,11 +76,17 @@ def main(args, sentry_client):
     address = args.address or settings.address
     port = args.port or settings.port
 
+    ssl_contexts = list(filter(bool, p.get_ssl_context() for p in get_plugins()))
+    assert len(ssl_contexts) <=1, "Plugins returned more than one ssl.SSLContext!"
+
     logging.info(
         "Starting application server with %d processes on port %d",
         settings.num_processes, port
     )
-    server = tornado.httpserver.HTTPServer(application)
+    server = tornado.httpserver.HTTPServer(
+            application,
+            ssl_options=next(ssl_contexts, None)
+    )
     server.bind(port, address=address)
     server.start(settings.num_processes)
     try:

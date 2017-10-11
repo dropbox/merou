@@ -61,16 +61,6 @@ def main(args, sentry_client):
 
     application = get_application(settings, sentry_client, args.deployment_name)
 
-    settings.start_config_thread(args.config, "fe")
-
-    with closing(Session()) as session:
-        graph = Graph()
-        graph.update_from_db(session)
-
-    refresher = DbRefreshThread(settings, graph, settings.refresh_interval, sentry_client)
-    refresher.daemon = True
-    refresher.start()
-
     address = args.address or settings.address
     port = args.port or settings.port
 
@@ -87,7 +77,22 @@ def main(args, sentry_client):
             ssl_options=ssl_context
     )
     server.bind(port, address=address)
+    # When using multiple processes, the forking happens here
     server.start(settings.num_processes)
+
+    # Create the Graph and start the config / graph update threads post fork to ensure each
+    # process gets updated.
+
+    settings.start_config_thread(args.config, "fe")
+
+    with closing(Session()) as session:
+        graph = Graph()
+        graph.update_from_db(session)
+
+    refresher = DbRefreshThread(settings, graph, settings.refresh_interval, sentry_client)
+    refresher.daemon = True
+    refresher.start()
+
     try:
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:

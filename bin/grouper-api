@@ -15,6 +15,7 @@ from grouper.app import Application
 from grouper.background import BackgroundThread
 from grouper.database import DbRefreshThread
 from grouper.error_reporting import get_sentry_client, SentryProxy, setup_signal_handlers
+from grouper.fe.settings import Settings
 from grouper.graph import Graph, GroupGraph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import load_plugins
@@ -23,7 +24,7 @@ from grouper.util import get_database_url
 
 
 def get_application(graph, settings, sentry_client):
-    # type: (GroupGraph, Settings, SentryProxy, str) -> Application
+    # type: (GroupGraph, Settings, SentryProxy) -> Application
     my_settings = {
         "graph": graph,
         "db_session": Session,

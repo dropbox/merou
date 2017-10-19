@@ -24,7 +24,7 @@ from grouper.util import get_database_url
 
 
 def get_application(settings, sentry_client, deployment_name):
-    # type: (Session, Settings, SentryProxy, str) -> Application
+    # type: (Settings, SentryProxy, str) -> Application
     tornado_settings = {
         "static_path": os.path.join(os.path.dirname(grouper.fe.__file__), "static"),
         "debug": settings.debug,

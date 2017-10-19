@@ -2,10 +2,18 @@
 
 LS_FILES_PATH=${1:-}
 
-EXCLUDE="(model_soup.py$)"
+MYPY_ARGS="--silent-imports --py2"
+MYPY_TAG="# type:"
+
+EXCLUDE="(^bin/|(model_soup.py|mypy.sh)$)"
 
 export LC_ALL=C
-FILES=$(git ls-files $LS_FILES_PATH | grep '\.py$' | egrep -v  "$EXCLUDE" | tr '\n' '\0' | xargs -0 grep -ls '# type:' | cat)
-STUBS=$(git ls-files $LS_FILES_PATH | grep '\.pyi$' | egrep -v  "$EXCLUDE" | cat)
+FILES=$(git grep -l "$MYPY_TAG" | egrep -v "$EXCLUDE")
+BINS=$(git grep -l "$MYPY_TAG" bin)
 
-mypy --silent-imports --py2 ${FILES} ${STUBS}
+mypy ${MYPY_ARGS} ${FILES}
+
+# We call mypy once per file in bin since mypy expects only one __main__ module
+for bin in ${BINS}; do
+  mypy ${MYPY_ARGS} ${bin}
+done

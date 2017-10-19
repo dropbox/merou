@@ -100,11 +100,12 @@ def main(args, sentry_client):
 
 if __name__ == "__main__":
     setup_signal_handlers()
-    try:
-        # get arguments
-        parser = argparse.ArgumentParser(description="Grouper Web Server.")
-        args = parse_args(parser, default_settings_path())
 
+    # get arguments
+    parser = argparse.ArgumentParser(description="Grouper Web Server.")
+    args = parse_args(parser, default_settings_path())
+
+    try:
         # load settings
         settings.update_from_config(args.config, "fe")
 

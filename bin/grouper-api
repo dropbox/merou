@@ -9,7 +9,6 @@ import sys
 import tornado.httpserver
 import tornado.ioloop
 
-import grouper
 from grouper.api.routes import HANDLERS
 from grouper.api.settings import settings
 from grouper.app import Application
@@ -20,7 +19,7 @@ from grouper.graph import Graph, GroupGraph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import load_plugins
 from grouper.setup import build_arg_parser, setup_logging
-from grouper.util import get_loglevel, get_database_url
+from grouper.util import get_database_url
 
 
 def get_application(graph, settings, sentry_client):

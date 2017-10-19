@@ -1,7 +1,6 @@
 from argparse import ArgumentParser, Namespace  # noqa
 import logging
 
-
 from grouper import __version__
 from grouper.settings import default_settings_path
 

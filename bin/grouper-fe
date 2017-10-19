@@ -5,7 +5,6 @@ from contextlib import closing
 import logging
 import os
 import sys
-from threading import Thread
 
 import tornado.httpserver
 import tornado.ioloop
@@ -21,10 +20,10 @@ from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import get_plugins, load_plugins
 from grouper.setup import build_arg_parser, setup_logging
-from grouper.util import get_loglevel, get_database_url
+from grouper.util import get_database_url
 
 
-def get_application(db_session_cls, settings, sentry_client, deployment_name):
+def get_application(settings, sentry_client, deployment_name):
     # type: (Session, Settings, SentryProxy, str) -> Application
     tornado_settings = {
         "static_path": os.path.join(os.path.dirname(grouper.fe.__file__), "static"),
@@ -60,7 +59,7 @@ def main(args, sentry_client):
     logging.debug("configure database session")
     Session.configure(bind=get_db_engine(get_database_url(settings)))
 
-    application = get_application(Session, settings, sentry_client, args.deployment_name)
+    application = get_application(settings, sentry_client, args.deployment_name)
 
     settings.start_config_thread(args.config, "fe")
 

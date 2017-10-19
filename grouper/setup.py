@@ -3,12 +3,16 @@ import logging
 
 
 from grouper import __version__
+from grouper.settings import default_settings_path
 
 
-def parse_args(parser, default_config_path):
-    # type(ArgumentParser, str) -> Namespace
+def build_arg_parser(description):
+    # type(str) -> ArgumentParser
+
+    parser = ArgumentParser(description=description)
+
     parser.add_argument(
-            "-c", "--config", default=default_config_path, help="Path to config file.")
+            "-c", "--config", default=default_settings_path(), help="Path to config file.")
     parser.add_argument(
             "-v", "--verbose", action="count", default=0, help="Increase logging verbosity.")
     parser.add_argument(
@@ -23,7 +27,7 @@ def parse_args(parser, default_config_path):
     parser.add_argument(
             "-n", "--deployment-name", type=str, default="", help="Name of the deployment.")
 
-    return parser.parse_args()
+    return parser
 
 
 def setup_logging(args, log_format):

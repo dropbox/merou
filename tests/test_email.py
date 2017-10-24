@@ -1,13 +1,14 @@
 from datetime import datetime, timedelta
+
 import pytest
 
 from fixtures import graph, users, groups, session, permissions, standard_graph  # noqa
-from util import add_member, revoke_member
-
 from grouper.background import BackgroundThread
 from grouper.fe.settings import settings
-from grouper.model_soup import AsyncNotification, Group, GroupEdge
+from grouper.model_soup import Group, GroupEdge
+from grouper.models.async_notification import AsyncNotification
 from grouper.models.audit_log import AuditLog
+from util import add_member, revoke_member
 
 
 def _get_unsent_emails_and_send(session):

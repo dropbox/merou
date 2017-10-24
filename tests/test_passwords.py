@@ -1,4 +1,3 @@
-import json
 from urllib import urlencode
 
 import pytest
@@ -6,13 +5,9 @@ from tornado.httpclient import HTTPError
 
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from fixtures import fe_app as app  # noqa
-from grouper import public_key
-from grouper.model_soup import User, Request, AsyncNotification
-from grouper.models.user_password import UserPassword
-from grouper.user_password import (add_new_user_password, delete_user_password,
-    PasswordAlreadyExists, user_passwords)
+from grouper.model_soup import User
+from grouper.user_password import PasswordAlreadyExists, add_new_user_password, delete_user_password, user_passwords
 from url_util import url
-
 
 TEST_PASSWORD = "test_password_please_ignore"
 

@@ -1,6 +1,4 @@
 from collections import namedtuple
-from mock import patch
-import re
 import unittest
 from urllib import urlencode
 
@@ -10,7 +8,6 @@ from wtforms.validators import ValidationError
 
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from fixtures import fe_app as app  # noqa
-from util import get_group_permissions, get_user_permissions, grant_permission
 from grouper.constants import (
         ARGUMENT_VALIDATION,
         AUDIT_MANAGER,
@@ -21,7 +18,8 @@ from grouper.constants import (
         )
 from grouper.fe.forms import ValidateRegex
 import grouper.fe.util
-from grouper.model_soup import AsyncNotification, Group, PermissionMap
+from grouper.model_soup import Group, PermissionMap
+from grouper.models.async_notification import AsyncNotification
 from grouper.models.user import User
 from grouper.permissions import (
         get_grantable_permissions,
@@ -29,9 +27,10 @@ from grouper.permissions import (
         get_owners_by_grantable_permission,
         get_requests_by_owner,
         )
-from url_util import url
 from grouper.models.permission import Permission
 from grouper.user_permissions import user_grantable_permissions, user_has_permission
+from url_util import url
+from util import get_group_permissions, get_user_permissions, grant_permission
 
 
 @pytest.fixture

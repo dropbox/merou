@@ -5,6 +5,7 @@ import logging
 import smtplib
 
 from grouper.fe.template_util import get_template_env
+from grouper.models.async_notification import AsyncNotification
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.user import User
@@ -37,10 +38,6 @@ def send_async_email(
     Returns:
         Nothing.
     """
-    # TODO(herb): get around circular depdendencies; long term remove call to
-    # send_async_email() from grouper.models
-    from grouper.model_soup import AsyncNotification
-
     if isinstance(recipients, basestring):
         recipients = recipients.split(",")
 
@@ -67,10 +64,6 @@ def cancel_async_emails(session, async_key):
     Args:
         async_key (str): The async_key previously provided for your emails.
     """
-    # TODO(herb): get around circular depdendencies; long term remove call to
-    # send_async_email() from grouper.models
-    from grouper.model_soup import AsyncNotification
-
     session.query(AsyncNotification).filter(
         AsyncNotification.key == async_key,
         AsyncNotification.sent == False
@@ -93,10 +86,6 @@ def process_async_emails(settings, session, now_ts, dry_run=False):
     Returns:
         int: Number of emails that were sent.
     """
-    # TODO(herb): get around circular depdendencies; long term remove call to
-    # send_async_email() from grouper.models
-    from grouper.model_soup import AsyncNotification
-
     emails = session.query(AsyncNotification).filter(
         AsyncNotification.sent == False,
         AsyncNotification.send_after < now_ts,
@@ -211,8 +200,6 @@ def notify_edge_expiration(settings, session, edge):
     # TODO(herb): get around circular depdendencies; long term remove call to
     # send_async_email() from grouper.models
     from grouper.model_soup import Group
-    from grouper.models.base.constants import OBJ_TYPES_IDX
-    from grouper.models.user import User
 
     # TODO(rra): Arbitrarily use the first listed owner of the group from which membership expired
     # as the actor, since we have to provide an actor and we didn't record who set the expiration on

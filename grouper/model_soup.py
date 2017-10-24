@@ -5,7 +5,7 @@
 #                                                                              #
 ################################################################################
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import datetime
 import json
 import logging
 
@@ -19,6 +19,7 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import label, literal
 
+from grouper.expiration import add_expiration, cancel_expiration
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX, REQUEST_STATUS_CHOICES
 from grouper.models.base.model_base import Model
@@ -29,10 +30,8 @@ from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
 from grouper.util import reference_id
-from .constants import ILLEGAL_NAME_CHARACTER, MAX_NAME_LENGTH
-from .email_util import send_async_email
+from .constants import MAX_NAME_LENGTH
 from .settings import settings
-
 
 GROUP_JOIN_CHOICES = {
     # Anyone can join with automatic approval
@@ -817,20 +816,20 @@ class GroupEdge(Model):
             # We're creating a new owner, who should find out when this group
             # they now own loses its membership in larger groups.
             for supergroup_name, expiration in expiring_supergroups:
-                AsyncNotification.add_expiration(self.session,
-                                                 expiration,
-                                                 group_name=supergroup_name,
-                                                 member_name=member_name,
-                                                 recipients=[recipient],
-                                                 member_is_user=False)
+                add_expiration(self.session,
+                               expiration,
+                               group_name=supergroup_name,
+                               member_name=member_name,
+                               recipients=[recipient],
+                               member_is_user=False)
         else:
             # We're removing an owner, who should no longer find out when this
             # group they no longer own loses its membership in larger groups.
             for supergroup_name, _ in expiring_supergroups:
-                AsyncNotification.cancel_expiration(self.session,
-                                                    group_name=supergroup_name,
-                                                    member_name=member_name,
-                                                    recipients=[recipient])
+                cancel_expiration(self.session,
+                                  group_name=supergroup_name,
+                                  member_name=member_name,
+                                  recipients=[recipient])
 
     def apply_changes_dict(self, changes):
         for key, value in changes.items():
@@ -850,20 +849,20 @@ class GroupEdge(Model):
                     member_is_user = False
                 if getattr(self, key, None) is not None:
                     # Check for and remove pending expiration notification.
-                    AsyncNotification.cancel_expiration(self.session,
-                                                        group_name,
-                                                        member_name)
+                    cancel_expiration(self.session,
+                                      group_name,
+                                      member_name)
                 if value:
                     expiration = datetime.strptime(value, "%m/%d/%Y")
                     setattr(self, key, expiration)
                     # Avoid sending notifications for expired edges.
                     if expiration > datetime.utcnow():
-                        AsyncNotification.add_expiration(self.session,
-                                                         expiration,
-                                                         group_name,
-                                                         member_name,
-                                                         recipients=recipients,
-                                                         member_is_user=member_is_user)
+                        add_expiration(self.session,
+                                       expiration,
+                                       group_name,
+                                       member_name,
+                                       recipients=recipients,
+                                       member_is_user=member_is_user)
                 else:
                     setattr(self, key, None)
             else:
@@ -879,81 +878,3 @@ class GroupEdge(Model):
             type(self).__name__, self.group_id,
             OBJ_TYPES_IDX[self.member_type], self.member_pk
         )
-
-
-class AsyncNotification(Model):
-    """Represent a notification tracking/sending mechanism"""
-
-    __tablename__ = "async_notifications"
-
-    id = Column(Integer, primary_key=True)
-    key = Column(String(length=MAX_NAME_LENGTH))
-
-    email = Column(String(length=MAX_NAME_LENGTH), nullable=False)
-    subject = Column(String(length=256), nullable=False)
-    body = Column(Text, nullable=False)
-    send_after = Column(DateTime, nullable=False)
-    sent = Column(Boolean, default=False, nullable=False)
-
-    @staticmethod
-    def _get_unsent_expirations(session, now_ts):
-        """Get upcoming group membership expiration notifications as a list of (group_name,
-        member_name, email address) tuples.
-        """
-        tuples = []
-        emails = session.query(AsyncNotification).filter(
-            AsyncNotification.key.like("EXPIRATION%"),
-            AsyncNotification.sent == False,
-            AsyncNotification.send_after < now_ts,
-        ).all()
-        for email in emails:
-            group_name, member_name = AsyncNotification._expiration_key_data(email.key)
-            user = email.email
-            tuples.append((group_name, member_name, user))
-        return tuples
-
-    @staticmethod
-    def _expiration_key_data(key):
-        expiration_token, group_name, member_name = key.split(ILLEGAL_NAME_CHARACTER)
-        assert expiration_token == 'EXPIRATION'
-        return group_name, member_name
-
-    @staticmethod
-    def _expiration_key(group_name, member_name):
-        async_key = ILLEGAL_NAME_CHARACTER.join(['EXPIRATION', group_name, member_name])
-        return async_key
-
-    @staticmethod
-    def add_expiration(session, expiration, group_name, member_name, recipients, member_is_user):
-        async_key = AsyncNotification._expiration_key(group_name, member_name)
-        send_after = expiration - timedelta(settings.expiration_notice_days)
-        email_context = {
-                'expiration': expiration,
-                'group_name': group_name,
-                'member_name': member_name,
-                'member_is_user': member_is_user,
-                }
-        from grouper.fe.settings import settings as fe_settings
-        send_async_email(
-                session=session,
-                recipients=recipients,
-                subject="expiration warning for membership in group '{}'".format(group_name),
-                template='expiration_warning',
-                settings=fe_settings,
-                context=email_context,
-                send_after=send_after,
-                async_key=async_key)
-
-    @staticmethod
-    def cancel_expiration(session, group_name, member_name, recipients=None):
-        async_key = AsyncNotification._expiration_key(group_name, member_name)
-        opt_arg = []
-        if recipients is not None:
-            exprs = [AsyncNotification.email == recipient for recipient in recipients]
-            opt_arg.append(or_(*exprs))
-        session.query(AsyncNotification).filter(
-            AsyncNotification.key == async_key,
-            AsyncNotification.sent == False,
-            *opt_arg
-        ).delete()
-        session.commit()

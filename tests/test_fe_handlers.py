@@ -1,3 +1,4 @@
+from datetime import date, datetime, timedelta
 import json
 from urllib import urlencode
 
@@ -6,15 +7,13 @@ from tornado.httpclient import HTTPError
 
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from fixtures import fe_app as app  # noqa
-from grouper import public_key
-from grouper.model_soup import  Request, AsyncNotification, Group, GroupEdge
+from grouper.model_soup import Group, GroupEdge, Request
+from grouper.models.async_notification import AsyncNotification
 from grouper.models.user import User
 from grouper.public_key import get_public_keys_of_user
-from grouper.service_account import (get_service_account, is_service_account,
-    disable_service_account, enable_service_account)
+from grouper.service_account import (disable_service_account, enable_service_account,
+    get_service_account, is_service_account)
 from url_util import url
-from datetime import timedelta, datetime, date
-from util import add_member
 
 
 def _get_unsent_and_mark_as_sent_emails_with_username(session, username):

@@ -5,8 +5,8 @@ from mock import patch
 
 from ctl_util import call_main
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
-from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
+from grouper.models.group import Group
 from grouper.models.group_edge import GROUP_EDGE_ROLES
 
 

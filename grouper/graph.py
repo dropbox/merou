@@ -8,8 +8,8 @@ from sqlalchemy import or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import label, literal
 
-from grouper.model_soup import Group
 from grouper.models.counter import Counter
+from grouper.models.group import Group
 from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
 from grouper.models.permission import MappedPermission, Permission
 from grouper.models.permission_map import PermissionMap

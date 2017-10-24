@@ -5,7 +5,7 @@ import pytest
 from fixtures import api_app as app  # noqa
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from grouper.constants import TAG_EDIT
-from grouper.model_soup import Group
+from grouper.models.group import Group
 from grouper.models.permission import Permission
 from grouper.models.public_key import PublicKey
 from grouper.models.public_key_tag import PublicKeyTag
@@ -15,7 +15,6 @@ from grouper.public_key import add_public_key, add_tag_to_public_key, get_public
 from grouper.user_permissions import user_permissions
 from url_util import url
 from util import grant_permission
-
 
 key1 = ('ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDCUQeasspT/etEJR2WUoR+h2sMOQYbJgr0Q'
         'E+J8p97gEhmz107KWZ+3mbOwyIFzfWBcJZCEg9wy5Paj+YxbGONqbpXAhPdVQ2TLgxr41bNXvbcR'

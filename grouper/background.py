@@ -16,8 +16,8 @@ from grouper.email_util import (
     )
 from grouper.graph import Graph
 from grouper.group import get_audited_groups
-from grouper.model_soup import Group
 from grouper.models.base.session import get_db_engine, Session
+from grouper.models.group import Group
 from grouper.models.group_edge import APPROVER_ROLE_INDICIES, GroupEdge
 from grouper.models.user import User
 from grouper.perf_profile import prune_old_traces

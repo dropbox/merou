@@ -4,7 +4,7 @@ from sqlalchemy import asc, or_
 
 from grouper.constants import (GROUP_ADMIN, PERMISSION_ADMIN, PERMISSION_CREATE,
     PERMISSION_GRANT, USER_ADMIN)
-from grouper.model_soup import Group
+from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap

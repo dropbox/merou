@@ -89,7 +89,7 @@ class GroupEdge(Model):
 
     def apply_changes_dict(self, changes):
         # TODO(cbguder): get around circular dependencies
-        from grouper.model_soup import Group
+        from grouper.models.group import Group
 
         for key, value in changes.items():
             if key == 'expiration':

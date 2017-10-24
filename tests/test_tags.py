@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from collections import namedtuple
 from urllib import urlencode
 
 import pytest
@@ -6,18 +6,17 @@ from tornado.httpclient import HTTPError
 
 from fixtures import fe_app as app
 from fixtures import standard_graph, users, graph, groups, session, permissions  # noqa
-from grouper.model_soup import Group, User
+from grouper.constants import TAG_EDIT
+from grouper.models.group import Group
+from grouper.models.permission import Permission
 from grouper.models.public_key import PublicKey
 from grouper.models.public_key_tag import PublicKeyTag
-from grouper.models.permission import Permission
-from grouper.constants import TAG_EDIT
+from grouper.models.user import User
 from grouper.permissions import permission_intersection
-from grouper.public_key import get_public_key_permissions, get_public_key_tags, get_public_key_tag_permissions
+from grouper.public_key import get_public_key_permissions, get_public_key_tag_permissions, get_public_key_tags
 from grouper.user_permissions import user_permissions
 from url_util import url
-from util import get_users, get_groups, add_member, grant_permission
-from collections import namedtuple
-
+from util import grant_permission
 
 key_1 = ('ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDCUQeasspT/etEJR2WUoR+h2sMOQYbJgr0Q'
             'E+J8p97gEhmz107KWZ+3mbOwyIFzfWBcJZCEg9wy5Paj+YxbGONqbpXAhPdVQ2TLgxr41bNXvbcR'

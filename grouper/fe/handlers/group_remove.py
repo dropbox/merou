@@ -1,7 +1,7 @@
 from grouper.fe.forms import GroupRemoveForm
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
+from grouper.models.group import Group
 from grouper.service_account import get_service_account, is_service_account
 from grouper.user import get_user_or_group
 from grouper.user_group import user_can_manage_group

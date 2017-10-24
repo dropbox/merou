@@ -9,9 +9,9 @@ from grouper.ctl.util import (
         make_session,
         open_file,
         )
-from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.session import Session  # noqa
+from grouper.models.group import Group
 from grouper.models.user_token import UserToken  # noqa: HAX(herb) workaround user -> user_token dep
 from grouper.models.user import User
 

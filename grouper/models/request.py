@@ -56,7 +56,7 @@ class Request(Model, CommentObjectMixin):
 
     def get_on_behalf(self):
         # TODO(cbguder): get around circular dependencies
-        from grouper.model_soup import Group
+        from grouper.models.group import Group
 
         obj_type = OBJ_TYPES_IDX[self.on_behalf_obj_type]
 

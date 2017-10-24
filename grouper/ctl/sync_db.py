@@ -7,9 +7,9 @@ from grouper.constants import (
         USER_ADMIN,
         )
 from grouper.ctl.util import make_session
-from grouper.model_soup import Group
 from grouper.models.base.model_base import Model
 from grouper.models.base.session import get_db_engine
+from grouper.models.group import Group
 from grouper.models.permission import Permission
 from grouper.permissions import grant_permission
 from grouper.settings import settings

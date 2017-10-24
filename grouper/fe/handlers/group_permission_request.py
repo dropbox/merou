@@ -4,7 +4,7 @@ from grouper import permissions
 from grouper.fe.forms import GroupPermissionRequestDropdownForm, GroupPermissionRequestTextForm
 from grouper.fe.settings import settings
 from grouper.fe.util import Alert, GrouperHandler
-from grouper.model_soup import Group
+from grouper.models.group import Group
 from grouper.models.permission import Permission
 from grouper.permissions import get_grantable_permissions
 

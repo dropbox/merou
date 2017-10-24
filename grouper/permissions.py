@@ -9,12 +9,12 @@ from grouper.constants import ARGUMENT_VALIDATION, PERMISSION_ADMIN, PERMISSION_
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
 from grouper.fe.template_util import get_template_env
-from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.base.session import Session  # noqa
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
+from grouper.models.group import Group
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.permission_request import PermissionRequest
@@ -23,7 +23,6 @@ from grouper.models.tag_permission_map import TagPermissionMap
 from grouper.plugin import get_plugins
 from grouper.user_group import get_groups_by_user
 from grouper.util import matches_glob
-
 
 # Singleton
 GLOBAL_OWNERS = object()

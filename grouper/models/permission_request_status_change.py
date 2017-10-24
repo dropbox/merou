@@ -3,9 +3,9 @@ from datetime import datetime
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 
-from grouper.model_soup import CommentObjectMixin
 from grouper.models.base.constants import REQUEST_STATUS_CHOICES
 from grouper.models.base.model_base import Model
+from grouper.models.comment import CommentObjectMixin
 
 
 class PermissionRequestStatusChange(Model, CommentObjectMixin):

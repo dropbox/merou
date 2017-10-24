@@ -7,8 +7,8 @@ from grouper.fe.forms import GroupAddForm
 from grouper.fe.settings import settings
 from grouper.fe.util import Alert, GrouperHandler
 from grouper.group import get_all_groups
-from grouper.model_soup import Group, InvalidRoleForMember
 from grouper.models.audit_log import AuditLog
+from grouper.models.group import Group, InvalidRoleForMember
 from grouper.service_account import get_service_account, is_service_account
 from grouper.user import get_all_enabled_users, get_user_or_group, user_role
 from grouper.user_group import user_can_manage_group

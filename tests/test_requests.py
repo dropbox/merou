@@ -1,7 +1,6 @@
 from fixtures import graph, groups, permissions, session, standard_graph, users
 
-from grouper.model_soup import Group, Request
-from grouper.models.user import User
+from grouper.models.request import Request
 from grouper.user import user_requests_aggregate
 from util import add_member
 

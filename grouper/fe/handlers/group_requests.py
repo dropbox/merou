@@ -1,6 +1,7 @@
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import APPROVER_ROLE_INDICIES, Group, OWNER_ROLE_INDICES, Request
+from grouper.model_soup import APPROVER_ROLE_INDICIES, Group, OWNER_ROLE_INDICES
 from grouper.models.base.constants import REQUEST_STATUS_CHOICES
+from grouper.models.request import Request
 from grouper.user import user_role, user_role_index
 
 

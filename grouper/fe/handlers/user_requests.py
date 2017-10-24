@@ -1,5 +1,5 @@
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import Request
+from grouper.models.request import Request
 from grouper.user import user_requests_aggregate
 
 

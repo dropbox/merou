@@ -4,12 +4,14 @@ from sqlalchemy import or_
 from sqlalchemy.sql import label, literal
 
 from grouper.model_soup import (APPROVER_ROLE_INDICIES, Group, GROUP_EDGE_ROLES, GroupEdge,
-    OWNER_ROLE_INDICES, Request, RequestStatusChange)
+    OWNER_ROLE_INDICES)
 from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.session import Session  # noqa
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
+from grouper.models.request import Request
+from grouper.models.request_status_change import RequestStatusChange
 from grouper.models.user import User
 from grouper.user_group import get_groups_by_user
 from grouper.user_permissions import user_is_group_admin

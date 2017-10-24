@@ -3,7 +3,8 @@ from grouper.fe.handlers.user_disable import UserDisable
 from grouper.fe.handlers.user_enable import UserEnable
 from grouper.fe.util import Alert
 from grouper.graph import NoSuchGroup, NoSuchUser
-from grouper.model_soup import APPROVER_ROLE_INDICIES, AUDIT_STATUS_CHOICES, OWNER_ROLE_INDICES
+from grouper.model_soup import APPROVER_ROLE_INDICIES, OWNER_ROLE_INDICES
+from grouper.models.audit_member import AUDIT_STATUS_CHOICES
 from grouper.permissions import (get_owner_arg_list, get_pending_request_by_group,
     get_requests_by_owner)
 from grouper.public_key import (get_public_key_permissions, get_public_key_tags,

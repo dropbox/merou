@@ -21,6 +21,7 @@ from sqlalchemy.sql import label, literal
 
 from grouper.expiration import add_expiration, cancel_expiration
 from grouper.models.audit_log import AuditLog
+from grouper.models.audit_member import AuditMember
 from grouper.models.base.constants import OBJ_TYPES_IDX, REQUEST_STATUS_CHOICES
 from grouper.models.base.model_base import Model
 from grouper.models.base.session import flush_transaction
@@ -42,8 +43,6 @@ GROUP_JOIN_CHOICES = {
     # join request should be generated for such groups!)
     "nobody": "<integrityerror>",
 }
-
-AUDIT_STATUS_CHOICES = {"pending", "approved", "remove"}
 
 # Note: the order of the GROUP_EDGE_ROLES tuple matters! New roles must be
 # appended!  When adding a new role, be sure to update the regression test.
@@ -556,34 +555,6 @@ class Group(Model, CommentObjectMixin):
     def __repr__(self):
         return "<%s: id=%s groupname=%s>" % (
             type(self).__name__, self.id, self.groupname)
-
-
-class AuditMember(Model):
-    """An AuditMember is a single instantiation of a user in an audit
-
-    Tracks the status of the member within the audit. I.e., have they been reviewed, should they
-    be removed, etc.
-    """
-
-    __tablename__ = "audit_members"
-
-    id = Column(Integer, primary_key=True)
-
-    audit_id = Column(Integer, ForeignKey("audits.id"), nullable=False)
-    audit = relationship("Audit", backref="members", foreign_keys=[audit_id])
-
-    edge_id = Column(Integer, ForeignKey("group_edges.id"), nullable=False)
-    edge = relationship("GroupEdge", backref="audits", foreign_keys=[edge_id])
-
-    status = Column(Enum(*AUDIT_STATUS_CHOICES), default="pending", nullable=False)
-
-    @hybrid_property
-    def member(self):
-        if self.edge.member_type == 0:  # User
-            return User.get(self.session, pk=self.edge.member_pk)
-        elif self.edge.member_type == 1:  # Group
-            return Group.get(self.session, pk=self.edge.member_pk)
-        raise Exception("invalid member_type in AuditMember!")
 
 
 class Audit(Model):

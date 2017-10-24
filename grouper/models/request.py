@@ -9,6 +9,7 @@ from grouper.models.base.model_base import Model
 from grouper.models.base.session import flush_transaction
 from grouper.models.comment import Comment, CommentObjectMixin
 from grouper.models.counter import Counter
+from grouper.models.group_edge import GroupEdge
 from grouper.models.request_status_change import RequestStatusChange
 from grouper.models.user import User
 from grouper.settings import settings
@@ -86,9 +87,6 @@ class Request(Model, CommentObjectMixin):
 
     @flush_transaction
     def update_status(self, requester, status, reason):
-        # TODO(cbguder): get around circular dependencies
-        from grouper.model_soup import GroupEdge
-
         now = datetime.utcnow()
         current_status = self.status
         self.status = status

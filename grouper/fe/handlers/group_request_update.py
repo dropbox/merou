@@ -3,9 +3,10 @@ from grouper.email_util import send_email
 from grouper.fe.forms import GroupRequestModifyForm
 from grouper.fe.settings import settings
 from grouper.fe.util import Alert, GrouperHandler
-from grouper.model_soup import Group, GroupEdge
+from grouper.model_soup import Group
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import REQUEST_STATUS_CHOICES
+from grouper.models.group_edge import GroupEdge
 from grouper.models.request import Request
 from grouper.user import user_role
 

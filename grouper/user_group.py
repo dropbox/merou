@@ -3,7 +3,8 @@ from datetime import datetime
 from sqlalchemy import or_
 from sqlalchemy.orm import Session  # noqa
 
-from grouper.model_soup import Group, GroupEdge, OWNER_ROLE_INDICES
+from grouper.model_soup import Group
+from grouper.models.group_edge import GroupEdge, OWNER_ROLE_INDICES
 from grouper.models.user import User  # noqa
 
 

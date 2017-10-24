@@ -1,15 +1,13 @@
 from datetime import datetime, timedelta
 import imp
-import unittest
 
 import pytest
 
-from fixtures import graph, session, users, groups, permissions
-from util import add_member, edit_member, revoke_member, grant_permission
-
+from fixtures import graph, session, users, groups, permissions # noqa
 from grouper.email_util import process_async_emails
-from grouper.model_soup import AsyncNotification
+from grouper.expiration import _get_unsent_expirations
 from grouper.settings import settings
+from util import add_member, edit_member, grant_permission, revoke_member
 
 imp.load_source('grouper-api', 'bin/grouper-api')
 
@@ -38,6 +36,7 @@ def expiring_graph(session, graph, users, groups, permissions):
 
     return graph
 
+
 def test_expiration_notifications(expiring_graph, session, users, groups, permissions):  # noqa
     now = datetime.utcnow()
     note_exp_now = now + timedelta(settings.expiration_notice_days)
@@ -45,10 +44,10 @@ def test_expiration_notifications(expiring_graph, session, users, groups, permis
     week = timedelta(7)
 
     # What expirations are coming up in the next day?  Next week?
-    upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+day)
+    upcoming_expirations = _get_unsent_expirations(session, now+day)
     assert upcoming_expirations == []
 
-    upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+week)
+    upcoming_expirations = _get_unsent_expirations(session, now+week)
     assert sorted(upcoming_expirations) == [
         # Group, subgroup, subgroup owners.
         ("serving-team", "team-sre", "gary@a.co"),
@@ -59,7 +58,7 @@ def test_expiration_notifications(expiring_graph, session, users, groups, permis
 
     # Make someone expire a week from now.
     edit_member(groups["team-sre"], users["zorkian@a.co"], expiration=note_exp_now+week)
-    upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+week)
+    upcoming_expirations = _get_unsent_expirations(session, now+week)
     assert sorted(upcoming_expirations) == [
         # Group, subgroup, subgroup owners.
         ("serving-team", "team-sre", "gary@a.co"),
@@ -71,7 +70,7 @@ def test_expiration_notifications(expiring_graph, session, users, groups, permis
 
     # Now cancel that expiration.
     edit_member(groups["team-sre"], users["zorkian@a.co"], expiration=None)
-    upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+week)
+    upcoming_expirations = _get_unsent_expirations(session, now+week)
     assert sorted(upcoming_expirations) == [
         # Group, subgroup, subgroup owners.
         ("serving-team", "team-sre", "gary@a.co"),
@@ -82,7 +81,7 @@ def test_expiration_notifications(expiring_graph, session, users, groups, permis
 
     # Make an ordinary member an owner.
     edit_member(groups["team-sre"], users["zorkian@a.co"], role="owner")
-    upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+week)
+    upcoming_expirations = _get_unsent_expirations(session, now+week)
     assert sorted(upcoming_expirations) == [
         # Group, subgroup, subgroup owners.
         ("serving-team", "team-sre", "gary@a.co"),
@@ -94,7 +93,7 @@ def test_expiration_notifications(expiring_graph, session, users, groups, permis
 
     # Make an owner an ordinary member.
     edit_member(groups["team-sre"], users["zorkian@a.co"], role="member")
-    upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+week)
+    upcoming_expirations = _get_unsent_expirations(session, now+week)
     assert sorted(upcoming_expirations) == [
         # Group, subgroup, subgroup owners.
         ("serving-team", "team-sre", "gary@a.co"),
@@ -115,10 +114,10 @@ def test_expiration_notifications(expiring_graph, session, users, groups, permis
 
     # Notices in the upcoming week have already been sent, but there's another
     # two weeks from now.
-    upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+week)
+    upcoming_expirations = _get_unsent_expirations(session, now+week)
     assert upcoming_expirations == []
 
-    upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+2*week)
+    upcoming_expirations = _get_unsent_expirations(session, now+2*week)
     assert upcoming_expirations == [
         ("tech-ops", "gary@a.co", "gary@a.co"),
     ]
@@ -130,7 +129,7 @@ def test_expiration_notifications(expiring_graph, session, users, groups, permis
     # Extend gary's membership to beyond worth mentioning expiration in two weeks.
     add_member(groups["tech-ops"], users["gary@a.co"], expiration=note_exp_now+3*week)
 
-    upcoming_expirations = AsyncNotification._get_unsent_expirations(session, now+2*week)
+    upcoming_expirations = _get_unsent_expirations(session, now+2*week)
     assert upcoming_expirations == []
 
     notices_sent = process_async_emails(settings, session, now+2*week, dry_run=True)

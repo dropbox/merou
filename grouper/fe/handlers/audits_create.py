@@ -7,8 +7,10 @@ from grouper.email_util import send_async_email, send_email
 from grouper.fe.forms import AuditCreateForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import Audit, AuditMember, Group, GROUP_EDGE_ROLES
+from grouper.model_soup import Group, GROUP_EDGE_ROLES
+from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog, AuditLogCategory
+from grouper.models.audit_member import AuditMember
 from grouper.user_permissions import user_has_permission
 
 

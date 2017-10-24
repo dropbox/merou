@@ -5,7 +5,7 @@ LS_FILES_PATH=${1:-}
 MYPY_ARGS="--silent-imports --py2"
 MYPY_TAG="# type:"
 
-EXCLUDE="(^bin/|(model_soup.py|mypy.sh)$)"
+EXCLUDE="(^bin/|mypy.sh$)"
 
 export LC_ALL=C
 FILES=$(git grep -l "$MYPY_TAG" | egrep -v "$EXCLUDE")

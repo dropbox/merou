@@ -1,6 +1,6 @@
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
+from grouper.models.user import User
 from grouper.models.user_password import UserPassword
 from grouper.service_account import can_manage_service_account
 from grouper.user_password import delete_user_password, PasswordDoesNotExist

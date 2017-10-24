@@ -2,19 +2,13 @@ from mock import patch
 import pytest
 
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
-from grouper.constants import (
-        GROUP_ADMIN,
-        PERMISSION_ADMIN,
-        SYSTEM_PERMISSIONS,
-        USER_ADMIN,
-)
 
 from ctl_util import call_main
-from grouper.model_soup import Group
+from grouper.constants import GROUP_ADMIN, PERMISSION_ADMIN, USER_ADMIN
 from grouper.models.base.model_base import Model
+from grouper.models.group import Group
 from grouper.models.user import User
 from grouper.public_key import get_public_keys_of_user
-
 
 noop = lambda *k: None
 

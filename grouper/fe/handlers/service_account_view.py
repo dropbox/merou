@@ -1,6 +1,6 @@
 from grouper.fe.handlers.template_variables import get_service_account_view_template_vars
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import Group
+from grouper.models.group import Group
 from grouper.models.user import User
 
 

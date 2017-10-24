@@ -1,6 +1,6 @@
 from grouper.constants import TAG_EDIT
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import Permission
+from grouper.models.permission import Permission
 from grouper.models.public_key_tag import PublicKeyTag
 from grouper.public_key import get_public_key_tag_permissions
 from grouper.user_permissions import user_has_permission

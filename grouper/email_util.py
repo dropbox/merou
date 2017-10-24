@@ -199,7 +199,7 @@ def notify_edge_expiration(settings, session, edge):
     """
     # TODO(herb): get around circular depdendencies; long term remove call to
     # send_async_email() from grouper.models
-    from grouper.model_soup import Group
+    from grouper.models.group import Group
 
     # TODO(rra): Arbitrarily use the first listed owner of the group from which membership expired
     # as the actor, since we have to provide an actor and we didn't record who set the expiration on

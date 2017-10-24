@@ -6,9 +6,9 @@ from tornado.httpclient import HTTPError
 
 from fixtures import fe_app as app
 from fixtures import standard_graph, users, graph, groups, session, permissions  # noqa
-from grouper.model_soup import Group
+from grouper.models.group import Group
 from url_util import url
-from util import get_users, get_groups, add_member
+from util import add_member, get_groups, get_users
 
 
 def setup_desc_to_ances(session, users, groups):  # noqa

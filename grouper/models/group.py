@@ -1,9 +1,3 @@
-################################################################################
-#                                                                              #
-# THIS MODULE IS DEPRECIATED. PLEASE DON'T ADD TO THE SPAGHETTI HERE IF YOU    #
-# CAN AVOID IT.                                                                #
-#                                                                              #
-################################################################################
 from collections import OrderedDict
 from datetime import datetime
 import json
@@ -11,9 +5,11 @@ import logging
 
 from sqlalchemy import Boolean, Column, desc, Enum, Integer, Interval, or_, String, Text, union_all
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import aliased, relationship
+from sqlalchemy.orm import relationship
+from sqlalchemy.orm.util import aliased
 from sqlalchemy.sql import label, literal
 
+from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
@@ -28,7 +24,6 @@ from grouper.models.permission_map import PermissionMap
 from grouper.models.request import Request
 from grouper.models.request_status_change import RequestStatusChange
 from grouper.models.user import User
-from .constants import MAX_NAME_LENGTH
 
 GROUP_JOIN_CHOICES = {
     # Anyone can join with automatic approval

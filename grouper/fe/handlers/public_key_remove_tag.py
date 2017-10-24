@@ -1,7 +1,7 @@
 from grouper.fe.util import GrouperHandler
-from grouper.model_soup import User
 from grouper.models.audit_log import AuditLog
 from grouper.models.public_key_tag import PublicKeyTag
+from grouper.models.user import User
 from grouper.public_key import get_public_key, KeyNotFound, remove_tag_from_public_key, TagNotOnKey
 from grouper.service_account import can_manage_service_account
 from grouper.user_permissions import user_is_user_admin

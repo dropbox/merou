@@ -3,12 +3,12 @@ from datetime import datetime
 from sqlalchemy import or_
 from sqlalchemy.sql import label, literal
 
-from grouper.model_soup import Group
 from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.session import Session  # noqa
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
+from grouper.models.group import Group
 from grouper.models.group_edge import (APPROVER_ROLE_INDICIES, GROUP_EDGE_ROLES, GroupEdge,
     OWNER_ROLE_INDICES)
 from grouper.models.request import Request

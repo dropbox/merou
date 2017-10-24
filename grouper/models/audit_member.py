@@ -30,7 +30,7 @@ class AuditMember(Model):
     @hybrid_property
     def member(self):
         # TODO(cbguder): get around circular dependencies
-        from grouper.model_soup import Group
+        from grouper.models.group import Group
 
         if self.edge.member_type == 0:  # User
             return User.get(self.session, pk=self.edge.member_pk)

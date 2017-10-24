@@ -1,6 +1,6 @@
 from grouper.constants import PERMISSION_AUDITOR
 from grouper.graph import Graph
-from grouper.model_soup import Audit
+from grouper.models.audit import Audit
 
 
 class UserNotAuditor(Exception):

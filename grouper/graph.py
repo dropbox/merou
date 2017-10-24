@@ -8,8 +8,9 @@ from sqlalchemy import or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import label, literal
 
-from grouper.model_soup import Group, GROUP_EDGE_ROLES, GroupEdge
+from grouper.model_soup import Group
 from grouper.models.counter import Counter
+from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
 from grouper.models.permission import MappedPermission, Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.public_key import PublicKey
@@ -19,7 +20,6 @@ from grouper.models.user_password import UserPassword
 from grouper.public_key import get_all_public_key_tags
 from grouper.service_account import is_service_account
 from grouper.util import singleton
-
 
 MEMBER_TYPE_MAP = {
     "User": "users",

@@ -3,8 +3,9 @@ from datetime import datetime
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.fe.forms import GroupEditMemberForm
 from grouper.fe.util import Alert, GrouperHandler
-from grouper.model_soup import Group, GroupEdge, InvalidRoleForMember
+from grouper.model_soup import Group, InvalidRoleForMember
 from grouper.models.comment import OBJ_TYPES
+from grouper.models.group_edge import GroupEdge
 from grouper.models.user import User
 from grouper.user import user_role
 

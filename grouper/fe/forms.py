@@ -9,9 +9,8 @@ from wtforms import (
 from wtforms.validators import ValidationError
 from wtforms_tornado import Form
 
+from grouper.models.group_edge import GROUP_EDGE_ROLES
 from .. import constants
-from .. import model_soup
-
 
 GROUP_CANJOIN_CHOICES = [
     ("canjoin", "Anyone"), ("canask", "Must Ask"),
@@ -190,7 +189,7 @@ class GroupJoinForm(Form):
         validators.DataRequired(),
     ], choices=[
         (role, role.title())
-        for role in model_soup.GROUP_EDGE_ROLES
+        for role in GROUP_EDGE_ROLES
     ], default="member")
     reason = TextAreaField("Reason", [
         validators.DataRequired(),

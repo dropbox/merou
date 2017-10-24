@@ -5,9 +5,10 @@ import pytest
 from fixtures import graph, users, groups, session, permissions, standard_graph  # noqa
 from grouper.background import BackgroundThread
 from grouper.fe.settings import settings
-from grouper.model_soup import Group, GroupEdge
+from grouper.model_soup import Group
 from grouper.models.async_notification import AsyncNotification
 from grouper.models.audit_log import AuditLog
+from grouper.models.group_edge import GroupEdge
 from util import add_member, revoke_member
 
 

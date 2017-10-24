@@ -1,14 +1,8 @@
-from fixtures import (
-    graph,
-    groups,
-    permissions,
-    session,
-    standard_graph,
-    users,
-)  # noqa
+from fixtures import graph, groups, permissions, session, standard_graph, users  # noqa
 
-from grouper.model_soup import GROUP_EDGE_ROLES, Group
+from grouper.model_soup import Group
 from grouper.permissions import get_groups_by_permission
+from grouper.models.group_edge import GROUP_EDGE_ROLES
 from grouper.models.permission import Permission
 
 

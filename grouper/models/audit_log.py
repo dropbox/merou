@@ -24,6 +24,9 @@ class AuditLogFailure(Exception):
 
 
 class AuditLog(Model):
+    # TODO: Extract business logic from this class
+    # PLEASE DON'T ADD NEW BUSINESS LOGIC HERE IF YOU CAN AVOID IT!
+
     '''
     Logs actions taken in the system. This is a pretty simple logging framework to just
     let us track everything that happened. The main use case is to show users what has

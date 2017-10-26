@@ -25,6 +25,8 @@ APPROVER_ROLE_INDICIES = set([GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.
 
 
 class GroupEdge(Model):
+    # TODO: Extract business logic from this class
+    # PLEASE DON'T ADD NEW BUSINESS LOGIC HERE IF YOU CAN AVOID IT!
 
     __tablename__ = "group_edges"
     __table_args__ = (

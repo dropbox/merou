@@ -8,6 +8,9 @@ from grouper.models.base.model_base import Model
 
 
 class Audit(Model):
+    # TODO: Extract business logic from this class
+    # PLEASE DON'T ADD NEW BUSINESS LOGIC HERE IF YOU CAN AVOID IT!
+
     """An Audit is applied to a group for a particular audit period
 
     This contains all of the state of a given audit including each of the members who were

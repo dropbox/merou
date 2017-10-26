@@ -62,6 +62,8 @@ class InvalidRoleForMember(Exception):
 
 
 class Group(Model, CommentObjectMixin):
+    # TODO: Extract business logic from this class
+    # PLEASE DON'T ADD NEW BUSINESS LOGIC HERE IF YOU CAN AVOID IT!
 
     __tablename__ = "groups"
 

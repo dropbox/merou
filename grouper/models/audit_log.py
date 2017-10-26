@@ -27,11 +27,11 @@ class AuditLog(Model):
     # TODO: Extract business logic from this class
     # PLEASE DON'T ADD NEW BUSINESS LOGIC HERE IF YOU CAN AVOID IT!
 
-    '''
+    """
     Logs actions taken in the system. This is a pretty simple logging framework to just
     let us track everything that happened. The main use case is to show users what has
     happened recently, to help them understand.
-    '''
+    """
 
     __tablename__ = "audit_log"
 
@@ -62,7 +62,7 @@ class AuditLog(Model):
     def log(session, actor_id, action, description,
             on_user_id=None, on_group_id=None, on_permission_id=None, on_tag_id=None,
             category=AuditLogCategory.general):
-        '''
+        """
         Log an event in the database.
 
         Args:
@@ -74,7 +74,7 @@ class AuditLog(Model):
             on_group_id(int): group affected, if any
             on_permission_id(int): permission affected, if any
             category(AuditLogCategory): category of log entry
-        '''
+        """
         entry = AuditLog(
             actor_id=actor_id,
             log_time=datetime.utcnow(),
@@ -101,12 +101,12 @@ class AuditLog(Model):
     def get_entries(session, actor_id=None, on_user_id=None, on_group_id=None,
                     on_permission_id=None, on_tag_id=None, limit=None, offset=None,
                     involve_user_id=None, category=None, action=None):
-        '''
+        """
         Flexible method for getting log entries. By default it returns all entries
         starting at the newest. Most recent first.
 
         involve_user_id, if set, is (actor_id OR on_user_id).
-        '''
+        """
 
         results = session.query(AuditLog)
 

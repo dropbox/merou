@@ -1,6 +1,5 @@
 from collections import OrderedDict
 from datetime import datetime
-import json
 import logging
 from typing import List  # noqa
 
@@ -11,6 +10,7 @@ from sqlalchemy.orm.util import aliased
 from sqlalchemy.sql import label, literal
 
 from grouper.constants import MAX_NAME_LENGTH
+from grouper.group_member import persist_group_member_changes
 from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
@@ -18,8 +18,7 @@ from grouper.models.base.model_base import Model
 from grouper.models.base.session import flush_transaction
 from grouper.models.comment import Comment, CommentObjectMixin
 from grouper.models.counter import Counter
-from grouper.models.group_edge import (APPROVER_ROLE_INDICES, GROUP_EDGE_ROLES, GroupEdge,
-    OWNER_ROLE_INDICES)
+from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge, OWNER_ROLE_INDICES
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.request import Request
@@ -35,31 +34,6 @@ GROUP_JOIN_CHOICES = {
     # join request should be generated for such groups!)
     "nobody": "<integrityerror>",
 }
-
-
-def build_changes(edge, **updates):
-    changes = {}
-    for key, value in updates.items():
-        if key not in ("role", "expiration", "active"):
-            continue
-        if getattr(edge, key) != value:
-            if key == "expiration":
-                changes[key] = value.strftime("%m/%d/%Y") if value else ""
-            else:
-                changes[key] = value
-    return json.dumps(changes)
-
-
-class MemberNotFound(Exception):
-    """This exception is raised when trying to perform a group operation on an account that is
-       not a member of the group."""
-    pass
-
-
-class InvalidRoleForMember(Exception):
-    """This exception is raised when trying to set the role for a member of a group, but that
-    member is not permitted to hold that role in the group"""
-    pass
 
 
 class Group(Model, CommentObjectMixin):
@@ -100,56 +74,23 @@ class Group(Model, CommentObjectMixin):
                 user_or_group: A User/Group object of the member
                 reason: A comment on why this member should exist
         """
-        now = datetime.utcnow()
-
         logging.debug(
             "Revoking member (%s) from %s", user_or_group.name, self.groupname
         )
 
-        # Create the edge even if it doesn't exist so that we can explicitly
-        # disable it.
-        edge, new = GroupEdge.get_or_create(
-            self.session,
-            group_id=self.id,
-            member_type=user_or_group.member_type,
-            member_pk=user_or_group.id,
-        )
-        self.session.flush()
-
-        request = Request(
-            requester_id=requester.id,
-            requesting_id=self.id,
-            on_behalf_obj_type=user_or_group.member_type,
-            on_behalf_obj_pk=user_or_group.id,
-            requested_at=now,
-            edge_id=edge.id,
+        persist_group_member_changes(
+            session=self.session,
+            group=self,
+            requester=requester,
+            member=user_or_group,
             status="actioned",
-            changes=build_changes(
-                edge, role="member", expiration=None, active=False
-            )
-        ).add(self.session)
-        self.session.flush()
-
-        request_status_change = RequestStatusChange(
-            request=request,
-            user_id=requester.id,
-            to_status="actioned",
-            change_at=now
-        ).add(self.session)
-        self.session.flush()
-
-        Comment(
-            obj_type=OBJ_TYPES_IDX.index("RequestStatusChange"),
-            obj_pk=request_status_change.id,
-            user_id=requester.id,
-            comment=reason,
-            created_on=now
-        ).add(self.session)
-
-        edge.apply_changes(request)
-        self.session.flush()
-
-        Counter.incr(self.session, "updates")
+            reason=reason,
+            # Create the edge even if it doesn't exist so that we can explicitly disable it.
+            create_edge=True,
+            role="member",
+            expiration=None,
+            active=False
+        )
 
     @flush_transaction
     def edit_member(self, requester, user_or_group, reason, **kwargs):
@@ -161,66 +102,26 @@ class Group(Model, CommentObjectMixin):
             Any option that is not passed is not updated, and instead, the existing value for this
             user is kept.
         """
-        now = datetime.utcnow()
-        member_type = user_or_group.member_type
-
-        if member_type == 1 and "role" in kwargs and kwargs["role"] != "member":
-            raise InvalidRoleForMember("Groups can only have the role of 'member'")
-
         logging.debug(
             "Editing member (%s) in %s", user_or_group.name, self.groupname
         )
 
-        edge = GroupEdge.get(
-            self.session,
-            group_id=self.id,
-            member_type=member_type,
-            member_pk=user_or_group.id,
-        )
-        self.session.flush()
-
-        if not edge:
-            raise MemberNotFound()
-
-        request = Request(
-            requester_id=requester.id,
-            requesting_id=self.id,
-            on_behalf_obj_type=member_type,
-            on_behalf_obj_pk=user_or_group.id,
-            requested_at=now,
-            edge_id=edge.id,
+        persist_group_member_changes(
+            session=self.session,
+            group=self,
+            requester=requester,
+            member=user_or_group,
             status="actioned",
-            changes=build_changes(
-                edge, **kwargs
-            ),
-        ).add(self.session)
-        self.session.flush()
+            reason=reason,
+            **kwargs
+        )
 
-        request_status_change = RequestStatusChange(
-            request=request,
-            user_id=requester.id,
-            to_status="actioned",
-            change_at=now,
-        ).add(self.session)
-        self.session.flush()
-
-        Comment(
-            obj_type=OBJ_TYPES_IDX.index("RequestStatusChange"),
-            obj_pk=request_status_change.id,
-            user_id=requester.id,
-            comment=reason,
-            created_on=now,
-        ).add(self.session)
-
-        edge.apply_changes(request)
-        self.session.flush()
+        member_type = user_or_group.member_type
 
         message = "Edit member {} {}: {}".format(
             OBJ_TYPES_IDX[member_type].lower(), user_or_group.name, reason)
         AuditLog.log(self.session, requester.id, 'edit_member',
                      message, on_group_id=self.id)
-
-        Counter.incr(self.session, "updates")
 
     @flush_transaction
     def add_member(self, requester, user_or_group, reason, status="pending",
@@ -236,67 +137,22 @@ class Group(Model, CommentObjectMixin):
                 expiration: datetime object when membership should expire.
                 role: member/manager/owner/np-owner of the Group.
         """
-        now = datetime.utcnow()
-        member_type = user_or_group.member_type
-
-        if member_type == 1 and role != "member":
-            raise InvalidRoleForMember("Groups can only have the role of 'member'")
-
         logging.debug(
             "Adding member (%s) to %s", user_or_group.name, self.groupname
         )
 
-        edge, new = GroupEdge.get_or_create(
-            self.session,
-            group_id=self.id,
-            member_type=member_type,
-            member_pk=user_or_group.id,
-        )
-
-        # TODO(herb): this means all requests by this user to this group will
-        # have the same role. we should probably record the role specifically
-        # on the request and use that as the source on the UI
-        edge._role = GROUP_EDGE_ROLES.index(role)
-
-        self.session.flush()
-
-        request = Request(
-            requester_id=requester.id,
-            requesting_id=self.id,
-            on_behalf_obj_type=member_type,
-            on_behalf_obj_pk=user_or_group.id,
-            requested_at=now,
-            edge_id=edge.id,
+        return persist_group_member_changes(
+            session=self.session,
+            group=self,
+            requester=requester,
+            member=user_or_group,
             status=status,
-            changes=build_changes(
-                edge, role=role, expiration=expiration, active=True
-            )
-        ).add(self.session)
-        self.session.flush()
-
-        request_status_change = RequestStatusChange(
-            request=request,
-            user_id=requester.id,
-            to_status=status,
-            change_at=now
-        ).add(self.session)
-        self.session.flush()
-
-        Comment(
-            obj_type=3,
-            obj_pk=request_status_change.id,
-            user_id=requester.id,
-            comment=reason,
-            created_on=now
-        ).add(self.session)
-
-        if status == "actioned":
-            edge.apply_changes(request)
-            self.session.flush()
-
-        Counter.incr(self.session, "updates")
-
-        return request
+            reason=reason,
+            create_edge=True,
+            role=role,
+            expiration=expiration,
+            active=True
+        )
 
     def my_permissions(self):
 

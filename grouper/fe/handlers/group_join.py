@@ -7,7 +7,7 @@ from grouper.fe.settings import settings
 from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group, GROUP_JOIN_CHOICES
-from grouper.models.group_edge import APPROVER_ROLE_INDICIES, GROUP_EDGE_ROLES
+from grouper.models.group_edge import APPROVER_ROLE_INDICES, GROUP_EDGE_ROLES
 from grouper.models.user import User
 from grouper.user_group import get_groups_by_user
 
@@ -156,7 +156,7 @@ class GroupJoin(GrouperHandler):
         for _group, group_edge in get_groups_by_user(self.session, self.current_user):
             if group.name == _group.name:  # Don't add self.
                 continue
-            if group_edge._role not in APPROVER_ROLE_INDICIES:  # manager, owner, and np-owner only.
+            if group_edge._role not in APPROVER_ROLE_INDICES:  # manager, owner, and np-owner only.
                 continue
             if ("Group", _group.name) in members:
                 continue

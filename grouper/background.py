@@ -18,7 +18,7 @@ from grouper.graph import Graph
 from grouper.group import get_audited_groups
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.group import Group
-from grouper.models.group_edge import APPROVER_ROLE_INDICIES, GroupEdge
+from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge
 from grouper.models.user import User
 from grouper.perf_profile import prune_old_traces
 from grouper.settings import settings
@@ -105,7 +105,7 @@ class BackgroundThread(Thread):
                 if type_ == "Group":
                     continue
                 member = User.get(session, name=member)
-                member_is_approver = user_role_index(member, members) in APPROVER_ROLE_INDICIES
+                member_is_approver = user_role_index(member, members) in APPROVER_ROLE_INDICES
                 member_is_auditor = user_has_permission(session, member, PERMISSION_AUDITOR)
                 if not member_is_approver or member_is_auditor:
                     continue

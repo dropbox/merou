@@ -17,7 +17,7 @@ from grouper.models.base.model_base import Model
 from grouper.models.base.session import flush_transaction
 from grouper.models.comment import Comment, CommentObjectMixin
 from grouper.models.counter import Counter
-from grouper.models.group_edge import (APPROVER_ROLE_INDICIES, GROUP_EDGE_ROLES, GroupEdge,
+from grouper.models.group_edge import (APPROVER_ROLE_INDICES, GROUP_EDGE_ROLES, GroupEdge,
     OWNER_ROLE_INDICES)
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
@@ -341,7 +341,7 @@ class Group(Model, CommentObjectMixin):
             A list of all User objects that are approvers for this group.
         """
 
-        return [user for user in self.my_users() if user.role in APPROVER_ROLE_INDICIES]
+        return [user for user in self.my_users() if user.role in APPROVER_ROLE_INDICES]
 
     def my_log_entries(self):
 

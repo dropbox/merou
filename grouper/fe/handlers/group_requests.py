@@ -1,7 +1,7 @@
 from grouper.fe.util import GrouperHandler
 from grouper.models.base.constants import REQUEST_STATUS_CHOICES
 from grouper.models.group import Group
-from grouper.models.group_edge import APPROVER_ROLE_INDICIES, OWNER_ROLE_INDICES
+from grouper.models.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.models.request import Request
 from grouper.user import user_role, user_role_index
 
@@ -28,7 +28,7 @@ class GroupRequests(GrouperHandler):
 
         current_user_role = {
             'is_owner': user_role_index(self.current_user, members) in OWNER_ROLE_INDICES,
-            'is_approver': user_role_index(self.current_user, members) in APPROVER_ROLE_INDICIES,
+            'is_approver': user_role_index(self.current_user, members) in APPROVER_ROLE_INDICES,
             'is_manager': user_role(self.current_user, members) == "manager",
             'role': user_role(self.current_user, members),
              }

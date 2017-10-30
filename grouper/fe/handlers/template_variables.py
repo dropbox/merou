@@ -4,7 +4,7 @@ from grouper.fe.handlers.user_enable import UserEnable
 from grouper.fe.util import Alert
 from grouper.graph import NoSuchGroup, NoSuchUser
 from grouper.models.audit_member import AUDIT_STATUS_CHOICES
-from grouper.models.group_edge import APPROVER_ROLE_INDICIES, OWNER_ROLE_INDICES
+from grouper.models.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.permissions import (get_owner_arg_list, get_pending_request_by_group,
     get_requests_by_owner)
 from grouper.public_key import (get_public_key_permissions, get_public_key_tags,
@@ -45,7 +45,7 @@ def get_group_view_template_vars(session, actor, group, graph):
     ret["num_pending"] = group.my_requests("pending").count()
     ret["current_user_role"] = {
         'is_owner': user_role_index(actor, ret["members"]) in OWNER_ROLE_INDICES,
-        'is_approver': user_role_index(actor, ret["members"]) in APPROVER_ROLE_INDICIES,
+        'is_approver': user_role_index(actor, ret["members"]) in APPROVER_ROLE_INDICES,
         'is_manager': user_role(actor, ret["members"]) == "manager",
         'is_member': user_role(actor, ret["members"]) is not None,
         'role': user_role(actor, ret["members"]),

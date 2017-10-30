@@ -9,7 +9,7 @@ from grouper.models.base.session import Session  # noqa
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
 from grouper.models.group import Group
-from grouper.models.group_edge import (APPROVER_ROLE_INDICIES, GROUP_EDGE_ROLES, GroupEdge,
+from grouper.models.group_edge import (APPROVER_ROLE_INDICES, GROUP_EDGE_ROLES, GroupEdge,
     OWNER_ROLE_INDICES)
 from grouper.models.request import Request
 from grouper.models.request_status_change import RequestStatusChange
@@ -144,7 +144,7 @@ def user_requests_aggregate(session, user):
         GroupEdge.group_id == Group.id,
         GroupEdge.member_pk == user.id,
         GroupEdge.active == True,
-        GroupEdge._role.in_(APPROVER_ROLE_INDICIES),
+        GroupEdge._role.in_(APPROVER_ROLE_INDICES),
         user.enabled == True,
         Group.enabled == True,
         or_(

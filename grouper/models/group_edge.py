@@ -19,9 +19,16 @@ GROUP_EDGE_ROLES = (
     "np-owner",  # Same as owner but don't inherit permissions.
 )
 
-OWNER_ROLE_INDICES = set([GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.index("np-owner")])
-APPROVER_ROLE_INDICIES = set([GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.index("np-owner"),
-        GROUP_EDGE_ROLES.index("manager")])  # TODO: Fix spelling
+OWNER_ROLE_INDICES = {
+    GROUP_EDGE_ROLES.index("owner"),
+    GROUP_EDGE_ROLES.index("np-owner")
+}
+
+APPROVER_ROLE_INDICES = {
+    GROUP_EDGE_ROLES.index("owner"),
+    GROUP_EDGE_ROLES.index("np-owner"),
+    GROUP_EDGE_ROLES.index("manager")
+}
 
 
 class GroupEdge(Model):

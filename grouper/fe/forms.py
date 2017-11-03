@@ -349,3 +349,37 @@ class RoleUserCreateForm(Form):
     description = TextAreaField("Description")
     canjoin = SelectField("Who Can Join?", choices=GROUP_CANJOIN_CHOICES,
     default="canask")
+
+
+class ServiceAccountCreateForm(Form):
+    name = StringField("Name", [
+        validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
+        validators.DataRequired(),
+        ValidateRegex(constants.NAME_VALIDATION),
+        ValidateRegex(constants.USERNAME_VALIDATION),
+    ])
+    description = TextAreaField("Description")
+    machine_set = TextAreaField("Machine Set")
+
+
+class ServiceAccountEditForm(Form):
+    description = TextAreaField("Description")
+    machine_set = TextAreaField("Machine Set")
+
+
+class ServiceAccountEnableForm(Form):
+    owner = SelectField("Owner", [
+        validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
+        validators.DataRequired(),
+        ValidateRegex(constants.NAME_VALIDATION),
+    ])
+
+
+class ServiceAccountPermissionGrantForm(Form):
+    permission = SelectField("Permission", [
+        validators.DataRequired(),
+    ])
+    argument = StringField("Argument", [
+        validators.Length(min=0, max=constants.MAX_NAME_LENGTH),
+        ValidateRegex(constants.ARGUMENT_VALIDATION),
+    ])

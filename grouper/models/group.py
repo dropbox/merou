@@ -19,10 +19,12 @@ from grouper.models.base.session import flush_transaction
 from grouper.models.comment import Comment, CommentObjectMixin
 from grouper.models.counter import Counter
 from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge, OWNER_ROLE_INDICES
+from grouper.models.group_service_accounts import GroupServiceAccount
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.request import Request
 from grouper.models.request_status_change import RequestStatusChange
+from grouper.models.service_account import ServiceAccount
 from grouper.models.user import User
 
 GROUP_JOIN_CHOICES = {
@@ -182,6 +184,7 @@ class Group(Model, CommentObjectMixin):
             GroupEdge.active == True,
             self.enabled == True,
             User.enabled == True,
+            User.is_service_account == False,
             or_(
                 GroupEdge.expiration > now,
                 GroupEdge.expiration == None
@@ -189,6 +192,23 @@ class Group(Model, CommentObjectMixin):
         ).all()
 
         return users
+
+    def my_service_accounts(self):
+        # type: () -> List[ServiceAccount]
+        """Return all service accounts owned by a group."""
+
+        service_accounts = self.session.query(
+            ServiceAccount
+        ).join(
+            ServiceAccount.owner,
+        ).filter(
+            GroupServiceAccount.group_id == self.id,
+            GroupServiceAccount.service_account_pk == ServiceAccount.id,
+            self.enabled == True,
+            User.enabled == True,
+        ).all()
+
+        return service_accounts
 
     def my_approver_users(self):
         # type: () -> List[User]

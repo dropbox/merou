@@ -11,9 +11,12 @@ from sqlalchemy.sql import label, literal
 from grouper.models.counter import Counter
 from grouper.models.group import Group
 from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
+from grouper.models.group_service_accounts import GroupServiceAccount
 from grouper.models.permission import MappedPermission, Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.public_key import PublicKey
+from grouper.models.service_account import ServiceAccount
+from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.models.user import User
 from grouper.models.user_metadata import UserMetadata
 from grouper.models.user_password import UserPassword
@@ -64,9 +67,11 @@ class GroupGraph(object):
         self.permissions = set()  # Permission names.
         self.checkpoint = 0
         self.checkpoint_time = 0
-        self.user_metadata = {}  # username -> {metaddata:[{}] public_keys:[{}]}.
+        self.user_metadata = {}  # username -> {metadata:[{}] public_keys:[{}]}.
         self.group_metadata = {}
+        self.group_service_accounts = {}
         self.permission_metadata = {}  # TODO: rename.  This is about permission grants.
+        self.service_account_permissions = {}
         self.permission_tuples = set()  # Mock Permission instances.
         self.group_tuples = {}  # groupname -> Mock Group instance.
         self.disabled_group_tuples = {}  # groupname -> Mock Group instance.
@@ -111,7 +116,9 @@ class GroupGraph(object):
 
             user_metadata = self._get_user_metadata(session)
             permission_metadata = self._get_permission_metadata(session)
+            service_account_permissions = ServiceAccountPermissionMap.all_permissions(session)
             group_metadata = self._get_group_metadata(session, permission_metadata)
+            group_service_accounts = self._get_group_service_accounts(session)
             permission_tuples = self._get_permission_tuples(session)
             group_tuples = self._get_group_tuples(session)
             disabled_group_tuples = self._get_group_tuples(session, enabled=False)
@@ -128,7 +135,9 @@ class GroupGraph(object):
                                     for perm in perm_list}
                 self.user_metadata = user_metadata
                 self.group_metadata = group_metadata
+                self.group_service_accounts = group_service_accounts
                 self.permission_metadata = permission_metadata
+                self.service_account_permissions = service_account_permissions
                 self.permission_tuples = permission_tuples
                 self.group_tuples = group_tuples
                 self.disabled_group_tuples = disabled_group_tuples
@@ -189,6 +198,14 @@ class GroupGraph(object):
                     } for row in user_metadata.get(user.id, [])
                 ],
             }
+            if user.is_service_account:
+                account = user.service_account
+                out[user.username]["service_account"] = {
+                    "description": account.description,
+                    "machine_set": account.machine_set,
+                }
+                if account.owner:
+                    out[user.username]["service_account"]["owner"] = account.owner.group.name
         return out
 
     # This describes how permissions are assigned to groups, NOT the intrinsic
@@ -257,6 +274,20 @@ class GroupGraph(object):
                 },
 
             }
+        return out
+
+    @staticmethod
+    def _get_group_service_accounts(session):
+        '''
+        Returns a dict of groupname: { list of service account names }.
+        '''
+        out = defaultdict(set)
+        tuples = session.query(Group, ServiceAccount).filter(
+            GroupServiceAccount.group_id == Group.id,
+            GroupServiceAccount.service_account_pk == ServiceAccount.id,
+        )
+        for group, account in tuples:
+            out[group.groupname].add(account.user.username)
         return out
 
     @staticmethod
@@ -360,11 +391,12 @@ class GroupGraph(object):
         return permissions
 
     def get_permission_details(self, name):
-        """ Get a permission and what groups it's assigned to. """
+        """ Get a permission and what groups and service accounts it's assigned to. """
 
         with self.lock:
             data = {
                 "groups": {},
+                "service_accounts": {},
             }
 
             # Get all mapped versions of the permission. This is only direct relationships.
@@ -392,6 +424,20 @@ class GroupGraph(object):
                     checked_groups.add(member_name)
                     data["groups"][member_name] = self.get_group_details(
                         member_name, show_permission=name)
+
+            # Finally, add all service accounts.
+            for account, permissions in self.service_account_permissions.iteritems():
+                for permission in permissions:
+                    if permission.permission == name:
+                        details = {
+                            "permission": permission.permission,
+                            "argument": permission.argument,
+                            "granted_on": (permission.granted_on - EPOCH).total_seconds(),
+                        }
+                        if account in data["service_accounts"]:
+                            data["service_accounts"][account]["permissions"].append(details)
+                        else:
+                            data["service_accounts"][account] = {"permissions": [details]}
 
             return data
 
@@ -443,6 +489,8 @@ class GroupGraph(object):
                 "permissions": [],
                 "audited": group_audited,
             }
+            if groupname in self.group_service_accounts:
+                data["service_accounts"] = self.group_service_accounts[groupname]
 
             group = ("Group", groupname)
             if not self._graph.has_node(group):
@@ -523,6 +571,18 @@ class GroupGraph(object):
             # For disabled users or users introduced between SQL queries, just
             # return empty details.
             if not self._rgraph.has_node(user):
+                return user_details
+
+            # If the user is a service account, its permissions are only those of the service
+            # account and we don't do any graph walking.
+            if "service_account" in self.user_metadata[username]:
+                if username in self.service_account_permissions:
+                    for permission in self.service_account_permissions[username]:
+                        permissions.append({
+                            "permission": permission.permission,
+                            "argument": permission.argument,
+                            "granted_on": (permission.granted_on - EPOCH).total_seconds(),
+                        })
                 return user_details
 
             # User permissions are inherited from all groups for which their

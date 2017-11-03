@@ -5,5 +5,12 @@ REQUEST_STATUS_CHOICES = {
     "cancelled": set([]),
 }
 
-OBJ_TYPES_IDX = ("User", "Group", "Request", "RequestStatusChange", "PermissionRequestStatusChange")
+OBJ_TYPES_IDX = (
+    "User",
+    "Group",
+    "Request",
+    "RequestStatusChange",
+    "PermissionRequestStatusChange",
+    "ServiceAccount",
+)
 OBJ_TYPES = {obj_type: idx for idx, obj_type in enumerate(OBJ_TYPES_IDX)}

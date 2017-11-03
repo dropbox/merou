@@ -170,6 +170,45 @@ enabled. Membership in this group is regularly reviewed.
     </div>
 {%- endmacro %}
 
+{% macro one_service_account_row(groupname, accountname) -%}
+    <td><a href="/groups/{{ groupname }}/service/{{ accountname }}">{{ accountname }}</a></td>
+{%- endmacro %}
+{% macro service_account_panel(max_height, groupname, service_accounts, can_control) -%}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Service Accounts</h3>
+        </div>
+        <div style="max-height: {{max_height}}px; overflow-y: auto">
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th class="col-sm-2">Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for service_account in service_accounts %}
+                    <tr>
+                        {{ one_service_account_row(groupname, service_account.user.username) }}
+                    </tr>
+                {% endfor %}
+                {% if not service_accounts %}
+                    <tr>
+                        <td colspan="2" class="text-center"><em>No Service Accounts</em></td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+        {% if can_control %}
+        <div class="panel-footer">
+            <a class="btn btn-default btn-sm" href="/groups/{{ groupname }}/service/create">
+                <span class="glyphicon glyphicon-plus"></span> Add Service Account
+            </a>
+        </div>
+        {% endif %}
+    </div>
+{%- endmacro %}
+
 {% macro account(user, type=None) -%}
 {% if type == None %}
 <a class="account-link" href="/{{ user.type | lower }}s/{{ user.name }}">

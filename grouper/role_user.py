@@ -1,3 +1,9 @@
+"""Role user (merged user and group) handling.
+
+FIXME(rra): Role users are deprecated and will be replaced by a new service account concept.  Do
+not add any more logic to role users in the meantime.
+"""
+
 from collections import namedtuple
 
 from grouper.constants import USER_ADMIN
@@ -10,14 +16,14 @@ from grouper.user_group import user_can_manage_group
 from grouper.user_permissions import user_has_permission
 
 
-class ServiceAccountNotFound(Exception):
+class RoleUserNotFound(Exception):
     pass
 
 
-ServiceAccount = namedtuple("ServiceAccount", ["user", "group"])
+RoleUser = namedtuple("RoleUser", ["user", "group"])
 
 
-def create_service_account(session, actor, name, description, canjoin):
+def create_role_user(session, actor, name, description, canjoin):
     # type (Session, User, str, str, str) -> None
     """Creates a service account with the given name, description, and canjoin status
 
@@ -41,11 +47,11 @@ def create_service_account(session, actor, name, description, canjoin):
     group.add_member(actor, user, "Service Account", "actioned", None, "member")
     session.commit()
 
-    AuditLog.log(session, actor.id, 'create_service_account', 'Created new service account.',
+    AuditLog.log(session, actor.id, 'create_role_user', 'Created new service account.',
                  on_group_id=group.id, on_user_id=user.id)
 
 
-def is_service_account(session, user=None, group=None):
+def is_role_user(session, user=None, group=None):
     # type: (Session, User, Group) -> bool
     """
     Takes in a User or a Group and returns a boolean indicating whether
@@ -74,8 +80,8 @@ def is_service_account(session, user=None, group=None):
     return user.role_user
 
 
-def get_service_account(session, user=None, group=None):
-    # type: (Session, User, Group) -> ServiceAccount
+def get_role_user(session, user=None, group=None):
+    # type: (Session, User, Group) -> RoleUser
     """
     Takes in a User or a Group and returns a dictionary that contains
     all of the service account components for the service account that
@@ -87,21 +93,20 @@ def get_service_account(session, user=None, group=None):
         group: a Group object to check
 
     Throws:
-        ServiceAccountNotFound: if the user or group is not part of a
-            service account
+        RoleUserNotFound: if the user or group is not part of a service account
 
     Returns:
         a dictionary with all components of the service account of the
             user or group passed in
     """
-    if not is_service_account(session, user, group):
-        raise ServiceAccountNotFound()
+    if not is_role_user(session, user, group):
+        raise RoleUserNotFound()
 
     name = user.name if user else group.name
-    return ServiceAccount(User.get(session, name=name), Group.get(session, name=name))
+    return RoleUser(User.get(session, name=name), Group.get(session, name=name))
 
 
-def can_manage_service_account(session, user, tuser=None, tgroup=None):
+def can_manage_role_user(session, user, tuser=None, tgroup=None):
     # type: (Session, User, User, Group) -> bool
     """
     Indicates whether the user has permission to manage the service account
@@ -117,8 +122,8 @@ def can_manage_service_account(session, user, tuser=None, tgroup=None):
         a boolean indicating if user can manage the service account of tuser/tgroup
     """
     try:
-        target = get_service_account(session, tuser, tgroup)
-    except ServiceAccountNotFound:
+        target = get_role_user(session, tuser, tgroup)
+    except RoleUserNotFound:
         return False
 
     if target.user.name == user.name:
@@ -130,7 +135,7 @@ def can_manage_service_account(session, user, tuser=None, tgroup=None):
     return user_has_permission(session, user, USER_ADMIN)
 
 
-def is_owner_of_service_account(session, user, tuser=None, tgroup=None):
+def is_owner_of_role_user(session, user, tuser=None, tgroup=None):
     # type: (Session, User, User, Group) -> bool
     """
     Indicates whether the user is an owner of the service account
@@ -146,8 +151,8 @@ def is_owner_of_service_account(session, user, tuser=None, tgroup=None):
         a boolean indicating if user is an owner of the service account of tuser/tgroup
     """
     try:
-        target = get_service_account(session, tuser, tgroup)
-    except ServiceAccountNotFound:
+        target = get_role_user(session, tuser, tgroup)
+    except RoleUserNotFound:
         return False
 
     if target.user.name == user.name:
@@ -159,7 +164,7 @@ def is_owner_of_service_account(session, user, tuser=None, tgroup=None):
     return user_has_permission(session, user, USER_ADMIN)
 
 
-def disable_service_account(session, user=None, group=None):
+def disable_role_user(session, user=None, group=None):
     # type: (Session, User, Group) -> None
     """
     Disables all components of the service account corresponding to user/group.
@@ -169,7 +174,7 @@ def disable_service_account(session, user=None, group=None):
         user: the User component of the service account to be disabled
         group: the Group component of the service account to be disabled
     """
-    acc = get_service_account(session, user, group)
+    acc = get_role_user(session, user, group)
 
     disable_user(session, acc.user)
     acc.group.enabled = False
@@ -177,7 +182,7 @@ def disable_service_account(session, user=None, group=None):
     acc.group.add(session)
 
 
-def enable_service_account(session, actor, preserve_membership, user=None, group=None):
+def enable_role_user(session, actor, preserve_membership, user=None, group=None):
     # type: (Session, User, bool, User, Group) -> None
     """
     Enabled all components of the service account corresponding to user/group.
@@ -189,7 +194,7 @@ def enable_service_account(session, actor, preserve_membership, user=None, group
         user: the User component of the service account to be enabled
         group: the Group component of the service account to be enabled
     """
-    acc = get_service_account(session, user, group)
+    acc = get_role_user(session, user, group)
 
     enable_user(session, acc.user, actor, preserve_membership)
     acc.group.enabled = True

@@ -1,10 +1,10 @@
-from grouper.fe.handlers.template_variables import get_service_account_view_template_vars
+from grouper.fe.handlers.template_variables import get_role_user_view_template_vars
 from grouper.fe.util import GrouperHandler
 from grouper.models.group import Group
 from grouper.models.user import User
 
 
-class ServiceAccountView(GrouperHandler):
+class RoleUserView(GrouperHandler):
 
     def get(self, user_id=None, name=None):
         self.handle_refresh()
@@ -20,5 +20,5 @@ class ServiceAccountView(GrouperHandler):
         self.render("service.html",
                     user=user,
                     group=group,
-                    **get_service_account_view_template_vars(session, actor, user, group, graph)
+                    **get_role_user_view_template_vars(session, actor, user, group, graph)
                     )

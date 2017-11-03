@@ -2,7 +2,7 @@ from grouper.fe.forms import GroupRemoveForm
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
-from grouper.service_account import get_service_account, is_service_account
+from grouper.role_user import get_role_user, is_role_user
 from grouper.user import get_user_or_group
 from grouper.user_group import user_can_manage_group
 
@@ -34,8 +34,8 @@ class GroupRemove(GrouperHandler):
                 reason="Can't remove yourself. Leave group instead."
             )
 
-        if (is_service_account(self.session, group=group) and
-                get_service_account(self.session, group=group).user.name == removed_member.name):
+        if (is_role_user(self.session, group=group) and
+                get_role_user(self.session, group=group).user.name == removed_member.name):
             return self.send_error(
                 status_code=400,
                 reason="Can't remove a service account user from the service account group."

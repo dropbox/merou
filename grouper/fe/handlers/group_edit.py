@@ -5,7 +5,7 @@ from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.counter import Counter
 from grouper.models.group import Group
-from grouper.service_account import is_service_account
+from grouper.role_user import is_role_user
 from grouper.user_group import user_can_manage_group
 
 
@@ -38,7 +38,7 @@ class GroupEdit(GrouperHandler):
             )
 
         if (group.groupname != form.data["groupname"] and
-                is_service_account(self.session, group=group)):
+                is_role_user(self.session, group=group)):
             form.groupname.errors.append("You cannot change the name of service account groups")
             return self.render(
                 "group-edit.html", group=group, form=form,

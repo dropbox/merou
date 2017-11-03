@@ -18,7 +18,7 @@ from grouper.models.user import User
 from grouper.models.user_metadata import UserMetadata
 from grouper.models.user_password import UserPassword
 from grouper.public_key import get_all_public_key_tags
-from grouper.service_account import is_service_account
+from grouper.role_user import is_role_user
 from grouper.util import singleton
 
 MEMBER_TYPE_MAP = {
@@ -279,7 +279,7 @@ class GroupGraph(object):
                 description=group.description,
                 canjoin=group.canjoin,
                 enabled=group.enabled,
-                service_account=is_service_account(session, group=group),
+                service_account=is_role_user(session, group=group),
                 type="Group"
             )
         return out

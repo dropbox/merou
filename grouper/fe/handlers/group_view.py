@@ -1,7 +1,7 @@
 from grouper.fe.handlers.template_variables import get_group_view_template_vars
 from grouper.fe.util import GrouperHandler
 from grouper.models.group import Group
-from grouper.service_account import is_service_account
+from grouper.role_user import is_role_user
 
 
 class GroupView(GrouperHandler):
@@ -12,7 +12,7 @@ class GroupView(GrouperHandler):
         if not group:
             return self.notfound()
 
-        if is_service_account(self.session, group=group):
+        if is_role_user(self.session, group=group):
             return self.redirect("/service/{}".format(group.groupname))
 
         self.render(

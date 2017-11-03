@@ -339,7 +339,7 @@ class UserPasswordForm(Form):
     ])
 
 
-class ServiceAccountCreateForm(Form):
+class RoleUserCreateForm(Form):
     name = StringField("Name", [
         validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
         validators.DataRequired(),

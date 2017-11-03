@@ -2,7 +2,7 @@ from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
 from grouper.models.user_token import UserToken
-from grouper.service_account import can_manage_service_account
+from grouper.role_user import can_manage_role_user
 from grouper.user_permissions import user_is_user_admin
 from grouper.user_token import disable_user_token
 
@@ -12,7 +12,7 @@ class UserTokenDisable(GrouperHandler):
     @staticmethod
     def check_access(session, actor, target):
         return (actor.name == target.name or user_is_user_admin(session, actor) or
-            (target.role_user and can_manage_service_account(session, actor, tuser=target)))
+            (target.role_user and can_manage_role_user(session, actor, tuser=target)))
 
     def get(self, user_id=None, name=None, token_id=None):
         user = User.get(self.session, user_id, name)

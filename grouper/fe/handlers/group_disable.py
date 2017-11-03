@@ -1,7 +1,7 @@
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
-from grouper.service_account import is_service_account
+from grouper.role_user import is_role_user
 from grouper.user import user_role
 
 
@@ -18,7 +18,7 @@ class GroupDisable(GrouperHandler):
         # Enabling and disabling service accounts via the group endpoints is forbidden
         # because we need the preserve_membership data that is only available via the
         # UserEnable form.
-        if is_service_account(self.session, group=group):
+        if is_role_user(self.session, group=group):
             return self.forbidden()
 
         group.disable()

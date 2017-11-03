@@ -9,7 +9,7 @@ from grouper.permissions import (get_owner_arg_list, get_pending_request_by_grou
     get_requests_by_owner)
 from grouper.public_key import (get_public_key_permissions, get_public_key_tags,
     get_public_keys_of_user)
-from grouper.service_account import can_manage_service_account
+from grouper.role_user import can_manage_role_user
 from grouper.user import (get_log_entries_by_user, user_open_audits, user_requests_aggregate,
     user_role, user_role_index)
 from grouper.user_group import get_groups_by_user
@@ -115,10 +115,10 @@ def get_user_view_template_vars(session, actor, user, graph):
     return ret
 
 
-def get_service_account_view_template_vars(session, actor, user, group, graph):
+def get_role_user_view_template_vars(session, actor, user, group, graph):
     ret = get_user_view_template_vars(session, actor, user, graph)
     ret.update(get_group_view_template_vars(session, actor, group, graph))
-    ret["can_control"] = can_manage_service_account(session, user=actor, tuser=user)
+    ret["can_control"] = can_manage_role_user(session, user=actor, tuser=user)
     ret["log_entries"] = sorted(set(get_log_entries_by_user(session, user) +
         group.my_log_entries()), key=lambda x: x.log_time, reverse=True)
     return ret

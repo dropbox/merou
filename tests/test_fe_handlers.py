@@ -13,8 +13,8 @@ from grouper.models.group_edge import GroupEdge
 from grouper.models.request import Request
 from grouper.models.user import User
 from grouper.public_key import get_public_keys_of_user
-from grouper.service_account import (disable_service_account, enable_service_account,
-    get_service_account, is_service_account)
+from grouper.role_user import (disable_role_user, enable_role_user,
+    get_role_user, is_role_user)
 from url_util import url
 
 
@@ -134,12 +134,12 @@ def test_sa_pubkeys(session, users, http_client, base_url):
 
     assert u is not None
     assert g is not None
-    assert is_service_account(session, user=u)
-    assert is_service_account(session, group=g)
-    assert get_service_account(session, user=u).group.id == g.id
-    assert get_service_account(session, group=g).user.id == u.id
-    assert not is_service_account(session, user=user)
-    assert not is_service_account(session, group=Group.get(session, name="team-sre"))
+    assert is_role_user(session, user=u)
+    assert is_role_user(session, group=g)
+    assert get_role_user(session, user=u).group.id == g.id
+    assert get_role_user(session, group=g).user.id == u.id
+    assert not is_role_user(session, user=user)
+    assert not is_role_user(session, group=Group.get(session, name="team-sre"))
 
     assert not get_public_keys_of_user(session, user.id)
 
@@ -269,12 +269,12 @@ def test_sa_tokens(session, users, http_client, base_url):
 
     assert u is not None
     assert g is not None
-    assert is_service_account(session, user=u)
-    assert is_service_account(session, group=g)
-    assert get_service_account(session, user=u).group.id == g.id
-    assert get_service_account(session, group=g).user.id == u.id
-    assert not is_service_account(session, user=user)
-    assert not is_service_account(session, group=Group.get(session, name="team-sre"))
+    assert is_role_user(session, user=u)
+    assert is_role_user(session, group=g)
+    assert get_role_user(session, user=u).group.id == g.id
+    assert get_role_user(session, group=g).user.id == u.id
+    assert not is_role_user(session, user=user)
+    assert not is_role_user(session, group=Group.get(session, name="team-sre"))
 
     with pytest.raises(HTTPError):
         # Add token
@@ -554,7 +554,7 @@ def test_request_autoexpiration(graph, groups, permissions, session, standard_gr
 
 
 @pytest.mark.gen_test
-def test_add_service_account(session, users, http_client, base_url):
+def test_add_role_user(session, users, http_client, base_url):
     user = users['zorkian@a.co']
 
     # Add account
@@ -579,16 +579,16 @@ def test_add_service_account(session, users, http_client, base_url):
 
     assert u is not None
     assert g is not None
-    assert is_service_account(session, user=u)
-    assert is_service_account(session, group=g)
-    assert get_service_account(session, user=u).group.id == g.id
-    assert get_service_account(session, group=g).user.id == u.id
-    assert not is_service_account(session, user=user)
-    assert not is_service_account(session, group=Group.get(session, name="team-sre"))
+    assert is_role_user(session, user=u)
+    assert is_role_user(session, group=g)
+    assert get_role_user(session, user=u).group.id == g.id
+    assert get_role_user(session, group=g).user.id == u.id
+    assert not is_role_user(session, user=user)
+    assert not is_role_user(session, group=Group.get(session, name="team-sre"))
 
 
 @pytest.mark.gen_test
-def test_disable_service_account(session, users, http_client, base_url):
+def test_disable_role_user(session, users, http_client, base_url):
     user = users['zorkian@a.co']
 
     # Add account
@@ -613,20 +613,20 @@ def test_disable_service_account(session, users, http_client, base_url):
 
     assert u is not None
     assert g is not None
-    assert is_service_account(session, user=u)
-    assert is_service_account(session, group=g)
-    assert get_service_account(session, user=u).group.id == g.id
-    assert get_service_account(session, group=g).user.id == u.id
-    assert not is_service_account(session, user=user)
-    assert not is_service_account(session, group=Group.get(session, name="team-sre"))
+    assert is_role_user(session, user=u)
+    assert is_role_user(session, group=g)
+    assert get_role_user(session, user=u).group.id == g.id
+    assert get_role_user(session, group=g).user.id == u.id
+    assert not is_role_user(session, user=user)
+    assert not is_role_user(session, group=Group.get(session, name="team-sre"))
 
-    disable_service_account(session, user=u)
+    disable_role_user(session, user=u)
     u = User.get(session, name="bob@svc.localhost")
     assert not u.enabled, "The SA User should be disabled"
     g = Group.get(session, name="bob@svc.localhost")
     assert not g.enabled, "The SA Group should be disabled"
 
-    enable_service_account(session, actor=user, group=g, preserve_membership=True)
+    enable_role_user(session, actor=user, group=g, preserve_membership=True)
     u = User.get(session, name="bob@svc.localhost")
     assert u.enabled, "The SA User should be enabled"
     g = Group.get(session, name="bob@svc.localhost")

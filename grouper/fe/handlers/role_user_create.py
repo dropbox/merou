@@ -1,14 +1,14 @@
 from sqlalchemy.exc import IntegrityError
 
-from grouper.fe.forms import ServiceAccountCreateForm
+from grouper.fe.forms import RoleUserCreateForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.service_account import create_service_account
+from grouper.role_user import create_role_user
 
 
-class ServiceAccountCreate(GrouperHandler):
+class RoleUserCreate(GrouperHandler):
     def get(self):
-        form = ServiceAccountCreateForm()
+        form = RoleUserCreateForm()
         return self.render(
             "service-account-create.html", form=form,
         )
@@ -17,7 +17,7 @@ class ServiceAccountCreate(GrouperHandler):
         if "@" not in self.request.arguments["name"][0]:
             self.request.arguments["name"][0] += "@" + settings.service_account_email_domain
 
-        form = ServiceAccountCreateForm(self.request.arguments)
+        form = RoleUserCreateForm(self.request.arguments)
 
         if not form.validate():
             return self.render(
@@ -34,7 +34,7 @@ class ServiceAccountCreate(GrouperHandler):
             )
 
         try:
-            create_service_account(self.session, self.current_user, form.data["name"],
+            create_role_user(self.session, self.current_user, form.data["name"],
                 form.data["description"], form.data["canjoin"])
         except IntegrityError:
             self.session.rollback()

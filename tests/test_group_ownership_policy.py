@@ -4,6 +4,7 @@ from mock import patch
 import pytest
 
 from fixtures import groups, session, users  # noqa
+from grouper.user import disable_user
 from plugins.group_ownership_policy import GroupOwnershipPolicyViolation, GroupOwnershipPolicyPlugin
 from util import add_member, revoke_member
 
@@ -112,3 +113,27 @@ def test_can_always_revoke_members(get_plugins, groups, users):
     add_member(group, member)
 
     revoke_member(group, member)
+
+
+@patch("grouper.user.get_plugins")
+def test_cant_disable_last_owner(get_plugins, session, groups, users):
+    get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
+
+    group = groups["team-infra"]
+    owner = users["gary@a.co"]
+
+    add_member(group, owner, role="owner")
+
+    with pytest.raises(GroupOwnershipPolicyViolation):
+        disable_user(session, owner)
+
+
+@patch("grouper.user.get_plugins")
+def test_can_disable_member(get_plugins, session, groups, users):
+    get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
+
+    group = groups["team-infra"]
+    member = users["gary@a.co"]
+
+    add_member(group, member)
+    disable_user(session, member)

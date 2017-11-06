@@ -8,11 +8,34 @@ from fixtures import standard_graph, graph, users, groups, session, permissions 
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
 from grouper.models.group_edge import GROUP_EDGE_ROLES
+from plugins.group_ownership_policy import GroupOwnershipPolicyPlugin
 
 
 @patch('grouper.ctl.group.make_session')
 def test_group_add_remove_member(make_session, session, users, groups):
     make_session.return_value = session
+
+    username = 'oliver@a.co'
+    groupname = 'team-sre'
+
+    # add
+    assert (u'User', username) not in groups[groupname].my_members()
+    call_main('group', 'add_member', '--member', groupname, username)
+    all_members = Group.get(session, name=groupname).my_members()
+    assert (u'User', username) in all_members
+    _, _, _, role, _, _ = all_members[(u'User', username)]
+    assert GROUP_EDGE_ROLES[role] == "member"
+
+    # remove
+    call_main('group', 'remove_member', groupname, username)
+    assert (u'User', username) not in Group.get(session, name=groupname).my_members()
+
+
+@patch("grouper.group_member.get_plugins")
+@patch('grouper.ctl.group.make_session')
+def test_group_add_remove_owner(make_session, get_plugins, session, users, groups):
+    make_session.return_value = session
+    get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
 
     username = 'oliver@a.co'
     groupname = 'team-sre'
@@ -25,9 +48,16 @@ def test_group_add_remove_member(make_session, session, users, groups):
     _, _, _, role, _, _ = all_members[(u'User', username)]
     assert GROUP_EDGE_ROLES[role] == "owner"
 
-    # remove
+    # remove (fails)
     call_main('group', 'remove_member', groupname, username)
-    assert (u'User', username) not in Group.get(session, name=groupname).my_members()
+    assert (u'User', username) in Group.get(session, name=groupname).my_members()
+
+
+@patch('grouper.ctl.group.make_session')
+def test_group_bulk_add_remove(make_session, session, users, groups):
+    make_session.return_value = session
+
+    groupname = 'team-sre'
 
     # bulk add
     usernames = {'oliver@a.co', 'testuser@a.co', 'zebu@a.co'}
@@ -39,6 +69,14 @@ def test_group_add_remove_member(make_session, session, users, groups):
     call_main('group', 'remove_member', groupname, *usernames)
     members = {u for _, u in Group.get(session, name=groupname).my_members().keys()}
     assert not members.intersection(usernames)
+
+
+@patch('grouper.ctl.group.make_session')
+def test_group_name_checks(make_session, session, users, groups):
+    make_session.return_value = session
+
+    username = 'oliver@a.co'
+    groupname = 'team-sre'
 
     # check user/group name
     call_main('group', 'add_member', '--member', 'invalid group name', username)

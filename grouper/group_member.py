@@ -7,6 +7,7 @@ from grouper.models.counter import Counter
 from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
 from grouper.models.request import Request
 from grouper.models.request_status_change import RequestStatusChange
+from grouper.plugin import get_plugins
 
 
 class InvalidRoleForMember(Exception):
@@ -34,9 +35,9 @@ def _serialize_changes(edge, **updates):
     return json.dumps(changes)
 
 
-def _validate_role(member_type, requested_role):
+def _validate_role(member_type, role):
     # type: (int, str) -> None
-    if member_type == OBJ_TYPES["Group"] and requested_role != "member":
+    if member_type == OBJ_TYPES["Group"] and role != "member":
         raise InvalidRoleForMember("Groups can only have the role of 'member'")
 
 
@@ -72,13 +73,15 @@ def persist_group_member_changes(session, group, requester, member, status, reas
                                  create_edge=False, **updates):
     requested_at = datetime.utcnow()
 
-    role = updates.get("role", "member")
-
     if "role" in updates:
+        role = updates["role"]
         _validate_role(member.member_type, role)
 
+    for plugin in get_plugins():
+        plugin.will_update_group_membership(session, group, member, **updates)
+
     if create_edge:
-        edge = _create_edge(session, group, member, role)
+        edge = _create_edge(session, group, member, updates.get("role", "member"))
     else:
         edge = _get_edge(session, group, member)
         if not edge:

@@ -113,3 +113,16 @@ class BasePlugin(object):
             entry: just-saved log object
         """
         pass
+
+    def will_update_group_membership(self, session, group, member, **updates):
+        # type: (Session, Group, Union[User, Group], **Any) -> None
+        """
+        Called before applying changes to a group membership
+
+        Args:
+            session: database session
+            group: affected group
+            member: affected User or Group
+            updates: the updates to the membership (active, expiration, role)
+        """
+        pass

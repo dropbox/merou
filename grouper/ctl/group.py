@@ -68,12 +68,16 @@ def mutate_group_command(session, group, args):
 
         elif args.subcommand == "remove_member":
             logging.info("Removing {} from group {}".format(username, args.groupname))
-            group.revoke_member(user, user, "grouper-ctl remove")
-            AuditLog.log(
-                session, user.id, 'leave_group',
-                '{} manually left via grouper-ctl'.format(username),
-                on_group_id=group.id)
-            session.commit()
+
+            try:
+                group.revoke_member(user, user, "grouper-ctl remove")
+                AuditLog.log(
+                    session, user.id, 'leave_group',
+                    '{} manually left via grouper-ctl'.format(username),
+                    on_group_id=group.id)
+                session.commit()
+            except Exception as e:
+                logging.error(e.message)
 
 
 def logdump_group_command(session, group, args):

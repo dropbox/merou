@@ -126,3 +126,14 @@ class BasePlugin(object):
             updates: the updates to the membership (active, expiration, role)
         """
         pass
+
+    def will_disable_user(self, session, user):
+        # type: (Session, User) -> None
+        """
+        Called before disabling a user
+
+        Args:
+            session: database session
+            user: User to be disabled
+        """
+        pass

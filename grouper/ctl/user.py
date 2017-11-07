@@ -47,14 +47,18 @@ def user_command(args):
                 logging.info("{}: User already disabled. Doing nothing.".format(username))
             else:
                 logging.info("{}: User found, disabling...".format(username))
-                if user.role_user:
-                    disable_role_user(session, user)
-                else:
-                    disable_user(session, user)
-                AuditLog.log(session, user.id, 'disable_user',
-                        '(Administrative) User disabled via grouper-ctl',
-                        on_user_id=user.id)
-                session.commit()
+                try:
+                    if user.role_user:
+                        disable_role_user(session, user)
+                    else:
+                        disable_user(session, user)
+                    AuditLog.log(session, user.id, 'disable_user',
+                                 '(Administrative) User disabled via grouper-ctl',
+                                 on_user_id=user.id)
+                    session.commit()
+                except Exception as e:
+                    logging.error(e.message)
+
         return
 
     elif args.subcommand == "enable":

@@ -1,6 +1,4 @@
 from grouper.constants import USER_METADATA_SHELL_KEY
-from grouper.fe.handlers.user_disable import UserDisable
-from grouper.fe.handlers.user_enable import UserEnable
 from grouper.fe.util import Alert
 from grouper.graph import NoSuchGroup, NoSuchUser
 from grouper.models.audit_member import AUDIT_STATUS_CHOICES
@@ -72,7 +70,11 @@ def get_group_view_template_vars(session, actor, group, graph, alerts=[]):
     return ret
 
 
-def get_user_view_template_vars(session, actor, user, graph):
+def get_user_view_template_vars(session, actor, user, graph, alerts=[]):
+    # TODO(cbguder): get around circular dependencies
+    from grouper.fe.handlers.user_disable import UserDisable
+    from grouper.fe.handlers.user_enable import UserEnable
+
     ret = {}
     ret["can_control"] = (user.name == actor.name or user_is_user_admin(session, actor))
     ret["can_disable"] = UserDisable.check_access(session, actor, user)
@@ -111,6 +113,7 @@ def get_user_view_template_vars(session, actor, user, graph):
     ret["permissions"] = user_md.get('permissions', [])
     ret["log_entries"] = get_log_entries_by_user(session, user)
     ret["user_tokens"] = user.tokens
+    ret["alerts"] = alerts[:]
 
     return ret
 

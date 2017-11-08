@@ -10,7 +10,7 @@ class RoleUserCreate(GrouperHandler):
     def get(self):
         form = RoleUserCreateForm()
         return self.render(
-            "service-account-create.html", form=form,
+            "role-user-create.html", form=form,
         )
 
     def post(self):
@@ -21,7 +21,7 @@ class RoleUserCreate(GrouperHandler):
 
         if not form.validate():
             return self.render(
-                "service-account-create.html", form=form,
+                "role-user-create.html", form=form,
                 alerts=self.get_form_alerts(form.errors)
             )
 
@@ -29,7 +29,7 @@ class RoleUserCreate(GrouperHandler):
             form.name.errors.append("All service accounts must have a username ending in {}"
                 .format(settings.service_account_email_domain))
             return self.render(
-                "service-account-create.html", form=form,
+                "role-user-create.html", form=form,
                 alerts=self.get_form_alerts(form.errors)
             )
 
@@ -41,7 +41,7 @@ class RoleUserCreate(GrouperHandler):
             form.name.errors.append("A user or group with name {} already exists"
                                     .format(form.data["name"]))
             return self.render(
-                "service-account-create.html", form=form,
+                "role-user-create.html", form=form,
                 alerts=self.get_form_alerts(form.errors)
             )
 

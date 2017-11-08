@@ -1,5 +1,6 @@
 from grouper.constants import USER_ADMIN, USER_DISABLE
-from grouper.fe.util import GrouperHandler
+from grouper.fe.handlers.template_variables import get_user_view_template_vars
+from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
 from grouper.role_user import disable_role_user, is_owner_of_role_user
@@ -25,10 +26,20 @@ class UserDisable(GrouperHandler):
         if not self.check_access(self.session, self.current_user, user):
             return self.forbidden()
 
-        if user.role_user:
-            disable_role_user(self.session, user=user)
-        else:
-            disable_user(self.session, user)
+        try:
+            if user.role_user:
+                disable_role_user(self.session, user=user)
+            else:
+                disable_user(self.session, user)
+        except Exception as e:
+            alert = Alert("danger", str(e))
+            return self.render("user.html", user=user, **get_user_view_template_vars(
+                self.session,
+                self.current_user,
+                user,
+                self.graph,
+                alerts=[alert]
+            ))
 
         self.session.commit()
 

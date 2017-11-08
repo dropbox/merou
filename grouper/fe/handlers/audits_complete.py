@@ -1,7 +1,8 @@
 from grouper.audit import get_audits
 from grouper.constants import PERMISSION_AUDITOR
 from grouper.email_util import cancel_async_emails
-from grouper.fe.util import GrouperHandler
+from grouper.fe.handlers.template_variables import get_group_view_template_vars
+from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog, AuditLogCategory
 from grouper.models.audit_member import AUDIT_STATUS_CHOICES
@@ -47,14 +48,24 @@ class AuditsComplete(GrouperHandler):
 
         # Complete audits have to be "enacted" now. This means anybody marked as remove has to
         # be removed from the group now.
-        for member in audit.my_members():
-            if member.status == "remove":
-                audit.group.revoke_member(self.current_user, member.member,
-                                          "Revoked as part of audit.")
-                AuditLog.log(self.session, self.current_user.id, 'remove_member',
-                             'Removed membership in audit: {}'.format(member.member.name),
-                             on_group_id=audit.group.id, on_user_id=member.member.id,
-                             category=AuditLogCategory.audit)
+        try:
+            for member in audit.my_members():
+                if member.status == "remove":
+                    audit.group.revoke_member(self.current_user, member.member,
+                                              "Revoked as part of audit.")
+                    AuditLog.log(self.session, self.current_user.id, 'remove_member',
+                                 'Removed membership in audit: {}'.format(member.member.name),
+                                 on_group_id=audit.group.id, on_user_id=member.member.id,
+                                 category=AuditLogCategory.audit)
+        except Exception as e:
+            alert = Alert("danger", str(e))
+            return self.render("group.html", group=audit.group, **get_group_view_template_vars(
+                self.session,
+                self.current_user,
+                audit.group,
+                self.graph,
+                alerts=[alert]
+            ))
 
         audit.complete = True
         self.session.commit()

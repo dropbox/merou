@@ -5,6 +5,7 @@ import tornado.web
 class Application(tornado.web.Application):
     def __init__(self, *args, **kwargs):
         self.my_settings = kwargs.pop("my_settings", {})
+        self.sentry_client = kwargs.pop("sentry_client", None)
         super(Application, self).__init__(*args, **kwargs)
 
     def log_request(self, handler):

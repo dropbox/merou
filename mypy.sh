@@ -2,7 +2,7 @@
 
 LS_FILES_PATH=${1:-}
 
-MYPY_ARGS="--silent-imports --py2"
+MYPY_ARGS=" --py2 --ignore-missing-imports --follow-imports=silent"
 MYPY_TAG="# type:"
 
 EXCLUDE="(^bin/|mypy.sh$)"

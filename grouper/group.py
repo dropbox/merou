@@ -1,6 +1,11 @@
+from typing import TYPE_CHECKING
+
 from grouper.graph import Graph, NoSuchGroup
-from grouper.models.base.session import Session  # noqa
 from grouper.models.group import Group
+
+if TYPE_CHECKING:
+    from typing import List  # noqa
+    from grouper.models.base.session import Session  # noqa
 
 
 def get_all_groups(session):

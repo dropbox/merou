@@ -36,8 +36,12 @@ def get_application(settings, sentry_client, deployment_name):
         "template_env": get_template_env(deployment_name=deployment_name),
     }
 
-    application = Application(HANDLERS, my_settings=my_settings, **tornado_settings)
-    application.sentry_client = sentry_client
+    application = Application(
+        HANDLERS,
+        my_settings=my_settings,
+        sentry_client=sentry_client,
+        **tornado_settings
+    )
 
     return application
 

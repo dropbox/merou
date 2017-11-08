@@ -2,6 +2,7 @@ from collections import OrderedDict
 from datetime import datetime
 import json
 import logging
+from typing import List  # noqa
 
 from sqlalchemy import Boolean, Column, desc, Enum, Integer, Interval, or_, String, Text, union_all
 from sqlalchemy.ext.hybrid import hybrid_property

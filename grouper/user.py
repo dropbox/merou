@@ -1,11 +1,11 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import or_
 from sqlalchemy.sql import label, literal
 
 from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog
-from grouper.models.base.session import Session  # noqa
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
 from grouper.models.group import Group
@@ -16,6 +16,10 @@ from grouper.models.request_status_change import RequestStatusChange
 from grouper.models.user import User
 from grouper.user_group import get_groups_by_user
 from grouper.user_permissions import user_is_group_admin
+
+if TYPE_CHECKING:
+    from typing import List  # noqa
+    from grouper.models.base.session import Session  # noqa
 
 
 def get_user_or_group(session, name, user_or_group=None):

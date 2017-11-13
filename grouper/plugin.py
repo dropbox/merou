@@ -4,10 +4,20 @@ plugin.py
 Base plugin for Grouper plugins. These are plugins that can be written to extend Grouper
 functionality.
 """
+from typing import TYPE_CHECKING
+
 from annex import Annex
 
+if TYPE_CHECKING:
+    from ssl import SSLContext  # noqa
+    from typing import Any, Dict, List, Union  # noqa
+    from sqlalchemy.orm import Session  # noqa
+    from tornado.httpserver import HTTPRequest  # noqa
+    from grouper.models.audit_log import AuditLog  # noqa
+    from grouper.models.group import Group  # noqa
+    from grouper.models.user import User  # noqa
 
-Plugins = []
+Plugins = []  # type: List[BasePlugin]
 
 
 class PluginsAlreadyLoaded(Exception):
@@ -15,6 +25,7 @@ class PluginsAlreadyLoaded(Exception):
 
 
 def load_plugins(plugin_dir, service_name):
+    # type: (str, str) -> None
     """Load plugins from a directory"""
     global Plugins
     if Plugins:
@@ -25,6 +36,7 @@ def load_plugins(plugin_dir, service_name):
 
 
 def get_plugins():
+    # type: () -> List[BasePlugin]
     """Get a list of loaded plugins."""
     global Plugins
     return list(Plugins)
@@ -32,13 +44,14 @@ def get_plugins():
 
 class BasePlugin(object):
     def user_created(self, user):
+        # type: (User) -> None
         """Called when a new user is created
 
         When new users enter into Grouper, you might have reason to set metadata on those
         users for some reason. This method is called when that happens.
 
         Args:
-            user (models.User): Object of new user.
+            user: Object of new user.
 
         Returns:
             The return code of this method is ignored.
@@ -46,6 +59,7 @@ class BasePlugin(object):
         pass
 
     def configure(self, service_name):
+        # type: (str) -> None
         """
         Called once the plugin is instantiated to identify the executable
         (grouper-api or grouper-fe).
@@ -53,20 +67,22 @@ class BasePlugin(object):
         pass
 
     def get_ssl_context(self):
+        # type: () -> SSLContext
         """
         Called to get the ssl.SSLContext for the application.
         """
         pass
 
     def log_exception(self, request, status, exception, stack):
+        # type: (HTTPRequest, int, Exception, List) -> None
         """
         Called when responding with statuses 400, 403, 404, and 500.
 
         Args:
-            request (tornado.httputil.HTTPServerRequest): the request being handled.
-            status (int): the response status.
-            exception (Exception): either a tornado.web.HTTPError or an unexpected exception.
-            stack (list): "pre-processed" stack trace entries for traceback.format_list.
+            request: the request being handled.
+            status: the response status.
+            exception: either a tornado.web.HTTPError or an unexpected exception.
+            stack: "pre-processed" stack trace entries for traceback.format_list.
 
         Returns:
             The return code of this method is ignored.
@@ -74,10 +90,11 @@ class BasePlugin(object):
         pass
 
     def get_owner_by_arg_by_perm(self, session):
+        # type: (Session) -> Dict[str, Dict[str, Group]]
         """Called when determining owners for permission+arg granting.
 
         Args:
-            session(sqlalchemy.orm.session.Session): database session
+            session: database session
 
         Returns:
             dict of the form {'permission_name': {'argument': [owner1, owner2,
@@ -88,10 +105,11 @@ class BasePlugin(object):
         pass
 
     def log_auditlog_entry(self, entry):
+        # type: (AuditLog) -> None
         """
         Called when an audit log entry is saved to the database.
 
         Args:
-            entry (models.audit_log.AuditLog): just-saved log object
+            entry: just-saved log object
         """
         pass

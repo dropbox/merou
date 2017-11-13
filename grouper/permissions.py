@@ -1,6 +1,7 @@
 from collections import defaultdict, namedtuple
 from datetime import datetime
 import re
+from typing import TYPE_CHECKING
 
 from sqlalchemy.exc import IntegrityError
 
@@ -11,7 +12,6 @@ from grouper.fe.settings import settings
 from grouper.fe.template_util import get_template_env
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
-from grouper.models.base.session import Session  # noqa
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
 from grouper.models.group import Group
@@ -23,6 +23,10 @@ from grouper.models.tag_permission_map import TagPermissionMap
 from grouper.plugin import get_plugins
 from grouper.user_group import get_groups_by_user
 from grouper.util import matches_glob
+
+if TYPE_CHECKING:
+    from typing import Dict, List, Set, TYPE_CHECKING  # noqa
+    from grouper.models.base.session import Session  # noqa
 
 # Singleton
 GLOBAL_OWNERS = object()

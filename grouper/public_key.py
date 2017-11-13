@@ -3,6 +3,7 @@ from collections import defaultdict
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label
 import sshpubkeys
+from typing import Dict, List  # noqa
 
 from grouper.models.base.session import Session  # noqa
 from grouper.models.counter import Counter

@@ -1,9 +1,14 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, Column, Integer, String, Text
 
 from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.model_base import Model
-from grouper.models.base.session import Session  # noqa
+
+if TYPE_CHECKING:
+    from typing import List  # noqa
+    from grouper.models.base.session import Session  # noqa
 
 
 class PublicKeyTag(Model):

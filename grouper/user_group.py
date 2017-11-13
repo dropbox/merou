@@ -1,11 +1,15 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import or_
-from sqlalchemy.orm import Session  # noqa
 
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge, OWNER_ROLE_INDICES
-from grouper.models.user import User  # noqa
+
+if TYPE_CHECKING:
+    from typing import List, Tuple  # noqa
+    from sqlalchemy.orm import Session  # noqa
+    from grouper.models.user import User  # noqa
 
 
 def get_groups_by_user(session, user):
@@ -27,7 +31,7 @@ def get_groups_by_user(session, user):
 
 
 def get_all_groups_by_user(session, user):
-    # type: (Session, User) -> List[tuple[Group, int]]
+    # type: (Session, User) -> List[Tuple[Group, int]]
     """Return groups a given user is a member of along with the user's role.
 
     This includes groups inherited from other groups, unlike get_groups_by_user.

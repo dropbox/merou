@@ -34,8 +34,12 @@ def get_application(graph, settings, sentry_client):
         "debug": settings.debug,
     }
 
-    application = Application(HANDLERS, my_settings=my_settings, **tornado_settings)
-    application.sentry_client = sentry_client
+    application = Application(
+        HANDLERS,
+        my_settings=my_settings,
+        sentry_client=sentry_client,
+        **tornado_settings
+    )
 
     return application
 

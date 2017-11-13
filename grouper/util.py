@@ -6,11 +6,13 @@ import re
 import subprocess
 import threading
 import time
-from typing import Dict, Pattern  # noqa
+from typing import TYPE_CHECKING
 
-_TRUTHY = set([
-    "true", "yes", "1", ""
-])
+if TYPE_CHECKING:
+    from typing import Any, Dict, Pattern  # noqa
+    from settings import Settings  # noqa
+
+_TRUTHY = {"true", "yes", "1", ""}
 
 _DB_URL_REFRESH_TIME = 0
 _DB_URL_REFRESH_JITTER = 30
@@ -66,8 +68,8 @@ _regex_cache = {}  # type: Dict[str, Pattern]
 
 
 def matches_glob(glob, text):
-    """Returns True/False on if text matches glob."""
     # type: (str, str) -> bool
+    """Returns True/False on if text matches glob."""
     if "*" not in glob:
         return text == glob
     try:
@@ -98,8 +100,8 @@ def singleton(f):
 
 
 def reference_id(settings, request_type, request):
+    # type: (Settings, str, Any) -> str
     """Generates the 'References' for a request"""
-    # type: (dict, str, Any) -> str
     try:
         domain = settings['service_account_email_domain']
     except KeyError:

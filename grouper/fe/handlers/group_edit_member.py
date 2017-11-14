@@ -3,10 +3,12 @@ from datetime import datetime
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.fe.forms import GroupEditMemberForm
 from grouper.fe.util import Alert, GrouperHandler
+from grouper.group_member import InvalidRoleForMember
 from grouper.models.comment import OBJ_TYPES
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
 from grouper.models.user import User
+from grouper.plugin import PluginException
 from grouper.user import user_role
 
 
@@ -118,7 +120,7 @@ class GroupEditMember(GrouperHandler):
         try:
             group.edit_member(self.current_user, user_or_group, form.data["reason"],
                               role=form.data["role"], expiration=expiration)
-        except Exception as e:
+        except (InvalidRoleForMember, PluginException) as e:
             return self.render(
                 "group-edit-member.html", form=form, group=group, member=member, edge=edge,
                 alerts=[Alert('danger', e.message)]

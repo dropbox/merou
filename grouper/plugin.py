@@ -42,6 +42,10 @@ def get_plugins():
     return list(Plugins)
 
 
+class PluginException(Exception):
+    pass
+
+
 class BasePlugin(object):
     def user_created(self, user):
         # type: (User) -> None

@@ -16,7 +16,7 @@ from grouper.user_password import user_passwords
 from grouper.user_permissions import user_grantable_permissions, user_is_user_admin
 
 
-def get_group_view_template_vars(session, actor, group, graph, alerts=[]):
+def get_group_view_template_vars(session, actor, group, graph):
     ret = {}
     ret["grantable"] = user_grantable_permissions(session, actor)
 
@@ -61,7 +61,7 @@ def get_group_view_template_vars(session, actor, group, graph, alerts=[]):
                 perm_up['mapping_id'] = perm_direct.mapping_id
                 break
 
-    ret["alerts"] = alerts[:]
+    ret["alerts"] = []
     ret["self_pending"] = group.my_requests("pending", user=actor).count()
     if ret["self_pending"]:
         ret["alerts"].append(Alert('info', 'You have a pending request to join this group.',
@@ -70,7 +70,7 @@ def get_group_view_template_vars(session, actor, group, graph, alerts=[]):
     return ret
 
 
-def get_user_view_template_vars(session, actor, user, graph, alerts=[]):
+def get_user_view_template_vars(session, actor, user, graph):
     # TODO(cbguder): get around circular dependencies
     from grouper.fe.handlers.user_disable import UserDisable
     from grouper.fe.handlers.user_enable import UserEnable
@@ -113,16 +113,14 @@ def get_user_view_template_vars(session, actor, user, graph, alerts=[]):
     ret["permissions"] = user_md.get('permissions', [])
     ret["log_entries"] = get_log_entries_by_user(session, user)
     ret["user_tokens"] = user.tokens
-    ret["alerts"] = alerts[:]
 
     return ret
 
 
-def get_role_user_view_template_vars(session, actor, user, group, graph, alerts=[]):
+def get_role_user_view_template_vars(session, actor, user, group, graph):
     ret = get_user_view_template_vars(session, actor, user, graph)
     ret.update(get_group_view_template_vars(session, actor, group, graph))
     ret["can_control"] = can_manage_role_user(session, user=actor, tuser=user)
     ret["log_entries"] = sorted(set(get_log_entries_by_user(session, user) +
         group.my_log_entries()), key=lambda x: x.log_time, reverse=True)
-    ret["alerts"] = alerts[:]
     return ret

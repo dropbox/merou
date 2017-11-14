@@ -1,5 +1,6 @@
 from datetime import datetime
 from functools import wraps
+import json
 import logging
 import re
 import sys
@@ -106,6 +107,9 @@ class GrouperHandler(RequestHandler):
     def redirect(self, url, *args, **kwargs):
         if self.is_refresh():
             url = urlparse.urljoin(url, "?refresh=yes")
+
+        self.set_alerts(kwargs.pop("alerts", []))
+
         return super(GrouperHandler, self).redirect(url, *args, **kwargs)
 
     def get_current_user(self):
@@ -176,7 +180,7 @@ class GrouperHandler(RequestHandler):
             "is_active": self.is_active,
             "perf_trace_uuid": self.perf_trace_uuid,
             "xsrf_form": self.xsrf_form_html,
-            "alerts": [],
+            "alerts": self.get_alerts(),
         })
         return namespace
 
@@ -186,10 +190,28 @@ class GrouperHandler(RequestHandler):
         return content
 
     def render(self, template_name, **kwargs):
+        defaults = self.get_template_namespace()
+
         context = {}
-        context.update(self.get_template_namespace())
+        context.update(defaults)
         context.update(kwargs)
+
+        # Merge alerts
+        context["alerts"] = defaults.get("alerts", []) + kwargs.get("alerts", [])
+
         self.write(self.render_template(template_name, **context))
+
+    def set_alerts(self, alerts):
+        if len(alerts) > 0:
+            self.set_cookie("_alerts", _serialize_alerts(alerts))
+        else:
+            self.clear_cookie("_alerts")
+
+    def get_alerts(self):
+        serialized_alerts = self.get_cookie("_alerts", default="[]")
+        alerts = _deserialize_alerts(serialized_alerts)
+        self.clear_cookie("_alerts")
+        return alerts
 
     def get_form_alerts(self, errors):
         alerts = []
@@ -264,3 +286,27 @@ def ensure_audit_security(perm_arg):
         return wraps(f)(_decorator)
 
     return _wrapper
+
+
+def _serialize_alerts(alerts):
+    alert_dicts = [a.__dict__ for a in alerts]
+    alerts_json = json.dumps(alert_dicts, separators=(",", ":"))
+    return urllib.quote(alerts_json)
+
+
+def _deserialize_alert(dict):
+    return Alert(
+        severity=dict["severity"],
+        message=dict["message"],
+        heading=dict["heading"]
+    )
+
+
+def _deserialize_alerts(quoted_alerts_json):
+    try:
+        alerts_json = urllib.unquote(quoted_alerts_json)
+        alert_dicts = json.loads(alerts_json)
+    except ValueError:
+        alert_dicts = []
+
+    return map(_deserialize_alert, alert_dicts)

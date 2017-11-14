@@ -1,36 +1,20 @@
-from urllib import urlencode
-
-from mock import patch
-import pytest
-
-from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
-from fixtures import fe_app as app  # noqa
-from grouper.models.group import Group
-from grouper.models.group_edge import GROUP_EDGE_ROLES
-from page import Page
-from plugins.group_ownership_policy import GroupOwnershipPolicyPlugin
+from fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401
+from fixtures import async_server, browser  # noqa: F401
+from fixtures import fe_app as app  # noqa: F401
+from pages import UserViewPage
 from url_util import url
 
 
-@pytest.mark.gen_test
-def test_disable_last_owner(session, http_client, base_url):
-    headers = {"X-Grouper-User": "tyleromeara@a.co"}
+def test_disable_last_owner(async_server, browser):
+    fe_url = url(async_server, "/users/gary@a.co")
+    browser.get(fe_url)
 
-    members = Group.get(session, name="team-sre").my_users()
-    assert ("gary@a.co", GROUP_EDGE_ROLES.index("owner")) in members
+    page = UserViewPage(browser)
 
-    fe_url = url(base_url, "/users/gary@a.co/disable")
-    body = {"member_type": "user", "member": "gary@a.co"}
+    page.click_disable_button()
 
-    with patch("grouper.user.get_plugins") as get_plugins:
-        get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
-        resp = yield http_client.fetch(fe_url, method="POST", headers=headers, body=urlencode(body))
+    modal = page.get_disable_user_modal()
+    modal.confirm()
 
-    assert resp.code == 200
-
-    page = Page(resp.body)
+    assert page.current_url.endswith("/users/gary@a.co")
     assert page.has_text("You can't remove the last permanent owner of a group")
-    assert page.has_element("h2", "Users")
-
-    members = Group.get(session, name="team-sre").my_users()
-    assert ("gary@a.co", GROUP_EDGE_ROLES.index("owner")) in members

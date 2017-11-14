@@ -98,11 +98,11 @@
 {% block headingbuttons %}
 
     {% if user.enabled and can_disable %}
-        <button class="btn btn-danger" data-toggle="modal" data-target="#disableModal">
+        <button class="btn btn-danger disable-user" data-toggle="modal" data-target="#disableModal">
             <i class="fa fa-minus"></i> Disable
         </button>
     {% elif not user.enabled and can_enable %}
-        <button class="btn btn-warning" data-toggle="modal" data-target="#enableModal">
+        <button class="btn btn-warning enable-user" data-toggle="modal" data-target="#enableModal">
             <i class="fa fa-plus"></i> Enable
         </button>
     {% endif %}

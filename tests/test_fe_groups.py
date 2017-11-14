@@ -1,129 +1,109 @@
-from urllib import urlencode
-
-from mock import patch
 import pytest
 
-from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
-from fixtures import fe_app as app  # noqa
-from grouper.models.group import Group
-from grouper.models.group_edge import GROUP_EDGE_ROLES
+from fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401
+from fixtures import async_server, browser  # noqa: F401
+from fixtures import fe_app as app  # noqa: F401
 from grouper.role_user import create_role_user
-from page import Page
-from plugins.group_ownership_policy import GroupOwnershipPolicyPlugin
+from pages import (GroupEditMemberPage, GroupViewPage, GroupsViewPage, NoSuchElementException,
+    RoleUserViewPage)
 from url_util import url
 
 
-@pytest.mark.gen_test
-def test_list_groups(session, groups, users, http_client, base_url):
-    headers = {"X-Grouper-User": "gary@a.co"}
+def test_list_groups(async_server, browser, groups):  # noqa: F811
+    fe_url = url(async_server, "/groups")
+    browser.get(fe_url)
 
-    fe_url = url(base_url, "/groups")
-    resp = yield http_client.fetch(fe_url, headers=headers)
-    assert resp.code == 200
-
-    page = Page(resp.body)
+    page = GroupsViewPage(browser)
 
     for name, _ in groups.iteritems():
-        path = "/groups/{}".format(name)
-        assert page.has_link(name, path)
+        row = page.find_group_row(name)
+        assert row.href.endswith("/groups/{}".format(name))
 
 
-@pytest.mark.gen_test
-def test_show_group(session, groups, users, http_client, base_url):
-    headers = {"X-Grouper-User": "gary@a.co"}
+def test_show_group(async_server, browser, groups):  # noqa: F811
+    fe_url = url(async_server, "/groups/team-sre")
+    browser.get(fe_url)
 
-    group = groups["team-sre"]
-    members = group.my_members()
+    page = GroupViewPage(browser)
 
-    fe_url = url(base_url, "/groups/{}".format(group.groupname))
-    resp = yield http_client.fetch(fe_url, headers=headers)
-    assert resp.code == 200
-
-    page = Page(resp.body)
-
-    for k, _ in members.iteritems():
-        assert page.has_text(k[1])
+    members = groups["team-sre"].my_members()
+    for [_, username], _ in members.iteritems():
+        row = page.find_member_row(username)
+        assert row.href.endswith("/users/{}".format(username))
 
 
-@pytest.mark.gen_test
-def test_remove_member(session, http_client, base_url):
-    headers = {"X-Grouper-User": "gary@a.co"}
+def test_remove_member(async_server, browser):  # noqa: F811
+    fe_url = url(async_server, "/groups/team-sre")
+    browser.get(fe_url)
 
-    members = Group.get(session, name="team-sre").my_users()
-    assert ("zorkian@a.co", GROUP_EDGE_ROLES.index("member")) in members
+    page = GroupViewPage(browser)
 
-    fe_url = url(base_url, "/groups/team-sre/remove")
-    body = {"member_type": "user", "member": "zorkian@a.co"}
-    resp = yield http_client.fetch(fe_url, method="POST", headers=headers, body=urlencode(body))
-    assert resp.code == 200
+    row = page.find_member_row("zorkian@a.co")
+    assert row.role == "member"
 
-    members = Group.get(session, name="team-sre").my_users()
-    assert ("zorkian@a.co", GROUP_EDGE_ROLES.index("member")) not in members
+    row.click_remove_button()
+
+    modal = page.get_remove_user_modal()
+    modal.confirm()
+
+    assert page.current_url.endswith("/groups/team-sre?refresh=yes")
+
+    with pytest.raises(NoSuchElementException):
+        assert page.find_member_row("zorkian@a.co")
 
 
-@pytest.mark.gen_test
-def test_remove_last_owner(session, http_client, base_url):
-    headers = {"X-Grouper-User": "cbguder@a.co"}
+def test_remove_last_owner(async_server, browser):  # noqa: F811
+    fe_url = url(async_server, "/groups/team-sre")
+    browser.get(fe_url)
 
-    members = Group.get(session, name="team-sre").my_users()
-    assert ("gary@a.co", GROUP_EDGE_ROLES.index("owner")) in members
+    page = GroupViewPage(browser)
 
-    fe_url = url(base_url, "/groups/team-sre/remove")
-    body = {"member_type": "user", "member": "gary@a.co"}
+    row = page.find_member_row("gary@a.co")
+    assert row.role == "owner"
 
-    with patch("grouper.group_member.get_plugins") as get_plugins:
-        get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
-        resp = yield http_client.fetch(fe_url, method="POST", headers=headers, body=urlencode(body))
+    row.click_remove_button()
 
-    assert resp.code == 200
+    modal = page.get_remove_user_modal()
+    modal.confirm()
 
-    page = Page(resp.body)
+    row = page.find_member_row("gary@a.co")
+    assert row.role == "owner"
+
     assert page.has_text("You can't remove the last permanent owner of a group")
-    assert page.has_element("h2", "Groups")
-
-    members = Group.get(session, name="team-sre").my_users()
-    assert ("gary@a.co", GROUP_EDGE_ROLES.index("owner")) in members
 
 
-@pytest.mark.gen_test
-def test_expire_last_owner(session, http_client, base_url):
-    headers = {"X-Grouper-User": "cbguder@a.co"}
+def test_expire_last_owner(async_server, browser):  # noqa: F811
+    fe_url = url(async_server, "/groups/sad-team")
+    browser.get(fe_url)
 
-    fe_url = url(base_url, "/groups/sad-team/edit/user/zorkian@a.co")
-    body = {"role": "owner", "reason": "because", "expiration": "12/31/2999"}
+    page = GroupViewPage(browser)
 
-    with patch("grouper.group_member.get_plugins") as get_plugins:
-        get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
-        resp = yield http_client.fetch(fe_url, method="POST", headers=headers, body=urlencode(body))
+    row = page.find_member_row("zorkian@a.co")
+    row.click_edit_button()
 
-    assert resp.code == 200
+    page = GroupEditMemberPage(browser)
 
-    page = Page(resp.body)
+    page.set_expiration("12/31/2999")
+    page.set_reason("Unit Testing")
+    page.submit()
+
+    assert page.current_url.endswith("/groups/sad-team/edit/user/zorkian@a.co")
     assert page.has_text("You can't remove the last permanent owner of a group")
-    assert page.has_element("h2", "Groups")
-
-    members = Group.get(session, name="sad-team").my_users()
-    assert ("zorkian@a.co", GROUP_EDGE_ROLES.index("owner")) in members
 
 
-@pytest.mark.gen_test
-def test_remove_last_owner_of_service_account(session, users, http_client, base_url):
-    headers = {"X-Grouper-User": "cbguder@a.co"}
-
+def test_remove_last_owner_of_service_account(async_server, browser, session, users):  # noqa: F811
     create_role_user(session, users["gary@a.co"], "service@svc.localhost", "things", "canask")
 
-    fe_url = url(base_url, "/groups/service@svc.localhost/remove")
-    body = {"member_type": "user", "member": "gary@a.co"}
+    fe_url = url(async_server, "/service/service@svc.localhost")
+    browser.get(fe_url)
 
-    with patch("grouper.group_member.get_plugins") as get_plugins:
-        get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
-        resp = yield http_client.fetch(fe_url, method="POST", headers=headers, body=urlencode(body))
+    page = RoleUserViewPage(browser)
 
-    assert resp.code == 200
+    row = page.find_member_row("gary@a.co")
+    row.click_remove_button()
 
-    page = Page(resp.body)
+    modal = page.get_remove_user_modal()
+    modal.confirm()
+
+    assert page.current_url.endswith("/service/service@svc.localhost")
     assert page.has_text("You can't remove the last permanent owner of a group")
-    assert page.has_element("h2", "Service Accounts")
-
-    members = Group.get(session, name="service@svc.localhost").my_users()
-    assert ("gary@a.co", GROUP_EDGE_ROLES.index("np-owner")) in members

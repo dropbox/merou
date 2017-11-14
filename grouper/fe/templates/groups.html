@@ -56,10 +56,10 @@
             </thead>
             <tbody>
             {% for group in groups %}
-                <tr>
-                    <td>{{ account(group) }}</td>
-                    <td>{{group.description|default("", True)|escape}}</td>
-                    <td>
+                <tr class="group-row">
+                    <td class="group-name">{{ account(group) }}</td>
+                    <td class="group-description">{{group.description|default("", True)|escape}}</td>
+                    <td class="group-can-join">
                         {% if group.canjoin == "canjoin" %}
                             Anyone
                         {% elif group.canjoin == "canask" %}
@@ -69,7 +69,7 @@
                         {% endif %}
                     </td>
 		    {% if audited_groups %}
-		    <td>
+		    <td class="group-why-audited">
 		      {% if group.groupname in directly_audited_groups %}
 		      Direct
 		      {% else %}

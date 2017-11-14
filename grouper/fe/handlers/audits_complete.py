@@ -1,7 +1,6 @@
 from grouper.audit import get_audits
 from grouper.constants import PERMISSION_AUDITOR
 from grouper.email_util import cancel_async_emails
-from grouper.fe.handlers.template_variables import get_group_view_template_vars
 from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog, AuditLogCategory
@@ -59,13 +58,7 @@ class AuditsComplete(GrouperHandler):
                                  category=AuditLogCategory.audit)
         except Exception as e:
             alert = Alert("danger", str(e))
-            return self.render("group.html", group=audit.group, **get_group_view_template_vars(
-                self.session,
-                self.current_user,
-                audit.group,
-                self.graph,
-                alerts=[alert]
-            ))
+            return self.redirect('/groups/{}'.format(audit.group.name), alerts=[alert])
 
         audit.complete = True
         self.session.commit()

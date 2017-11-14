@@ -261,7 +261,6 @@ def _write_test_config(tmpdir):
         config = yaml.safe_load(config_file.read())
 
     config["common"]["database"] = db_url(tmpdir)
-    config["common"]["plugin_dir"] = src_path("plugins")
 
     config_path = str(tmpdir.join("grouper.yaml"))
     with open(config_path, "w") as config_file:

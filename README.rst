@@ -85,3 +85,22 @@ group.
     # Give the user administrative access to the Grouper instance
     bin/grouper-ctl -vv \
         group add_member --owner grouper-administrators $USER@example.com
+
+
+Running the tests
+-----------------
+
+Some tests require a recent (>= 2.31) version of chromedriver, which can be
+installed via apt or Homebrew:
+
+.. code:: bash
+
+    apt install chromium-chromedriver
+
+Once chromedriver is installed, the tests can be run using pytest:
+
+.. code:: bash
+
+    pip install -r requirements.txt
+    pip install -r requirements-dev.txt
+    py.test tests

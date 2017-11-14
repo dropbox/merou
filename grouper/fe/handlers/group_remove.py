@@ -1,10 +1,7 @@
 from grouper.fe.forms import GroupRemoveForm
-from grouper.fe.handlers.template_variables import (get_group_view_template_vars,
-    get_role_user_view_template_vars)
 from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
-from grouper.models.user import User
 from grouper.role_user import get_role_user, is_role_user
 from grouper.user import get_user_or_group
 from grouper.user_group import user_can_manage_group
@@ -37,7 +34,9 @@ class GroupRemove(GrouperHandler):
                 reason="Can't remove yourself. Leave group instead."
             )
 
-        if (is_role_user(self.session, group=group) and
+        role_user = is_role_user(self.session, group=group)
+
+        if (role_user and
                 get_role_user(self.session, group=group).user.name == removed_member.name):
             return self.send_error(
                 status_code=400,
@@ -56,28 +55,10 @@ class GroupRemove(GrouperHandler):
                          on_group_id=group.id, on_user_id=removed_member.id)
         except Exception as e:
             alert = Alert("danger", str(e))
-            return self._render_group_with_alert(group, alert)
+
+            if role_user:
+                return self.redirect("/service/{}".format(group.name), alerts=[alert])
+            else:
+                return self.redirect("/groups/{}".format(group.name), alerts=[alert])
 
         return self.redirect("/groups/{}?refresh=yes".format(group.name))
-
-    def _render_group_with_alert(self, group, alert):
-        if is_role_user(self.session, group=group):
-            user = User.get(self.session, name=group.groupname)
-
-            self.render("service.html", user=user, group=group, **get_role_user_view_template_vars(
-                self.session,
-                self.current_user,
-                user,
-                group,
-                self.graph,
-                alerts=[alert]
-            ))
-
-        else:
-            self.render("group.html", group=group, **get_group_view_template_vars(
-                self.session,
-                self.current_user,
-                group,
-                self.graph,
-                alerts=[alert]
-            ))

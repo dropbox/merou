@@ -1,5 +1,4 @@
 from grouper.constants import USER_ADMIN, USER_DISABLE
-from grouper.fe.handlers.template_variables import get_user_view_template_vars
 from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
@@ -33,13 +32,7 @@ class UserDisable(GrouperHandler):
                 disable_user(self.session, user)
         except Exception as e:
             alert = Alert("danger", str(e))
-            return self.render("user.html", user=user, **get_user_view_template_vars(
-                self.session,
-                self.current_user,
-                user,
-                self.graph,
-                alerts=[alert]
-            ))
+            return self.redirect("/users/{}".format(user.name), alerts=[alert])
 
         self.session.commit()
 

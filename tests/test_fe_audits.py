@@ -1,52 +1,37 @@
 from datetime import datetime, timedelta
-from urllib import urlencode
 
-from mock import patch
-import pytest
-
-from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
-from fixtures import fe_app as app  # noqa
-from grouper.models.audit import Audit
-from page import Page
-from plugins.group_ownership_policy import GroupOwnershipPolicyPlugin
-from util import add_member
+from fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401
+from fixtures import async_server, browser  # noqa: F401
+from fixtures import fe_app as app  # noqa: F401
+from pages import AuditsCreatePage, GroupViewPage
 from url_util import url
+from util import add_member
 
 
-@pytest.mark.gen_test
-def test_remove_last_owner_via_audit(session, groups, users, http_client, base_url):
-    headers = {"X-Grouper-User": "cbguder@a.co"}
-
+def test_remove_last_owner_via_audit(async_server, browser, users, groups, session):
     future = datetime.utcnow() + timedelta(1)
-
-    group_id = groups["audited-team"].id
 
     add_member(groups["auditors"], users["cbguder@a.co"], role="owner")
     add_member(groups["audited-team"], users["cbguder@a.co"], role="owner", expiration=future)
 
-    fe_url = url(base_url, '/audits/create')
-    body = {'ends_at': future.strftime('%m/%d/%Y')}
-    resp = yield http_client.fetch(fe_url, method="POST", headers=headers, body=urlencode(body))
-    assert resp.code == 200
+    session.commit()
 
-    audit = session.query(Audit).filter(Audit.group_id == group_id).one()
+    fe_url = url(async_server, "/audits/create")
+    browser.get(fe_url)
 
-    body = {}
-    for member in audit.my_members():
-        key = "audit_{}".format(member.id)
+    page = AuditsCreatePage(browser)
 
-        if member.member.name == "zorkian@a.co":
-            body[key] = "remove"
-        else:
-            body[key] = "approved"
+    page.set_end_date(future.strftime("%m/%d/%Y"))
+    page.submit()
 
-    fe_url = url(base_url, "/audits/{}/complete".format(audit.id))
+    fe_url = url(async_server, "/groups/audited-team")
+    browser.get(fe_url)
 
-    with patch("grouper.group_member.get_plugins") as get_plugins:
-        get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
-        resp = yield http_client.fetch(fe_url, method="POST", headers=headers, body=urlencode(body))
+    page = GroupViewPage(browser)
 
-    assert resp.code == 200
+    audit_modal = page.get_audit_modal()
+    audit_modal.find_member_row("zorkian@a.co").set_audit_status("remove")
+    audit_modal.confirm()
 
-    page = Page(resp.body)
+    assert page.current_url.endswith("/groups/audited-team")
     assert page.has_text("You can't remove the last permanent owner of a group")

@@ -205,36 +205,34 @@ enabled. Membership in this group is regularly reviewed.
 {%- endmacro %}
 
 {% macro member_row(group, member, members, current_user, current_user_role) -%}
-    <tr>
+    <tr class="member-row">
         <td>
             {% if member.name != current_user.name and member.name != group.name and
                 (current_user_role['is_approver'] or
                  (current_user_role['is_manager'] and ROLES[member.role] == "member"))
             %}
                 <a href="/groups/{{group.name}}/edit/{{member.type|lower}}/{{member.name}}"
-                   class="btn btn-default btn-xs">
+                   class="btn btn-default btn-xs edit-member">
                     <i class="fa fa-edit"></i>
                 </a>
 
-                <button class="btn btn-danger btn-xs"
+                <button class="btn btn-danger btn-xs remove-member"
                         data-toggle="modal"
                         data-target="#removeUserModal"
                         data-member-name="{{member.name}}"
                         data-member-type="{{member.type|lower}}">
                     <i class="fa fa-times"></i>
-                </a>
+                </button>
             {% endif %}
         </td>
-        <td>
-            {{ account(member) }}
-        </td>
-        <td>{{ ROLES[member.role] }}</td>
-        <td>{{ member.expiration|expires_when_str }}</td>
+        <td class="member-name">{{ account(member) }}</td>
+        <td class="member-role">{{ ROLES[member.role] }}</td>
+        <td class="member-expiration">{{ member.expiration|expires_when_str }}</td>
     </tr>
 {%- endmacro %}
 
 {% macro member_panel(max_height, group, members, current_user, current_user_role) -%}
-    <div class="panel panel-default">
+    <div id="members-panel" class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Members</h3>
         </div>

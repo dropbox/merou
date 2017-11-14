@@ -9,9 +9,10 @@ import traceback
 from expvar.stats import stats
 import sshpubkeys
 from tornado.web import HTTPError, RequestHandler
-from typing import Optional  # noqa
+from typing import Any, Dict, Optional  # noqa
 
 from grouper.constants import TOKEN_FORMAT
+from grouper.graph import NoSuchUser
 from grouper.models.base.session import Session
 from grouper.models.public_key import PublicKey
 from grouper.models.user import User
@@ -30,27 +31,29 @@ else:
 
 
 def get_individual_user_info(handler, name, cutoff, service_account):
-    # type: (GraphHandler, str, int, Optional[bool]) -> None
-    """This is a helper function to consolidate duplicate code from the service account and user
-    endpoints into one location.
+    # type: (GraphHandler, str, int, Optional[bool]) -> Dict[str, Any]
+    """This is a helper function to retrieve all information about a user.
 
     Args:
         handler: the GraphHandler for this request
-        name: the name we're looking up for this request
+        name: the name of the user whose data is being retrieved
         cutoff: the maximum distance of groups to use for permission checking
         service_account: a boolean indicating if this request is for a service account or not. This
             can be None if you want to support users and service accounts (deprecated)
 
     Returns:
-        None
+        A dictionary containing all of the user's data
+
+    Raises:
+        NoSuchUser: When no user with the given name exists, or has the the wrong serviceaccount
+            type
     """
-    acc = "Service Account" if service_account else "User"
     with handler.graph.lock:
         if name not in handler.graph.user_metadata:
-            return handler.notfound("{} ({}) not found.".format(acc, name))
+            raise NoSuchUser
         md = handler.graph.user_metadata[name]
         if service_account is not None and md["role_user"] != service_account:
-            return handler.notfound("{} ({}) not found.".format(acc, name))
+            raise NoSuchUser
 
         details = handler.graph.get_user_details(name, cutoff)
         out = {"user": {"name": name}}
@@ -58,7 +61,7 @@ def get_individual_user_info(handler, name, cutoff, service_account):
         try_update(out["user"], md)
         # Updates the output with the user's details (such as permissions)
         try_update(out, details)
-        return handler.success(out)
+        return out
 
 
 class GraphHandler(RequestHandler):
@@ -137,7 +140,12 @@ class Users(GraphHandler):
             # We don't require `include_service_accounts` when querying for a specific user,
             # because there are too many existing integrations that expect the
             # /users/foo@example.com endpoint to work for both. :(
-            return get_individual_user_info(self, name, cutoff, service_account=None)
+            try:
+                return self.success(
+                    get_individual_user_info(self, name, cutoff, service_account=None)
+                )
+            except NoSuchUser:
+                return self.notfound("User ({}) not found.".format(name))
 
         with self.graph.lock:
             return self.success({
@@ -145,6 +153,31 @@ class Users(GraphHandler):
                                 for k, v in self.graph.user_metadata.iteritems()
                                 if (include_service_accounts or not v["role_user"])]),
             })
+
+
+class MultiUsers(GraphHandler):
+    """API endpoint for bulk retrieval of user data.
+
+    This returns the same information as the Users and ServiceAccounts endpoints, but supports
+    multiple returning the data of multiple users to save on API call overhead.
+    """
+    def get(self):
+        usernames = self.get_arguments("username")
+        if not usernames:
+            usernames = self.graph.user_metadata.iterkeys()
+
+        cutoff = int(self.get_argument("cutoff", 100))
+
+        with self.graph.lock:
+            data = {}
+            for username in usernames:
+                try:
+                    data[username] = get_individual_user_info(
+                        self, username, cutoff, service_account=None
+                    )
+                except NoSuchUser:
+                    continue
+            self.success(data)
 
 
 class UsersPublicKeys(GraphHandler):
@@ -266,7 +299,12 @@ class ServiceAccounts(GraphHandler):
     def get(self, name=None):
         cutoff = int(self.get_argument("cutoff", 100))
         if name is not None:
-            return get_individual_user_info(self, name, cutoff, service_account=True)
+            try:
+                return self.success(
+                    get_individual_user_info(self, name, cutoff, service_account=True)
+                )
+            except NoSuchUser:
+                return self.notfound("User ({}) not found.".format(name))
 
         with self.graph.lock:
             return self.success({

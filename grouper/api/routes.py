@@ -1,5 +1,6 @@
 from grouper.api.handlers import (
         Groups,
+        MultiUsers,
         NotFound,
         Permissions,
         ServiceAccounts,
@@ -16,7 +17,6 @@ HANDLERS = [
     (r"/users/{}".format(NAME_VALIDATION), Users),
     (r"/token/validate".format(NAME_VALIDATION), TokenValidate),
 
-
     (r"/public-keys", UsersPublicKeys),
 
     (r"/groups", Groups),
@@ -27,6 +27,8 @@ HANDLERS = [
 
     (r"/service_accounts", ServiceAccounts),
     (r"/service_accounts/{}".format(NAME_VALIDATION), ServiceAccounts),
+
+    (r"/multi/users", MultiUsers),
 
     (DEBUG_ROUTE_PATH, Stats),
 

@@ -4,10 +4,10 @@ from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.group import Group
 from grouper.models.group_edge import GROUP_EDGE_ROLES, OWNER_ROLE_INDICES, GroupEdge
 from grouper.models.user import User
-from grouper.plugin import BasePlugin
+from grouper.plugin import BasePlugin, PluginException
 
 
-class GroupOwnershipPolicyViolation(Exception):
+class GroupOwnershipPolicyViolation(PluginException):
     """This exception is raised when trying to remove the last owner of a group."""
     pass
 

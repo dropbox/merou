@@ -147,6 +147,8 @@ class BackgroundThread(Thread):
                 stats.set_gauge("successful-background-update", 0)
                 stats.set_gauge("failed-background-update", 1)
                 self.capture_exception()
-                raise
+                self.logger.exception(
+                    "Unexpected exception occurred while performing background tasks."
+                )
 
             sleep(60)

@@ -182,7 +182,16 @@ def send_email_raw(settings, recipient_list, msg_raw):
         return
 
     sender = settings["from_addr"]
-    smtp = smtplib.SMTP(settings["smtp_server"])
+    username = settings["smtp_username"]
+    password = settings["smtp_password"]
+    use_ssl = settings["smtp_use_ssl"]
+
+    smtp_cls = smtplib.SMTP_SSL if use_ssl else smtplib.SMTP
+    smtp = smtp_cls(settings["smtp_server"])
+
+    if username:
+        smtp.login(username, password)
+
     smtp.sendmail(sender, recipient_list, msg_raw)
     smtp.quit()
 

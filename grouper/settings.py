@@ -101,6 +101,9 @@ settings = Settings({
     "restricted_ownership_permissions": None,
     "send_emails": True,
     "sentry_dsn": None,
+    "smtp_password": "",
     "smtp_server": "localhost",
+    "smtp_use_ssl": False,
+    "smtp_username": "root",
     "url": "http://127.0.0.1:8888",
 })

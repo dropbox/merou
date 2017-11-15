@@ -39,6 +39,21 @@ common:
     # Type: str
     smtp_server: "localhost"
 
+    # Whether to connect to the SMTP server using TLS
+    # Type: bool
+    smtp_use_ssl: false
+
+    # Username to use for logging in to the SMTP server
+    # You should probably not use this unless smtp_use_ssl is true
+    # Leave blank if you want to not authenticate to the SMTP server
+    # Type: str
+    smtp_username: ""
+
+    # Password to use for logging in to the SMTP server
+    # You should probably not use this unless smtp_use_ssl is true
+    # Type: str
+    smtp_password: ""
+
     # Address to send email from
     # Type: str
     from_addr: "no-reply@grouper.local"

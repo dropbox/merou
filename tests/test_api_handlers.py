@@ -24,7 +24,7 @@ def test_users(users, http_client, base_url):
     api_url = url(base_url, '/users')
     resp = yield http_client.fetch(api_url)
     body = json.loads(resp.body)
-    users_wo_role = sorted((u for u in users if u != u"role@a.co"))
+    users_wo_role = sorted([u for u in users if u != u"role@a.co"] + [u"service@a.co"])
 
     print 'user_wo_role={}'.format(users_wo_role)
     print 'res={}'.format(sorted(body["data"]["users"]))

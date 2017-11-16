@@ -281,13 +281,13 @@ class GroupGraph(object):
         '''
         Returns a dict of groupname: { list of service account names }.
         '''
-        out = defaultdict(set)
+        out = defaultdict(list)
         tuples = session.query(Group, ServiceAccount).filter(
             GroupServiceAccount.group_id == Group.id,
             GroupServiceAccount.service_account_pk == ServiceAccount.id,
         )
         for group, account in tuples:
-            out[group.groupname].add(account.user.username)
+            out[group.groupname].append(account.user.username)
         return out
 
     @staticmethod

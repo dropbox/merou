@@ -106,7 +106,7 @@ def test_graph_disable(session, graph, users, groups, user_admin_perm_to_auditor
         http_client, base_url):
     graph.update_from_db(session)
     old_users = graph.users
-    assert sorted(old_users) == sorted(users.keys())
+    assert sorted(old_users) == sorted(users.keys() + ["service@a.co"])
 
     # disable a user
     username = u"oliver@a.co"

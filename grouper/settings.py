@@ -104,6 +104,6 @@ settings = Settings({
     "smtp_password": "",
     "smtp_server": "localhost",
     "smtp_use_ssl": False,
-    "smtp_username": "root",
+    "smtp_username": "",
     "url": "http://127.0.0.1:8888",
 })

@@ -24,7 +24,7 @@ def test_users(users, http_client, base_url):
     api_url = url(base_url, '/users')
     resp = yield http_client.fetch(api_url)
     body = json.loads(resp.body)
-    users_wo_role = sorted([u for u in users if u != u"role@a.co"] + [u"service@a.co"])
+    users_wo_role = sorted([u for u in users if u not in (u"role@a.co", u"service@a.co")])
 
     print 'user_wo_role={}'.format(users_wo_role)
     print 'res={}'.format(sorted(body["data"]["users"]))
@@ -92,7 +92,7 @@ def test_service_accounts(users, http_client, base_url):
     api_url = url(base_url, '/service_accounts')
     resp = yield http_client.fetch(api_url)
     body = json.loads(resp.body)
-    service_accounts = sorted([user.name for user in users.values() if user.role_user])
+    service_accounts = sorted([u.name for u in users.values() if u.role_user] + ["service@a.co"])
 
     assert resp.code == 200
     assert body["status"] == "ok"

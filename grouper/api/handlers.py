@@ -52,8 +52,10 @@ def get_individual_user_info(handler, name, cutoff, service_account):
         if name not in handler.graph.user_metadata:
             raise NoSuchUser
         md = handler.graph.user_metadata[name]
-        if service_account is not None and md["role_user"] != service_account:
-            raise NoSuchUser
+        if service_account is not None:
+            is_service_account = md["role_user"] or "service_account" in md
+            if service_account != is_service_account:
+                raise NoSuchUser
 
         details = handler.graph.get_user_details(name, cutoff)
         out = {"user": {"name": name}}
@@ -149,9 +151,10 @@ class Users(GraphHandler):
 
         with self.graph.lock:
             return self.success({
-                "users": sorted([k
-                                for k, v in self.graph.user_metadata.iteritems()
-                                if (include_service_accounts or not v["role_user"])]),
+                "users": sorted([
+                    k for k, v in self.graph.user_metadata.iteritems()
+                    if (include_service_accounts or not ("service_account" in v or v["role_user"]))
+                ]),
             })
 
 
@@ -308,9 +311,10 @@ class ServiceAccounts(GraphHandler):
 
         with self.graph.lock:
             return self.success({
-                "service_accounts": sorted([k
-                                for k, v in self.graph.user_metadata.iteritems()
-                                if v["role_user"]]),
+                "service_accounts": sorted([
+                    k for k, v in self.graph.user_metadata.iteritems()
+                    if "service_account" in v or v["role_user"]
+                ]),
             })
 
 

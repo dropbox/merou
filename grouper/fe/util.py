@@ -4,6 +4,7 @@ import json
 import logging
 import re
 import sys
+from typing import Dict, List  # noqa: F401
 import urllib
 import urlparse
 from uuid import uuid4
@@ -202,12 +203,14 @@ class GrouperHandler(RequestHandler):
         self.write(self.render_template(template_name, **context))
 
     def set_alerts(self, alerts):
+        # type: (List[Alert]) -> None
         if len(alerts) > 0:
             self.set_cookie("_alerts", _serialize_alerts(alerts))
         else:
             self.clear_cookie("_alerts")
 
     def get_alerts(self):
+        # type: () -> List[Alert]
         serialized_alerts = self.get_cookie("_alerts", default="[]")
         alerts = _deserialize_alerts(serialized_alerts)
         self.clear_cookie("_alerts")
@@ -288,21 +291,33 @@ def ensure_audit_security(perm_arg):
     return _wrapper
 
 
+def _serialize_alert(alert):
+    # type: (Alert) -> Dict[str, str]
+    return {
+        "severity": alert.severity,
+        "message": alert.message,
+        "heading": alert.heading
+    }
+
+
+def _deserialize_alert(alert_dict):
+    # type: (Dict[str, str]) -> Alert
+    return Alert(
+        severity=alert_dict["severity"],
+        message=alert_dict["message"],
+        heading=alert_dict["heading"]
+    )
+
+
 def _serialize_alerts(alerts):
-    alert_dicts = [a.__dict__ for a in alerts]
+    # type: (List[Alert]) -> str
+    alert_dicts = map(_serialize_alert, alerts)
     alerts_json = json.dumps(alert_dicts, separators=(",", ":"))
     return urllib.quote(alerts_json)
 
 
-def _deserialize_alert(dict):
-    return Alert(
-        severity=dict["severity"],
-        message=dict["message"],
-        heading=dict["heading"]
-    )
-
-
 def _deserialize_alerts(quoted_alerts_json):
+    # type: (str) -> List[Alert]
     try:
         alerts_json = urllib.unquote(quoted_alerts_json)
         alert_dicts = json.loads(alerts_json)

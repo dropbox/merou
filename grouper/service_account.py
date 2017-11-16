@@ -24,6 +24,7 @@ from grouper.models.permission import Permission
 from grouper.models.service_account import ServiceAccount
 from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.models.user import User
+from grouper.plugin import get_plugins, PluginRejectedMachineSet
 from grouper.user import disable_user, enable_user
 
 # A single service account permission.
@@ -31,9 +32,28 @@ ServiceAccountPermission = namedtuple("ServiceAccountPermission",
     ["permission", "argument", "granted_on", "mapping_id"])
 
 
+class BadMachineSet(Exception):
+    """The service account machine set was rejected."""
+    pass
+
+
 class DuplicateServiceAccount(Exception):
     """Creating a service account failed because it duplicates an existing user."""
     pass
+
+
+def _check_machine_set(service_account, machine_set):
+    # type: (ServiceAccount, str) -> None
+    """Verify a service account machine set with plugins.
+
+    Raises:
+        BadMachineSet: if some plugin rejected the machine set
+    """
+    try:
+        for plugin in get_plugins():
+            plugin.check_machine_set(service_account.user.username, machine_set)
+    except PluginRejectedMachineSet as e:
+        raise BadMachineSet(str(e))
 
 
 def create_service_account(session, actor, name, description, machine_set, owner):
@@ -43,10 +63,14 @@ def create_service_account(session, actor, name, description, machine_set, owner
     Also adds the service account to the list of accounts managed by the owning group.
 
     Throws:
+        BadMachineSet: if some plugin rejected the machine set
         DuplicateServiceAccount: if a user with the given name already exists
     """
     user = User(username=name, is_service_account=True)
     service_account = ServiceAccount(user=user, description=description, machine_set=machine_set)
+
+    if machine_set is not None:
+        _check_machine_set(service_account, machine_set)
 
     try:
         user.add(session)
@@ -68,7 +92,14 @@ def create_service_account(session, actor, name, description, machine_set, owner
 
 def edit_service_account(session, actor, service_account, description, machine_set):
     # type: (Session, User, ServiceAccount, str, str) -> None
-    """Update the description and machine set of a service account."""
+    """Update the description and machine set of a service account.
+
+    Raises:
+        PluginRejectedMachineSet: if some plugin rejected the machine set
+    """
+    if machine_set is not None:
+        _check_machine_set(service_account, machine_set)
+
     service_account.description = description
     service_account.machine_set = machine_set
     Counter.incr(session, "updates")

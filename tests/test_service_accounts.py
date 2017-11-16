@@ -5,6 +5,8 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from tornado.httpclient import HTTPError
 
+import grouper.plugin
+
 from fixtures import fe_app as app
 from fixtures import graph, groups, permissions, session, standard_graph, users  # noqa
 from grouper.constants import USER_ADMIN
@@ -14,6 +16,7 @@ from grouper.models.permission import Permission
 from grouper.models.service_account import ServiceAccount
 from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.permissions import grant_permission_to_service_account
+from grouper.plugin import BasePlugin, PluginRejectedMachineSet
 from grouper.service_account import (
     can_manage_service_account,
     create_service_account,
@@ -262,3 +265,70 @@ def test_service_account_fe_perms(session, standard_graph, http_client, base_url
     graph.update_from_db(session)
     metadata = graph.get_user_details("service@a.co")
     assert metadata["permissions"] == []
+
+
+class MachineSetPlugin(BasePlugin):
+    """Test plugin that rejects some machine sets."""
+
+    def check_machine_set(self, name, machine_set):
+        # type: (str, str) -> None
+        if "okay" not in machine_set:
+            raise PluginRejectedMachineSet("{} has invalid machine set".format(name))
+
+
+@pytest.mark.gen_test
+def test_machine_set_plugin(session, standard_graph, http_client, base_url):
+    graph = standard_graph
+    admin = "zorkian@a.co"
+    grouper.plugin.Plugins = [MachineSetPlugin()]
+
+    # Edit the metadata of an existing service account.  This should fail (although return 200)
+    # including the appropriate error.
+    update = {
+        "description": "some service account",
+        "machine_set": "not valid",
+    }
+    fe_url = url(base_url, "/groups/team-sre/service/service@a.co/edit")
+    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": admin},
+            body=urlencode(update))
+    assert resp.code == 200
+    assert "service@a.co has invalid machine set" in resp.body
+    graph.update_from_db(session)
+    metadata = graph.user_metadata["service@a.co"]
+    assert metadata["service_account"]["machine_set"] == "some machines"
+
+    # Use a valid machine set, and then this should go through.
+    update["machine_set"] = "is okay"
+    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": admin},
+            body=urlencode(update))
+    assert resp.code == 200
+    graph.update_from_db(session)
+    metadata = graph.user_metadata["service@a.co"]
+    assert metadata["service_account"]["machine_set"] == "is okay"
+
+    # Try creating a new service account with an invalid machine set.
+    data = {
+        "name": "other@svc.localhost",
+        "description": "some other service account",
+        "machine_set": "not valid",
+    }
+    fe_url = url(base_url, "/groups/team-sre/service/create")
+    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": admin},
+            body=urlencode(data))
+    assert resp.code == 200
+    assert "other@svc.localhost has invalid machine set" in resp.body
+    graph.update_from_db(session)
+    assert "other@svc.localhost" not in graph.users
+
+    # But this should go through with a valid machine set.
+    data["machine_set"] = "is okay"
+    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": admin},
+            body=urlencode(data))
+    assert resp.code == 200
+    graph.update_from_db(session)
+    metadata = graph.user_metadata["other@svc.localhost"]
+    assert metadata["service_account"]["description"] == "some other service account"
+    assert metadata["service_account"]["machine_set"] == "is okay"
+
+    # Reset for any subsequent tests.
+    grouper.plugin.Plugins.pop()

@@ -4,6 +4,7 @@ from fixtures import graph, groups, permissions, session, standard_graph, users 
 from fixtures import async_server, browser  # noqa: F401
 from fixtures import fe_app as app  # noqa: F401
 from pages import AuditsCreatePage, GroupViewPage
+from plugins import group_ownership_policy
 from url_util import url
 from util import add_member
 
@@ -34,4 +35,4 @@ def test_remove_last_owner_via_audit(async_server, browser, users, groups, sessi
     audit_modal.confirm()
 
     assert page.current_url.endswith("/groups/audited-team")
-    assert page.has_text("You can't remove the last permanent owner of a group")
+    assert page.has_text(group_ownership_policy.EXCEPTION_MESSAGE)

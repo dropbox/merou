@@ -6,6 +6,8 @@ from grouper.models.group_edge import GROUP_EDGE_ROLES, OWNER_ROLE_INDICES, Grou
 from grouper.models.user import User
 from grouper.plugin import BasePlugin, PluginException
 
+EXCEPTION_MESSAGE = "You can't remove the last permanent owner of a group"
+
 
 class GroupOwnershipPolicyViolation(PluginException):
     """This exception is raised when trying to remove the last owner of a group."""
@@ -28,7 +30,7 @@ def _validate_not_last_permanent_owner(session, group, member):
     perm_owner_usernames = [user[0] for user in perm_owners]
 
     if perm_owner_usernames == [member.username]:
-        raise GroupOwnershipPolicyViolation("You can't remove the last permanent owner of a group")
+        raise GroupOwnershipPolicyViolation(EXCEPTION_MESSAGE)
 
 
 def _get_permanently_owned_groups_by_user(session, user):

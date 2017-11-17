@@ -2,6 +2,7 @@ from fixtures import graph, groups, permissions, session, standard_graph, users 
 from fixtures import async_server, browser  # noqa: F401
 from fixtures import fe_app as app  # noqa: F401
 from pages import UserViewPage
+from plugins import group_ownership_policy
 from url_util import url
 
 
@@ -17,4 +18,4 @@ def test_disable_last_owner(async_server, browser):
     modal.confirm()
 
     assert page.current_url.endswith("/users/gary@a.co")
-    assert page.has_text("You can't remove the last permanent owner of a group")
+    assert page.has_text(group_ownership_policy.EXCEPTION_MESSAGE)

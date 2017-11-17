@@ -6,6 +6,7 @@ from fixtures import fe_app as app  # noqa: F401
 from grouper.role_user import create_role_user
 from pages import (GroupEditMemberPage, GroupViewPage, GroupsViewPage, NoSuchElementException,
     RoleUserViewPage)
+from plugins import group_ownership_policy
 from url_util import url
 
 
@@ -69,7 +70,7 @@ def test_remove_last_owner(async_server, browser):  # noqa: F811
     row = page.find_member_row("gary@a.co")
     assert row.role == "owner"
 
-    assert page.has_text("You can't remove the last permanent owner of a group")
+    assert page.has_text(group_ownership_policy.EXCEPTION_MESSAGE)
 
 
 def test_expire_last_owner(async_server, browser):  # noqa: F811
@@ -88,7 +89,7 @@ def test_expire_last_owner(async_server, browser):  # noqa: F811
     page.submit()
 
     assert page.current_url.endswith("/groups/sad-team/edit/user/zorkian@a.co")
-    assert page.has_text("You can't remove the last permanent owner of a group")
+    assert page.has_text(group_ownership_policy.EXCEPTION_MESSAGE)
 
 
 def test_remove_last_owner_of_service_account(async_server, browser, session, users):  # noqa: F811
@@ -106,4 +107,4 @@ def test_remove_last_owner_of_service_account(async_server, browser, session, us
     modal.confirm()
 
     assert page.current_url.endswith("/service/service@svc.localhost")
-    assert page.has_text("You can't remove the last permanent owner of a group")
+    assert page.has_text(group_ownership_policy.EXCEPTION_MESSAGE)

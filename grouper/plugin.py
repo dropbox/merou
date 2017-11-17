@@ -46,6 +46,14 @@ class PluginException(Exception):
     pass
 
 
+class PluginRejectedGroupMembershipUpdate(PluginException):
+    pass
+
+
+class PluginRejectedDisablingUser(PluginException):
+    pass
+
+
 class BasePlugin(object):
     def user_created(self, user):
         # type: (User) -> None
@@ -128,6 +136,9 @@ class BasePlugin(object):
             group: affected group
             member: affected User or Group
             updates: the updates to the membership (active, expiration, role)
+
+        Raises:
+            PluginRejectedGroupMembershipUpdate: if the plugin rejects the update
         """
         pass
 
@@ -139,5 +150,8 @@ class BasePlugin(object):
         Args:
             session: database session
             user: User to be disabled
+
+        Raises:
+            PluginRejectedDisablingUser: if the plugin rejects the change
         """
         pass

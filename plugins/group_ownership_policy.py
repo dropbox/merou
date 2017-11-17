@@ -4,17 +4,13 @@ from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.group import Group
 from grouper.models.group_edge import GROUP_EDGE_ROLES, OWNER_ROLE_INDICES, GroupEdge
 from grouper.models.user import User
-from grouper.plugin import BasePlugin, PluginException
+from grouper.plugin import (BasePlugin, PluginRejectedGroupMembershipUpdate,
+    PluginRejectedDisablingUser)
 
 EXCEPTION_MESSAGE = "You can't remove the last permanent owner of a group"
 
 
-class GroupOwnershipPolicyViolation(PluginException):
-    """This exception is raised when trying to remove the last owner of a group."""
-    pass
-
-
-def _validate_not_last_permanent_owner(session, group, member):
+def _is_last_permanent_owner(session, group, member):
     perm_owners = session.query(
         label("name", User.username)
     ).filter(
@@ -29,8 +25,7 @@ def _validate_not_last_permanent_owner(session, group, member):
 
     perm_owner_usernames = [user[0] for user in perm_owners]
 
-    if perm_owner_usernames == [member.username]:
-        raise GroupOwnershipPolicyViolation(EXCEPTION_MESSAGE)
+    return perm_owner_usernames == [member.username]
 
 
 def _get_permanently_owned_groups_by_user(session, user):
@@ -64,11 +59,12 @@ class GroupOwnershipPolicyPlugin(BasePlugin):
         if "active" in updates and not updates["active"]:
             check_permanent_owners = True
 
-        if check_permanent_owners:
-            _validate_not_last_permanent_owner(session, group, member)
+        if check_permanent_owners and _is_last_permanent_owner(session, group, member):
+            raise PluginRejectedGroupMembershipUpdate(EXCEPTION_MESSAGE)
 
     def will_disable_user(self, session, user):
         groups = _get_permanently_owned_groups_by_user(session, user)
 
         for group in groups:
-            _validate_not_last_permanent_owner(session, group, user)
+            if _is_last_permanent_owner(session, group, user):
+                raise PluginRejectedDisablingUser(EXCEPTION_MESSAGE)

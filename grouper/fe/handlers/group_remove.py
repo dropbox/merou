@@ -2,7 +2,7 @@ from grouper.fe.forms import GroupRemoveForm
 from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
-from grouper.plugin import PluginException
+from grouper.plugin import PluginRejectedGroupMembershipUpdate
 from grouper.role_user import get_role_user, is_role_user
 from grouper.user import get_user_or_group
 from grouper.user_group import user_can_manage_group
@@ -54,7 +54,7 @@ class GroupRemove(GrouperHandler):
             AuditLog.log(self.session, self.current_user.id, 'remove_from_group',
                          '{} was removed from the group.'.format(removed_member.name),
                          on_group_id=group.id, on_user_id=removed_member.id)
-        except PluginException as e:
+        except PluginRejectedGroupMembershipUpdate as e:
             alert = Alert("danger", str(e))
 
             if role_user:

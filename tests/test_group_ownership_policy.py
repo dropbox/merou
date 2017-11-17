@@ -4,8 +4,9 @@ from mock import patch
 import pytest
 
 from fixtures import groups, session, users  # noqa
+from grouper.plugin import PluginRejectedGroupMembershipUpdate, PluginRejectedDisablingUser
 from grouper.user import disable_user
-from plugins.group_ownership_policy import GroupOwnershipPolicyViolation, GroupOwnershipPolicyPlugin
+from plugins.group_ownership_policy import GroupOwnershipPolicyPlugin
 from util import add_member, revoke_member
 
 
@@ -28,7 +29,7 @@ def test_cant_revoke_last_owner(get_plugins, session, groups, users):
     session.commit()
     assert len(group.my_owners()) == 1
 
-    with pytest.raises(GroupOwnershipPolicyViolation):
+    with pytest.raises(PluginRejectedGroupMembershipUpdate):
         revoke_member(group, second_owner)
 
     assert len(group.my_owners()) == 1
@@ -50,7 +51,7 @@ def test_cant_revoke_last_npowner(get_plugins, session, groups, users):
 
     session.commit()
 
-    with pytest.raises(GroupOwnershipPolicyViolation):
+    with pytest.raises(PluginRejectedGroupMembershipUpdate):
         revoke_member(group, second_owner)
 
 
@@ -67,7 +68,7 @@ def test_cant_revoke_last_permanent_owner(get_plugins, groups, users):
     add_member(group, first_owner, role="owner", expiration=expiration)
     add_member(group, second_owner, role="owner")
 
-    with pytest.raises(GroupOwnershipPolicyViolation):
+    with pytest.raises(PluginRejectedGroupMembershipUpdate):
         revoke_member(group, second_owner)
 
 
@@ -82,7 +83,7 @@ def test_cant_expire_last_owner(get_plugins, groups, users):
 
     add_member(group, owner, role="owner")
 
-    with pytest.raises(GroupOwnershipPolicyViolation):
+    with pytest.raises(PluginRejectedGroupMembershipUpdate):
         group.edit_member(owner, owner, "Unit Testing", expiration=expiration)
 
 
@@ -95,7 +96,7 @@ def test_cant_demote_last_owner(get_plugins, groups, users):
 
     add_member(group, owner, role="owner")
 
-    with pytest.raises(GroupOwnershipPolicyViolation):
+    with pytest.raises(PluginRejectedGroupMembershipUpdate):
         group.edit_member(owner, owner, "Unit Testing", role="member")
 
 
@@ -124,7 +125,7 @@ def test_cant_disable_last_owner(get_plugins, session, groups, users):
 
     add_member(group, owner, role="owner")
 
-    with pytest.raises(GroupOwnershipPolicyViolation):
+    with pytest.raises(PluginRejectedDisablingUser):
         disable_user(session, owner)
 
 

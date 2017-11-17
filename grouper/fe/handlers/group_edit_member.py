@@ -8,7 +8,7 @@ from grouper.models.comment import OBJ_TYPES
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
 from grouper.models.user import User
-from grouper.plugin import PluginException
+from grouper.plugin import PluginRejectedGroupMembershipUpdate
 from grouper.user import user_role
 
 
@@ -120,7 +120,7 @@ class GroupEditMember(GrouperHandler):
         try:
             group.edit_member(self.current_user, user_or_group, form.data["reason"],
                               role=form.data["role"], expiration=expiration)
-        except (InvalidRoleForMember, PluginException) as e:
+        except (InvalidRoleForMember, PluginRejectedGroupMembershipUpdate) as e:
             return self.render(
                 "group-edit-member.html", form=form, group=group, member=member, edge=edge,
                 alerts=[Alert('danger', e.message)]

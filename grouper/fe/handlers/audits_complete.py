@@ -5,7 +5,7 @@ from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog, AuditLogCategory
 from grouper.models.audit_member import AUDIT_STATUS_CHOICES
-from grouper.plugin import PluginException
+from grouper.plugin import PluginRejectedGroupMembershipUpdate
 from grouper.user_permissions import user_has_permission
 
 
@@ -57,7 +57,7 @@ class AuditsComplete(GrouperHandler):
                                  'Removed membership in audit: {}'.format(member.member.name),
                                  on_group_id=audit.group.id, on_user_id=member.member.id,
                                  category=AuditLogCategory.audit)
-        except PluginException as e:
+        except PluginRejectedGroupMembershipUpdate as e:
             alert = Alert("danger", str(e))
             return self.redirect('/groups/{}'.format(audit.group.name), alerts=[alert])
 

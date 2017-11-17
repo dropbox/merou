@@ -14,7 +14,7 @@ from grouper.models.base.session import Session  # noqa
 from grouper.models.group import Group
 from grouper.models.user_token import UserToken  # noqa: HAX(herb) workaround user -> user_token dep
 from grouper.models.user import User
-from grouper.plugin import PluginException
+from grouper.plugin import PluginRejectedGroupMembershipUpdate
 
 
 @ensure_valid_groupname
@@ -77,7 +77,7 @@ def mutate_group_command(session, group, args):
                     '{} manually left via grouper-ctl'.format(username),
                     on_group_id=group.id)
                 session.commit()
-            except PluginException as e:
+            except PluginRejectedGroupMembershipUpdate as e:
                 logging.error(e.message)
 
 

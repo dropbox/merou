@@ -36,6 +36,58 @@ def test_users(users, http_client, base_url):
 
 
 @pytest.mark.gen_test
+def test_multi_users(users, http_client, base_url):
+
+    def make_url(*usernames):
+        query_args = urlencode({'username': usernames}, doseq=True)
+
+        return url(base_url, '/multi/users?{}'.format(query_args))
+
+    # Test case when no usernames are provided
+    api_url = make_url()
+    resp = yield http_client.fetch(api_url)
+    body = json.loads(resp.body)
+
+    assert resp.code == 200
+    assert body["status"] == "ok"
+    # Service Accounts should be included
+    assert sorted(body["data"].iterkeys()) == sorted(users)
+
+    # Test case when only valid usernames are provided
+    api_url = make_url('tyleromeara@a.co', 'gary@a.co', 'role@a.co')
+    resp = yield http_client.fetch(api_url)
+    body = json.loads(resp.body)
+
+    assert resp.code == 200
+    assert body["status"] == "ok"
+    # Service Accounts should be included
+    assert sorted(body["data"].iterkeys()) == ['gary@a.co', 'role@a.co', 'tyleromeara@a.co']
+    # Verify that we return the same data as the single user endpoint
+    for username, data in body["data"].iteritems():
+        r = yield http_client.fetch(url(base_url, '/users/{}'.format(username)))
+        rbody = json.loads(r.body)
+        assert data == rbody["data"]
+
+    # Ensure that nonexistent usernames are ignored
+    api_url = make_url('tyleromeara@a.co', 'gary@a.co', 'doesnotexist@a.co')
+    resp = yield http_client.fetch(api_url)
+    body = json.loads(resp.body)
+
+    assert resp.code == 200
+    assert body["status"] == "ok"
+    assert sorted(body["data"].iterkeys()) == ['gary@a.co', 'tyleromeara@a.co']
+
+    # Test when only nonexistent usernames are given
+    api_url = make_url('doesnotexist@a.co', 'doesnotexist2@a.co')
+    resp = yield http_client.fetch(api_url)
+    body = json.loads(resp.body)
+
+    assert resp.code == 200
+    assert body["status"] == "ok"
+    assert sorted(body["data"].iterkeys()) == []
+
+
+@pytest.mark.gen_test
 def test_service_accounts(users, http_client, base_url):
     api_url = url(base_url, '/service_accounts')
     resp = yield http_client.fetch(api_url)

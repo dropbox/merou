@@ -1,6 +1,7 @@
 from contextlib import closing
 from datetime import datetime, timedelta
 import logging
+import thread
 from threading import Thread
 from time import sleep
 
@@ -147,6 +148,8 @@ class BackgroundThread(Thread):
                 stats.set_gauge("successful-background-update", 0)
                 stats.set_gauge("failed-background-update", 1)
                 self.capture_exception()
+                self.logger.exception("Unexpected exception occurred in background thread.")
+                thread.interrupt_main()
                 raise
 
             sleep(60)

@@ -1,9 +1,16 @@
 import logging
 
+from typing import TYPE_CHECKING
+
 from grouper.models.counter import Counter
 from grouper.models.group_service_accounts import GroupServiceAccount
 from grouper.models.service_account import ServiceAccount
 from grouper.models.user import User
+
+if TYPE_CHECKING:
+    from typing import List  # noqa
+    from grouper.models.group import Group  # noqa
+    from grouper.models.session import Session  # noqa
 
 
 def add_service_account(session, group, service_account):

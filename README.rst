@@ -1,20 +1,23 @@
 =======
-grouper
+merou
 =======
 
-.. image:: https://travis-ci.org/dropbox/grouper.png?branch=master
+.. image:: https://travis-ci.org/dropbox/merou.png?branch=master
     :alt: Build Status
-    :target: https://travis-ci.org/dropbox/grouper
+    :target: https://travis-ci.org/dropbox/merou
 
 
 Description
 -----------
 
-Grouper is an application to allow users to create and manage
+Merou is an application to allow users to create and manage
 memberships to their own groups.
 
-**Warning**: This project is still very much in flux and likely
-to have schema changes that will need to be manually applied.
+**Note**: We recently renamed the project to avoid 
+`a namespace conflict <https://github.com/Internet2/grouper>`_,
+but it isn't reflected in the codebase yet.
+
+To get updates about Merou, `join our mailing list <https://goo.gl/forms/mbw70IQ26Mj188pi1>`_.
 
 Installation
 ------------
@@ -27,7 +30,7 @@ On Debian-based systems:
 .. code:: bash
 
     apt-get install libmysqlclient-dev libpython2.7-dev
-    pip install -e git+https://github.com/dropbox/grouper#egg=grouper
+    pip install -e git+https://github.com/dropbox/merou#egg=grouper
 
 Next you need to configure grouper to find a SQL-style backing database
 and stand up processes to serve the read-write web UI and read-only

@@ -54,8 +54,8 @@ def main(sys_argv=sys.argv, start_config_thread=True):
     log_level = get_loglevel(args)
     logging.basicConfig(level=log_level, format=settings.log_format)
 
-    if settings["plugin_dir"]:
-        load_plugins(settings["plugin_dir"], service_name="grouper-ctl")
+    if settings.plugin_dir:
+        load_plugins(settings.plugin_dir, settings.plugin_module_paths, service_name="grouper-ctl")
 
     if log_level < 0:
         sa_log.setLevel(logging.INFO)

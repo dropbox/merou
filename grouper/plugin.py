@@ -11,8 +11,6 @@ from typing import TYPE_CHECKING
 
 from annex import Annex
 
-from grouper.settings import settings
-
 if TYPE_CHECKING:
     from ssl import SSLContext  # noqa
     from typing import Any, Dict, List, Union  # noqa
@@ -37,8 +35,8 @@ class PluginsAlreadyLoaded(PluginException):
     """`load_plugins()` called twice."""
 
 
-def load_plugins(plugin_dir, service_name):
-    # type: (str, str) -> None
+def load_plugins(plugin_dir, plugin_module_paths, service_name):
+    # type: (str, List[str], str) -> None
     """Load plugins from a directory"""
     global Plugins
     if Plugins:
@@ -53,23 +51,25 @@ def load_plugins(plugin_dir, service_name):
         plugin_dirs = []
 
     Plugins = Annex(BasePlugin, plugin_dirs, raise_exceptions=True,
-            additional_plugin_callback=load_plugin_modules)
+            additional_plugin_callback=load_plugin_modules(plugin_module_paths))
 
     for plugin in Plugins:
         plugin.configure(service_name)
 
 
-def load_plugin_modules():
-    plugins = []
-    if settings['plugin_module_paths']:
-        for module_path in settings['plugin_module_paths']:
-            module = import_module(module_path)
-            for name in dir(module):
-                obj = getattr(module, name)
-                if inspect.isclass(obj) and issubclass(obj, BasePlugin) and obj != BasePlugin:
-                    plugins.append(obj)
+def load_plugin_modules(plugin_module_paths):
+    def callback():
+        plugins = []
+        if plugin_module_paths:
+            for module_path in plugin_module_paths:
+                module = import_module(module_path)
+                for name in dir(module):
+                    obj = getattr(module, name)
+                    if inspect.isclass(obj) and issubclass(obj, BasePlugin) and obj != BasePlugin:
+                        plugins.append(obj)
 
-    return plugins
+        return plugins
+    return callback
 
 
 def get_plugins():

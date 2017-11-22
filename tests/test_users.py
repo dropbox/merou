@@ -4,15 +4,20 @@ import pytest
 
 from tornado.httpclient import HTTPError
 
+import grouper.plugin
+
 from fixtures import fe_app as app
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from grouper.constants import USER_ADMIN
+from grouper.models.permission import Permission
+from grouper.models.user import User
 from grouper.models.user_token import UserToken
+from grouper.plugin import BasePlugin
+from grouper.role_user import create_role_user
 from grouper.user_metadata import set_user_metadata, get_user_metadata
 from grouper.user_token import add_new_user_token, disable_user_token
 from url_util import url
 from util import get_groups, grant_permission
-from grouper.models.permission import Permission
 
 
 def test_basic_metadata(standard_graph, session, users, groups, permissions):  # noqa
@@ -154,3 +159,36 @@ def test_user_disable(session, graph, users, user_admin_perm_to_auditors, http_c
 
     graph.update_from_db(session)
     assert len(get_groups(graph, username)) == 0, 'all group membership should be removed'
+
+
+class UserCreatedPlugin(BasePlugin):
+    """Test plugin for checking user_created calls."""
+
+    def __init__(self):
+        # type: () -> None
+        self.calls = 0
+        self.expected_service_account = False
+
+    def user_created(self, user, is_service_account=False):
+        # type: (User, bool) -> None
+        print "Called for", user
+        assert is_service_account == self.expected_service_account
+        self.calls += 1
+
+
+def test_user_created_plugin(session, users, groups):
+    """Test calls to the user_created plugin."""
+    plugin = UserCreatedPlugin()
+    grouper.plugin.Plugins = [plugin]
+
+    # Create a regular user.  The service account flag should be false, and the plugin should be
+    # called.
+    user, created = User.get_or_create(session, username="test@a.co")
+    assert created == True
+    assert plugin.calls == 1
+
+    # Create a role user.  This should cause another plugin call and the service account flag
+    # should now be true.
+    plugin.expected_service_account = True
+    create_role_user(session, user, "testrole@a.co", "description", "canask")
+    assert plugin.calls == 2

@@ -32,13 +32,13 @@ class ServiceAccount(Model):
     id = Column(Integer, primary_key=True)
     description = Column(Text)
     machine_set = Column(Text)
-    user_pk = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     user = relationship("User", uselist=False, backref=backref("service_account", uselist=False))
 
     def __repr__(self):
         # type: () -> str
-        return "<%s: id=%s user_pk=%s>" % (
-            type(self).__name__, self.id, self.user_pk)
+        return "<%s: id=%s user_id=%s>" % (
+            type(self).__name__, self.id, self.user_id)
 
     @staticmethod
     def get(session, pk=None, name=None):
@@ -47,7 +47,7 @@ class ServiceAccount(Model):
             return session.query(ServiceAccount).filter_by(id=pk).scalar()
         if name is not None:
             return session.query(ServiceAccount).filter(
-                ServiceAccount.user_pk == User.id,
+                ServiceAccount.user_id == User.id,
                 User.username == name,
             ).scalar()
         return None

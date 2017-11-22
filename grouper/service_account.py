@@ -61,7 +61,7 @@ def create_service_account(session, actor, name, description, machine_set, owner
     add_service_account(session, owner, service_account)
 
     AuditLog.log(session, actor.id, "create_service_account", "Created new service account.",
-                 on_group_id=owner.id, on_user_id=service_account.user_pk)
+                 on_group_id=owner.id, on_user_id=service_account.user_id)
 
     return service_account
 
@@ -114,7 +114,7 @@ def disable_service_account(session, actor, service_account):
         permission.delete(session)
 
     AuditLog.log(session, actor.id, "disable_service_account", "Disabled service account.",
-                 on_group_id=owner_id, on_user_id=service_account.user_pk)
+                 on_group_id=owner_id, on_user_id=service_account.user_id)
 
     Counter.incr(session, "updates")
     session.commit()
@@ -127,7 +127,7 @@ def enable_service_account(session, actor, service_account, owner):
     add_service_account(session, owner, service_account)
 
     AuditLog.log(session, actor.id, "enable_service_account", "Enabled service account.",
-                 on_group_id=owner.id, on_user_id=service_account.user_pk)
+                 on_group_id=owner.id, on_user_id=service_account.user_id)
 
     Counter.incr(session, "updates")
     session.commit()
@@ -140,7 +140,7 @@ def service_account_permissions(session, service_account):
         Permission.id == ServiceAccountPermissionMap.permission_id,
         ServiceAccountPermissionMap.service_account_id == service_account.id,
         ServiceAccountPermissionMap.service_account_id == ServiceAccount.id,
-        ServiceAccount.user_pk == User.id,
+        ServiceAccount.user_id == User.id,
         User.enabled == True,
     )
     out = []
@@ -161,7 +161,7 @@ def all_service_account_permissions(session):
     permissions = session.query(Permission, ServiceAccountPermissionMap).filter(
         Permission.id == ServiceAccountPermissionMap.permission_id,
         ServiceAccountPermissionMap.service_account_id == ServiceAccount.id,
-        ServiceAccount.user_pk == User.id,
+        ServiceAccount.user_id == User.id,
         User.enabled == True,
     )
     for permission in permissions:

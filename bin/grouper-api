@@ -3,7 +3,6 @@
 import argparse
 from contextlib import closing
 import logging
-import os
 import sys
 
 import tornado.httpserver
@@ -18,7 +17,7 @@ from grouper.error_reporting import get_sentry_client, SentryProxy, setup_signal
 from grouper.fe.settings import Settings
 from grouper.graph import Graph, GroupGraph
 from grouper.models.base.session import get_db_engine, Session
-from grouper.plugin import load_plugins
+from grouper.plugin import load_plugins, PluginsDirectoryDoesNotExist
 from grouper.setup import build_arg_parser, setup_logging
 from grouper.util import get_database_url
 
@@ -50,9 +49,11 @@ def main(args, sentry_client):
     log_level = logging.getLevelName(logging.getLogger().level)
     logging.info("begin. log_level={}".format(log_level))
 
-    if settings.plugin_dir:
-        assert os.path.exists(settings.plugin_dir), "Plugin directory does not exist"
-        load_plugins(settings.plugin_dir, service_name="grouper_api")
+    try:
+        load_plugins(settings.plugin_dir, settings.plugin_module_paths, service_name="grouper_api")
+    except PluginsDirectoryDoesNotExist as e:
+        logging.fatal("Plugin directory does not exist: {}".format(e))
+        sys.exit(1)
 
     # setup database
     logging.debug("configure database session")

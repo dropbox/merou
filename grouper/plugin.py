@@ -4,6 +4,9 @@ plugin.py
 Base plugin for Grouper plugins. These are plugins that can be written to extend Grouper
 functionality.
 """
+from importlib import import_module
+import inspect
+import os
 from typing import TYPE_CHECKING
 
 from annex import Annex
@@ -20,19 +23,53 @@ if TYPE_CHECKING:
 Plugins = []  # type: List[BasePlugin]
 
 
-class PluginsAlreadyLoaded(Exception):
+class PluginException(Exception):
     pass
 
 
-def load_plugins(plugin_dir, service_name):
-    # type: (str, str) -> None
+class PluginsDirectoryDoesNotExist(PluginException):
+    """The specified plugin direcotry does not exist."""
+
+
+class PluginsAlreadyLoaded(PluginException):
+    """`load_plugins()` called twice."""
+
+
+def load_plugins(plugin_dir, plugin_module_paths, service_name):
+    # type: (str, List[str], str) -> None
     """Load plugins from a directory"""
     global Plugins
     if Plugins:
         raise PluginsAlreadyLoaded("Plugins already loaded; can't load twice!")
-    Plugins = Annex(BasePlugin, [plugin_dir], raise_exceptions=True)
+
+    if plugin_dir:
+        if not os.path.exists(plugin_dir):
+            raise PluginsDirectoryDoesNotExist("{} doesn't exist".format(plugin_dir))
+
+        plugin_dirs = [plugin_dir]
+    else:
+        plugin_dirs = []
+
+    Plugins = Annex(BasePlugin, plugin_dirs, raise_exceptions=True,
+            additional_plugin_callback=load_plugin_modules(plugin_module_paths))
+
     for plugin in Plugins:
         plugin.configure(service_name)
+
+
+def load_plugin_modules(plugin_module_paths):
+    def callback():
+        plugins = []
+        if plugin_module_paths:
+            for module_path in plugin_module_paths:
+                module = import_module(module_path)
+                for name in dir(module):
+                    obj = getattr(module, name)
+                    if inspect.isclass(obj) and issubclass(obj, BasePlugin) and obj != BasePlugin:
+                        plugins.append(obj)
+
+        return plugins
+    return callback
 
 
 def get_plugins():
@@ -40,10 +77,6 @@ def get_plugins():
     """Get a list of loaded plugins."""
     global Plugins
     return list(Plugins)
-
-
-class PluginException(Exception):
-    pass
 
 
 class PluginRejectedGroupMembershipUpdate(PluginException):

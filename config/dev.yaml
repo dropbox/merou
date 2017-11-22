@@ -20,7 +20,12 @@ common:
     # Directory for plugins. If set, load plugins from this directory. Plugins can affect the
     # behavior of Grouper.
     # Type: str
-    plugin_dir: "plugins"
+    plugin_dir: ""
+
+    # Module paths for plugins to load from.
+    # Type: list of str
+    plugin_module_paths:
+    - plugins.group_ownership_policy
 
     # Directory for one-offs. If set, load oneoffs from this directory which
     # are run via grouper-ctl.

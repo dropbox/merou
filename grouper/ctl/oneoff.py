@@ -56,7 +56,7 @@ def key_value_arg_type(arg):
 def oneoff_command(args):
     session = make_session()
 
-    oneoffs = Annex(BaseOneOff, [settings["oneoff_dir"]], raise_exceptions=True)
+    oneoffs = Annex(BaseOneOff, settings.oneoff_dirs, raise_exceptions=True)
     for oneoff in oneoffs:
         oneoff.configure(service_name="grouper-ctl")
 

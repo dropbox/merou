@@ -50,7 +50,7 @@ def main(args, sentry_client):
     logging.info("begin. log_level={}".format(log_level))
 
     try:
-        load_plugins(settings.plugin_dir, settings.plugin_module_paths, service_name="grouper_api")
+        load_plugins(settings.plugin_dirs, settings.plugin_module_paths, service_name="grouper_api")
     except PluginsDirectoryDoesNotExist as e:
         logging.fatal("Plugin directory does not exist: {}".format(e))
         sys.exit(1)

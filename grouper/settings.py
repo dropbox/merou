@@ -35,6 +35,13 @@ class Settings(object):
         for key, value in settings.iteritems():
             key = key.lower()
 
+            # TODO(cbguder): Remove backwards compatibility for old keys
+            if key in ["plugin_dir", "oneoff_dir"]:
+                new_key = "%ss".format(key)
+                self.logger.warning("%s is deprecated, please use %s instead", key, new_key)
+                key = new_key
+                value = [value]
+
             # Limit the parts of the config file that can have an effect.
             if key not in self.settings:
                 continue
@@ -96,9 +103,9 @@ settings = Settings({
     "nonauditor_expiration_days": 5,
     "from_addr": "no-reply@grouper.local",
     "log_format": "%(asctime)-15s\t%(levelname)s\t%(message)s",
-    "oneoff_dir": None,
-    "plugin_dir": None,
-    "plugin_module_paths": None,
+    "oneoff_dirs": [],
+    "plugin_dirs": [],
+    "plugin_module_paths": [],
     "restricted_ownership_permissions": None,
     "send_emails": True,
     "sentry_dsn": None,

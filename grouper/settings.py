@@ -98,6 +98,7 @@ settings = Settings({
     "log_format": "%(asctime)-15s\t%(levelname)s\t%(message)s",
     "oneoff_dir": None,
     "plugin_dir": None,
+    "plugin_module_paths": None,
     "restricted_ownership_permissions": None,
     "send_emails": True,
     "sentry_dsn": None,

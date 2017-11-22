@@ -1,15 +1,15 @@
 from grouper.constants import USER_METADATA_SHELL_KEY
 from grouper.fe.util import Alert
 from grouper.graph import NoSuchGroup, NoSuchUser
+from grouper.group_service_account import get_service_accounts
 from grouper.models.audit_member import AUDIT_STATUS_CHOICES
 from grouper.models.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
-from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.permissions import (get_owner_arg_list, get_pending_request_by_group,
     get_requests_by_owner)
 from grouper.public_key import (get_public_key_permissions, get_public_key_tags,
     get_public_keys_of_user)
 from grouper.role_user import can_manage_role_user
-from grouper.service_account import can_manage_service_account
+from grouper.service_account import can_manage_service_account, service_account_permissions
 from grouper.user import (get_log_entries_by_user, user_open_audits, user_requests_aggregate,
     user_role, user_role_index)
 from grouper.user_group import get_groups_by_user
@@ -31,7 +31,7 @@ def get_group_view_template_vars(session, actor, group, graph):
 
     ret["members"] = group.my_members()
     ret["groups"] = group.my_groups()
-    ret["service_accounts"] = group.my_service_accounts()
+    ret["service_accounts"] = get_service_accounts(session, group)
     ret["permissions"] = group_md.get('permissions', [])
 
     ret["permission_requests_pending"] = []
@@ -127,7 +127,7 @@ def get_user_view_template_vars(session, actor, user, graph):
 
     if user.is_service_account:
         service_account = user.service_account
-        ret["permissions"] = ServiceAccountPermissionMap.permissions_for(session, service_account)
+        ret["permissions"] = service_account_permissions(session, service_account)
     else:
         ret["permissions"] = user_md.get('permissions', [])
 

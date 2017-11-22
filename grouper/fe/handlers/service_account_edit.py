@@ -1,10 +1,8 @@
 from grouper.fe.forms import ServiceAccountEditForm
 from grouper.fe.util import GrouperHandler
-from grouper.models.audit_log import AuditLog
-from grouper.models.counter import Counter
 from grouper.models.group import Group
 from grouper.models.service_account import ServiceAccount
-from grouper.service_account import can_manage_service_account
+from grouper.service_account import can_manage_service_account, edit_service_account
 
 
 class ServiceAccountEdit(GrouperHandler):
@@ -43,14 +41,8 @@ class ServiceAccountEdit(GrouperHandler):
                 form=form, alerts=self.get_form_alerts(form.errors)
             )
 
-        service_account.description = form.data["description"]
-        service_account.machine_set = form.data["machine_set"]
-        Counter.incr(self.session, "updates")
-
-        self.session.commit()
-
-        AuditLog.log(self.session, self.current_user.id, "edit_service_account",
-                     "Edited service account.", on_user_id=service_account.user.id)
+        edit_service_account(self.session, self.current_user, service_account,
+                             form.data["description"], form.data["machine_set"])
 
         return self.redirect("/groups/{}/service/{}".format(
             group.name, service_account.user.username))

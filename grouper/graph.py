@@ -16,12 +16,12 @@ from grouper.models.permission import MappedPermission, Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.public_key import PublicKey
 from grouper.models.service_account import ServiceAccount
-from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.models.user import User
 from grouper.models.user_metadata import UserMetadata
 from grouper.models.user_password import UserPassword
 from grouper.public_key import get_all_public_key_tags
 from grouper.role_user import is_role_user
+from grouper.service_account import all_service_account_permissions
 from grouper.util import singleton
 
 MEMBER_TYPE_MAP = {
@@ -116,7 +116,7 @@ class GroupGraph(object):
 
             user_metadata = self._get_user_metadata(session)
             permission_metadata = self._get_permission_metadata(session)
-            service_account_permissions = ServiceAccountPermissionMap.all_permissions(session)
+            service_account_permissions = all_service_account_permissions(session)
             group_metadata = self._get_group_metadata(session, permission_metadata)
             group_service_accounts = self._get_group_service_accounts(session)
             permission_tuples = self._get_permission_tuples(session)
@@ -284,7 +284,7 @@ class GroupGraph(object):
         out = defaultdict(list)
         tuples = session.query(Group, ServiceAccount).filter(
             GroupServiceAccount.group_id == Group.id,
-            GroupServiceAccount.service_account_pk == ServiceAccount.id,
+            GroupServiceAccount.service_account_id == ServiceAccount.id,
         )
         for group, account in tuples:
             out[group.groupname].append(account.user.username)

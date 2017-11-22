@@ -10,17 +10,30 @@ Account abstraction.  A User that's just the account of a ServiceAccount is flag
 service_account boolean field.
 """
 
-from typing import Union  # noqa
+from collections import defaultdict, namedtuple
+from typing import Dict, List, Union  # noqa
 
-from grouper.group import add_service_account
+from sqlalchemy.exc import IntegrityError
+
+from grouper.group_service_account import add_service_account
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.session import Session  # noqa
 from grouper.models.counter import Counter
 from grouper.models.group import Group  # noqa
+from grouper.models.permission import Permission
 from grouper.models.service_account import ServiceAccount
 from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.models.user import User
 from grouper.user import disable_user, enable_user
+
+# A single service account permission.
+ServiceAccountPermission = namedtuple("ServiceAccountPermission",
+    ["permission", "argument", "granted_on", "mapping_id"])
+
+
+class DuplicateServiceAccount(Exception):
+    """Creating a service account failed because it duplicates an existing user."""
+    pass
 
 
 def create_service_account(session, actor, name, description, machine_set, owner):
@@ -30,21 +43,40 @@ def create_service_account(session, actor, name, description, machine_set, owner
     Also adds the service account to the list of accounts managed by the owning group.
 
     Throws:
-        IntegrityError: if a user with the given name already exists
+        DuplicateServiceAccount: if a user with the given name already exists
     """
     user = User(username=name, is_service_account=True)
     service_account = ServiceAccount(user=user, description=description, machine_set=machine_set)
 
-    user.add(session)
-    service_account.add(session)
-    session.flush()
+    try:
+        user.add(session)
+        service_account.add(session)
+        session.flush()
+    except IntegrityError:
+        session.rollback()
+        raise DuplicateServiceAccount("User {} already exists".format(name))
 
+    # Counter is updated here and the session is committed, so we don't need an additional update
+    # or commit for the account creation.
     add_service_account(session, owner, service_account)
 
     AuditLog.log(session, actor.id, "create_service_account", "Created new service account.",
                  on_group_id=owner.id, on_user_id=service_account.user_pk)
 
     return service_account
+
+
+def edit_service_account(session, actor, service_account, description, machine_set):
+    # type: (Session, User, ServiceAccount, str, str) -> None
+    """Update the description and machine set of a service account."""
+    service_account.description = description
+    service_account.machine_set = machine_set
+    Counter.incr(session, "updates")
+
+    session.commit()
+
+    AuditLog.log(session, actor.id, "edit_service_account", "Edited service account.",
+                 on_user_id=service_account.user.id)
 
 
 def is_service_account(session, user):
@@ -99,3 +131,44 @@ def enable_service_account(session, actor, service_account, owner):
 
     Counter.incr(session, "updates")
     session.commit()
+
+
+def service_account_permissions(session, service_account):
+    # type: (Session, ServiceAccount) -> List[ServiceAccountPermission]
+    """Return the permissions of a service account."""
+    permissions = session.query(Permission, ServiceAccountPermissionMap).filter(
+        Permission.id == ServiceAccountPermissionMap.permission_id,
+        ServiceAccountPermissionMap.service_account_id == service_account.id,
+        ServiceAccountPermissionMap.service_account_id == ServiceAccount.id,
+        ServiceAccount.user_pk == User.id,
+        User.enabled == True,
+    )
+    out = []
+    for permission in permissions:
+        out.append(ServiceAccountPermission(
+            permission=permission[0].name,
+            argument=permission[1].argument,
+            granted_on=permission[1].granted_on,
+            mapping_id=permission[1].id
+        ))
+    return out
+
+
+def all_service_account_permissions(session):
+    # type: (Session) -> Dict[str, List[ServiceAccountPermission]]
+    """Return a dict of service account names to their permissions."""
+    out = defaultdict(list)  # type: Dict[str, List[ServiceAccountPermission]]
+    permissions = session.query(Permission, ServiceAccountPermissionMap).filter(
+        Permission.id == ServiceAccountPermissionMap.permission_id,
+        ServiceAccountPermissionMap.service_account_id == ServiceAccount.id,
+        ServiceAccount.user_pk == User.id,
+        User.enabled == True,
+    )
+    for permission in permissions:
+        out[permission[1].service_account.user.username].append(ServiceAccountPermission(
+            permission=permission[0].name,
+            argument=permission[1].argument,
+            granted_on=permission[1].granted_on,
+            mapping_id=permission[1].id,
+        ))
+    return out

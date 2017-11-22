@@ -8,6 +8,7 @@ from tornado.httpclient import HTTPError
 from fixtures import fe_app as app
 from fixtures import graph, groups, permissions, session, standard_graph, users  # noqa
 from grouper.constants import USER_ADMIN
+from grouper.group_service_account import get_service_accounts
 from grouper.models.base.session import Session
 from grouper.models.permission import Permission
 from grouper.models.service_account import ServiceAccount
@@ -17,8 +18,10 @@ from grouper.service_account import (
     can_manage_service_account,
     create_service_account,
     disable_service_account,
+    DuplicateServiceAccount,
     enable_service_account,
     is_service_account,
+    service_account_permissions,
 )
 from url_util import url
 from util import grant_permission
@@ -34,16 +37,15 @@ def test_service_accounts(session, standard_graph, users, groups, permissions):
     assert service_account.user.name == "service@a.co"
     assert service_account.user.enabled == True
     assert service_account.user.is_service_account == True
-    service_accounts = groups["team-sre"].my_service_accounts()
+    service_accounts = get_service_accounts(session, groups["team-sre"])
     assert len(service_accounts) == 1
     assert service_accounts[0].user.name == "service@a.co"
     assert is_service_account(session, service_account.user)
 
     # Duplicates should raise an exception.
-    with pytest.raises(IntegrityError):
+    with pytest.raises(DuplicateServiceAccount):
         create_service_account(
             session, users["zay@a.co"], "service@a.co", "dup", "dup", groups["team-sre"])
-    session.rollback()
 
     # zorkian should be able to manage the account, as should gary, but oliver (not a member of the
     # group) should not.
@@ -71,7 +73,7 @@ def test_service_accounts(session, standard_graph, users, groups, permissions):
     # Diabling the service account should remove the link to the group.
     disable_service_account(session, users["zorkian@a.co"], service_account)
     assert service_account.user.enabled == False
-    assert groups["team-sre"].my_service_accounts() == []
+    assert get_service_accounts(session, groups["team-sre"]) == []
 
     # The user should also be gone from the graph and have its permissions removed.
     graph.update_from_db(session)
@@ -87,8 +89,8 @@ def test_service_accounts(session, standard_graph, users, groups, permissions):
     new_group = groups["security-team"]
     enable_service_account(session, users["zorkian@a.co"], service_account, new_group)
     assert service_account.user.enabled == True
-    assert groups["team-sre"].my_service_accounts() == []
-    service_accounts = new_group.my_service_accounts()
+    assert get_service_accounts(session, groups["team-sre"]) == []
+    service_accounts = get_service_accounts(session, new_group)
     assert len(service_accounts) == 1
     assert service_accounts[0].user.name == "service@a.co"
 
@@ -237,7 +239,7 @@ def test_service_account_fe_perms(session, standard_graph, http_client, base_url
 
     # Find the mapping IDs of the two permissions.
     service_account = ServiceAccount.get(session, name="service@a.co")
-    permissions = ServiceAccountPermissionMap.permissions_for(session, service_account)
+    permissions = service_account_permissions(session, service_account)
 
     # Unrelated people cannot revoke a permission.
     fe_url = url(base_url, "/groups/team-sre/service/service@a.co/revoke/{}".format(

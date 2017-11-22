@@ -1,12 +1,10 @@
 from typing import Optional  # noqa
 
-from sqlalchemy.exc import IntegrityError
-
 from grouper.fe.forms import ServiceAccountCreateForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
 from grouper.models.group import Group
-from grouper.service_account import create_service_account
+from grouper.service_account import create_service_account, DuplicateServiceAccount
 
 
 class ServiceAccountCreate(GrouperHandler):
@@ -44,12 +42,10 @@ class ServiceAccountCreate(GrouperHandler):
         try:
             create_service_account(self.session, self.current_user, form.data["name"],
                 form.data["description"], form.data["machine_set"], group)
-        except IntegrityError:
-            self.session.rollback()
+        except DuplicateServiceAccount:
             form.name.errors.append("A user with name {} already exists".format(form.data["name"]))
             return self.render(
-                "service-account-create.html", form=form,
-                alerts=self.get_form_alerts(form.errors)
+                "service-account-create.html", form=form, alerts=self.get_form_alerts(form.errors)
             )
 
         url = "/groups/{}/service/{}?refresh=yes".format(group.name, form.data["name"])

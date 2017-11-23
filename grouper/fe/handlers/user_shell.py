@@ -6,6 +6,7 @@ from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
 from grouper.role_user import can_manage_role_user
 from grouper.service_account import can_manage_service_account
+from grouper.user_metadata import set_user_metadata
 
 
 class UserShell(GrouperHandler):
@@ -45,9 +46,7 @@ class UserShell(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors),
             )
 
-        user.set_metadata(USER_METADATA_SHELL_KEY, form.data["shell"])
-        user.add(self.session)
-        self.session.commit()
+        set_user_metadata(self.session, user.id, USER_METADATA_SHELL_KEY, form.data["shell"])
 
         AuditLog.log(self.session, self.current_user.id, 'changed_shell',
                      'Changed shell: {}'.format(form.data["shell"]),

@@ -1,5 +1,3 @@
-import logging
-
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, Integer, String
@@ -70,10 +68,3 @@ class User(Model, CommentObjectMixin):
     def is_member(self, members):
         # type: (Iterable[Tuple[str, str]]) -> bool
         return ("User", self.name) in members
-
-    def set_metadata(self, key, value):
-        from grouper.user_metadata import set_user_metadata
-
-        logging.warning("User.set_metadata is deprecated."
-            "Please switch to using grouper.user_metadata.set_user_metadata")
-        set_user_metadata(self.session, self.id, key, value)

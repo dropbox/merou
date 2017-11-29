@@ -25,8 +25,6 @@ class _Model(object):
         instance = cls(**kwargs)
         instance.add(session)
 
-        cls.just_created(instance)
-
         return instance, True
 
     def just_created(self):
@@ -34,6 +32,7 @@ class _Model(object):
 
     def add(self, session):
         session._add(self)
+        self.just_created()
         return self
 
     def delete(self, session):

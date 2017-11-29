@@ -88,8 +88,8 @@ class PluginRejectedDisablingUser(PluginException):
 
 
 class BasePlugin(object):
-    def user_created(self, user):
-        # type: (User) -> None
+    def user_created(self, user, is_service_account=False):
+        # type: (User, bool) -> None
         """Called when a new user is created
 
         When new users enter into Grouper, you might have reason to set metadata on those
@@ -97,6 +97,7 @@ class BasePlugin(object):
 
         Args:
             user: Object of new user.
+            is_service_account: Whether this user is a service account (role user)
 
         Returns:
             The return code of this method is ignored.

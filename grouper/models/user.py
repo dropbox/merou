@@ -1,5 +1,7 @@
 import logging
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, Column, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
@@ -9,6 +11,10 @@ from grouper.models.base.model_base import Model
 from grouper.models.comment import CommentObjectMixin
 from grouper.models.counter import Counter
 from grouper.plugin import get_plugins
+
+if TYPE_CHECKING:
+    from typing import Iterable, Optional, Tuple  # noqa
+    from grouper.models.session import Session  # noqa
 
 
 class User(Model, CommentObjectMixin):
@@ -24,18 +30,22 @@ class User(Model, CommentObjectMixin):
 
     @hybrid_property
     def name(self):
+        # type: () -> str
         return self.username
 
     @property
     def type(self):
+        # type: () -> str
         return "User"
 
     def __repr__(self):
+        # type: () -> str
         return "<%s: id=%s username=%s>" % (
             type(self).__name__, self.id, self.username)
 
     @staticmethod
     def get(session, pk=None, name=None):
+        # type: (Session, Optional[int], Optional[str]) -> Optional[User]
         if pk is not None:
             return session.query(User).filter_by(id=pk).scalar()
         if name is not None:
@@ -43,15 +53,22 @@ class User(Model, CommentObjectMixin):
         return None
 
     def just_created(self):
+        # type: () -> None
+        """Call the user_created plugin on new User creation."""
+        # This is a little weird because the default value of the column isn't applied in the
+        # object at the time this is called, so role_user may be None instead of False.
+        is_service_account = self.role_user is not None and self.role_user
         for plugin in get_plugins():
-            plugin.user_created(self)
+            plugin.user_created(self, is_service_account)
 
     def add(self, session):
+        # type: (Session) -> User
         super(User, self).add(session)
         Counter.incr(session, "updates")
         return self
 
     def is_member(self, members):
+        # type: (Iterable[Tuple[str, str]]) -> bool
         return ("User", self.name) in members
 
     def set_metadata(self, key, value):

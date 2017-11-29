@@ -29,8 +29,8 @@ def test_shell(session, users, http_client, base_url):
 
         user = User.get(session, name=user.username)
 
-        assert (get_user_metadata_by_key(session, user.id, USER_METADATA_SHELL_KEY) is not None,
-            "The user should have shell metadata")
+        assert get_user_metadata_by_key(session, user.id, USER_METADATA_SHELL_KEY) is not None, \
+            "The user should have shell metadata"
         assert (get_user_metadata_by_key(session, user.id, 
                    USER_METADATA_SHELL_KEY).data_value == "/bin/bash")
 
@@ -42,10 +42,10 @@ def test_shell(session, users, http_client, base_url):
 
         user = User.get(session, name=user.username)
 
-        assert (get_user_metadata_by_key(session, user.id, USER_METADATA_SHELL_KEY) is not None,
-            "The user should have shell metadata")
-        assert (get_user_metadata_by_key(session, user.id, 
-                   USER_METADATA_SHELL_KEY).data_value == "/bin/bash")
+        assert get_user_metadata_by_key(session, user.id, USER_METADATA_SHELL_KEY) is not None, \
+            "The user should have shell metadata"
+        assert get_user_metadata_by_key(session, user.id,
+                                        USER_METADATA_SHELL_KEY).data_value == "/bin/bash"
 
         fe_url = url(base_url, '/users/{}/shell'.format(user.username))
         resp = yield http_client.fetch(fe_url, method="POST",
@@ -55,7 +55,7 @@ def test_shell(session, users, http_client, base_url):
 
         user = User.get(session, name=user.username)
 
-        assert (get_user_metadata_by_key(session, user.id, USER_METADATA_SHELL_KEY) is not None,
-            "The user should have shell metadata")
+        assert get_user_metadata_by_key(session, user.id, USER_METADATA_SHELL_KEY) is not None, \
+            "The user should have shell metadata"
         assert (get_user_metadata_by_key(session, user.id, 
                    USER_METADATA_SHELL_KEY).data_value == "/bin/zsh")

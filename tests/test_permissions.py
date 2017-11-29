@@ -200,8 +200,8 @@ def test_permission_grant_to_owners(session, standard_graph, groups, grantable_p
     # make sure get_owner() respect substrings
     res = [o for o, a in get_owner_arg_list(session, perm1, "somesubstring",
             owners_by_arg_by_perm=owners_by_arg_by_perm)]
-    assert (sorted(res) == sorted([groups["all-teams"], groups["team-sre"]]),
-            "should include substring wildcard matches")
+    assert sorted(res) == sorted([groups["all-teams"], groups["team-sre"]]), \
+            "should include substring wildcard matches"
 
     res = [o for o, a in get_owner_arg_list(session, perm1, "othersubstring",
             owners_by_arg_by_perm=owners_by_arg_by_perm)]

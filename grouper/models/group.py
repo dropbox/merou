@@ -182,6 +182,7 @@ class Group(Model, CommentObjectMixin):
             GroupEdge.active == True,
             self.enabled == True,
             User.enabled == True,
+            User.is_service_account == False,
             or_(
                 GroupEdge.expiration > now,
                 GroupEdge.expiration == None

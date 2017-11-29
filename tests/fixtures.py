@@ -15,6 +15,7 @@ from grouper.models.group import Group
 from grouper.models.permission import Permission
 from grouper.models.user import User
 from grouper.permissions import enable_permission_auditing
+from grouper.service_account import create_service_account
 from path_util import src_path, db_url
 from util import add_member, grant_permission
 
@@ -28,7 +29,8 @@ def standard_graph(session, graph, users, groups, permissions):
     |  team-sre             |
     |    * gary (o)         +---------------------------------+
     |    * zay              |                                 |
-    |    * zorkian          |                     +-----------v-----------+
+    |    * zorkian          |                                 |
+    |    * service (s)      |                     +-----------v-----------+
     |                       |                     |                       |
     +-----------------------+                     |  serving-team         |
     +-----------------------+           +--------->    * zorkian (o)      |
@@ -80,7 +82,7 @@ def standard_graph(session, graph, users, groups, permissions):
     +-----------------------+
 
     Arrows denote member of the source in the destination group. (o) for
-    owners, (np) for non-permissioned owners.
+    owners, (np) for non-permissioned owners, (s) for service accounts.
     """
     add_member(groups["team-sre"], users["gary@a.co"], role="owner")
     add_member(groups["team-sre"], users["zay@a.co"])
@@ -125,6 +127,11 @@ def standard_graph(session, graph, users, groups, permissions):
 
     add_member(groups["group-admins"], users["cbguder@a.co"], role="owner")
     grant_permission(groups["group-admins"], permissions[GROUP_ADMIN])
+
+    create_service_account(
+        session, users["zay@a.co"], "service@a.co", "some service account", "some machines",
+        groups["team-sre"]
+    )
 
     session.commit()
     graph.update_from_db(session)

@@ -19,6 +19,7 @@ from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.permission_request import PermissionRequest
 from grouper.models.permission_request_status_change import PermissionRequestStatusChange
+from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.models.tag_permission_map import TagPermissionMap
 from grouper.plugin import get_plugins
 from grouper.user_group import get_groups_by_user
@@ -62,6 +63,31 @@ def grant_permission(session, group_id, permission_id, argument=''):
     assert re.match(ARGUMENT_VALIDATION, argument), 'Permission argument does not match regex.'
 
     mapping = PermissionMap(permission_id=permission_id, group_id=group_id, argument=argument)
+    mapping.add(session)
+
+    Counter.incr(session, "updates")
+
+    session.commit()
+
+
+def grant_permission_to_service_account(session, account, permission, argument=''):
+    """
+    Grant a permission to this service account. This will fail if the (permission, argument) has
+    already been granted to this group.
+
+    Args:
+        session(models.base.session.Session): database session
+        account(ServiceAccount): a ServiceAccount object being granted a permission
+        permission(Permission): a Permission object being granted
+        argument(str): must match constants.ARGUMENT_VALIDATION
+
+    Throws:
+        AssertError if argument does not match ARGUMENT_VALIDATION regex
+    """
+    assert re.match(ARGUMENT_VALIDATION, argument), 'Permission argument does not match regex.'
+
+    mapping = ServiceAccountPermissionMap(
+        permission_id=permission.id, service_account_id=account.id, argument=argument)
     mapping.add(session)
 
     Counter.incr(session, "updates")

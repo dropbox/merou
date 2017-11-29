@@ -5,12 +5,16 @@ _NAME_VALIDATION = r"(?P<{}>[@\-\w\.]+)"
 NAME_VALIDATION = _NAME_VALIDATION.format("name")
 
 # This regex needs to exactly match the above, EXCEPT that the name should be "name2".
-# This is kind of gross. :\
-# TODO(lfaraone): Figure out why this is needed, and then stop needing it.
+# This is kind of gross. :\ We have to do this because the name of the capture group becomes the
+# argument to route handler, named arguments have to be unique, and at least one route (edit
+# member) requires occurrences of the name validation regex.
 NAME2_VALIDATION = _NAME_VALIDATION.format("name2")
 
-# This regex is specifically to validate usernames.
+# These regexes are specifically to validate usernames.  SERVICE_ACCOUNT_VALIDATION is the same as
+# USERNAME_VALIDATION but with a distinct capture group name so that it doesn't conflict with a
+# NAME_VALIDATION regex in the same URL.
 USERNAME_VALIDATION = r"(?P<name>[\w-]+@\w+[\.\w]+)"
+SERVICE_ACCOUNT_VALIDATION = r"(?P<accountname>[\w-]+@\w+[\.\w]+)"
 
 # UserToken validators
 TOKEN_SECRET_VALIDATION = r"(?P<token_secret>[a-f0-9]{40})"

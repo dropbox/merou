@@ -19,6 +19,7 @@ class User(Model, CommentObjectMixin):
     username = Column(String(length=MAX_NAME_LENGTH), unique=True, nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
     role_user = Column(Boolean, default=False, nullable=False)
+    is_service_account = Column(Boolean, default=False, nullable=False)
     tokens = relationship("UserToken", back_populates="user")
 
     @hybrid_property

@@ -1,6 +1,7 @@
 from grouper.constants import USER_METADATA_SHELL_KEY
 from grouper.fe.util import Alert
 from grouper.graph import NoSuchGroup, NoSuchUser
+from grouper.group_service_account import get_service_accounts
 from grouper.models.audit_member import AUDIT_STATUS_CHOICES
 from grouper.models.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.permissions import (get_owner_arg_list, get_pending_request_by_group,
@@ -8,6 +9,7 @@ from grouper.permissions import (get_owner_arg_list, get_pending_request_by_grou
 from grouper.public_key import (get_public_key_permissions, get_public_key_tags,
     get_public_keys_of_user)
 from grouper.role_user import can_manage_role_user
+from grouper.service_account import can_manage_service_account, service_account_permissions
 from grouper.user import (get_log_entries_by_user, user_open_audits, user_requests_aggregate,
     user_role, user_role_index)
 from grouper.user_group import get_groups_by_user
@@ -29,6 +31,7 @@ def get_group_view_template_vars(session, actor, group, graph):
 
     ret["members"] = group.my_members()
     ret["groups"] = group.my_groups()
+    ret["service_accounts"] = get_service_accounts(session, group)
     ret["permissions"] = group_md.get('permissions', [])
 
     ret["permission_requests_pending"] = []
@@ -76,9 +79,18 @@ def get_user_view_template_vars(session, actor, user, graph):
     from grouper.fe.handlers.user_enable import UserEnable
 
     ret = {}
-    ret["can_control"] = (user.name == actor.name or user_is_user_admin(session, actor))
-    ret["can_disable"] = UserDisable.check_access(session, actor, user)
-    ret["can_enable"] = UserEnable.check_access(session, actor, user)
+    if user.is_service_account:
+        ret["can_control"] = (
+            can_manage_service_account(session, user.service_account, actor) or
+            user_is_user_admin(session, actor)
+        )
+        ret["can_disable"] = ret["can_control"]
+        ret["can_enable"] = user_is_user_admin(session, actor)
+        ret["account"] = user.service_account
+    else:
+        ret["can_control"] = (user.name == actor.name or user_is_user_admin(session, actor))
+        ret["can_disable"] = UserDisable.check_access(session, actor, user)
+        ret["can_enable"] = UserEnable.check_access(session, actor, user)
 
     if user.id == actor.id:
         ret["num_pending_group_requests"] = user_requests_aggregate(session, actor).count()
@@ -110,9 +122,14 @@ def get_user_view_template_vars(session, actor, user, graph):
         key.pretty_permissions = ["{} ({})".format(perm.name,
             perm.argument if perm.argument else "unargumented")
             for perm in get_public_key_permissions(session, key)]
-    ret["permissions"] = user_md.get('permissions', [])
     ret["log_entries"] = get_log_entries_by_user(session, user)
     ret["user_tokens"] = user.tokens
+
+    if user.is_service_account:
+        service_account = user.service_account
+        ret["permissions"] = service_account_permissions(session, service_account)
+    else:
+        ret["permissions"] = user_md.get('permissions', [])
 
     return ret
 

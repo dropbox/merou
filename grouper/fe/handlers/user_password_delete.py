@@ -3,6 +3,7 @@ from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
 from grouper.models.user_password import UserPassword
 from grouper.role_user import can_manage_role_user
+from grouper.service_account import can_manage_service_account
 from grouper.user_password import delete_user_password, PasswordDoesNotExist
 from grouper.user_permissions import user_is_user_admin
 
@@ -12,7 +13,8 @@ class UserPasswordDelete(GrouperHandler):
     @staticmethod
     def check_access(session, actor, target):
         return (actor.name == target.name or user_is_user_admin(session, actor) or
-            (target.role_user and can_manage_role_user(session, actor, tuser=target)))
+            (target.role_user and can_manage_role_user(session, actor, tuser=target)) or
+            (target.is_service_account and can_manage_service_account(session, target, actor)))
 
     def get(self, user_id=None, name=None, pass_id=None):
         user = User.get(self.session, user_id, name)

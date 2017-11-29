@@ -1,10 +1,11 @@
 from grouper.constants import (
-        DEBUG_ROUTE_PATH,
-        NAME2_VALIDATION,
-        NAME_VALIDATION,
-        PERMISSION_VALIDATION,
-        USERNAME_VALIDATION,
-        )
+    DEBUG_ROUTE_PATH,
+    NAME2_VALIDATION,
+    NAME_VALIDATION,
+    PERMISSION_VALIDATION,
+    SERVICE_ACCOUNT_VALIDATION,
+    USERNAME_VALIDATION,
+)
 from grouper.fe.handlers.audits_complete import AuditsComplete
 from grouper.fe.handlers.audits_create import AuditsCreate
 from grouper.fe.handlers.audits_view import AuditsView
@@ -44,6 +45,13 @@ from grouper.fe.handlers.role_user_create import RoleUserCreate
 from grouper.fe.handlers.role_user_view import RoleUserView
 from grouper.fe.handlers.role_users_view import RoleUsersView
 from grouper.fe.handlers.search import Search
+from grouper.fe.handlers.service_account_create import ServiceAccountCreate
+from grouper.fe.handlers.service_account_disable import ServiceAccountDisable
+from grouper.fe.handlers.service_account_edit import ServiceAccountEdit
+from grouper.fe.handlers.service_account_enable import ServiceAccountEnable
+from grouper.fe.handlers.service_account_permission_grant import ServiceAccountPermissionGrant
+from grouper.fe.handlers.service_account_permission_revoke import ServiceAccountPermissionRevoke
+from grouper.fe.handlers.service_account_view import ServiceAccountView
 from grouper.fe.handlers.tag_edit import TagEdit
 from grouper.fe.handlers.tag_view import TagView
 from grouper.fe.handlers.tags_view import TagsView
@@ -114,12 +122,17 @@ for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
         (r"/users/{}/passwords/add".format(regex), UserPasswordAdd),
         (r"/users/{}/passwords/(?P<pass_id>[0-9]+)/delete".format(regex), UserPasswordDelete),
         (r"/service/{}".format(regex), RoleUserView),
+        (r"/service/{}/enable".format(regex), ServiceAccountEnable),
     ])
 
 for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
     HANDLERS.extend([
         (r"/groups/{}".format(regex), GroupView),
         (r"/groups/{}/edit".format(regex), GroupEdit),
+        (
+            r"/groups/{}/edit/(?P<member_type>user|group)/{}".format(regex, NAME2_VALIDATION),
+            GroupEditMember
+        ),
         (r"/groups/{}/disable".format(regex), GroupDisable),
         (r"/groups/{}/enable".format(regex), GroupEnable),
         (r"/groups/{}/join".format(regex), GroupJoin),
@@ -129,11 +142,24 @@ for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
         (r"/groups/{}/requests".format(regex), GroupRequests),
         (r"/groups/{}/requests/(?P<request_id>[0-9]+)".format(regex), GroupRequestUpdate),
         (r"/groups/{}/permission/request".format(regex), GroupPermissionRequest),
-        (
-            r"/groups/{}/edit/(?P<member_type>user|group)/{}".format(regex, NAME2_VALIDATION),
-            GroupEditMember
-        ),
+        (r"/groups/{}/service/create".format(regex), ServiceAccountCreate),
     ])
+
+for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
+    for service_regex in (r"(?P<account_id>[0-9]+)", SERVICE_ACCOUNT_VALIDATION):
+        HANDLERS.extend([
+            (r"/groups/{}/service/{}".format(regex, service_regex), ServiceAccountView),
+            (r"/groups/{}/service/{}/disable".format(regex, service_regex), ServiceAccountDisable),
+            (r"/groups/{}/service/{}/edit".format(regex, service_regex), ServiceAccountEdit),
+            (
+                r"/groups/{}/service/{}/grant".format(regex, service_regex),
+                ServiceAccountPermissionGrant
+            ),
+            (
+                r"/groups/{}/service/{}/revoke/(?P<mapping_id>[0-9]+)".format(regex, service_regex),
+                ServiceAccountPermissionRevoke
+            ),
+        ])
 
 for regex in (r"(?P<tag_id>[0-9]+)", NAME_VALIDATION):
     HANDLERS.extend([

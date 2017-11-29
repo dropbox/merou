@@ -11,7 +11,9 @@ from fixtures import standard_graph, graph, users, groups, session, permissions 
 from grouper.constants import USER_METADATA_SHELL_KEY
 from grouper.models.counter import Counter
 from grouper.models.permission import Permission
+from grouper.models.service_account import ServiceAccount
 from grouper.models.user_token import UserToken
+from grouper.permissions import grant_permission_to_service_account
 from grouper.user_metadata import get_user_metadata_by_key, set_user_metadata
 from grouper.user_password import add_new_user_password, delete_user_password, user_passwords
 from grouper.user_token import add_new_user_token, disable_user_token
@@ -21,16 +23,22 @@ from util import grant_permission
 
 @pytest.mark.gen_test
 def test_users(users, http_client, base_url):
-    api_url = url(base_url, '/users')
+    all_users = sorted(users.keys() + ["service@a.co"])
+    users_wo_role = sorted([u for u in users if u != u"role@a.co"])
+
+    api_url = url(base_url, "/users")
     resp = yield http_client.fetch(api_url)
     body = json.loads(resp.body)
-    users_wo_role = sorted((u for u in users if u != u"role@a.co"))
-
-    print 'user_wo_role={}'.format(users_wo_role)
-    print 'res={}'.format(sorted(body["data"]["users"]))
     assert resp.code == 200
     assert body["status"] == "ok"
     assert sorted(body["data"]["users"]) == users_wo_role
+
+    api_url = url(base_url, "/users?include_role_users=yes")
+    resp = yield http_client.fetch(api_url)
+    body = json.loads(resp.body)
+    assert resp.code == 200
+    assert body["status"] == "ok"
+    assert sorted(body["data"]["users"]) == all_users
 
     # TODO: test cutoff
 
@@ -51,7 +59,7 @@ def test_multi_users(users, http_client, base_url):
     assert resp.code == 200
     assert body["status"] == "ok"
     # Service Accounts should be included
-    assert sorted(body["data"].iterkeys()) == sorted(users)
+    assert sorted(body["data"].iterkeys()) == sorted(users.keys() + ['service@a.co'])
 
     # Test case when only valid usernames are provided
     api_url = make_url('tyleromeara@a.co', 'gary@a.co', 'role@a.co')
@@ -88,15 +96,44 @@ def test_multi_users(users, http_client, base_url):
 
 
 @pytest.mark.gen_test
-def test_service_accounts(users, http_client, base_url):
-    api_url = url(base_url, '/service_accounts')
+def test_service_accounts(session, standard_graph, users, http_client, base_url):
+    graph = standard_graph
+    service_accounts = sorted([u.name for u in users.values() if u.role_user] + ["service@a.co"])
+
+    api_url = url(base_url, "/service_accounts")
     resp = yield http_client.fetch(api_url)
     body = json.loads(resp.body)
-    service_accounts = sorted([user.name for user in users.values() if user.role_user])
-
     assert resp.code == 200
     assert body["status"] == "ok"
     assert sorted(body["data"]["service_accounts"]) == service_accounts
+
+    # TODO: test cutoff
+
+    # Retrieve a single service account and check its metadata.
+    api_url = url(base_url, "/service_accounts/service@a.co")
+    resp = yield http_client.fetch(api_url)
+    body = json.loads(resp.body)
+    assert resp.code == 200
+    assert body["status"] == "ok"
+    data = body["data"]["user"]
+    assert "service_account" in data
+    assert data["service_account"]["description"] == "some service account"
+    assert data["service_account"]["machine_set"] == "some machines"
+    assert data["service_account"]["owner"] == "team-sre"
+    assert body["data"]["permissions"] == []
+
+    # Delegate a permission to the service account and check for it.
+    service_account = ServiceAccount.get(session, name="service@a.co")
+    permission = Permission.get(session, name="team-sre")
+    grant_permission_to_service_account(session, service_account, permission, "*")
+    graph.update_from_db(session)
+    resp = yield http_client.fetch(api_url)
+    body = json.loads(resp.body)
+    assert resp.code == 200
+    assert body["status"] == "ok"
+    permissions = body["data"]["permissions"]
+    assert permissions[0]["permission"] == "team-sre"
+    assert permissions[0]["argument"] == "*"
 
 
 @pytest.mark.gen_test

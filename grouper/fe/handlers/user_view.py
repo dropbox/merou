@@ -19,6 +19,18 @@ class UserView(GrouperHandler):
         if user.role_user:
             return self.redirect("/service/{}".format(user_id or name))
 
+        if user.is_service_account:
+            service_account = user.service_account
+            if service_account.owner:
+                return self.redirect("/groups/{}/service/{}".format(
+                    service_account.owner.group.name, user.username))
+            else:
+                self.render(
+                    "service-account.html", service_account=service_account, group=None, user=user,
+                    **get_user_view_template_vars(self.session, self.current_user, user, self.graph)
+                )
+                return
+
         self.render("user.html",
                     user=user,
                     **get_user_view_template_vars(self.session, self.current_user, user, self.graph)

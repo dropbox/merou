@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from 'macros/ui.html' import group_panel, member_panel, permission_panel, log_entry_panel,
-                                help_for, account %}
+                                help_for, account, service_account_panel %}
 
 {% block heading %}
     <a href="/groups">Groups</a>
@@ -100,6 +100,7 @@
     </div>
     <div class="col-md-5">
         {{ group_panel(390, groups, current_user_role['role']) }}
+        {{ service_account_panel(390, group.name, service_accounts, current_user_role["is_member"]) }}
     </div>
 </div>
 <div class="row">

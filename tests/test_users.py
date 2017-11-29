@@ -67,6 +67,16 @@ def test_usertokens(standard_graph, session, users, groups, permissions):  # noq
     assert tok.check_secret(secret) == False
 
 
+@pytest.fixture
+def user_admin_perm_to_auditors(session, groups):
+    """Adds a USER_ADMIN permission to the "auditors" group"""
+    user_admin_perm, is_new = Permission.get_or_create(session, name=USER_ADMIN,
+        description="grouper.admin.users permission")
+    session.commit()
+
+    grant_permission(groups["auditors"], user_admin_perm)
+
+
 @pytest.mark.gen_test
 def test_user_tok_acls(session, graph, users, user_admin_perm_to_auditors, http_client, base_url):
     role_user = "role@a.co"
@@ -91,23 +101,12 @@ def test_user_tok_acls(session, graph, users, user_admin_perm_to_auditors, http_
                 headers={"X-Grouper-User": admin}, body=urlencode({"name": "foo3"}))
 
 
-
-@pytest.fixture
-def user_admin_perm_to_auditors(session, groups):
-    """Adds a USER_ADMIN permission to the "auditors" group"""
-    user_admin_perm, is_new = Permission.get_or_create(session, name=USER_ADMIN,
-        description="grouper.admin.users permission")
-    session.commit()
-
-    grant_permission(groups["auditors"], user_admin_perm)
-
-
 @pytest.mark.gen_test
 def test_graph_disable(session, graph, users, groups, user_admin_perm_to_auditors,
         http_client, base_url):
     graph.update_from_db(session)
     old_users = graph.users
-    assert sorted(old_users) == sorted(users.keys())
+    assert sorted(old_users) == sorted(users.keys() + ["service@a.co"])
 
     # disable a user
     username = u"oliver@a.co"

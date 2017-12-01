@@ -2,7 +2,7 @@ from grouper.fe.forms import ServiceAccountEditForm
 from grouper.fe.util import GrouperHandler
 from grouper.models.group import Group
 from grouper.models.service_account import ServiceAccount
-from grouper.service_account import can_manage_service_account, edit_service_account
+from grouper.service_account import BadMachineSet, can_manage_service_account, edit_service_account
 
 
 class ServiceAccountEdit(GrouperHandler):
@@ -41,8 +41,15 @@ class ServiceAccountEdit(GrouperHandler):
                 form=form, alerts=self.get_form_alerts(form.errors)
             )
 
-        edit_service_account(self.session, self.current_user, service_account,
-                             form.data["description"], form.data["machine_set"])
+        try:
+            edit_service_account(self.session, self.current_user, service_account,
+                                 form.data["description"], form.data["machine_set"])
+        except BadMachineSet as e:
+            form.machine_set.errors.append(str(e))
+            return self.render(
+                "service-account-edit.html", service_account=service_account, group=group,
+                form=form, alerts=self.get_form_alerts(form.errors)
+            )
 
         return self.redirect("/groups/{}/service/{}".format(
             group.name, service_account.user.username))

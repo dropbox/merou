@@ -87,6 +87,11 @@ class PluginRejectedDisablingUser(PluginException):
     pass
 
 
+class PluginRejectedMachineSet(PluginException):
+    """A plugin rejected a machine set for a service account."""
+    pass
+
+
 class BasePlugin(object):
     def user_created(self, user, is_service_account=False):
         # type: (User, bool) -> None
@@ -187,5 +192,19 @@ class BasePlugin(object):
 
         Raises:
             PluginRejectedDisablingUser: if the plugin rejects the change
+        """
+        pass
+
+    def check_machine_set(self, name, machine_set):
+        # type: (str, str) -> None
+        """Check whether a service account machine set is valid.
+
+        Args:
+            name: Name of the service account being changed
+            machine_set: New machine set for a service account
+
+        Raises:
+            PluginRejectedMachineSet to reject the change.  The exception message will be shown to
+            the user.
         """
         pass

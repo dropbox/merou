@@ -29,7 +29,6 @@ def get_application(settings, sentry_client, deployment_name):
         "static_path": os.path.join(os.path.dirname(grouper.fe.__file__), "static"),
         "debug": settings.debug,
         "xsrf_cookies": True,
-        "xsrf_cookie_version": 1,
     }
 
     my_settings = {

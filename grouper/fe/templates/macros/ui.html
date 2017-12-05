@@ -571,11 +571,18 @@ enabled. Membership in this group is regularly reviewed.
     </div>
 {%- endmacro %}
 
-{% macro form_field(field, label_width, field_width) -%}
-    <div class="form-group {% if field.errors %}has-error{% endif %}">
+{% macro form_field(field, label_width, field_width, help=None) -%}
+    <div class="form-group form-group-{{field.label.field_id}} {% if field.errors %}has-error{% endif %}">
         <label for="{{field.label.field_id}}"
                class="col-sm-{{label_width}} control-label">
-            {{ field.label.text }} {% if field.flags.required %}*{% endif %}
+            {{ field.label.text }}
+            {% if help %}
+            <a data-toggle="popover" title="restricted argument set"
+                    data-content="{{ help|escape }}">
+                <sup>?</sup>
+            </a>
+            {% endif %}
+            {% if field.flags.required %}*{% endif %}
         </label>
         <div class="col-sm-{{field_width}}">
             {{ field(**kwargs) }}

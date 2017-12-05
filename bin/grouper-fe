@@ -56,7 +56,7 @@ def main(args, sentry_client):
             "debug mode does not support multiple processes"
 
     try:
-        load_plugins(settings.plugin_dir, settings.plugin_module_paths, service_name="grouper_fe")
+        load_plugins(settings.plugin_dirs, settings.plugin_module_paths, service_name="grouper_fe")
     except PluginsDirectoryDoesNotExist as e:
         logging.fatal("Plugin directory does not exist: {}".format(e))
         sys.exit(1)

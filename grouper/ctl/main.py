@@ -3,14 +3,7 @@ import logging
 import sys
 
 from grouper import __version__
-from grouper.ctl import (
-        group,
-        oneoff,
-        shell,
-        sync_db,
-        user,
-        user_proxy,
-        )
+from grouper.ctl import dump_sql, group, oneoff, shell, sync_db, user, user_proxy
 from grouper.plugin import load_plugins
 from grouper.settings import default_settings_path, settings
 from grouper.util import get_loglevel
@@ -36,6 +29,7 @@ def main(sys_argv=sys.argv, start_config_thread=True):
     subparsers = parser.add_subparsers(dest="command")
 
     for subcommand_module in [
+            dump_sql,
             group,
             oneoff,
             shell,

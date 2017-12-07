@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
     try:
         main(args, sentry_client)
-    except:
+    except Exception:
         sentry_client.captureException()
     finally:
         logging.info("end")

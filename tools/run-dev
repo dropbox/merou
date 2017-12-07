@@ -30,26 +30,31 @@ parser.add_option(
 
 os.chdir(os.path.join(os.path.dirname(__file__), '..'))
 
+# Add the grouper directory to the Python environment.
+if "PYTHONPATH" in os.environ:
+    os.environ["PYTHONPATH"] = os.getcwd() + ":" + os.environ["PYTHONPATH"]
+else:
+    os.environ["PYTHONPATH"] = os.getcwd()
+
 # Set up a new process group, so that we can later kill the servers
 # and all of the processes they spawn.
 os.setpgrp()
 
+# Start the services.
 settings = os.environ.get("GROUPER_SETTINGS", "config/dev.yaml")
-
 cmds = [
-    "bin/grouper-ctl -vvc {} user_proxy {}".format(
-        settings,
-        options.user,
-    ),
-    "bin/grouper-fe --config={}".format(settings),
-    "bin/grouper-api --config={}".format(settings),
+    ["bin/grouper-ctl", "-vvc", settings, "user_proxy", options.user],
+    ["bin/grouper-fe", "--config={}".format(settings)],
+    ["bin/grouper-api", "--config={}".format(settings)],
 ]
-
 for cmd in cmds:
-    subprocess.Popen(cmd, shell=True)
+    subprocess.Popen(cmd)
 
+# Wait for a signal and then shut everything down.
 try:
     signal.pause()
+except KeyboardInterrupt:
+    print "Terminating development environment"
 finally:
     # Kill everything in our process group.
     os.killpg(0, signal.SIGTERM)

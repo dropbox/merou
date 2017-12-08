@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
 from fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401
-from fixtures import async_server, browser  # noqa: F401
 from fixtures import fe_app as app  # noqa: F401
+from fixtures_selenium import async_server, browser  # noqa: F401
 from pages import AuditsCreatePage, GroupViewPage
 from plugins import group_ownership_policy
 from url_util import url

@@ -32,6 +32,10 @@ common:
     # Type: list of str
     oneoff_dirs: []
 
+    # Module paths for one-offs to load from.
+    # Type: list of str
+    oneoff_module_paths: []
+
     # Name of permissions for which we restrict ownership calculations to
     # exclude wildcard ownership if any non-wildcard owners are avaiable.
     # Type: list of str

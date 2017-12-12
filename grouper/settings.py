@@ -35,13 +35,6 @@ class Settings(object):
         for key, value in settings.iteritems():
             key = key.lower()
 
-            # TODO(cbguder): Remove backwards compatibility for old keys
-            if key in ["plugin_dir", "oneoff_dir"]:
-                new_key = "%ss".format(key)
-                self.logger.warning("%s is deprecated, please use %s instead", key, new_key)
-                key = new_key
-                value = [value]
-
             # Limit the parts of the config file that can have an effect.
             if key not in self.settings:
                 continue

@@ -104,6 +104,7 @@ settings = Settings({
     "from_addr": "no-reply@grouper.local",
     "log_format": "%(asctime)-15s\t%(levelname)s\t%(message)s",
     "oneoff_dirs": [],
+    "oneoff_module_paths": [],
     "plugin_dirs": [],
     "plugin_module_paths": [],
     "restricted_ownership_permissions": None,

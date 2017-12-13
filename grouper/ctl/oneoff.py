@@ -7,6 +7,7 @@ from annex import Annex
 
 from grouper.ctl.util import make_session
 from grouper.oneoff import BaseOneOff
+from grouper.plugin import load_plugin_modules
 from grouper.settings import settings
 
 
@@ -56,7 +57,13 @@ def key_value_arg_type(arg):
 def oneoff_command(args):
     session = make_session()
 
-    oneoffs = Annex(BaseOneOff, settings.oneoff_dirs, raise_exceptions=True)
+    oneoffs = Annex(
+        BaseOneOff,
+        settings.oneoff_dirs,
+        raise_exceptions=True,
+        additional_plugin_callback=load_plugin_modules(settings.oneoff_module_paths, BaseOneOff)
+    )
+
     for oneoff in oneoffs:
         oneoff.configure(service_name="grouper-ctl")
 

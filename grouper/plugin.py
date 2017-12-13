@@ -46,14 +46,18 @@ def load_plugins(plugin_dirs, plugin_module_paths, service_name):
         if not os.path.exists(plugin_dir):
             raise PluginsDirectoryDoesNotExist("{} doesn't exist".format(plugin_dir))
 
-    Plugins = Annex(BasePlugin, plugin_dirs, raise_exceptions=True,
-            additional_plugin_callback=load_plugin_modules(plugin_module_paths))
+    Plugins = Annex(
+        BasePlugin,
+        plugin_dirs,
+        raise_exceptions=True,
+        additional_plugin_callback=load_plugin_modules(plugin_module_paths, BasePlugin)
+    )
 
     for plugin in Plugins:
         plugin.configure(service_name)
 
 
-def load_plugin_modules(plugin_module_paths):
+def load_plugin_modules(plugin_module_paths, base_plugin):
     def callback():
         plugins = []
 
@@ -61,7 +65,7 @@ def load_plugin_modules(plugin_module_paths):
             module = import_module(module_path)
             for name in dir(module):
                 obj = getattr(module, name)
-                if inspect.isclass(obj) and issubclass(obj, BasePlugin) and obj != BasePlugin:
+                if inspect.isclass(obj) and issubclass(obj, base_plugin) and obj != base_plugin:
                     plugins.append(obj)
 
         return plugins

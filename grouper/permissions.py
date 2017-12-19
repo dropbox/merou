@@ -44,7 +44,10 @@ Grant = namedtuple('Grant', 'name, argument')
 
 class NoSuchPermission(Exception):
     """No permission by this name exists."""
-    name = None  # type: str
+
+    def __init__(self, name):
+        # type: (str) -> None
+        self.name = name
 
 
 def grant_permission(session, group_id, permission_id, argument=''):

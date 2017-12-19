@@ -198,7 +198,9 @@ class GrouperHandler(RequestHandler):
         context.update(kwargs)
 
         # Merge alerts
-        context["alerts"] = defaults.get("alerts", []) + kwargs.get("alerts", [])
+        context["alerts"] = []
+        context["alerts"].extend(defaults.get("alerts", []))
+        context["alerts"].extend(kwargs.get("alerts", []))
 
         self.write(self.render_template(template_name, **context))
 

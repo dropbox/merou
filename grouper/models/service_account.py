@@ -7,11 +7,6 @@ from grouper.models.counter import Counter
 from grouper.models.user import User
 
 
-class MachineSetInvalid(Exception):
-    """A plugin rejected the machine set for this service acccount."""
-    pass
-
-
 class ServiceAccount(Model):
     """Represents a group-owned service account.
 

@@ -375,10 +375,6 @@ class NoOwnersAvailable(PermissionRequestException):
     """No owner was found for the permission + argument combination."""
 
 
-class InvalidRequestID(PermissionRequestException):
-    """Submitted request ID is invalid (doesn't exist or group doesn't match."""
-
-
 class RequestAlreadyGranted(PermissionRequestException):
     """Group already has requested permission + argument pair."""
 

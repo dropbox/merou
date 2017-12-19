@@ -44,7 +44,10 @@ Grant = namedtuple('Grant', 'name, argument')
 
 class NoSuchPermission(Exception):
     """No permission by this name exists."""
-    name = None  # type: str
+
+    def __init__(self, name):
+        # type: (str) -> None
+        self.name = name
 
 
 def grant_permission(session, group_id, permission_id, argument=''):
@@ -370,10 +373,6 @@ class RequestAlreadyExists(PermissionRequestException):
 
 class NoOwnersAvailable(PermissionRequestException):
     """No owner was found for the permission + argument combination."""
-
-
-class InvalidRequestID(PermissionRequestException):
-    """Submitted request ID is invalid (doesn't exist or group doesn't match."""
 
 
 class RequestAlreadyGranted(PermissionRequestException):

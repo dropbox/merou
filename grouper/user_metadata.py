@@ -5,12 +5,6 @@ from grouper.models.counter import Counter
 from grouper.models.user_metadata import UserMetadata
 
 
-class MetadataNotFound(Exception):
-    """Particualr user metadata entry was not found."""
-    user_id = None
-    data_key = None
-
-
 def get_user_metadata(session, user_id):
     """Return all of a user's metadata.
 

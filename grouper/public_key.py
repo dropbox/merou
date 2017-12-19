@@ -24,14 +24,16 @@ class DuplicateTag(Exception):
 
 
 class KeyNotFound(Exception):
-    key_id = None  # type: int
-    user_id = None  # type: int
     """Particular user's specific key was not found."""
+
+    def __init__(self, key_id, user_id):
+        # type: (int, int) -> None
+        self.key_id = key_id
+        self.user_id = user_id
 
 
 class TagNotOnKey(Exception):
-    key_id = None  # type: int
-    tag_id = None  # type: int
+    pass
 
 
 def get_public_key(session, user_id, key_id):

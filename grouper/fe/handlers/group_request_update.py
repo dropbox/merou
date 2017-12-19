@@ -56,7 +56,7 @@ class GroupRequestUpdate(GrouperHandler):
         updates = request.my_status_updates()
 
         if not form.status.choices:
-            alerts = (Alert("info", "Request has already been processed"),)
+            alerts = [Alert("info", "Request has already been processed")]
             return self.render(
                 "group-request-update.html", group=group, request=request,
                 members=members, form=form, alerts=alerts,

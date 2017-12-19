@@ -663,3 +663,86 @@ def test_disable_role_user(session, users, http_client, base_url):
     assert not u.enabled, "Attempting to enable SAs through groups/enable should not work"
     g = Group.get(session, name="bob@svc.localhost")
     assert not g.enabled, "Attempting to enable SAs through groups/enable should not work"
+
+
+@pytest.mark.gen_test
+def test_group_request(session, users, groups, http_client, base_url):
+    user = users['cbguder@a.co']
+    group = groups['sad-team']
+
+    # Request to join
+
+    fe_url = url(base_url, '/groups/{}/join'.format(group.groupname))
+    resp = yield http_client.fetch(
+        fe_url,
+        method='POST',
+        headers={'X-Grouper-User': user.username},
+        body=urlencode({'reason': 'Test Request', 'member': 'User: cbguder@a.co'}),
+    )
+    assert resp.code == 200
+
+    request = Request.get(session, requester_id=user.id, requesting_id=group.id)
+    assert request.status == 'pending'
+
+    # Approve request
+
+    fe_url = url(base_url, '/groups/{}/requests/{}'.format(group.groupname, request.id))
+    resp = yield http_client.fetch(
+        fe_url,
+        method='POST',
+        headers={'X-Grouper-User': 'zorkian@a.co'},
+        body=urlencode({'reason': 'Test Request', 'status': 'actioned'}),
+    )
+    assert resp.code == 200
+
+    request = Request.get(session, requester_id=user.id, requesting_id=group.id)
+    assert request.status == 'actioned'
+
+
+@pytest.mark.gen_test
+def test_group_request_cancelled(session, users, groups, http_client, base_url):
+    user = users['cbguder@a.co']
+    group = groups['sad-team']
+
+    # Request to join
+
+    fe_url = url(base_url, '/groups/{}/join'.format(group.groupname))
+    resp = yield http_client.fetch(
+        fe_url,
+        method='POST',
+        headers={'X-Grouper-User': user.username},
+        body=urlencode({'reason': 'Test Request', 'member': 'User: cbguder@a.co'}),
+    )
+    assert resp.code == 200
+
+    request = Request.get(session, requester_id=user.id, requesting_id=group.id)
+    assert request.status == 'pending'
+
+    # Cancel request
+
+    fe_url = url(base_url, '/groups/{}/requests/{}'.format(group.groupname, request.id))
+    resp = yield http_client.fetch(
+        fe_url,
+        method='POST',
+        headers={'X-Grouper-User': user.username},
+        body=urlencode({'reason': 'Test Request', 'status': 'cancelled'}),
+    )
+    assert resp.code == 200
+
+    request = Request.get(session, requester_id=user.id, requesting_id=group.id)
+    assert request.status == 'cancelled'
+
+    # Approve request (Fails)
+
+    fe_url = url(base_url, '/groups/{}/requests/{}'.format(group.groupname, request.id))
+    resp = yield http_client.fetch(
+        fe_url,
+        method='POST',
+        headers={'X-Grouper-User': 'zorkian@a.co'},
+        body=urlencode({'reason': 'Test Request', 'status': 'actioned'}),
+    )
+    assert resp.code == 200
+    assert 'Request has already been processed' in resp.body
+
+    request = Request.get(session, requester_id=user.id, requesting_id=group.id)
+    assert request.status == 'cancelled'

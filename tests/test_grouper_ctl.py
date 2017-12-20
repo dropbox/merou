@@ -1,9 +1,9 @@
 from mock import patch
 import pytest
 
-from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
-
+from constants import SSH_KEY_1
 from ctl_util import call_main
+from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from grouper.constants import GROUP_ADMIN, PERMISSION_ADMIN, USER_ADMIN
 from grouper.models.base.model_base import Model
 from grouper.models.group import Group
@@ -11,6 +11,7 @@ from grouper.models.user import User
 from grouper.public_key import get_public_keys_of_user
 
 noop = lambda *k: None
+
 
 @patch('grouper.ctl.user.make_session')
 def test_user_create(make_session, session, users):
@@ -36,6 +37,7 @@ def test_user_create(make_session, session, users):
     call_main('user', 'create', *usernames_with_one_bad)
     users = [User.get(session, name=u) for u in usernames_with_one_bad]
     assert not any(users), 'one bad seed means no users created'
+
 
 @patch('grouper.ctl.user.make_session')
 @patch('grouper.ctl.group.make_session')
@@ -72,34 +74,26 @@ def test_user_status_changes(make_user_session, make_group_session, session, use
     assert User.get(session, name=username).enabled
     assert (u'User', username) not in groups[groupname].my_members()
 
+
 @patch('grouper.ctl.user.make_session')
 def test_user_public_key(make_session, session, users):
     make_session.return_value = session
 
     # good key
     username = 'zorkian@a.co'
-    good_key = ('ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDCUQeasspT/etEJR2WUoR+h2sMOQYbJgr0Q'
-            'E+J8p97gEhmz107KWZ+3mbOwyIFzfWBcJZCEg9wy5Paj+YxbGONqbpXAhPdVQ2TLgxr41bNXvbcR'
-            'AxZC+Q12UZywR4Klb2kungKz4qkcmSZzouaKK12UxzGB3xQ0N+3osKFj3xA1+B6HqrVreU19XdVo'
-            'AJh0xLZwhw17/NDM+dAcEdMZ9V89KyjwjraXtOVfFhQF0EDF0ame8d6UkayGrAiXC2He0P2Cja+J'
-            '371P27AlNLHFJij8WGxvcGGSeAxMLoVSDOOllLCYH5UieV8mNpX1kNe2LeA58ciZb0AXHaipSmCH'
-            'gh/ some-comment')
-    call_main('user', 'add_public_key', username, good_key)
+    call_main('user', 'add_public_key', username, SSH_KEY_1)
 
     user = User.get(session, name=username)
     keys = get_public_keys_of_user(session, user.id)
     assert len(keys) == 1
-    assert keys[0].public_key == good_key
+    assert keys[0].public_key == SSH_KEY_1
 
     # bad key
-    username = 'zorkian@a.co'
-    bad_key = 'ssh-rsa AAAblahblahkey some-comment'
-    call_main('user', 'add_public_key', username, good_key)
+    call_main('user', 'add_public_key', username, SSH_KEY_1)
 
-    user = User.get(session, name=username)
     keys = get_public_keys_of_user(session, user.id)
     assert len(keys) == 1
-    assert keys[0].public_key == good_key
+    assert keys[0].public_key == SSH_KEY_1
 
 
 @patch('grouper.ctl.sync_db.make_session')

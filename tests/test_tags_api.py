@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from constants import SSH_KEY_1
 from fixtures import api_app as app  # noqa
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from grouper.constants import TAG_EDIT
@@ -16,18 +17,9 @@ from grouper.user_permissions import user_permissions
 from url_util import url
 from util import grant_permission
 
-key1 = ('ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDCUQeasspT/etEJR2WUoR+h2sMOQYbJgr0Q'
-        'E+J8p97gEhmz107KWZ+3mbOwyIFzfWBcJZCEg9wy5Paj+YxbGONqbpXAhPdVQ2TLgxr41bNXvbcR'
-        'AxZC+Q12UZywR4Klb2kungKz4qkcmSZzouaKK12UxzGB3xQ0N+3osKFj3xA1+B6HqrVreU19XdVo'
-        'AJh0xLZwhw17/NDM+dAcEdMZ9V89KyjwjraXtOVfFhQF0EDF0ame8d6UkayGrAiXC2He0P2Cja+J'
-        '371P27AlNLHFJij8WGxvcGGSeAxMLoVSDOOllLCYH5UieV8mNpX1kNe2LeA58ciZb0AXHaipSmCH'
-        'gh/ some-comment')
-
 
 @pytest.mark.gen_test
-def test_tags(session, users, http_client, base_url, graph):
-    user = session.query(User).filter_by(username="testuser@a.co").scalar()
-
+def test_tags(session, http_client, base_url, graph):
     perm = Permission(name=TAG_EDIT, description="Why is this not nullable?")
     perm.add(session)
     session.commit()
@@ -45,16 +37,13 @@ def test_tags(session, users, http_client, base_url, graph):
 
     tag = PublicKeyTag.get(session, name="tyler_was_here")
 
-    user = session.query(User).filter_by(username="testuser@a.co").scalar()
-
     grant_permission_to_tag(session, tag.id, perm.id, "prod")
 
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
 
-    add_public_key(session, user, key1)
+    add_public_key(session, user, SSH_KEY_1)
 
     key = session.query(PublicKey).filter_by(user_id=user.id).scalar()
-    user = session.query(User).filter_by(username="testuser@a.co").scalar()
 
     add_tag_to_public_key(session, key, tag)
 
@@ -76,5 +65,3 @@ def test_tags(session, users, http_client, base_url, graph):
     assert len(pub_key['tags']) == 1, "The public key should only have 1 tag"
     assert pub_key['fingerprint'] == 'e9:ae:c5:8f:39:9b:3a:9c:6a:b8:33:6b:cb:6f:ba:35'
     assert pub_key['tags'][0] == 'tyler_was_here', "The public key should have the tag we gave it"
-    #assert len(pub_key['permissions']) == 1, "The public key should only have 1 permission"
-    #assert pub_key['permissions'][0] == [TAG_EDIT, "prod"], "The public key should only have permissions that are the intersection of the user's permissions and the tag's permissions"

@@ -1,7 +1,7 @@
 from mock import patch
 import pytest
 
-from constants import SSH_KEY_1
+from constants import SSH_KEY_1, SSH_KEY_BAD
 from ctl_util import call_main
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from grouper.constants import GROUP_ADMIN, PERMISSION_ADMIN, USER_ADMIN
@@ -88,8 +88,15 @@ def test_user_public_key(make_session, session, users):
     assert len(keys) == 1
     assert keys[0].public_key == SSH_KEY_1
 
-    # bad key
+    # duplicate key
     call_main('user', 'add_public_key', username, SSH_KEY_1)
+
+    keys = get_public_keys_of_user(session, user.id)
+    assert len(keys) == 1
+    assert keys[0].public_key == SSH_KEY_1
+
+    # bad key
+    call_main('user', 'add_public_key', username, SSH_KEY_BAD)
 
     keys = get_public_keys_of_user(session, user.id)
     assert len(keys) == 1

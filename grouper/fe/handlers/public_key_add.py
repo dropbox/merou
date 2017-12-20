@@ -45,9 +45,11 @@ class PublicKeyAdd(GrouperHandler):
         try:
             pubkey = public_key.add_public_key(self.session, user, form.data["public_key"])
         except public_key.DuplicateKey:
-            form.public_key.errors.append(
-                "Key already in use. Public keys must be unique."
-            )
+            form.public_key.errors.append("Key already in use. Public keys must be unique.")
+        except public_key.PublicKeyParseError:
+            form.public_key.errors.append("Public key appears to be invalid.")
+
+        if form.public_key.errors:
             return self.render(
                 "public-key-add.html", form=form, user=user,
                 alerts=self.get_form_alerts(form.errors),

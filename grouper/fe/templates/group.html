@@ -9,7 +9,7 @@
 {% block subheading %}
     {{group.groupname}} {% if not group.enabled %}<small>(disabled)</small>{% endif %}
     {% if group.audit and not group.audit.complete %}
-        <span class="label label-danger">AUDIT IN PROGRESS</i>
+        <span class="label label-danger">AUDIT IN PROGRESS</span>
     {% endif %}
     {% if group.email_address %}
         <a href="mailto:{{ group.email_address }}">

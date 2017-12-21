@@ -1,5 +1,8 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import account, paginator, public_key_modal, one_public_key_row, dropdown with context %}
+
+{% from 'macros/ui.html' import account, paginator, one_public_key_row %}
+{% from 'macros/ui.html' import public_key_modal with context %}
+{% from 'macros/ui.html' import dropdown with context %}
 
 {% block heading %}
     {% if not form.enabled.data %}

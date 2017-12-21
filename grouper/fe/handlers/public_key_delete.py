@@ -47,7 +47,7 @@ class PublicKeyDelete(GrouperHandler):
             return self.notfound()
 
         AuditLog.log(self.session, self.current_user.id, 'delete_public_key',
-                     'Deleted public key: {}'.format(key.fingerprint),
+                     'Deleted public key: {}'.format(key.fingerprint_sha256),
                      on_user_id=user.id)
 
         email_context = {

@@ -258,7 +258,7 @@ class UsersPublicKeyForm(Form):
             ])
     fingerprint = StringField(label="fingerprint", validators=[
             validators.Optional(),
-            validators.Regexp("^[\w:]+$"),
+            validators.Regexp("^[A-Za-z0-9+/=]+$"),
             ],
             default=None)
 

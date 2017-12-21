@@ -18,7 +18,7 @@
             <form class="form-horizontal" role="form"
                   method="post" action="/users/{{user.name}}/public-key/{{ key.id }}/delete">
                 <div class="form-group text-center">
-                    Delete key with fingerprint <strong>{{ key.fingerprint }}</strong>?
+                    Delete key with fingerprint <strong>{{ key.fingerprint_sha256 }}</strong>?
                 </div>
                 {{ xsrf_form() }}
                 <div class="form-group text-center">

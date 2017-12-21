@@ -40,7 +40,7 @@ class PublicKeyRemoveTag(GrouperHandler):
             return self.redirect("/users/{}?refresh=yes".format(user.name))
 
         AuditLog.log(self.session, self.current_user.id, 'untag_public_key',
-                     'Untagged public key: {}'.format(key.fingerprint),
+                     'Untagged public key: {}'.format(key.fingerprint_sha256),
                      on_tag_id=tag.id, on_user_id=user.id)
 
         return self.redirect("/users/{}?refresh=yes".format(user.name))

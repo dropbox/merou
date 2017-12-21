@@ -4,7 +4,7 @@
     <td>{% if key.key_type %}{{ key.key_type }}{% endif %}</td>
     <td>{% if key.key_size %}{{ key.key_size }}{% endif %}</td>
     <td class="hidden-xs">
-        <code>{{ key.fingerprint }}</code>
+        <code>{{ key.fingerprint_sha256 }}</code>
     </td>
     <td>
         <span class="pull-right">
@@ -45,7 +45,7 @@
     <td>{% if key.key_type %}{{ key.key_type }}{% endif %}</td>
     <td>{% if key.key_size %}{{ key.key_size }}{% endif %}</td>
     <td class="hidden-xs">
-        <code>{{ key.fingerprint }}</code>
+        <code>{{ key.fingerprint_sha256 }}</code>
     </td>
     <td>
         {% for tag in key.tags %}

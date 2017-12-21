@@ -56,7 +56,7 @@ class PublicKeyAdd(GrouperHandler):
             )
 
         AuditLog.log(self.session, self.current_user.id, 'add_public_key',
-                     'Added public key: {}'.format(pubkey.fingerprint),
+                     'Added public key: {}'.format(pubkey.fingerprint_sha256),
                      on_user_id=user.id)
 
         email_context = {

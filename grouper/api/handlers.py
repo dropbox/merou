@@ -193,6 +193,7 @@ class UsersPublicKeys(GraphHandler):
             'type',
             'size',
             'fingerprint',
+            'fingerprint_sha256',
             'comment',
         ])
 
@@ -204,6 +205,7 @@ class UsersPublicKeys(GraphHandler):
                 key.key_type,
                 key.key_size,
                 key.fingerprint,
+                key.fingerprint_sha256,
                 key.comment,
             ])
 

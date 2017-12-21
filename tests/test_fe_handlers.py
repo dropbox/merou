@@ -68,6 +68,7 @@ def test_public_key(session, users, http_client, base_url):
     assert len(keys) == 1
     assert keys[0].public_key == SSH_KEY_1
     assert keys[0].fingerprint == 'e9:ae:c5:8f:39:9b:3a:9c:6a:b8:33:6b:cb:6f:ba:35'
+    assert keys[0].fingerprint_sha256 == 'MP9uWaujW96EWxbjDtPdPWheoMDu6BZ8FZj0+CBkVWU'
     assert keys[0].comment == 'some-comment'
 
     # delete it

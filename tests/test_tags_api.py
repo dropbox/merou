@@ -64,4 +64,5 @@ def test_tags(session, http_client, base_url, graph):
     pub_key = body['data']['user']['public_keys'][0]
     assert len(pub_key['tags']) == 1, "The public key should only have 1 tag"
     assert pub_key['fingerprint'] == 'e9:ae:c5:8f:39:9b:3a:9c:6a:b8:33:6b:cb:6f:ba:35'
+    assert pub_key['fingerprint_sha256'] == 'MP9uWaujW96EWxbjDtPdPWheoMDu6BZ8FZj0+CBkVWU'
     assert pub_key['tags'][0] == 'tyler_was_here', "The public key should have the tag we gave it"

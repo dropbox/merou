@@ -87,6 +87,7 @@ def add_public_key(session, user, public_key_str):
         user=user,
         public_key=pubkey.keydata.strip(),
         fingerprint=pubkey.hash_md5().replace(b"MD5:", b""),
+        fingerprint_sha256=pubkey.hash_sha256().replace(b"SHA256:", b""),
         key_size=pubkey.bits,
         key_type=pubkey.key_type,
         comment=pubkey.comment,

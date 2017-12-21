@@ -1,11 +1,12 @@
 import crypt
+import cStringIO as StringIO
+import csv
 import json
-import hashlib
-
 from urllib import urlencode
 
 import pytest
 
+from constants import SSH_KEY_1
 from fixtures import api_app as app  # noqa
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from grouper.constants import USER_METADATA_SHELL_KEY
@@ -14,11 +15,11 @@ from grouper.models.permission import Permission
 from grouper.models.service_account import ServiceAccount
 from grouper.models.user_token import UserToken
 from grouper.permissions import grant_permission_to_service_account
+from grouper.public_key import add_public_key
 from grouper.user_metadata import get_user_metadata_by_key, set_user_metadata
 from grouper.user_password import add_new_user_password, delete_user_password, user_passwords
 from grouper.user_token import add_new_user_token, disable_user_token
 from url_util import url
-from util import grant_permission
 
 
 @pytest.mark.gen_test
@@ -329,3 +330,23 @@ def test_passwords_api(session, users, http_client, base_url, graph):
     body = json.loads(resp.body)
     assert body["checkpoint"] == c.count, "The API response is not up to date"
     assert body["data"]["user"]["passwords"] == [], "The user should not have any passwords"
+
+@pytest.mark.gen_test
+def test_public_keys(session, users, http_client, base_url):
+    user = users['cbguder@a.co']
+
+    add_public_key(session, user, SSH_KEY_1)
+
+    api_url = url(base_url, '/public-keys')
+    resp = yield http_client.fetch(api_url)
+
+    body_io = StringIO.StringIO(resp.body)
+
+    csv_reader = csv.DictReader(body_io)
+    rows = list(csv_reader)
+
+    assert len(rows) == 1
+    assert rows[0]['username'] == 'cbguder@a.co'
+    assert rows[0]['fingerprint'] == 'e9:ae:c5:8f:39:9b:3a:9c:6a:b8:33:6b:cb:6f:ba:35'
+    assert rows[0]['fingerprint_sha256'] == 'MP9uWaujW96EWxbjDtPdPWheoMDu6BZ8FZj0+CBkVWU'
+    assert rows[0]['comment'] == 'some-comment'

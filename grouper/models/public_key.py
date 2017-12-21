@@ -20,3 +20,4 @@ class PublicKey(Model):
     public_key = Column(Text, nullable=False)
     fingerprint = Column(String(length=64), nullable=False, unique=True)
     created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
+    comment = Column(String(length=255))

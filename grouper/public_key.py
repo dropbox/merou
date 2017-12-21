@@ -89,6 +89,7 @@ def add_public_key(session, user, public_key_str):
         fingerprint=pubkey.hash_md5().replace(b"MD5:", b""),
         key_size=pubkey.bits,
         key_type=pubkey.key_type,
+        comment=pubkey.comment,
     )
 
     try:

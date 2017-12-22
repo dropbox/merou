@@ -4,6 +4,7 @@ from urllib import urlencode
 import pytest
 from tornado.httpclient import HTTPError
 
+from constants import SSH_KEY_1, SSH_KEY_2
 from fixtures import fe_app as app
 from fixtures import standard_graph, users, graph, groups, session, permissions  # noqa
 from grouper.constants import TAG_EDIT
@@ -17,19 +18,6 @@ from grouper.public_key import get_public_key_permissions, get_public_key_tag_pe
 from grouper.user_permissions import user_permissions
 from url_util import url
 from util import grant_permission
-
-key_1 = ('ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDCUQeasspT/etEJR2WUoR+h2sMOQYbJgr0Q'
-            'E+J8p97gEhmz107KWZ+3mbOwyIFzfWBcJZCEg9wy5Paj+YxbGONqbpXAhPdVQ2TLgxr41bNXvbcR'
-            'AxZC+Q12UZywR4Klb2kungKz4qkcmSZzouaKK12UxzGB3xQ0N+3osKFj3xA1+B6HqrVreU19XdVo'
-            'AJh0xLZwhw17/NDM+dAcEdMZ9V89KyjwjraXtOVfFhQF0EDF0ame8d6UkayGrAiXC2He0P2Cja+J'
-            '371P27AlNLHFJij8WGxvcGGSeAxMLoVSDOOllLCYH5UieV8mNpX1kNe2LeA58ciZb0AXHaipSmCH'
-            'gh/ some-comment')
-
-key_2 = ("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDF1DyXlqc40AVUgt/IO0GFcTniaoFt5qCUAeNVlva"
-         "lMnsrRULIXkb0g1ds9P9/UI2jWr70ZYG7XieQX1F7NpzaDeUyPGCrLV1/ev1ZtUImCrDFfMznEjkcqB"
-         "33mRe1rCFGKNVOYUviPE1yBdbfZBGUuJBX2GOXQQj9fU4Hiq3rAgOhz89717mt+qZxZllZ4mdyVEaMB"
-         "WCwqAvl7Z5ecDjB+llFpBORTmsT8OZoGbZnJTIB1d9j0tSbegP17emE+g9fTrk4/ePmSIAKcSV3xj6h"
-         "98AGesNibyu9eKVrroEptxX4crl0o95Me6B1/DCL632xrTO0a5mSmlF4cxCgjLj9 to/ key2")
 
 
 @pytest.mark.gen_test
@@ -56,7 +44,7 @@ def test_add_tag(users, http_client, base_url, session):
     # add SSH key
     fe_url = url(base_url, '/users/{}/public-key/add'.format(user.username))
     resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'public_key': key_1}),
+            body=urlencode({'public_key': SSH_KEY_1}),
             headers={'X-Grouper-User': user.username})
     assert resp.code == 200
 
@@ -65,11 +53,11 @@ def test_add_tag(users, http_client, base_url, session):
     # add SSH key
     fe_url = url(base_url, '/users/{}/public-key/add'.format(user.username))
     resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'public_key': key_2}),
+            body=urlencode({'public_key': SSH_KEY_2}),
             headers={'X-Grouper-User': user.username})
     assert resp.code == 200
 
-    key2 = session.query(PublicKey).filter_by(public_key=key_2).scalar()
+    key2 = session.query(PublicKey).filter_by(public_key=SSH_KEY_2).scalar()
 
     fe_url = url(base_url, '/tags')
     resp = yield http_client.fetch(fe_url, method="POST",
@@ -78,7 +66,7 @@ def test_add_tag(users, http_client, base_url, session):
 
     tag = PublicKeyTag.get(session, name="tyler_was_here")
 
-    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    key = session.query(PublicKey).filter_by(public_key=SSH_KEY_1).scalar()
     assert get_public_key_tags(session, key) == [], "No public keys should have a tag unless it's been added to the key"
 
     fe_url = url(base_url, '/tags')
@@ -88,7 +76,7 @@ def test_add_tag(users, http_client, base_url, session):
 
     tag = PublicKeyTag.get(session, name="dont_tag_me_bro")
 
-    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    key = session.query(PublicKey).filter_by(public_key=SSH_KEY_1).scalar()
     assert get_public_key_tags(session, key) == [], "No public keys should have a tag unless it's been added to the key"
 
     fe_url = url(base_url, '/users/{}/public-key/{}/tag'.format(user.username, key.id))
@@ -97,11 +85,11 @@ def test_add_tag(users, http_client, base_url, session):
             headers={'X-Grouper-User': user.username})
 
     assert resp.code == 200
-    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    key = session.query(PublicKey).filter_by(public_key=SSH_KEY_1).scalar()
     assert len(get_public_key_tags(session, key)) == 1, "The key should have exactly 1 tag"
     assert get_public_key_tags(session, key)[0].name == "tyler_was_here"
 
-    key2 = session.query(PublicKey).filter_by(public_key=key_2).scalar()
+    key2 = session.query(PublicKey).filter_by(public_key=SSH_KEY_2).scalar()
     assert len(get_public_key_tags(session, key2)) == 0, "Keys other than the one with the added tag should not gain tags"
 
     # Non-admin and not user adding tag should fail
@@ -111,7 +99,7 @@ def test_add_tag(users, http_client, base_url, session):
                 body=urlencode({'tagname': "tyler_was_here"}),
                 headers={'X-Grouper-User': "zorkian@a.co"})
 
-    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    key = session.query(PublicKey).filter_by(public_key=SSH_KEY_1).scalar()
     assert len(get_public_key_tags(session, key)) == 1, "The key should have exactly 1 tag"
     assert get_public_key_tags(session, key)[0].name == "tyler_was_here"
 
@@ -122,7 +110,7 @@ def test_add_tag(users, http_client, base_url, session):
             headers={'X-Grouper-User': "tyleromeara@a.co"})
 
     assert resp.code == 200
-    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    key = session.query(PublicKey).filter_by(public_key=SSH_KEY_1).scalar()
     assert len(get_public_key_tags(session, key)) == 2, "The key should have 2 tags now"
     assert set([x.name for x in get_public_key_tags(session, key)]) == set(["tyler_was_here",
         "dont_tag_me_bro"])
@@ -136,7 +124,7 @@ def test_remove_tag(users, http_client, base_url, session):
     # add SSH key
     fe_url = url(base_url, '/users/{}/public-key/add'.format(user.username))
     resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'public_key': key_1}),
+            body=urlencode({'public_key': SSH_KEY_1}),
             headers={'X-Grouper-User': user.username})
     assert resp.code == 200
 
@@ -145,11 +133,11 @@ def test_remove_tag(users, http_client, base_url, session):
     # add SSH key
     fe_url = url(base_url, '/users/{}/public-key/add'.format(user.username))
     resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'public_key': key_2}),
+            body=urlencode({'public_key': SSH_KEY_2}),
             headers={'X-Grouper-User': user.username})
     assert resp.code == 200
 
-    key2 = session.query(PublicKey).filter_by(public_key=key_2).scalar()
+    key2 = session.query(PublicKey).filter_by(public_key=SSH_KEY_2).scalar()
 
     fe_url = url(base_url, '/tags')
     resp = yield http_client.fetch(fe_url, method="POST",
@@ -158,7 +146,7 @@ def test_remove_tag(users, http_client, base_url, session):
 
     tag = PublicKeyTag.get(session, name="tyler_was_here")
 
-    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    key = session.query(PublicKey).filter_by(public_key=SSH_KEY_1).scalar()
     assert get_public_key_tags(session, key) == [], "No public keys should have a tag unless it's been added to the key"
 
     fe_url = url(base_url, '/tags')
@@ -168,7 +156,7 @@ def test_remove_tag(users, http_client, base_url, session):
 
     tag2 = PublicKeyTag.get(session, name="dont_tag_me_bro")
 
-    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    key = session.query(PublicKey).filter_by(public_key=SSH_KEY_1).scalar()
     assert get_public_key_tags(session, key) == [], "No public keys should have a tag unless it's been added to the key"
 
     fe_url = url(base_url, '/users/{}/public-key/{}/tag'.format(user.username, key.id))
@@ -177,11 +165,11 @@ def test_remove_tag(users, http_client, base_url, session):
             headers={'X-Grouper-User': user.username})
 
     assert resp.code == 200
-    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    key = session.query(PublicKey).filter_by(public_key=SSH_KEY_1).scalar()
     assert len(get_public_key_tags(session, key)) == 1, "The key should have exactly 1 tag"
     assert get_public_key_tags(session, key)[0].name == "tyler_was_here"
 
-    key2 = session.query(PublicKey).filter_by(public_key=key_2).scalar()
+    key2 = session.query(PublicKey).filter_by(public_key=SSH_KEY_2).scalar()
     assert len(get_public_key_tags(session, key2)) == 0, "Keys other than the one with the added tag should not gain tags"
 
     fe_url = url(base_url, '/users/{}/public-key/{}/tag'.format(user.username, key2.id))
@@ -189,7 +177,7 @@ def test_remove_tag(users, http_client, base_url, session):
             body=urlencode({'tagname': "tyler_was_here"}),
             headers={'X-Grouper-User': user.username})
 
-    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    key = session.query(PublicKey).filter_by(public_key=SSH_KEY_1).scalar()
     # Fail Remove tag
     tag = PublicKeyTag.get(session, name="dont_tag_me_bro")
     fe_url = url(base_url, '/users/{}/public-key/{}/delete_tag/{}'.format(user.username, key.id, tag.id))
@@ -216,10 +204,10 @@ def test_remove_tag(users, http_client, base_url, session):
 
     assert resp.code == 200
 
-    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    key = session.query(PublicKey).filter_by(public_key=SSH_KEY_1).scalar()
     assert len(get_public_key_tags(session, key)) == 0, "The key should have exactly 0 tags"
 
-    key2 = session.query(PublicKey).filter_by(public_key=key_2).scalar()
+    key2 = session.query(PublicKey).filter_by(public_key=SSH_KEY_2).scalar()
     assert len(get_public_key_tags(session, key2)) == 1, "Removing a tag from one key should not affect other keys"
 
     # User admin remove tag
@@ -231,7 +219,7 @@ def test_remove_tag(users, http_client, base_url, session):
             headers={'X-Grouper-User': user.username})
 
     assert resp.code == 200
-    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    key = session.query(PublicKey).filter_by(public_key=SSH_KEY_1).scalar()
     assert len(get_public_key_tags(session, key)) == 1, "The key should have exactly 1 tag"
     assert get_public_key_tags(session, key)[0].name == "tyler_was_here"
 
@@ -243,7 +231,7 @@ def test_remove_tag(users, http_client, base_url, session):
                 body="",
                 headers={'X-Grouper-User': "oliver@a.co"})
 
-    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    key = session.query(PublicKey).filter_by(public_key=SSH_KEY_1).scalar()
     assert len(get_public_key_tags(session, key)) == 1, "The key should have exactly 1 tags"
 
     # Remove tag
@@ -255,7 +243,7 @@ def test_remove_tag(users, http_client, base_url, session):
 
     assert resp.code == 200
 
-    key = session.query(PublicKey).filter_by(public_key=key_1).scalar()
+    key = session.query(PublicKey).filter_by(public_key=SSH_KEY_1).scalar()
     assert len(get_public_key_tags(session, key)) == 0, "The key should have exactly 0 tags"
 
 
@@ -369,7 +357,7 @@ def test_permissions(users, http_client, base_url, session):
     # add SSH key
     fe_url = url(base_url, '/users/{}/public-key/add'.format(user.username))
     resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'public_key': key_1}),
+            body=urlencode({'public_key': SSH_KEY_1}),
             headers={'X-Grouper-User': user.username})
 
     key = session.query(PublicKey).filter_by(user_id=user.id).scalar()

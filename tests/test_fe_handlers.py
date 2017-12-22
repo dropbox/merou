@@ -5,6 +5,7 @@ from urllib import urlencode
 import pytest
 from tornado.httpclient import HTTPError
 
+from constants import SSH_KEY_1, SSH_KEY_BAD
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
 from fixtures import fe_app as app  # noqa
 from grouper.models.async_notification import AsyncNotification
@@ -48,34 +49,27 @@ def test_public_key(session, users, http_client, base_url):
     user = users['zorkian@a.co']
     assert not get_public_keys_of_user(session, user.id)
 
-    good_key = ('ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDCUQeasspT/etEJR2WUoR+h2sMOQYbJgr0Q'
-            'E+J8p97gEhmz107KWZ+3mbOwyIFzfWBcJZCEg9wy5Paj+YxbGONqbpXAhPdVQ2TLgxr41bNXvbcR'
-            'AxZC+Q12UZywR4Klb2kungKz4qkcmSZzouaKK12UxzGB3xQ0N+3osKFj3xA1+B6HqrVreU19XdVo'
-            'AJh0xLZwhw17/NDM+dAcEdMZ9V89KyjwjraXtOVfFhQF0EDF0ame8d6UkayGrAiXC2He0P2Cja+J'
-            '371P27AlNLHFJij8WGxvcGGSeAxMLoVSDOOllLCYH5UieV8mNpX1kNe2LeA58ciZb0AXHaipSmCH'
-            'gh/ some-comment')
-
-    bad_key = 'ssh-rsa AAAblahblahkey some-comment'
-
     # add it
     fe_url = url(base_url, '/users/{}/public-key/add'.format(user.username))
     resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'public_key': good_key}),
+            body=urlencode({'public_key': SSH_KEY_1}),
             headers={'X-Grouper-User': user.username})
     assert resp.code == 200
 
     # add bad key -- shouldn't add
     fe_url = url(base_url, '/users/{}/public-key/add'.format(user.username))
     resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'public_key': bad_key}),
+            body=urlencode({'public_key': SSH_KEY_BAD}),
             headers={'X-Grouper-User': user.username})
     assert resp.code == 200
 
     user = User.get(session, name=user.username)
     keys = get_public_keys_of_user(session, user.id)
     assert len(keys) == 1
-    assert keys[0].public_key == good_key
+    assert keys[0].public_key == SSH_KEY_1
     assert keys[0].fingerprint == 'e9:ae:c5:8f:39:9b:3a:9c:6a:b8:33:6b:cb:6f:ba:35'
+    assert keys[0].fingerprint_sha256 == 'MP9uWaujW96EWxbjDtPdPWheoMDu6BZ8FZj0+CBkVWU'
+    assert keys[0].comment == 'some-comment'
 
     # delete it
     fe_url = url(base_url, '/users/{}/public-key/{}/delete'.format(user.username, keys[0].id))
@@ -89,14 +83,14 @@ def test_public_key(session, users, http_client, base_url):
     # add it
     fe_url = url(base_url, '/users/{}/public-key/add'.format(user.username))
     resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'public_key': good_key}),
+            body=urlencode({'public_key': SSH_KEY_1}),
             headers={'X-Grouper-User': user.username})
     assert resp.code == 200
 
     user = User.get(session, name=user.username)
     keys = get_public_keys_of_user(session, user.id)
     assert len(keys) == 1
-    assert keys[0].public_key == good_key
+    assert keys[0].public_key == SSH_KEY_1
 
     # have an admin delete it
     fe_url = url(base_url, '/users/{}/public-key/{}/delete'.format(user.username, keys[0].id))
@@ -143,40 +137,31 @@ def test_sa_pubkeys(session, users, http_client, base_url):
 
     assert not get_public_keys_of_user(session, user.id)
 
-    good_key = ('ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDCUQeasspT/etEJR2WUoR+h2sMOQYbJgr0Q'
-            'E+J8p97gEhmz107KWZ+3mbOwyIFzfWBcJZCEg9wy5Paj+YxbGONqbpXAhPdVQ2TLgxr41bNXvbcR'
-            'AxZC+Q12UZywR4Klb2kungKz4qkcmSZzouaKK12UxzGB3xQ0N+3osKFj3xA1+B6HqrVreU19XdVo'
-            'AJh0xLZwhw17/NDM+dAcEdMZ9V89KyjwjraXtOVfFhQF0EDF0ame8d6UkayGrAiXC2He0P2Cja+J'
-            '371P27AlNLHFJij8WGxvcGGSeAxMLoVSDOOllLCYH5UieV8mNpX1kNe2LeA58ciZb0AXHaipSmCH'
-            'gh/ some-comment')
-
-    bad_key = 'ssh-rsa AAAblahblahkey some-comment'
-
     with pytest.raises(HTTPError):
         # add it
         fe_url = url(base_url, '/users/{}/public-key/add'.format("bob@svc.localhost"))
         resp = yield http_client.fetch(fe_url, method="POST",
-                body=urlencode({'public_key': good_key}),
+                body=urlencode({'public_key': SSH_KEY_1}),
                 headers={'X-Grouper-User': "gary@a.co"})
 
     # add it
     fe_url = url(base_url, '/users/{}/public-key/add'.format("bob@svc.localhost"))
     resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'public_key': good_key}),
+            body=urlencode({'public_key': SSH_KEY_1}),
             headers={'X-Grouper-User': user.username})
     assert resp.code == 200
 
     # add bad key -- shouldn't add
     fe_url = url(base_url, '/users/{}/public-key/add'.format("bob@svc.localhost"))
     resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'public_key': bad_key}),
+            body=urlencode({'public_key': SSH_KEY_BAD}),
             headers={'X-Grouper-User': user.username})
     assert resp.code == 200
 
     sa = User.get(session, name="bob@svc.localhost")
     keys = get_public_keys_of_user(session, sa.id)
     assert len(keys) == 1
-    assert keys[0].public_key == good_key
+    assert keys[0].public_key == SSH_KEY_1
 
     with pytest.raises(HTTPError):
         # delete it

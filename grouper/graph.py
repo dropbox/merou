@@ -185,6 +185,7 @@ class GroupGraph(object):
                     {
                         "public_key": key.public_key,
                         "fingerprint": key.fingerprint,
+                        "fingerprint_sha256": key.fingerprint_sha256,
                         "created_on": str(key.created_on),
                         "tags": [tag.name for tag in public_key_tags.get(key.id, [])],
                         "id": key.id,

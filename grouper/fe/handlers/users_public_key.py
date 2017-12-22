@@ -28,7 +28,9 @@ class UsersPublicKey(GrouperHandler):
         user_key_list = user_key_list.filter(User.enabled == bool(form.enabled.data))
 
         if form.fingerprint.data:
-            user_key_list = user_key_list.filter(PublicKey.fingerprint == form.fingerprint.data)
+            user_key_list = user_key_list.filter(
+                PublicKey.fingerprint_sha256 == form.fingerprint.data
+            )
 
         if form.sort_by.data == "size":
             user_key_list = user_key_list.order_by(PublicKey.key_size.desc())

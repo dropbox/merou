@@ -109,7 +109,7 @@ def user_command(args):
             return
 
         AuditLog.log(session, user.id, 'add_public_key',
-                '(Administrative) Added public key: {}'.format(pubkey.fingerprint),
+                '(Administrative) Added public key: {}'.format(pubkey.fingerprint_sha256),
                 on_user_id=user.id)
 
 

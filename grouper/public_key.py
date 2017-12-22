@@ -23,6 +23,10 @@ class DuplicateTag(Exception):
     pass
 
 
+class PublicKeyParseError(Exception):
+    pass
+
+
 class KeyNotFound(Exception):
     """Particular user's specific key was not found."""
 
@@ -65,18 +69,30 @@ def add_public_key(session, user, public_key_str):
         user: User model of user in question
         public_key_str: public key to add
 
-    Return created PublicKey model or raises DuplicateKey if key is already in use.
+    Throws:
+        DuplicateKey if key is already in use
+        PublicKeyParseError if key can't be parsed
+
+    Returns:
+        PublicKey model object representing the key
     """
     pubkey = sshpubkeys.SSHKey(public_key_str, strict=True)
-    pubkey.parse()
+
+    try:
+        pubkey.parse()
+    except sshpubkeys.InvalidKeyException as e:
+        raise PublicKeyParseError(e.message)
 
     db_pubkey = PublicKey(
         user=user,
         public_key=pubkey.keydata.strip(),
         fingerprint=pubkey.hash_md5().replace(b"MD5:", b""),
+        fingerprint_sha256=pubkey.hash_sha256().replace(b"SHA256:", b""),
         key_size=pubkey.bits,
         key_type=pubkey.key_type,
+        comment=pubkey.comment,
     )
+
     try:
         db_pubkey.add(session)
         Counter.incr(session, "updates")

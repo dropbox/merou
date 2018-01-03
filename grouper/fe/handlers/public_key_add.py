@@ -48,6 +48,8 @@ class PublicKeyAdd(GrouperHandler):
             form.public_key.errors.append("Key already in use. Public keys must be unique.")
         except public_key.PublicKeyParseError:
             form.public_key.errors.append("Public key appears to be invalid.")
+        except public_key.BadPublicKey as e:
+            form.public_key.errors.append(e.message)
 
         if form.public_key.errors:
             return self.render(

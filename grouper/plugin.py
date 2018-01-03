@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from ssl import SSLContext  # noqa
     from typing import Any, Dict, List, Union  # noqa
     from sqlalchemy.orm import Session  # noqa
+    from sshpubkeys import SSHKey  # noqa
     from tornado.httpserver import HTTPRequest  # noqa
     from grouper.models.audit_log import AuditLog  # noqa
     from grouper.models.group import Group  # noqa
@@ -90,6 +91,10 @@ class PluginRejectedDisablingUser(PluginException):
 
 class PluginRejectedMachineSet(PluginException):
     """A plugin rejected a machine set for a service account."""
+    pass
+
+
+class PluginRejectedPublicKey(PluginException):
     pass
 
 
@@ -207,5 +212,18 @@ class BasePlugin(object):
         Raises:
             PluginRejectedMachineSet to reject the change.  The exception message will be shown to
             the user.
+        """
+        pass
+
+    def will_add_public_key(self, key):
+        # type: (SSHKey) -> None
+        """
+        Called before adding a public key
+
+        Args:
+            key: Parsed public key
+
+        Raises:
+            PluginRejectedPublicKey: if the plugin rejects the key
         """
         pass

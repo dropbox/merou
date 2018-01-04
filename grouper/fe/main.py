@@ -22,6 +22,7 @@ from grouper.util import get_database_url
 
 if TYPE_CHECKING:
     import argparse  # noqa
+    from typing import List  # noqa
     from grouper.error_reporting import SentryProxy  # noqa
     from grouper.fe.settings import Settings  # noqa
 

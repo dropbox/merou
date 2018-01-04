@@ -1,7 +1,7 @@
-import argparse
 from contextlib import closing
 import logging
 import sys
+from typing import TYPE_CHECKING
 
 import tornado.httpserver
 import tornado.ioloop
@@ -11,13 +11,18 @@ from grouper.api.settings import settings
 from grouper.app import Application
 from grouper.background import BackgroundThread
 from grouper.database import DbRefreshThread
-from grouper.error_reporting import get_sentry_client, SentryProxy, setup_signal_handlers
-from grouper.fe.settings import Settings
-from grouper.graph import Graph, GroupGraph
+from grouper.error_reporting import get_sentry_client, setup_signal_handlers
+from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import load_plugins, PluginsDirectoryDoesNotExist
 from grouper.setup import build_arg_parser, setup_logging
 from grouper.util import get_database_url
+
+if TYPE_CHECKING:
+    import argparse  # noqa
+    from grouper.error_reporting import SentryProxy  # noqa
+    from grouper.fe.settings import Settings  # noqa
+    from grouper.graph import GroupGraph  # noqa
 
 
 def get_application(graph, settings, sentry_client):

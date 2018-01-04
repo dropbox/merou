@@ -1,24 +1,29 @@
-import argparse
 from contextlib import closing
 import logging
 import os
 import sys
+from typing import TYPE_CHECKING
 
 import tornado.httpserver
 import tornado.ioloop
 
 from grouper.app import Application
 from grouper.database import DbRefreshThread
-from grouper.error_reporting import get_sentry_client, SentryProxy, setup_signal_handlers
+from grouper.error_reporting import get_sentry_client, setup_signal_handlers
 import grouper.fe
 from grouper.fe.routes import HANDLERS
-from grouper.fe.settings import Settings, settings
+from grouper.fe.settings import settings
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import get_plugins, load_plugins, PluginsDirectoryDoesNotExist
 from grouper.setup import build_arg_parser, setup_logging
 from grouper.util import get_database_url
+
+if TYPE_CHECKING:
+    import argparse  # noqa
+    from grouper.error_reporting import SentryProxy  # noqa
+    from grouper.fe.settings import Settings  # noqa
 
 
 def get_application(settings, sentry_client, deployment_name):
@@ -51,7 +56,7 @@ def start_server(args, sentry_client):
     logging.info("begin. log_level={}".format(log_level))
 
     assert not (settings.debug and settings.num_processes > 1), \
-            "debug mode does not support multiple processes"
+        "debug mode does not support multiple processes"
 
     try:
         load_plugins(settings.plugin_dirs, settings.plugin_module_paths, service_name="grouper_fe")
@@ -69,7 +74,7 @@ def start_server(args, sentry_client):
     port = args.port or settings.port
 
     ssl_contexts = list(filter(bool, (p.get_ssl_context() for p in get_plugins())))
-    assert len(ssl_contexts) <=1, "Plugins returned more than one ssl.SSLContext!"
+    assert len(ssl_contexts) <= 1, "Plugins returned more than one ssl.SSLContext!"
     ssl_context = ssl_contexts[0] if ssl_contexts else None
 
     logging.info(

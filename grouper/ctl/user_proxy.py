@@ -20,7 +20,7 @@ class ProxyHandler(UserProxyHandler):
             data = err.read()
         except urllib2.URLError as err:
             code = 503
-            headers = str(err.info())
+            headers = str(err)
             data = "503 Service Unavailable: %s\n" % err
 
         self.send_response(code)

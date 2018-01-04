@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import imp
 
 import pytest
 
@@ -9,7 +8,6 @@ from grouper.expiration import _get_unsent_expirations
 from grouper.settings import settings
 from util import add_member, edit_member, grant_permission, revoke_member
 
-imp.load_source('grouper-api', 'bin/grouper-api')
 
 @pytest.fixture
 def expiring_graph(session, graph, users, groups, permissions):

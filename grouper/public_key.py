@@ -1,18 +1,22 @@
 from collections import defaultdict
+from typing import TYPE_CHECKING
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label
 import sshpubkeys
-from typing import Dict, List  # noqa
 
-from grouper.models.base.session import Session  # noqa
 from grouper.models.counter import Counter
 from grouper.models.permission import Permission
 from grouper.models.public_key import PublicKey
-from grouper.models.public_key_tag import PublicKeyTag  # noqa
 from grouper.models.public_key_tag_map import PublicKeyTagMap
 from grouper.models.tag_permission_map import TagPermissionMap
+from grouper.plugin import get_plugins, PluginRejectedPublicKey
 from grouper.user_permissions import user_permissions
+
+if TYPE_CHECKING:
+    from typing import Dict, List  # noqa
+    from grouper.models.base.session import Session  # noqa
+    from grouper.models.public_key_tag import PublicKeyTag  # noqa
 
 
 class DuplicateKey(Exception):
@@ -24,6 +28,10 @@ class DuplicateTag(Exception):
 
 
 class PublicKeyParseError(Exception):
+    pass
+
+
+class BadPublicKey(Exception):
     pass
 
 
@@ -72,6 +80,7 @@ def add_public_key(session, user, public_key_str):
     Throws:
         DuplicateKey if key is already in use
         PublicKeyParseError if key can't be parsed
+        BadPublicKey if a plugin rejects the key
 
     Returns:
         PublicKey model object representing the key
@@ -82,6 +91,12 @@ def add_public_key(session, user, public_key_str):
         pubkey.parse()
     except sshpubkeys.InvalidKeyException as e:
         raise PublicKeyParseError(e.message)
+
+    try:
+        for plugin in get_plugins():
+            plugin.will_add_public_key(pubkey)
+    except PluginRejectedPublicKey as e:
+        raise BadPublicKey(e.message)
 
     db_pubkey = PublicKey(
         user=user,

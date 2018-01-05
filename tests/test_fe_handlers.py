@@ -2,6 +2,7 @@ from datetime import date, datetime, timedelta
 import json
 from urllib import urlencode
 
+from mock import patch
 import pytest
 from tornado.httpclient import HTTPError
 
@@ -13,7 +14,7 @@ from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
 from grouper.models.request import Request
 from grouper.models.user import User
-from grouper.public_key import get_public_keys_of_user
+from grouper.public_key import BadPublicKey, get_public_keys_of_user
 from grouper.role_user import (disable_role_user, enable_role_user,
     get_role_user, is_role_user)
 from url_util import url
@@ -56,13 +57,6 @@ def test_public_key(session, users, http_client, base_url):
             headers={'X-Grouper-User': user.username})
     assert resp.code == 200
 
-    # add bad key -- shouldn't add
-    fe_url = url(base_url, '/users/{}/public-key/add'.format(user.username))
-    resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'public_key': SSH_KEY_BAD}),
-            headers={'X-Grouper-User': user.username})
-    assert resp.code == 200
-
     user = User.get(session, name=user.username)
     keys = get_public_keys_of_user(session, user.id)
     assert len(keys) == 1
@@ -78,6 +72,12 @@ def test_public_key(session, users, http_client, base_url):
     assert resp.code == 200
 
     user = User.get(session, name=user.username)
+    assert not get_public_keys_of_user(session, user.id)
+
+
+@pytest.mark.gen_test
+def test_public_key_admin(session, users, http_client, base_url):
+    user = users['zorkian@a.co']
     assert not get_public_keys_of_user(session, user.id)
 
     # add it
@@ -99,6 +99,35 @@ def test_public_key(session, users, http_client, base_url):
     assert resp.code == 200
 
     user = User.get(session, name=user.username)
+    assert not get_public_keys_of_user(session, user.id)
+
+
+@pytest.mark.gen_test
+def test_bad_public_key(session, users, http_client, base_url):
+    user = users['zorkian@a.co']
+
+    fe_url = url(base_url, '/users/{}/public-key/add'.format(user.username))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({'public_key': SSH_KEY_BAD}),
+            headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+    assert "Public key appears to be invalid" in resp.body
+    assert not get_public_keys_of_user(session, user.id)
+
+
+@pytest.mark.gen_test
+def test_rejected_public_key(session, users, http_client, base_url):
+    user = users['zorkian@a.co']
+
+    with patch('grouper.public_key.add_public_key') as add_public_key:
+        add_public_key.side_effect = BadPublicKey("Your key is bad and you should feel bad")
+
+        fe_url = url(base_url, '/users/{}/public-key/add'.format(user.username))
+        resp = yield http_client.fetch(fe_url, method="POST",
+                                       body=urlencode({'public_key': SSH_KEY_1}),
+                                       headers={'X-Grouper-User': user.username})
+    assert resp.code == 200
+    assert "Your key is bad and you should feel bad" in resp.body
     assert not get_public_keys_of_user(session, user.id)
 
 

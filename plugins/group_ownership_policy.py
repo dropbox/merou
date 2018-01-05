@@ -53,7 +53,7 @@ class GroupOwnershipPolicyPlugin(BasePlugin):
             if role_idx not in OWNER_ROLE_INDICES:
                 check_permanent_owners = True
 
-        if "expiration" in updates:
+        if updates.get("expiration"):
             check_permanent_owners = True
 
         if "active" in updates and not updates["active"]:

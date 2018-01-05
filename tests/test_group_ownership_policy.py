@@ -116,6 +116,17 @@ def test_can_always_revoke_members(get_plugins, groups, users):
     revoke_member(group, member)
 
 
+@patch("grouper.group_member.get_plugins")
+def test_can_add_owner_twice(get_plugins, session, groups, users):
+    get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
+
+    group = groups["team-infra"]
+    owner = users["gary@a.co"]
+
+    add_member(group, owner, role="owner")
+    add_member(group, owner, role="owner")
+
+
 @patch("grouper.user.get_plugins")
 def test_cant_disable_last_owner(get_plugins, session, groups, users):
     get_plugins.return_value = [GroupOwnershipPolicyPlugin()]

@@ -1,14 +1,38 @@
-SSH_KEY_1 = ('ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDCUQeasspT/etEJR2WUoR+h2sMOQYbJgr0Q'
-             'E+J8p97gEhmz107KWZ+3mbOwyIFzfWBcJZCEg9wy5Paj+YxbGONqbpXAhPdVQ2TLgxr41bNXvbcR'
-             'AxZC+Q12UZywR4Klb2kungKz4qkcmSZzouaKK12UxzGB3xQ0N+3osKFj3xA1+B6HqrVreU19XdVo'
-             'AJh0xLZwhw17/NDM+dAcEdMZ9V89KyjwjraXtOVfFhQF0EDF0ame8d6UkayGrAiXC2He0P2Cja+J'
-             '371P27AlNLHFJij8WGxvcGGSeAxMLoVSDOOllLCYH5UieV8mNpX1kNe2LeA58ciZb0AXHaipSmCH'
-             'gh/ some-comment')
+SSH_KEY_1 = (
+    'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDCUQeasspT/etEJR2WUoR+h2sMOQYbJgr0QE+J8p97gEhmz107KWZ+3m'
+    'bOwyIFzfWBcJZCEg9wy5Paj+YxbGONqbpXAhPdVQ2TLgxr41bNXvbcRAxZC+Q12UZywR4Klb2kungKz4qkcmSZzouaKK12'
+    'UxzGB3xQ0N+3osKFj3xA1+B6HqrVreU19XdVoAJh0xLZwhw17/NDM+dAcEdMZ9V89KyjwjraXtOVfFhQF0EDF0ame8d6Uk'
+    'ayGrAiXC2He0P2Cja+J371P27AlNLHFJij8WGxvcGGSeAxMLoVSDOOllLCYH5UieV8mNpX1kNe2LeA58ciZb0AXHaipSmC'
+    'Hgh/ some-comment'
+)
 
-SSH_KEY_2 = ('ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDF1DyXlqc40AVUgt/IO0GFcTniaoFt5qCUAeNVlva'
-             'lMnsrRULIXkb0g1ds9P9/UI2jWr70ZYG7XieQX1F7NpzaDeUyPGCrLV1/ev1ZtUImCrDFfMznEjkcqB'
-             '33mRe1rCFGKNVOYUviPE1yBdbfZBGUuJBX2GOXQQj9fU4Hiq3rAgOhz89717mt+qZxZllZ4mdyVEaMB'
-             'WCwqAvl7Z5ecDjB+llFpBORTmsT8OZoGbZnJTIB1d9j0tSbegP17emE+g9fTrk4/ePmSIAKcSV3xj6h'
-             '98AGesNibyu9eKVrroEptxX4crl0o95Me6B1/DCL632xrTO0a5mSmlF4cxCgjLj9 to/ key2')
+SSH_KEY_2 = (
+    'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDF1DyXlqc40AVUgt/IO0GFcTniaoFt5qCUAeNVlvalMnsrRULIXkb0g1'
+    'ds9P9/UI2jWr70ZYG7XieQX1F7NpzaDeUyPGCrLV1/ev1ZtUImCrDFfMznEjkcqB33mRe1rCFGKNVOYUviPE1yBdbfZBGU'
+    'uJBX2GOXQQj9fU4Hiq3rAgOhz89717mt+qZxZllZ4mdyVEaMBWCwqAvl7Z5ecDjB+llFpBORTmsT8OZoGbZnJTIB1d9j0t'
+    'SbegP17emE+g9fTrk4/ePmSIAKcSV3xj6h98AGesNibyu9eKVrroEptxX4crl0o95Me6B1/DCL632xrTO0a5mSmlF4cxCg'
+    'jLj9 to/ key2'
+)
 
 SSH_KEY_BAD = 'ssh-rsa AAAblahblahkey some-comment'
+
+SSH_KEY_RSA_1024 = (
+    'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDhKgSsCJR9UyQa/Gsheb5F56hg23CVnCLpmpyC2JMqVEptG9CL83Oftp'
+    'OPvEb/785Act4En1VFvwMwTj25VurbG3XI984csiNdWPlM1ke4lHK2PQepSYyZVYn+hhXhzSILNDixhBYeDVv4GOfJM1HB'
+    'O2AEtupOMHOqtnQLjV1UnQ== rsa-1024'
+)
+
+SSH_KEY_DSA = (
+    'ssh-dss AAAAB3NzaC1kc3MAAACBAKdCbYh9GgDPFppJmyRcpWhFn3Xc5vcljGE20df84KYQeBVCQg3zTLkwynHyrpEwTH'
+    'mIc0bgH14muGwPOdt8CEtj9EvcPHHCEaZ/4IdT02awY+Opszq7LI/YXzfu3cbgOoB22zj+chhryCiMIisEBHQv00F54z01'
+    'yOi3mOX7BIZBAAAAFQDgX/4IaAAtnbQ3DeDbWSJVxdKtIQAAAIEAoUsqfKyrzmDLgLhLpJpVs5BPdziHxlJM1+cQuIaVsT'
+    'He7tyu61hpColor2ybyhafKhJ3ZH9bsl8DASwkGQXyjOTL/T6IzVhlcCfeDtirwAwQNINz8xwplLIbCOLAAOdVrKE9xHMO'
+    '5RPXO8i58CFF7c5fm3vg87nLH+uh1AwFyysAAACABCca7QX1ZJIoIt37HxCwV3+ktcoVhoZhuzHNRe9l4CSKSeSdnWrdaC'
+    '8G7tvKPTrImYIPqSZz3ohLDioflMUN3yIHnO1VsDn0hwTa7x9c/RiGAkiwKagF1icGfzgEiMt7PTfJT/nMeFoahuJEk8ka'
+    'sRtdm0VcM4JyOLiqej/8VRo= dsa-1024'
+)
+
+SSH_KEY_ECDSA_P256 = (
+    'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBD7FwYV01qXgP2TManNEqn'
+    'OD/JXCp7WChDk7c3GiwHSlZVn3xvmtphQjzE6Ag4GDh/bFOaKIcGc66691GsOE6Vo= ecdsa-p256'
+)

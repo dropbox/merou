@@ -26,6 +26,7 @@ common:
     # Type: list of str
     plugin_module_paths:
     - plugins.group_ownership_policy
+    - plugins.ssh_key_policy
 
     # Directories for one-offs. If set, load oneoffs from these directories which
     # are run via grouper-ctl.

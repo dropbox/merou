@@ -37,6 +37,7 @@ common:
     # Type: list of str
     oneoff_module_paths:
     - oneoffs.refresh_public_keys
+    - oneoffs.check_public_keys
 
     # Name of permissions for which we restrict ownership calculations to
     # exclude wildcard ownership if any non-wildcard owners are avaiable.

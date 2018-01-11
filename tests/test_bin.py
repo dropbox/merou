@@ -1,16 +1,21 @@
 import subprocess
 
+from path_util import src_path
+
 
 def test_api():
-    out = subprocess.check_output(["bin/grouper-api", "--help"])
+    bin_path = src_path("bin", "grouper-api")
+    out = subprocess.check_output([bin_path, "--help"])
     assert out.startswith("usage: grouper-api")
 
 
 def test_ctl():
-    out = subprocess.check_output(["bin/grouper-ctl", "--help"])
+    bin_path = src_path("bin", "grouper-ctl")
+    out = subprocess.check_output([bin_path, "--help"])
     assert out.startswith("usage: grouper-ctl")
 
 
 def test_fe():
-    out = subprocess.check_output(["bin/grouper-fe", "--help"])
+    bin_path = src_path("bin", "grouper-fe")
+    out = subprocess.check_output([bin_path, "--help"])
     assert out.startswith("usage: grouper-fe")

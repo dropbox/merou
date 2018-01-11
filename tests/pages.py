@@ -118,6 +118,18 @@ class AuditsCreatePage(BasePage):
         form.submit()
 
 
+class PublicKeysPage(BasePage):
+    def find_public_key_row(self, fingerprint_sha256):
+        for row in self.find_elements_by_class_name("public-key-row"):
+            member_row = PublicKeyRow(row)
+            if member_row.fingerprint_sha256 == fingerprint_sha256:
+                return member_row
+
+        raise NoSuchElementException(
+            "Can't find public key with fingerprint {}".format(fingerprint_sha256)
+        )
+
+
 class BaseModal(BaseElement):
     def confirm(self):
         form = self.find_element_by_tag_name("form")
@@ -191,3 +203,21 @@ class AuditMemberRow(BaseElement):
         status_cell = self.find_element_by_class_name("audit-member-status")
         status_select = status_cell.find_element_by_tag_name("select")
         Select(status_select).select_by_visible_text(status)
+
+
+class PublicKeyRow(BaseElement):
+    @property
+    def user(self):
+        return self.find_element_by_class_name("public-key-user").text
+
+    @property
+    def key_type(self):
+        return self.find_element_by_class_name("public-key-type").text
+
+    @property
+    def key_size(self):
+        return self.find_element_by_class_name("public-key-size").text
+
+    @property
+    def fingerprint_sha256(self):
+        return self.find_element_by_class_name("public-key-fingerprint-sha256").text

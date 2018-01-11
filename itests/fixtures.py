@@ -1,13 +1,10 @@
 import subprocess
 
 import pytest
+import selenium
 import yaml
 
-from fixtures import standard_graph  # noqa: F401
-from path_util import db_url, src_path
-
-
-selenium = pytest.importorskip("selenium")
+from tests.path_util import db_url, src_path
 
 
 def _write_test_config(tmpdir):
@@ -58,12 +55,10 @@ def async_server(standard_graph, tmpdir):
 def browser():
     options = selenium.webdriver.ChromeOptions()
     options.add_argument("headless")
+    options.add_argument("no-sandbox")
     options.add_argument("window-size=1920,1080")
 
-    try:
-        driver = selenium.webdriver.Chrome(chrome_options=options)
-    except selenium.common.exceptions.WebDriverException:
-        pytest.skip("could not initialize Selenium Chrome webdriver")
+    driver = selenium.webdriver.Chrome(chrome_options=options)
 
     yield driver
 

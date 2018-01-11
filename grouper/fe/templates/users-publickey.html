@@ -1,8 +1,7 @@
 {% extends "base.html" %}
 
-{% from 'macros/ui.html' import account, paginator, one_public_key_row %}
-{% from 'macros/ui.html' import public_key_modal with context %}
-{% from 'macros/ui.html' import dropdown with context %}
+{% from 'macros/ui.html' import account, one_public_key_row %}
+{% from 'macros/ui.html' import dropdown, paginator, public_key_modal with context %}
 
 {% block heading %}
     {% if not form.enabled.data %}
@@ -68,8 +67,8 @@
             </thead>
             <tbody>
             {% for key, user in user_key_list %}
-                <tr>
-                    <td>{{ account(user) }}</td>
+                <tr class="public-key-row">
+                    <td class="public-key-user">{{ account(user) }}</td>
                     {{ one_public_key_row(key, user.name, True) }}
                 </tr>
             {% endfor %}

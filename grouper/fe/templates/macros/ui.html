@@ -1,9 +1,9 @@
 {% macro one_public_key_row(key, username, can_control) -%}
-    <td><span class="has-help" data-toggle="popover" data-content="{{ key.created_on|print_date }}">
+    <td class="public-key-created-on"><span class="has-help" data-toggle="popover" data-content="{{ key.created_on|print_date }}">
         {{ key.created_on|long_ago_str }}</span></td>
-    <td>{% if key.key_type %}{{ key.key_type }}{% endif %}</td>
-    <td>{% if key.key_size %}{{ key.key_size }}{% endif %}</td>
-    <td class="hidden-xs">
+    <td class="public-key-type">{% if key.key_type %}{{ key.key_type }}{% endif %}</td>
+    <td class="public-key-size">{% if key.key_size %}{{ key.key_size }}{% endif %}</td>
+    <td class="public-key-fingerprint-sha256 hidden-xs">
         <code>{{ key.fingerprint_sha256 }}</code>
     </td>
     <td>

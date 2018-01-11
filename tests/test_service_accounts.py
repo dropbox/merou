@@ -235,10 +235,8 @@ def test_service_account_fe_perms(session, standard_graph, http_client, base_url
     # Check that the permissions are reflected in the graph.
     graph.update_from_db(session)
     metadata = graph.get_user_details("service@a.co")
-    assert metadata["permissions"][0]["permission"] == "team-sre"
-    assert metadata["permissions"][0]["argument"] == "*"
-    assert metadata["permissions"][1]["permission"] == "ssh"
-    assert metadata["permissions"][1]["argument"] == "*"
+    permissions = [(p["permission"], p["argument"]) for p in metadata["permissions"]]
+    assert sorted(permissions) == [("ssh", "*"), ("team-sre", "*")]
 
     # Find the mapping IDs of the two permissions.
     service_account = ServiceAccount.get(session, name="service@a.co")

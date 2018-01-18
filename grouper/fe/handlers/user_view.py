@@ -7,11 +7,8 @@ class UserView(GrouperHandler):
 
     def get(self, user_id=None, name=None):
         self.handle_refresh()
+
         user = User.get(self.session, user_id, name)
-        if user_id is not None:
-            user = self.session.query(User).filter_by(id=user_id).scalar()
-        else:
-            user = self.session.query(User).filter_by(username=name).scalar()
 
         if not user:
             return self.notfound()

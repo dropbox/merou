@@ -24,10 +24,12 @@ def qp_to_bool(arg):
     return arg.lower() in _TRUTHY
 
 
-def get_loglevel(args):
+def get_loglevel(args, base=None):
+    if base is None:
+        base = logging.getLogger().level
     verbose = args.verbose * 10
     quiet = args.quiet * 10
-    return logging.getLogger().level - verbose + quiet
+    return base - verbose + quiet
 
 
 def try_update(dct, update):

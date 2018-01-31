@@ -20,6 +20,7 @@ from grouper.fe.forms import ValidateRegex
 import grouper.fe.util
 from grouper.models.async_notification import AsyncNotification
 from grouper.models.group import Group
+from grouper.models.service_account import ServiceAccount
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
 from grouper.permissions import (
@@ -27,6 +28,7 @@ from grouper.permissions import (
         get_owner_arg_list,
         get_owners_by_grantable_permission,
         get_requests_by_owner,
+        grant_permission_to_service_account,
         )
 from grouper.models.permission import Permission
 from grouper.user_permissions import user_grantable_permissions, user_has_permission
@@ -132,9 +134,20 @@ class PermissionTests(unittest.TestCase):
         self.assertIsNone(eval_argument('right_bracket]'))
         self.assertIsNone(eval_argument('caret^'))
         self.assertIsNone(eval_argument('underscore_equals=plus+slash/dot.color:hyphen-ok'))
-        self.assertRaises(ValidationError, eval_argument, 'whitespace invalid')
+        self.assertIsNone(eval_argument('whitespace allowed'))
         self.assertRaises(ValidationError, eval_argument, 'question?mark')
         self.assertRaises(ValidationError, eval_argument, 'exclaimation!point')
+
+
+def test_grant_permission(session, standard_graph, groups, permissions):
+    grant_permission(groups["sad-team"], permissions["ssh"], argument="host +other-host")
+    with pytest.raises(AssertionError):
+        grant_permission(groups["sad-team"], permissions["ssh"], argument="question?")
+    account = ServiceAccount.get(session, name="service@a.co")
+    grant_permission_to_service_account(session, account, permissions["ssh"], argument="*")
+    with pytest.raises(AssertionError):
+        grant_permission_to_service_account(
+            session, account, permissions["ssh"], argument="question?")
 
 
 def test_grantable_permissions(session, standard_graph, users, groups, grantable_permissions):
@@ -233,10 +246,20 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
     perm_grant, _, perm1, perm2 = grantable_permissions
     grant_permission(groups["all-teams"], perm_grant, argument="grantable.*")
 
-    # REQUEST: 'grantable.one', 'some argument' for 'serving-team'
+    # REQUEST: permission with an invalid argument
     groupname = "serving-team"
     username = "zorkian@a.co"
     fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
+    resp = yield http_client.fetch(fe_url, method="POST",
+            body=urlencode({"permission_name": "grantable.one", "argument": "some argument?",
+                "reason": "blah blah black sheep", "argument_type": "text"}),
+            headers={'X-Grouper-User': username})
+    assert resp.code == 200
+    assert "Field must match" in resp.body
+    emails = _get_unsent_and_mark_as_sent_emails(session)
+    assert len(emails) == 0, "no emails queued"
+
+    # REQUEST: 'grantable.one', 'some argument' for 'serving-team'
     resp = yield http_client.fetch(fe_url, method="POST",
             body=urlencode({"permission_name": "grantable.one", "argument": "some argument",
                 "reason": "blah blah black sheep", "argument_type": "text"}),

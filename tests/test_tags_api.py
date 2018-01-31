@@ -38,6 +38,8 @@ def test_tags(session, http_client, base_url, graph):
     tag = PublicKeyTag.get(session, name="tyler_was_here")
 
     grant_permission_to_tag(session, tag.id, perm.id, "prod")
+    with pytest.raises(AssertionError):
+        grant_permission_to_tag(session, tag.id, perm.id, "question?")
 
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
 

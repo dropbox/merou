@@ -45,7 +45,7 @@ def main(sys_argv=sys.argv, start_config_thread=True):
         settings.update_from_config(args.config)
         settings.start_config_thread(args.config)
 
-    log_level = get_loglevel(args)
+    log_level = get_loglevel(args, base=logging.INFO)
     logging.basicConfig(level=log_level, format=settings.log_format)
 
     load_plugins(settings.plugin_dirs, settings.plugin_module_paths, service_name="grouper-ctl")

@@ -1,3 +1,5 @@
+from sqlalchemy import or_
+
 from grouper.fe.util import GrouperHandler
 from grouper.models.user import User
 
@@ -12,12 +14,20 @@ class UsersView(GrouperHandler):
         if limit > 9000:
             limit = 9000
 
-        users = (
-            self.session.query(User)
-            .filter(User.enabled == enabled)
-            .filter(User.role_user == service)
-            .order_by(User.username)
-        )
+        if service:
+            users = self.session.query(User).filter(
+                User.enabled == enabled,
+                or_(
+                    User.role_user == True,
+                    User.is_service_account == True,
+                ),
+            ).order_by(User.username)
+        else:
+            users = self.session.query(User).filter(
+                User.enabled == enabled,
+                User.role_user == False,
+                User.is_service_account == False,
+            ).order_by(User.username)
         total = users.count()
         users = users.offset(offset).limit(limit).all()
 

@@ -63,7 +63,8 @@ def grant_permission(session, group_id, permission_id, argument=''):
     Throws:
         AssertError if argument does not match ARGUMENT_VALIDATION regex
     """
-    assert re.match(ARGUMENT_VALIDATION, argument), 'Permission argument does not match regex.'
+    assert re.match(ARGUMENT_VALIDATION + r"$", argument), \
+        'Permission argument does not match regex.'
 
     mapping = PermissionMap(permission_id=permission_id, group_id=group_id, argument=argument)
     mapping.add(session)
@@ -87,7 +88,8 @@ def grant_permission_to_service_account(session, account, permission, argument='
     Throws:
         AssertError if argument does not match ARGUMENT_VALIDATION regex
     """
-    assert re.match(ARGUMENT_VALIDATION, argument), 'Permission argument does not match regex.'
+    assert re.match(ARGUMENT_VALIDATION + r"$", argument), \
+        'Permission argument does not match regex.'
 
     mapping = ServiceAccountPermissionMap(
         permission_id=permission.id, service_account_id=account.id, argument=argument)
@@ -116,7 +118,8 @@ def grant_permission_to_tag(session, tag_id, permission_id, argument=''):
     Returns:
         bool indicating whether the function succeeded or not
     """
-    assert re.match(ARGUMENT_VALIDATION, argument), 'Permission argument does not match regex.'
+    assert re.match(ARGUMENT_VALIDATION + r"$", argument), \
+        'Permission argument does not match regex.'
 
     try:
         mapping = TagPermissionMap(permission_id=permission_id, tag_id=tag_id, argument=argument)

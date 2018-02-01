@@ -206,6 +206,7 @@ class GroupPermissionRequestDropdownForm(Form):
     ])
     argument = SelectField("Argument", [
         validators.DataRequired(),
+        ValidateRegex(constants.ARGUMENT_VALIDATION),
     ])
     reason = TextAreaField("Reason", [
         validators.DataRequired(),
@@ -220,6 +221,7 @@ class GroupPermissionRequestTextForm(Form):
     ])
     argument = StringField("Argument", [
         validators.DataRequired(),
+        ValidateRegex(constants.ARGUMENT_VALIDATION),
     ])
     reason = TextAreaField("Reason", [
         validators.DataRequired(),

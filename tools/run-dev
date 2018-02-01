@@ -16,13 +16,15 @@ which serves to the frontend.  After it's all up and running, browse to
 """)
 
 parser.add_option(
-    '--interface',
-    action='store', dest='interface',
-    default='127.0.0.1', help='Set the interface for the proxy to listen on'
+    '--listen-host',
+    default='127.0.0.1', help='Host on which the proxy listens'
+)
+parser.add_option(
+    '--listen-port',
+    default='8888', help='Port on which the proxy listens'
 )
 parser.add_option(
     '--user',
-    action='store', dest='user',
     default='admin@example.com', help='Set the user for the proxy'
 )
 
@@ -43,7 +45,17 @@ os.setpgrp()
 # Start the services.
 settings = os.environ.get("GROUPER_SETTINGS", "config/dev.yaml")
 cmds = [
-    ["bin/grouper-ctl", "-vvc", settings, "user_proxy", options.user],
+    [
+        "bin/grouper-ctl",
+        "-vvc",
+        settings,
+        "user_proxy",
+        "--listen-host",
+        options.listen_host,
+        "--listen-port",
+        options.listen_port,
+        options.user,
+    ],
     ["bin/grouper-fe", "--config={}".format(settings)],
     ["bin/grouper-api", "--config={}".format(settings)],
 ]

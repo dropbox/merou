@@ -235,7 +235,7 @@ enabled. Membership in this group is regularly reviewed.
                     </tr>
                 </thead>
                 <tbody>
-                {% for group in groups %}
+                {% for group in groups|sort(attribute='name') %}
                     <tr>
                         <td>{{ account(group) }}</td>
                         {% if show_role %}
@@ -270,7 +270,7 @@ enabled. Membership in this group is regularly reviewed.
                     </tr>
                 </thead>
                 <tbody>
-                {% for service_account in service_accounts %}
+                {% for service_account in service_accounts|sort(attribute='user.name') %}
                     <tr>
                         {{ one_service_account_row(groupname, service_account.user.username) }}
                     </tr>

@@ -297,11 +297,11 @@ enabled. Membership in this group is regularly reviewed.
 {% if type == None %}
 <a class="account-link" href="/{{ user.type | lower }}s/{{ user.name }}">
     <i class="fa fa-user{% if user.type.lower() == 'group' %}s{% endif %}"></i> 
-    {% if user.role_user %}
+    {% if user.role_user or user.is_service_account %}
     <i>
     {% endif %}
     {{ user.name }}
-    {% if user.role_user %}
+    {% if user.role_user or user.is_service_account %}
     (service)</i>
     {% endif %}
 </a>

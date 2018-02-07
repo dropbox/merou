@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -21,6 +21,13 @@ class CommentObjectMixin(object):
 class Comment(Model):
 
     __tablename__ = "comments"
+    __table_args__ = (
+        Index(
+            "obj_idx",
+            "obj_type", "obj_pk",
+            unique=False
+        ),
+    )
 
     id = Column(Integer, primary_key=True)
 

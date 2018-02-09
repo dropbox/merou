@@ -7,6 +7,7 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueCons
 from sqlalchemy.orm import relationship
 
 from grouper.models.base.model_base import Model
+from grouper.models.user import User
 
 
 def _make_secret():
@@ -33,6 +34,11 @@ class UserToken(Model):
     __table_args__ = (
         UniqueConstraint("user_id", "name"),
     )
+
+    @staticmethod
+    def get_by_value(session, username, name):
+        print username, name
+        return session.query(UserToken).join(UserToken.user).filter(User.username == username, UserToken.name == name).scalar()
 
     @staticmethod
     def get(session, user, name=None, id=None):

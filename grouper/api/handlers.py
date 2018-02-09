@@ -271,9 +271,9 @@ class TokenValidate(GraphHandler):
 
         token_name = match.group("token_name")
         token_secret = match.group("token_secret")
-        owner = User.get(sess, name=match.group("name"))
+        username = match.group("name")
 
-        token = UserToken.get(sess, owner, token_name)
+        token = UserToken.get_by_value(sess, username, token_name)
         if token is None:
             return self.error(((2, "Token specified does not exist"),))
         if not token.enabled:
@@ -282,7 +282,7 @@ class TokenValidate(GraphHandler):
             return self.error(((4, "Token secret mismatch"),))
 
         return self.success({
-            "owner": owner.username,
+            "owner": username,
             "identity": str(token),
             "act_as_owner": True,
             "valid": True,

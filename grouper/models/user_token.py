@@ -37,7 +37,9 @@ class UserToken(Model):
 
     @staticmethod
     def get_by_value(session, username, name):
-        return session.query(UserToken).join(UserToken.user).filter(User.username == username, UserToken.name == name).scalar()
+        return session.query(UserToken).join(UserToken.user).filter(
+            User.username == username, UserToken.name == name
+        ).scalar()
 
     @staticmethod
     def get(session, user, name=None, id=None):

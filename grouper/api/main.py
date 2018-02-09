@@ -3,8 +3,10 @@ import logging
 import sys
 from typing import TYPE_CHECKING
 
+from expvar.stats import stats
 import tornado.httpserver
 import tornado.ioloop
+from tornado.process import task_id
 
 from grouper.api.routes import HANDLERS
 from grouper.api.settings import settings
@@ -89,6 +91,12 @@ def start_server(args, sentry_client):
     server = tornado.httpserver.HTTPServer(application)
     server.bind(port, address=address)
     server.start(settings.num_processes)
+
+    instance = task_id()
+    if instance is None:
+        instance = 0
+    stats.set_label("instance", str(instance))
+
     try:
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:

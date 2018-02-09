@@ -53,6 +53,9 @@ def start_server(args, sentry_client):
     log_level = logging.getLevelName(logging.getLogger().level)
     logging.info("begin. log_level={}".format(log_level))
 
+    assert not (settings.debug and settings.num_processes > 1), \
+        "debug mode does not support multiple processes"
+
     try:
         load_plugins(settings.plugin_dirs, settings.plugin_module_paths, service_name="grouper_api")
     except PluginsDirectoryDoesNotExist as e:
@@ -85,7 +88,7 @@ def start_server(args, sentry_client):
     logging.info("Starting application server on port %d", port)
     server = tornado.httpserver.HTTPServer(application)
     server.bind(port, address=address)
-    server.start()
+    server.start(settings.num_processes)
     try:
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:

@@ -159,6 +159,11 @@ fe:
     service_account_email_domain: "svc.localhost"
 
 api:
+    # Number of worker processes to fork for receving requests. This option
+    # is mutually exclusive with debug.
+    # Type: int
+    num_processes: 1
+
     # The port to listen to requests on.
     # Type: int
     port: 8990

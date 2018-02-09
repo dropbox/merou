@@ -4,8 +4,10 @@ import os
 import sys
 from typing import TYPE_CHECKING
 
+from expvar.stats import stats
 import tornado.httpserver
 import tornado.ioloop
+from tornado.process import task_id
 
 from grouper.app import Application
 from grouper.database import DbRefreshThread
@@ -89,6 +91,11 @@ def start_server(args, sentry_client):
     server.bind(port, address=address)
     # When using multiple processes, the forking happens here
     server.start(settings.num_processes)
+
+    instance = task_id()
+    if instance is None:
+        instance = 0
+    stats.set_label("instance", str(instance))
 
     # Create the Graph and start the config / graph update threads post fork to ensure each
     # process gets updated.

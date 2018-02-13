@@ -42,6 +42,10 @@ class GroupEdge(Model):
             "group_id", "member_type", "member_pk",
             unique=True
         ),
+        Index(
+            "group_edges_member_pk_type",
+            "member_pk", "member_type"
+        )
     )
 
     id = Column(Integer, primary_key=True)

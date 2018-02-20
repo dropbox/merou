@@ -1,9 +1,8 @@
 from contextlib import closing
 from datetime import datetime, timedelta
 import logging
-import thread
-from threading import Thread
 from time import sleep
+from typing import TYPE_CHECKING
 
 from expvar.stats import stats
 from sqlalchemy import and_
@@ -14,44 +13,44 @@ from grouper.email_util import (
     notify_edge_expiration,
     notify_nonauditor_flagged,
     process_async_emails
-    )
+)
 from grouper.graph import Graph
 from grouper.group import get_audited_groups
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.group import Group
 from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge
 from grouper.models.user import User
+from grouper.models.user_token import UserToken  # noqa: F401
 from grouper.perf_profile import prune_old_traces
-from grouper.settings import settings
 from grouper.user import user_role_index
 from grouper.user_permissions import user_has_permission
 from grouper.util import get_database_url
 
+if TYPE_CHECKING:
+    from grouper.settings import Settings  # noqa: F401
+    from grouper.error_reporting import SentryProxy  # noqa: F401
 
-class BackgroundThread(Thread):
-    """Background thread for running periodic tasks.
+
+class BackgroundProcessor(object):
+    """Background process for running periodic tasks.
 
     Currently, this sends asynchronous mail messages and handles edge expiration and notification.
-
-    This class thread will exist on multiple servers in a standard Grouper production environment
-    so we need to ensure that it's race-safe.
     """
-    def __init__(self, settings, sentry_client, *args, **kwargs):
-        """Initialize new BackgroundThread
 
-        Args:
-            settings (Settings): The current Settings object for this application.
-        """
+    def __init__(self, settings, sentry_client):
+        # type: (Settings, SentryProxy) -> None
+        """Initialize new BackgroundProcessor"""
+
         self.settings = settings
         self.sentry_client = sentry_client
         self.logger = logging.getLogger(__name__)
-        Thread.__init__(self, *args, **kwargs)
 
-    def capture_exception(self):
+    def _capture_exception(self):
         if self.sentry_client:
             self.sentry_client.captureException()
 
     def expire_edges(self, session):
+        # type: (Session) -> None
         """Mark expired edges as inactive and log to the audit log.
 
         Edges are immediately excluded from the permission graph once they've
@@ -59,9 +58,6 @@ class BackgroundThread(Thread):
         an email notification.  This function finds all expired edges, logs the
         expiration to the audit log, and sends a notification message.  It's meant
         to be run from the background processing thread.
-
-        Args:
-            session (session): database session
         """
         now = datetime.utcnow()
 
@@ -83,6 +79,7 @@ class BackgroundThread(Thread):
             session.commit()
 
     def expire_nonauditors(self, session):
+        # type: (Session) -> None
         """Checks all enabled audited groups and ensures that all approvers for that group have
         the PERMISSION_AUDITOR permission. All approvers of audited groups that aren't auditors
         have their membership in the audited group set to expire
@@ -93,7 +90,7 @@ class BackgroundThread(Thread):
         """
         now = datetime.utcnow()
         graph = Graph()
-        exp_days = timedelta(days=settings.nonauditor_expiration_days)
+        exp_days = timedelta(days=self.settings.nonauditor_expiration_days)
         # Hack to ensure the graph is loaded before we access it
         graph.update_from_db(session)
         # TODO(tyleromeara): replace with graph call
@@ -113,27 +110,31 @@ class BackgroundThread(Thread):
                 edge = GroupEdge.get(session, id=edge.edge_id)
                 if edge.expiration and edge.expiration < now + exp_days:
                     continue
-                exp = now + exp_days
-                exp = exp.date()
+                exp = (now + exp_days).date()
                 edge.apply_changes_dict(
                     {"expiration": "{}/{}/{}".format(exp.month, exp.day, exp.year)}
                 )
                 edge.add(session)
-                notify_nonauditor_flagged(settings, session, edge)
+                notify_nonauditor_flagged(self.settings, session, edge)
         session.commit()
 
     def run(self):
+        # type: () -> None
         while True:
             try:
                 with closing(Session()) as session:
-                    self.logger.debug("Expiring edges....")
+                    self.logger.info("Expiring edges....")
                     self.expire_edges(session)
-                    self.logger.debug("Expiring nonauditor approvers in audited groups...")
+
+                    self.logger.info("Expiring nonauditor approvers in audited groups...")
                     self.expire_nonauditors(session)
-                    self.logger.debug("Sending emails...")
+
+                    self.logger.info("Sending emails...")
                     process_async_emails(self.settings, session, datetime.utcnow())
-                    self.logger.debug("Pruning old traces....")
+
+                    self.logger.info("Pruning old traces....")
                     prune_old_traces(session)
+
                     session.commit()
 
                 stats.set_gauge("successful-background-update", 1)
@@ -143,13 +144,13 @@ class BackgroundThread(Thread):
                 self.logger.critical("Failed to connect to database.")
                 stats.set_gauge("successful-background-update", 0)
                 stats.set_gauge("failed-background-update", 1)
-                self.capture_exception()
+                self._capture_exception()
             except:
                 stats.set_gauge("successful-background-update", 0)
                 stats.set_gauge("failed-background-update", 1)
-                self.capture_exception()
+                self._capture_exception()
                 self.logger.exception("Unexpected exception occurred in background thread.")
-                thread.interrupt_main()
                 raise
 
-            sleep(60)
+            self.logger.debug("Sleeping for {} seconds...".format(self.settings.sleep_interval))
+            sleep(self.settings.sleep_interval)

@@ -11,7 +11,6 @@ from tornado.process import task_id
 from grouper.api.routes import HANDLERS
 from grouper.api.settings import settings
 from grouper.app import Application
-from grouper.background import BackgroundThread
 from grouper.database import DbRefreshThread
 from grouper.error_reporting import get_sentry_client, setup_signal_handlers
 from grouper.graph import Graph
@@ -77,10 +76,6 @@ def start_server(args, sentry_client):
     refresher = DbRefreshThread(settings, graph, settings.refresh_interval, sentry_client)
     refresher.daemon = True
     refresher.start()
-
-    background = BackgroundThread(settings, sentry_client)
-    background.daemon = True
-    background.start()
 
     application = get_application(graph, settings, sentry_client)
 

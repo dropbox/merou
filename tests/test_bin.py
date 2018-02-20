@@ -9,6 +9,12 @@ def test_api():
     assert out.startswith("usage: grouper-api")
 
 
+def test_background():
+    bin_path = src_path("bin", "grouper-background")
+    out = subprocess.check_output([bin_path, "--help"])
+    assert out.startswith("usage: grouper-background")
+
+
 def test_ctl():
     bin_path = src_path("bin", "grouper-ctl")
     out = subprocess.check_output([bin_path, "--help"])

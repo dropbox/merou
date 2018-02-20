@@ -58,6 +58,7 @@ cmds = [
     ],
     ["bin/grouper-fe", "--config={}".format(settings)],
     ["bin/grouper-api", "--config={}".format(settings)],
+    ["bin/grouper-background", "--config={}".format(settings)],
 ]
 for cmd in cmds:
     subprocess.Popen(cmd)

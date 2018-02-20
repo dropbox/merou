@@ -180,3 +180,12 @@ api:
     # Sentry DSN for logging exceptions
     # Type: str
     sentry_dsn:
+
+background:
+    # Sentry DSN for logging exceptions
+    # Type: str
+    sentry_dsn:
+
+    # How long to wait between iterations
+    # Type: int
+    sleep_interval: 60

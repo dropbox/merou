@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from fixtures import graph, users, groups, session, permissions, standard_graph  # noqa
-from grouper.background import BackgroundThread
+from grouper.background.background_processor import BackgroundProcessor
 from grouper.fe.settings import settings
 from grouper.models.async_notification import AsyncNotification
 from grouper.models.audit_log import AuditLog
@@ -51,7 +51,7 @@ def test_expire_edges(expired_graph, session):  # noqa
         assert edge.active == True
 
     # Expire the edges.
-    background = BackgroundThread(settings, None)
+    background = BackgroundProcessor(settings, None)
     background.expire_edges(session)
 
     # Check that the edges are now marked as inactive.
@@ -96,7 +96,7 @@ def test_expire_nonauditors(standard_graph, users, groups, session, permissions)
         assert group_md.get('audited', False)
 
         # Expire the edges.
-        background = BackgroundThread(settings, None)
+        background = BackgroundProcessor(settings, None)
         background.expire_nonauditors(session)
 
         # Check that the edges are now marked as inactive.
@@ -128,7 +128,7 @@ def test_expire_nonauditors(standard_graph, users, groups, session, permissions)
         assert group_md.get('audited', False)
 
         # Expire the edges.
-        background = BackgroundThread(settings, None)
+        background = BackgroundProcessor(settings, None)
         background.expire_nonauditors(session)
 
         # Check that the edges are now marked as inactive.

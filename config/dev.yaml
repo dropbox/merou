@@ -143,11 +143,6 @@ fe:
     # Type: str
     sentry_dsn:
 
-    # Url is the location of the Grouper homepage, no trailing slash. This should include a
-    # port if one is needed.
-    # Type: str
-    url: "http://127.0.0.1:8888"
-
     # A list of lists of the shells that users are allowed to select. The first argument is
     # the shell location (i.e. /bin/bash), and the second is a user readable format for the
     # shell
@@ -185,8 +180,3 @@ api:
     # Sentry DSN for logging exceptions
     # Type: str
     sentry_dsn:
-
-    # Url is the location of the Grouper homepage, no trailing slash. This should include a
-    # port if one is needed.
-    # Type: str
-    url: "http://127.0.0.1:8888"

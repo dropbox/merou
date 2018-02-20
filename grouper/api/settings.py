@@ -7,5 +7,4 @@ settings = Settings.from_settings(base_settings, {
     "num_processes": 1,
     "port": 8990,
     "refresh_interval": 60,
-    "url": "http://127.0.0.1:8888",
 })

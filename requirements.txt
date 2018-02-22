@@ -8,7 +8,6 @@ WTForms==2.1
 argparse==1.2.1
 backports.ssl-match-hostname==3.5.0.1
 enum34==1.0.4
-expvar==0.1.0
 networkx==1.8.1
 plop==0.3.0
 pyflamegraph==0.0.2

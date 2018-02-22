@@ -3,8 +3,9 @@ import os
 import threading
 import time
 
-from expvar.stats import stats
 import yaml
+
+from grouper import stats
 
 
 class Settings(object):
@@ -45,7 +46,7 @@ class Settings(object):
 
             self[key] = value
 
-        stats.set_gauge("successful-config-update", 1)
+        stats.log_gauge("successful-config-update", 1)
 
     def start_config_thread(self, filename, section=None, refresh_config_seconds=10):
         """
@@ -60,8 +61,8 @@ class Settings(object):
                 try:
                     self.update_from_config(filename, section=section)
                 except (IOError, yaml.parser.ParserError):
-                    stats.set_gauge("successful-config-update", 0)
-                    stats.set_gauge("failed-config-update", 1)
+                    stats.log_gauge("successful-config-update", 0)
+                    stats.log_gauge("failed-config-update", 1)
 
                 time.sleep(refresh_config_seconds)
 

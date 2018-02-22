@@ -1,5 +1,4 @@
 from grouper.constants import (
-    DEBUG_ROUTE_PATH,
     NAME2_VALIDATION,
     NAME_VALIDATION,
     PERMISSION_VALIDATION,
@@ -67,8 +66,7 @@ from grouper.fe.handlers.user_view import UserView
 from grouper.fe.handlers.users_public_key import UsersPublicKey
 from grouper.fe.handlers.users_user_tokens import UsersUserTokens
 from grouper.fe.handlers.users_view import UsersView
-from grouper.handlers.stats import Stats
-
+from grouper.handlers.health_check import HealthCheck
 
 HANDLERS = [
     (r"/", Index),
@@ -175,7 +173,8 @@ for regex in (r"(?P<tag_id>[0-9]+)", NAME_VALIDATION):
 
 HANDLERS += [
     (r"/help", Help),
-    (DEBUG_ROUTE_PATH, Stats),
+
+    (r"/debug/health", HealthCheck),
     (r"/debug/profile/(?P<trace_uuid>[\-\w]+)", PerfProfile),
 
     (r"/.*", NotFound),

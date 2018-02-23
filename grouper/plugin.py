@@ -227,3 +227,25 @@ class BasePlugin(object):
             PluginRejectedPublicKey: if the plugin rejects the key
         """
         pass
+
+    def set_default_stats_tags(self, tags):
+        # type: (Dict[str, str]) -> None
+        """Set default tags for stats"""
+        pass
+
+    def log_rate(self, key, val, count=1):
+        # type: (str, float, int) -> None
+        """ Log a time-varying rate stat, such as an execution time or a
+        method invocation.
+            @param key - the name of the stat.
+            @param val - increment to the value of the stat.
+            @param count - the number of samples that created the increment.
+        """
+        pass
+
+    def log_gauge(self, key, val):
+        # type: (str, float) -> None
+        """ Log an instantaneous-value gauge stat that does not vary with
+        time. For e.g., number of CPUs or amount of RAM on a machine.
+        """
+        pass

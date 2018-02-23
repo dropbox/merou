@@ -8,8 +8,8 @@ from grouper.api.handlers import (
         Users,
         UsersPublicKeys,
         )
-from grouper.constants import DEBUG_ROUTE_PATH, NAME_VALIDATION, PERMISSION_VALIDATION
-from grouper.handlers.stats import Stats
+from grouper.constants import NAME_VALIDATION, PERMISSION_VALIDATION
+from grouper.handlers.health_check import HealthCheck
 
 HANDLERS = [
 
@@ -30,7 +30,7 @@ HANDLERS = [
 
     (r"/multi/users", MultiUsers),
 
-    (DEBUG_ROUTE_PATH, Stats),
+    (r"/debug/health", HealthCheck),
 
     (r"/.*", NotFound),
 

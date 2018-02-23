@@ -9,13 +9,13 @@ import urllib
 import urlparse
 from uuid import uuid4
 
-from expvar.stats import stats
 from plop.collector import Collector
 import sqlalchemy.exc
 import tornado.web
 from tornado.web import RequestHandler
+from typing import Dict, List  # noqa: F401
 
-from grouper import perf_profile
+from grouper import perf_profile, stats
 from grouper.constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATION
 from grouper.fe.settings import settings
 from grouper.graph import Graph
@@ -68,8 +68,9 @@ class GrouperHandler(RequestHandler):
             self.perf_trace_uuid = None
 
         self._request_start_time = datetime.utcnow()
-        stats.incr("requests")
-        stats.incr("requests_{}".format(self.__class__.__name__))
+
+        stats.log_rate("requests", 1)
+        stats.log_rate("requests_{}".format(self.__class__.__name__), 1)
 
     def write_error(self, status_code, **kwargs):
         """Override for custom error page."""
@@ -155,13 +156,15 @@ class GrouperHandler(RequestHandler):
         # log request duration
         duration = datetime.utcnow() - self._request_start_time
         duration_ms = int(duration.total_seconds() * 1000)
-        stats.incr("duration_ms", duration_ms)
-        stats.incr("duration_ms_{}".format(self.__class__.__name__), duration_ms)
+
+        stats.log_rate("duration_ms", duration_ms)
+        stats.log_rate("duration_ms_{}".format(self.__class__.__name__), duration_ms)
 
         # log response status code
         response_status = self.get_status()
-        stats.incr("response_status_{}".format(response_status))
-        stats.incr("response_status_{}_{}".format(self.__class__.__name__, response_status))
+
+        stats.log_rate("response_status_{}".format(response_status), 1)
+        stats.log_rate("response_status_{}_{}".format(self.__class__.__name__, response_status), 1)
 
     def update_qs(self, **kwargs):
         qs = self.request.arguments.copy()

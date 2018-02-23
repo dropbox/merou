@@ -5,10 +5,10 @@ import re
 import sys
 import traceback
 
-from expvar.stats import stats
 from tornado.web import HTTPError, RequestHandler
-from typing import Any, Dict, Optional  # noqa
+from typing import Any, Dict, Optional  # noqa: F401
 
+from grouper import stats
 from grouper.constants import TOKEN_FORMAT
 from grouper.graph import NoSuchUser
 from grouper.models.base.session import Session
@@ -70,20 +70,23 @@ class GraphHandler(RequestHandler):
         self.session = self.application.my_settings.get("db_session")()
 
         self._request_start_time = datetime.utcnow()
-        stats.incr("requests")
-        stats.incr("requests_{}".format(self.__class__.__name__))
+
+        stats.log_rate("requests", 1)
+        stats.log_rate("requests_{}".format(self.__class__.__name__), 1)
 
     def on_finish(self):
         # log request duration
         duration = datetime.utcnow() - self._request_start_time
         duration_ms = int(duration.total_seconds() * 1000)
-        stats.incr("duration_ms", duration_ms)
-        stats.incr("duration_ms_{}".format(self.__class__.__name__), duration_ms)
+
+        stats.log_rate("duration_ms", duration_ms)
+        stats.log_rate("duration_ms_{}".format(self.__class__.__name__), duration_ms)
 
         # log response status code
         response_status = self.get_status()
-        stats.incr("response_status_{}".format(response_status))
-        stats.incr("response_status_{}_{}".format(self.__class__.__name__, response_status))
+
+        stats.log_rate("response_status_{}".format(response_status), 1)
+        stats.log_rate("response_status_{}_{}".format(self.__class__.__name__, response_status), 1)
 
     def error(self, errors):
         errors = [

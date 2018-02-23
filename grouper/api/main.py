@@ -3,11 +3,10 @@ import logging
 import sys
 from typing import TYPE_CHECKING
 
-from expvar.stats import stats
 import tornado.httpserver
 import tornado.ioloop
-from tornado.process import task_id
 
+from grouper import stats
 from grouper.api.routes import HANDLERS
 from grouper.api.settings import settings
 from grouper.app import Application
@@ -20,11 +19,11 @@ from grouper.setup import build_arg_parser, setup_logging
 from grouper.util import get_database_url
 
 if TYPE_CHECKING:
-    import argparse  # noqa
-    from typing import List  # noqa
-    from grouper.error_reporting import SentryProxy  # noqa
-    from grouper.fe.settings import Settings  # noqa
-    from grouper.graph import GroupGraph  # noqa
+    import argparse  # noqa: F401
+    from typing import List  # noqa: F401
+    from grouper.error_reporting import SentryProxy  # noqa: F401
+    from grouper.fe.settings import Settings  # noqa: F401
+    from grouper.graph import GroupGraph  # noqa: F401
 
 
 def get_application(graph, settings, sentry_client):
@@ -87,10 +86,7 @@ def start_server(args, sentry_client):
     server.bind(port, address=address)
     server.start(settings.num_processes)
 
-    instance = task_id()
-    if instance is None:
-        instance = 0
-    stats.set_label("instance", str(instance))
+    stats.set_defaults()
 
     try:
         tornado.ioloop.IOLoop.instance().start()

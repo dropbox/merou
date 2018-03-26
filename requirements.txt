@@ -2,10 +2,9 @@ annex==0.4.0
 Jinja2==2.7.3
 MySQL-python==1.2.5
 MarkupSafe==0.23
-PyYAML==3.11
-SQLAlchemy==0.9.1
+PyYAML==3.12
+SQLAlchemy==1.1.15
 WTForms==2.1
-argparse==1.2.1
 backports.ssl-match-hostname==3.5.0.1
 enum34==1.0.4
 networkx==1.8.1
@@ -14,6 +13,6 @@ pyflamegraph==0.0.2
 python-dateutil==2.4.2
 pytz==2017.2
 sshpubkeys==2.2.0
-tornado==4.4.2
-typing==3.6.2
+tornado==4.5.3
+typing==3.6.4
 wtforms-tornado==0.0.2

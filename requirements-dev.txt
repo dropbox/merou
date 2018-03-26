@@ -1,6 +1,6 @@
 mrproxy==0.3.4
-py==1.4.30
-pytest==3.0.7
+py==1.5.2
+pytest==3.4.2
 pytest-tornado==0.4.5
 coverage==3.7.1
 mock==2.0.0

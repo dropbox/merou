@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
+from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.base.constants import REQUEST_STATUS_CHOICES
 from grouper.models.base.model_base import Model
 from grouper.settings import settings
@@ -22,7 +23,7 @@ class PermissionRequest(Model):
 
     permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=False)
     permission = relationship("Permission", foreign_keys=[permission_id])
-    argument = Column(String(length=64), nullable=True)
+    argument = Column(String(length=MAX_NAME_LENGTH), nullable=True)
 
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
     group = relationship("Group", foreign_keys=[group_id])

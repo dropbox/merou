@@ -343,20 +343,22 @@ def test_permission_request_flow(
     emails = _get_unsent_and_mark_as_sent_emails(session)
     assert len(emails) == 0, "no emails queued"
 
-    # REQUEST: 'grantable.one', 'some argument' for 'serving-team'
+    # REQUEST: 'grantable.one', argument longer than 64 characters for 'serving-team'
+    argument = ("a" * 64) + " long"
     resp = yield http_client.fetch(
         fe_url,
         method="POST",
         body=urlencode(
             {
                 "permission_name": "grantable.one",
-                "argument": "some argument",
+                "argument": argument,
                 "reason": "blah blah black sheep",
             }
         ),
         headers={"X-Grouper-User": username},
     )
     assert resp.code == 200
+    print(resp.body)
 
     emails = _get_unsent_and_mark_as_sent_emails(session)
     assert_same_recipients(emails, ["testuser@a.co", "security-team@a.co"])
@@ -387,12 +389,15 @@ def test_permission_request_flow(
 
     perms = _load_permissions_by_group_name(session, "serving-team")
     assert len(perms) == 2
-    assert "grantable.one" in perms, "requested permission shouldn't be granted immediately"
+    assert "grantable.one" in perms, "requested permission granted"
+    for _, name, _, arg, _ in Group.get(session, name='serving-team').my_permissions():
+        if name == "grantable.one":
+            assert argument == arg, "argument is not truncated"
 
     emails = _get_unsent_and_mark_as_sent_emails(session)
     assert_same_recipients(emails, ["zorkian@a.co"])
 
-    # (re)REQUEST: 'grantable.one', 'some argument' for 'serving-team'
+    # (re)REQUEST: 'grantable.one', some argument for 'serving-team'
     groupname = "serving-team"
     username = "zorkian@a.co"
     fe_url = url(base_url, f"/permissions/request?group={groupname}")
@@ -402,7 +407,7 @@ def test_permission_request_flow(
         body=urlencode(
             {
                 "permission_name": "grantable.one",
-                "argument": "some argument",
+                "argument": argument,
                 "reason": "blah blah black sheep",
             }
         ),

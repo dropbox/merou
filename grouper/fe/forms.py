@@ -214,7 +214,7 @@ class GroupPermissionRequestDropdownForm(Form):
         "Argument",
         [
             validators.DataRequired(),
-            validators.Length(min=0, max=64),
+            validators.Length(min=0, max=constants.MAX_NAME_LENGTH),
             ValidateRegex(constants.ARGUMENT_VALIDATION),
         ],
     )
@@ -231,7 +231,7 @@ class GroupPermissionRequestTextForm(Form):
         "Argument",
         [
             validators.DataRequired(),
-            validators.Length(min=0, max=64),
+            validators.Length(min=0, max=constants.MAX_NAME_LENGTH),
             ValidateRegex(constants.ARGUMENT_VALIDATION),
         ],
     )
@@ -247,7 +247,7 @@ class PermissionRequestForm(Form):
         "Argument",
         [
             validators.DataRequired(),
-            validators.Length(min=0, max=64),
+            validators.Length(min=0, max=constants.MAX_NAME_LENGTH),
             ValidateRegex(constants.ARGUMENT_VALIDATION),
         ],
     )

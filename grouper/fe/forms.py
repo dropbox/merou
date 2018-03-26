@@ -125,6 +125,7 @@ class AuditCreateForm(Form):
 
 
 class GroupRequestModifyForm(Form):
+    # Caller of the form will add choices based on current status.
     status = SelectField("New Status", [
         validators.DataRequired(),
     ])
@@ -135,6 +136,7 @@ class GroupRequestModifyForm(Form):
 
 
 class GroupAddForm(Form):
+    # Caller of the form will add choices for member and role.
     member = SelectField("Name", [
         validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
         validators.DataRequired(),
@@ -187,6 +189,7 @@ class GroupJoinForm(Form):
 
 
 class GroupEditMemberForm(Form):
+    # Caller of the form will add choices based on role.
     role = SelectField("Role", [
         validators.Length(min=3, max=32),
         validators.DataRequired(),
@@ -201,11 +204,13 @@ class GroupEditMemberForm(Form):
 
 class GroupPermissionRequestDropdownForm(Form):
     """permission request form using a dropdown field for the argument."""
+    # Caller of form will add permission choices.
     permission_name = SelectField("Permission", [
         validators.DataRequired(),
     ])
     argument = SelectField("Argument", [
         validators.DataRequired(),
+        validators.Length(min=0, max=64),
         ValidateRegex(constants.ARGUMENT_VALIDATION),
     ])
     reason = TextAreaField("Reason", [
@@ -216,11 +221,13 @@ class GroupPermissionRequestDropdownForm(Form):
 
 class GroupPermissionRequestTextForm(Form):
     """permission request form using a text field for the argument."""
+    # Caller of form will add permission choices.
     permission_name = SelectField("Permission", [
         validators.DataRequired(),
     ])
     argument = StringField("Argument", [
         validators.DataRequired(),
+        validators.Length(min=0, max=64),
         ValidateRegex(constants.ARGUMENT_VALIDATION),
     ])
     reason = TextAreaField("Reason", [
@@ -232,12 +239,14 @@ class GroupPermissionRequestTextForm(Form):
 class PermissionRequestsForm(Form):
     offset = IntegerField(default=0)
     limit = IntegerField(default=100, validators=[validators.NumberRange(min=100, max=9000)])
+    # Caller of form will add choices for status.
     status = SelectField("New Status", [
         validators.Optional(),
     ], default='')
 
 
 class PermissionRequestUpdateForm(Form):
+    # Caller of form will add choices based on current status.
     status = SelectField("New Status", [
         validators.DataRequired(),
     ])
@@ -278,11 +287,13 @@ class UsersUserTokenForm(Form):
 class UserTokenForm(Form):
     name = StringField("Token name", [
         validators.DataRequired(),
+        validators.Length(min=1, max=16),
         ValidateRegex(constants.TOKEN_NAME_VALIDATION),
     ])
 
 
 class UserShellForm(Form):
+    # Caller of form will add choices based on settings.
     shell = SelectField("Shell", [
         validators.DataRequired(),
     ])
@@ -365,6 +376,7 @@ class ServiceAccountEnableForm(Form):
 
 
 class ServiceAccountPermissionGrantForm(Form):
+    # Caller of form will add choices.
     permission = SelectField("Permission", [
         validators.DataRequired(),
     ])

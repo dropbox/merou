@@ -1,17 +1,16 @@
 import pytest
 
-from constants import SSH_KEY_1
-from fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401
-from fixtures import fe_app as app  # noqa: F401
-from fixtures_selenium import async_server, browser  # noqa: F401
+from fixtures import async_server, browser  # noqa: F401
 from grouper.constants import AUDIT_SECURITY
 from grouper.models.permission import Permission
 from grouper.models.public_key import PublicKey
-from grouper.public_key import add_public_key
 from pages import PublicKeysPage, UserViewPage, NoSuchElementException
 from plugins import group_ownership_policy
-from url_util import url
-from util import add_member, grant_permission
+from tests.constants import SSH_KEY_1
+from tests.fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401
+from tests.fixtures import fe_app as app  # noqa: F401
+from tests.url_util import url
+from tests.util import add_member, grant_permission
 
 
 def test_disable_last_owner(async_server, browser):

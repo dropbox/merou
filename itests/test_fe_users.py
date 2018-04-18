@@ -4,7 +4,8 @@ from fixtures import async_server, browser  # noqa: F401
 from grouper.constants import AUDIT_SECURITY
 from grouper.models.permission import Permission
 from grouper.models.public_key import PublicKey
-from pages import PublicKeysPage, UserViewPage, NoSuchElementException
+from pages.exceptions import NoSuchElementException
+from pages.users import PublicKeysPage, UserViewPage
 from plugins import group_ownership_policy
 from tests.constants import SSH_KEY_1
 from tests.fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401

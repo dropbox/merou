@@ -20,22 +20,26 @@
     {{ dropdown("limit", limit, [100, 250, 500, 1000]) }}
     {{ paginator(offset, limit, total) }}
     {% if enabled %}
-      <a class="btn btn-default" href="/users?limit={{limit}}&enabled=0&service={{service|int}}">
-          <i class="fa"></i> Show disabled users
-      </a>
+        <a class="btn btn-default show-disabled-users"
+           href="/users?limit={{ limit }}&enabled=0&service={{ service|int }}">
+            <i class="fa"></i> Show disabled users
+        </a>
     {% else %}
-      <a class="btn btn-default" href="/users?limit={{limit}}&enabled=1&service={{service|int}}">
-          <i class="fa"></i> Show enabled users
-      </a>
+        <a class="btn btn-default show-enabled-users"
+           href="/users?limit={{ limit }}&enabled=1&service={{ service|int }}">
+            <i class="fa"></i> Show enabled users
+        </a>
     {% endif %}
     {% if service %}
-      <a class="btn btn-default" href="/users?limit={{limit}}&enabled={{enabled|int}}&service=0">
-          <i class="fa"></i> Show normal users
-      </a>
+        <a class="btn btn-default show-normal-users"
+           href="/users?limit={{ limit }}&enabled={{ enabled|int }}&service=0">
+            <i class="fa"></i> Show normal users
+        </a>
     {% else %}
-      <a class="btn btn-default" href="/users?limit={{limit}}&enabled={{enabled|int}}&service=1">
-          <i class="fa"></i> Show service accounts
-      </a>
+        <a class="btn btn-default show-service-accounts"
+           href="/users?limit={{ limit }}&enabled={{ enabled|int }}&service=1">
+            <i class="fa"></i> Show service accounts
+        </a>
     {% endif %}
 
     <a class="btn btn-success" href="/service/create">
@@ -54,8 +58,8 @@
             </thead>
             <tbody>
             {% for user in users %}
-                <tr>
-                    <td>{{ account(user) }}</td>
+                <tr class="user-row">
+                    <td class="user-name">{{ account(user) }}</td>
                 </tr>
             {% endfor %}
             </tbody>

@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 
 from fixtures import async_server, browser  # noqa: F401
-from pages import AuditsCreatePage, GroupViewPage
+from pages.audits import AuditsCreatePage
+from pages.groups import GroupViewPage
 from plugins import group_ownership_policy
 from tests.fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401
 from tests.fixtures import fe_app as app  # noqa: F401

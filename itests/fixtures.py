@@ -1,41 +1,44 @@
+from contextlib import closing
+import socket
 import subprocess
 
 import pytest
 import selenium
-import yaml
 
 from tests.path_util import db_url, src_path
 
 
-def _write_test_config(tmpdir):
-    with open(src_path("config", "dev.yaml")) as config_file:
-        config = yaml.safe_load(config_file.read())
-
-    config["common"]["database"] = db_url(tmpdir)
-
-    config_path = str(tmpdir.join("grouper.yaml"))
-    with open(config_path, "w") as config_file:
-        yaml.safe_dump(config, config_file)
-
-    return config_path
+def _get_unused_port():
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(('', 0))
+        return s.getsockname()[1]
 
 
 @pytest.yield_fixture
 def async_server(standard_graph, tmpdir):
-    config_path = _write_test_config(tmpdir)
+    proxy_port = _get_unused_port()
+    fe_port = _get_unused_port()
 
     cmds = [
         [
             src_path("bin", "grouper-ctl"),
             "-vvc",
-            config_path,
+            src_path("config", "dev.yaml"),
             "user_proxy",
+            "-P",
+            str(fe_port),
+            "-p",
+            str(proxy_port),
             "cbguder@a.co"
         ],
         [
             src_path("bin", "grouper-fe"),
             "-c",
-            config_path
+            src_path("config", "dev.yaml"),
+            "-p",
+            str(fe_port),
+            "-d",
+            db_url(tmpdir),
         ]
     ]
 
@@ -45,7 +48,7 @@ def async_server(standard_graph, tmpdir):
         p = subprocess.Popen(cmd)
         subprocesses.append(p)
 
-    yield "http://localhost:8888"
+    yield "http://localhost:{}".format(proxy_port)
 
     for p in subprocesses:
         p.kill()

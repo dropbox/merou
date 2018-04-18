@@ -25,6 +25,8 @@ def build_arg_parser(description):
             "-p", "--port", type=int, default=None, help="Override port in config.")
     parser.add_argument(
             "-n", "--deployment-name", type=str, default="", help="Name of the deployment.")
+    parser.add_argument(
+            "-d", "--database-url", type=str, default=None, help="Override database URL in config.")
 
     return parser
 

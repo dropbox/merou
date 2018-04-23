@@ -17,7 +17,8 @@ from grouper.fe.settings import settings
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
-from grouper.plugin import get_plugins, load_plugins, PluginsDirectoryDoesNotExist
+from grouper.plugin import get_plugin_proxy, initialize_plugins
+from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
 from grouper.setup import build_arg_parser, setup_logging
 from grouper.util import get_database_url
 
@@ -61,7 +62,7 @@ def start_server(args, sentry_client):
         "debug mode does not support multiple processes"
 
     try:
-        load_plugins(settings.plugin_dirs, settings.plugin_module_paths, service_name="grouper_fe")
+        initialize_plugins(settings.plugin_dirs, settings.plugin_module_paths, "grouper_fe")
     except PluginsDirectoryDoesNotExist as e:
         logging.fatal("Plugin directory does not exist: {}".format(e))
         sys.exit(1)
@@ -76,9 +77,7 @@ def start_server(args, sentry_client):
     address = args.address or settings.address
     port = args.port or settings.port
 
-    ssl_contexts = list(filter(bool, (p.get_ssl_context() for p in get_plugins())))
-    assert len(ssl_contexts) <= 1, "Plugins returned more than one ssl.SSLContext!"
-    ssl_context = ssl_contexts[0] if ssl_contexts else None
+    ssl_context = get_plugin_proxy().get_ssl_context()
 
     logging.info(
         "Starting application server with %d processes on port %d",

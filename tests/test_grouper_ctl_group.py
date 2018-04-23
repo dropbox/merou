@@ -8,6 +8,7 @@ from fixtures import standard_graph, graph, users, groups, session, permissions 
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
 from grouper.models.group_edge import GROUP_EDGE_ROLES
+from grouper.plugin.proxy import PluginProxy
 from plugins.group_ownership_policy import GroupOwnershipPolicyPlugin
 
 
@@ -31,11 +32,11 @@ def test_group_add_remove_member(make_session, session, users, groups):
     assert (u'User', username) not in Group.get(session, name=groupname).my_members()
 
 
-@patch("grouper.group_member.get_plugins")
+@patch("grouper.group_member.get_plugin_proxy")
 @patch('grouper.ctl.group.make_session')
-def test_group_add_remove_owner(make_session, get_plugins, session, users, groups):
+def test_group_add_remove_owner(make_session, get_plugin_proxy, session, users, groups):
     make_session.return_value = session
-    get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
+    get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     username = 'oliver@a.co'
     groupname = 'team-sre'

@@ -14,7 +14,8 @@ from grouper.database import DbRefreshThread
 from grouper.error_reporting import get_sentry_client, setup_signal_handlers
 from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
-from grouper.plugin import load_plugins, PluginsDirectoryDoesNotExist
+from grouper.plugin import initialize_plugins
+from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
 from grouper.setup import build_arg_parser, setup_logging
 from grouper.util import get_database_url
 
@@ -57,7 +58,7 @@ def start_server(args, sentry_client):
         "debug mode does not support multiple processes"
 
     try:
-        load_plugins(settings.plugin_dirs, settings.plugin_module_paths, service_name="grouper_api")
+        initialize_plugins(settings.plugin_dirs, settings.plugin_module_paths, "grouper_api")
     except PluginsDirectoryDoesNotExist as e:
         logging.fatal("Plugin directory does not exist: {}".format(e))
         sys.exit(1)

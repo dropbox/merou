@@ -1,20 +1,23 @@
-from argparse import Namespace  # noqa
 import csv
 import logging
+from typing import TYPE_CHECKING
 
 from grouper.ctl.util import (
-        argparse_validate_date,
-        ensure_valid_groupname,
-        ensure_valid_username,
-        make_session,
-        open_file,
-        )
+    argparse_validate_date,
+    ensure_valid_groupname,
+    ensure_valid_username,
+    make_session,
+    open_file,
+)
 from grouper.models.audit_log import AuditLog
-from grouper.models.base.session import Session  # noqa
 from grouper.models.group import Group
 from grouper.models.user_token import UserToken  # noqa: HAX(herb) workaround user -> user_token dep
 from grouper.models.user import User
-from grouper.plugin import PluginRejectedGroupMembershipUpdate
+from grouper.plugin.exceptions import PluginRejectedGroupMembershipUpdate
+
+if TYPE_CHECKING:
+    from argparse import Namespace  # noqa: F401
+    from grouper.models.base.session import Session  # noqa: F401
 
 
 @ensure_valid_groupname

@@ -3,16 +3,20 @@ from datetime import datetime, timedelta
 from mock import patch
 import pytest
 
-from fixtures import groups, session, users  # noqa
-from grouper.plugin import PluginRejectedGroupMembershipUpdate, PluginRejectedDisablingUser
+from fixtures import groups, session, users  # noqa: F401
+from grouper.plugin.exceptions import (
+    PluginRejectedDisablingUser,
+    PluginRejectedGroupMembershipUpdate,
+)
+from grouper.plugin.proxy import PluginProxy
 from grouper.user import disable_user
 from plugins.group_ownership_policy import GroupOwnershipPolicyPlugin
 from util import add_member, revoke_member
 
 
-@patch("grouper.group_member.get_plugins")
-def test_cant_revoke_last_owner(get_plugins, session, groups, users):
-    get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
+@patch("grouper.group_member.get_plugin_proxy")
+def test_cant_revoke_last_owner(get_plugin_proxy, session, groups, users):
+    get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
     first_owner = users["gary@a.co"]
@@ -35,9 +39,9 @@ def test_cant_revoke_last_owner(get_plugins, session, groups, users):
     assert len(group.my_owners()) == 1
 
 
-@patch("grouper.group_member.get_plugins")
-def test_cant_revoke_last_npowner(get_plugins, session, groups, users):
-    get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
+@patch("grouper.group_member.get_plugin_proxy")
+def test_cant_revoke_last_npowner(get_plugin_proxy, session, groups, users):
+    get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
     first_owner = users["gary@a.co"]
@@ -55,9 +59,9 @@ def test_cant_revoke_last_npowner(get_plugins, session, groups, users):
         revoke_member(group, second_owner)
 
 
-@patch("grouper.group_member.get_plugins")
-def test_cant_revoke_last_permanent_owner(get_plugins, groups, users):
-    get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
+@patch("grouper.group_member.get_plugin_proxy")
+def test_cant_revoke_last_permanent_owner(get_plugin_proxy, groups, users):
+    get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
     first_owner = users["gary@a.co"]
@@ -72,9 +76,9 @@ def test_cant_revoke_last_permanent_owner(get_plugins, groups, users):
         revoke_member(group, second_owner)
 
 
-@patch("grouper.group_member.get_plugins")
-def test_cant_expire_last_owner(get_plugins, groups, users):
-    get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
+@patch("grouper.group_member.get_plugin_proxy")
+def test_cant_expire_last_owner(get_plugin_proxy, groups, users):
+    get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
     owner = users["gary@a.co"]
@@ -87,9 +91,9 @@ def test_cant_expire_last_owner(get_plugins, groups, users):
         group.edit_member(owner, owner, "Unit Testing", expiration=expiration)
 
 
-@patch("grouper.group_member.get_plugins")
-def test_cant_demote_last_owner(get_plugins, groups, users):
-    get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
+@patch("grouper.group_member.get_plugin_proxy")
+def test_cant_demote_last_owner(get_plugin_proxy, groups, users):
+    get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
     owner = users["gary@a.co"]
@@ -100,9 +104,9 @@ def test_cant_demote_last_owner(get_plugins, groups, users):
         group.edit_member(owner, owner, "Unit Testing", role="member")
 
 
-@patch("grouper.group_member.get_plugins")
-def test_can_always_revoke_members(get_plugins, groups, users):
-    get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
+@patch("grouper.group_member.get_plugin_proxy")
+def test_can_always_revoke_members(get_plugin_proxy, groups, users):
+    get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
     owner = users["gary@a.co"]
@@ -116,9 +120,9 @@ def test_can_always_revoke_members(get_plugins, groups, users):
     revoke_member(group, member)
 
 
-@patch("grouper.group_member.get_plugins")
-def test_can_add_owner_twice(get_plugins, session, groups, users):
-    get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
+@patch("grouper.group_member.get_plugin_proxy")
+def test_can_add_owner_twice(get_plugin_proxy, session, groups, users):
+    get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
     owner = users["gary@a.co"]
@@ -127,9 +131,9 @@ def test_can_add_owner_twice(get_plugins, session, groups, users):
     add_member(group, owner, role="owner")
 
 
-@patch("grouper.user.get_plugins")
-def test_cant_disable_last_owner(get_plugins, session, groups, users):
-    get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
+@patch("grouper.user.get_plugin_proxy")
+def test_cant_disable_last_owner(get_plugin_proxy, session, groups, users):
+    get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
     owner = users["gary@a.co"]
@@ -140,9 +144,9 @@ def test_cant_disable_last_owner(get_plugins, session, groups, users):
         disable_user(session, owner)
 
 
-@patch("grouper.user.get_plugins")
-def test_can_disable_member(get_plugins, session, groups, users):
-    get_plugins.return_value = [GroupOwnershipPolicyPlugin()]
+@patch("grouper.user.get_plugin_proxy")
+def test_can_disable_member(get_plugin_proxy, session, groups, users):
+    get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
     member = users["gary@a.co"]

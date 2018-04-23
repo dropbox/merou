@@ -2,7 +2,7 @@ from grouper.constants import USER_ADMIN, USER_DISABLE
 from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
-from grouper.plugin import PluginRejectedDisablingUser
+from grouper.plugin.exceptions import PluginRejectedDisablingUser
 from grouper.role_user import disable_role_user, is_owner_of_role_user
 from grouper.user import disable_user
 from grouper.user_permissions import user_has_permission

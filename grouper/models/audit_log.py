@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import relationship
 
 from grouper.models.base.model_base import Model
-from grouper.plugin import get_plugins
+from grouper.plugin import get_plugin_proxy
 
 
 class AuditLogCategory(IntEnum):
@@ -94,8 +94,7 @@ class AuditLog(Model):
             raise AuditLogFailure()
         session.commit()
 
-        for plugin in get_plugins():
-            plugin.log_auditlog_entry(entry)
+        get_plugin_proxy().log_auditlog_entry(entry)
 
     @staticmethod
     def get_entries(session, actor_id=None, on_user_id=None, on_group_id=None,

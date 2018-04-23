@@ -1,20 +1,18 @@
 from urllib import urlencode
 
 import pytest
-
 from tornado.httpclient import HTTPError
 
-import grouper.plugin
-
-from fixtures import fe_app as app
-from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
+from fixtures import fe_app as app  # noqa: F401
+from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa: F401
 from grouper.constants import USER_ADMIN
 from grouper.models.permission import Permission
 from grouper.models.user import User
 from grouper.models.user_token import UserToken
-from grouper.plugin import BasePlugin
+from grouper.plugin.base import BasePlugin
+from grouper.plugin.proxy import PluginProxy
 from grouper.role_user import create_role_user
-from grouper.user_metadata import set_user_metadata, get_user_metadata
+from grouper.user_metadata import get_user_metadata, set_user_metadata
 from grouper.user_token import add_new_user_token, disable_user_token
 from url_util import url
 from util import get_groups, grant_permission
@@ -23,7 +21,6 @@ from util import get_groups, grant_permission
 def test_basic_metadata(standard_graph, session, users, groups, permissions):  # noqa
     """ Test basic metadata functionality. """
 
-    graph = standard_graph  # noqa
     user_id = users["zorkian@a.co"].id
 
     assert len(get_user_metadata(session, users["zorkian@a.co"].id)) == 0, "No metadata yet"
@@ -175,10 +172,10 @@ class UserCreatedPlugin(BasePlugin):
         self.calls += 1
 
 
-def test_user_created_plugin(session, users, groups):
+def test_user_created_plugin(mocker, session, users, groups):
     """Test calls to the user_created plugin."""
     plugin = UserCreatedPlugin()
-    grouper.plugin.Plugins = [plugin]
+    mocker.patch('grouper.models.user.get_plugin_proxy', return_value=PluginProxy([plugin]))
 
     # Create a regular user.  The service account flag should be false, and the plugin should be
     # called.

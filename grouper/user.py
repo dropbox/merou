@@ -14,7 +14,7 @@ from grouper.models.group_edge import (APPROVER_ROLE_INDICES, GROUP_EDGE_ROLES, 
 from grouper.models.request import Request
 from grouper.models.request_status_change import RequestStatusChange
 from grouper.models.user import User
-from grouper.plugin import get_plugins
+from grouper.plugin import get_plugin_proxy
 from grouper.user_group import get_groups_by_user
 from grouper.user_permissions import user_is_group_admin
 
@@ -108,8 +108,7 @@ def enable_user(session, user, requester, preserve_membership):
 def disable_user(session, user):
     """Disables an enabled user"""
 
-    for plugin in get_plugins():
-        plugin.will_disable_user(session, user)
+    get_plugin_proxy().will_disable_user(session, user)
 
     user.enabled = False
     Counter.incr(session, "updates")

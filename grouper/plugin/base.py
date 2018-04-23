@@ -1,0 +1,164 @@
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ssl import SSLContext  # noqa: F401
+    from typing import Any, Dict, List, Union  # noqa: F401
+    from sqlalchemy.orm import Session  # noqa: F401
+    from sshpubkeys import SSHKey  # noqa: F401
+    from tornado.httpserver import HTTPRequest  # noqa: F401
+    from grouper.models.audit_log import AuditLog  # noqa: F401
+    from grouper.models.group import Group  # noqa: F401
+    from grouper.models.user import User  # noqa: F401
+
+
+class BasePlugin(object):
+    def check_machine_set(self, name, machine_set):
+        # type: (str, str) -> None
+        """Check whether a service account machine set is valid.
+
+        Args:
+            name: Name of the service account being changed
+            machine_set: New machine set for a service account
+
+        Raises:
+            PluginRejectedMachineSet to reject the change.  The exception message will be shown to
+            the user.
+        """
+        pass
+
+    def configure(self, service_name):
+        # type: (str) -> None
+        """
+        Called once the plugin is instantiated to identify the executable
+        (grouper-api or grouper-fe).
+        """
+        pass
+
+    def get_owner_by_arg_by_perm(self, session):
+        # type: (Session) -> Dict[str, Dict[str, Group]]
+        """Called when determining owners for permission+arg granting.
+
+        Args:
+            session: database session
+
+        Returns:
+            dict of the form {'permission_name': {'argument': [owner1, owner2,
+            ...], ...}, ...} where 'ownerN' is a models.Group corresponding to
+            the grouper group that owns (read: is able to) grant that
+            permission + argument pair.
+        """
+        pass
+
+    def get_ssl_context(self):
+        # type: () -> SSLContext
+        """
+        Called to get the ssl.SSLContext for the application.
+        """
+        pass
+
+    def log_auditlog_entry(self, entry):
+        # type: (AuditLog) -> None
+        """
+        Called when an audit log entry is saved to the database.
+
+        Args:
+            entry: just-saved log object
+        """
+        pass
+
+    def log_exception(self, request, status, exception, stack):
+        # type: (HTTPRequest, int, Exception, List) -> None
+        """
+        Called when responding with statuses 400, 403, 404, and 500.
+
+        Args:
+            request: the request being handled.
+            status: the response status.
+            exception: either a tornado.web.HTTPError or an unexpected exception.
+            stack: "pre-processed" stack trace entries for traceback.format_list.
+
+        Returns:
+            The return code of this method is ignored.
+        """
+        pass
+
+    def log_gauge(self, key, val):
+        # type: (str, float) -> None
+        """ Log an instantaneous-value gauge stat that does not vary with
+        time. For e.g., number of CPUs or amount of RAM on a machine.
+        """
+        pass
+
+    def log_rate(self, key, val, count=1):
+        # type: (str, float, int) -> None
+        """ Log a time-varying rate stat, such as an execution time or a
+        method invocation.
+            @param key - the name of the stat.
+            @param val - increment to the value of the stat.
+            @param count - the number of samples that created the increment.
+        """
+        pass
+
+    def set_default_stats_tags(self, tags):
+        # type: (Dict[str, str]) -> None
+        """Set default tags for stats"""
+        pass
+
+    def user_created(self, user, is_service_account=False):
+        # type: (User, bool) -> None
+        """Called when a new user is created
+
+        When new users enter into Grouper, you might have reason to set metadata on those
+        users for some reason. This method is called when that happens.
+
+        Args:
+            user: Object of new user.
+            is_service_account: Whether this user is a service account (role user)
+
+        Returns:
+            The return code of this method is ignored.
+        """
+        pass
+
+    def will_add_public_key(self, key):
+        # type: (SSHKey) -> None
+        """
+        Called before adding a public key
+
+        Args:
+            key: Parsed public key
+
+        Raises:
+            PluginRejectedPublicKey: if the plugin rejects the key
+        """
+        pass
+
+    def will_disable_user(self, session, user):
+        # type: (Session, User) -> None
+        """
+        Called before disabling a user
+
+        Args:
+            session: database session
+            user: User to be disabled
+
+        Raises:
+            PluginRejectedDisablingUser: if the plugin rejects the change
+        """
+        pass
+
+    def will_update_group_membership(self, session, group, member, **updates):
+        # type: (Session, Group, Union[User, Group], **Any) -> None
+        """
+        Called before applying changes to a group membership
+
+        Args:
+            session: database session
+            group: affected group
+            member: affected User or Group
+            updates: the updates to the membership (active, expiration, role)
+
+        Raises:
+            PluginRejectedGroupMembershipUpdate: if the plugin rejects the update
+        """
+        pass

@@ -120,9 +120,9 @@ def test_sync_db_default_group(make_session, session, users, groups):
                 "Expected permission missing: %s" % permission
 
 
-@patch('grouper.ctl.oneoff.Annex')
+@patch('grouper.ctl.oneoff.load_plugins')
 @patch('grouper.ctl.oneoff.make_session')
-def test_oneoff(mock_make_session, mock_annex, session):
+def test_oneoff(mock_make_session, mock_load_plugins, session):
     mock_make_session.return_value = session
     username = 'fake_user@a.co'
     other_username = 'fake_user2@a.co'
@@ -143,7 +143,7 @@ def test_oneoff(mock_make_session, mock_annex, session):
                 User.get_or_create(session, username=username)
                 session.commit()
 
-    mock_annex.return_value = [FakeOneOff()]
+    mock_load_plugins.return_value = [FakeOneOff()]
 
     # dry_run
     call_main('oneoff', 'run', 'FakeOneOff')

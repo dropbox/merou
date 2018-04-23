@@ -8,11 +8,11 @@ from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.base.model_base import Model
 from grouper.models.comment import CommentObjectMixin
 from grouper.models.counter import Counter
-from grouper.plugin import get_plugins
+from grouper.plugin import get_plugin_proxy
 
 if TYPE_CHECKING:
     from typing import Iterable, Optional, Tuple  # noqa
-    from grouper.models.session import Session  # noqa
+    from grouper.models.base.session import Session  # noqa
 
 
 class User(Model, CommentObjectMixin):
@@ -56,8 +56,7 @@ class User(Model, CommentObjectMixin):
         # This is a little weird because the default value of the column isn't applied in the
         # object at the time this is called, so role_user may be None instead of False.
         is_service_account = self.role_user is not None and self.role_user
-        for plugin in get_plugins():
-            plugin.user_created(self, is_service_account)
+        get_plugin_proxy().user_created(self, is_service_account)
 
     def add(self, session):
         # type: (Session) -> User

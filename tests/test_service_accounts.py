@@ -1,22 +1,16 @@
 from urllib import urlencode
 
 import pytest
-
-from sqlalchemy.exc import IntegrityError
 from tornado.httpclient import HTTPError
 
-import grouper.plugin
-
-from fixtures import fe_app as app
-from fixtures import graph, groups, permissions, session, standard_graph, users  # noqa
-from grouper.constants import USER_ADMIN
+from fixtures import fe_app as app  # noqa: F401
+from fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401
 from grouper.group_service_account import get_service_accounts
-from grouper.models.base.session import Session
-from grouper.models.permission import Permission
 from grouper.models.service_account import ServiceAccount
-from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.permissions import grant_permission_to_service_account
-from grouper.plugin import BasePlugin, PluginRejectedMachineSet
+from grouper.plugin import PluginProxy
+from grouper.plugin.base import BasePlugin
+from grouper.plugin.exceptions import PluginRejectedMachineSet
 from grouper.service_account import (
     can_manage_service_account,
     create_service_account,
@@ -27,7 +21,6 @@ from grouper.service_account import (
     service_account_permissions,
 )
 from url_util import url
-from util import grant_permission
 
 
 def test_service_accounts(session, standard_graph, users, groups, permissions):
@@ -160,7 +153,6 @@ def test_service_account_fe_disable(session, standard_graph, http_client, base_u
 @pytest.mark.gen_test
 def test_service_account_fe_edit(session, standard_graph, http_client, base_url):
     graph = standard_graph
-    admin = "tyleromeara@a.co"
     owner = "gary@a.co"
     plebe = "oliver@a.co"
 
@@ -275,10 +267,14 @@ class MachineSetPlugin(BasePlugin):
 
 
 @pytest.mark.gen_test
-def test_machine_set_plugin(session, standard_graph, http_client, base_url):
+def test_machine_set_plugin(mocker, session, standard_graph, http_client, base_url):
+    mocker.patch(
+        'grouper.service_account.get_plugin_proxy',
+        return_value=PluginProxy([MachineSetPlugin()]),
+    )
+
     graph = standard_graph
     admin = "zorkian@a.co"
-    grouper.plugin.Plugins = [MachineSetPlugin()]
 
     # Edit the metadata of an existing service account.  This should fail (although return 200)
     # including the appropriate error.
@@ -327,6 +323,3 @@ def test_machine_set_plugin(session, standard_graph, http_client, base_url):
     metadata = graph.user_metadata["other@svc.localhost"]
     assert metadata["service_account"]["description"] == "some other service account"
     assert metadata["service_account"]["machine_set"] == "is okay"
-
-    # Reset for any subsequent tests.
-    grouper.plugin.Plugins.pop()

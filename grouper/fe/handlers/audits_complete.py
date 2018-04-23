@@ -5,7 +5,7 @@ from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog, AuditLogCategory
 from grouper.models.audit_member import AUDIT_STATUS_CHOICES
-from grouper.plugin import PluginRejectedGroupMembershipUpdate
+from grouper.plugin.exceptions import PluginRejectedGroupMembershipUpdate
 from grouper.user_permissions import user_has_permission
 
 

@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from datetime import datetime
 import logging
-from typing import List  # noqa
+from typing import List  # noqa: F401
 
 from sqlalchemy import Boolean, Column, desc, Enum, Integer, Interval, or_, String, Text, union_all
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -16,13 +16,11 @@ from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.base.model_base import Model
 from grouper.models.base.session import flush_transaction
-from grouper.models.comment import Comment, CommentObjectMixin
+from grouper.models.comment import CommentObjectMixin
 from grouper.models.counter import Counter
 from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge, OWNER_ROLE_INDICES
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
-from grouper.models.request import Request
-from grouper.models.request_status_change import RequestStatusChange
 from grouper.models.user import User
 
 GROUP_JOIN_CHOICES = {
@@ -322,53 +320,6 @@ class Group(Model, CommentObjectMixin):
             GroupEdge.expiration > now
         ).all()
         return groups
-
-    def my_requests(self, status=None, user=None):
-
-        members = self.session.query(
-            label("type", literal(1)),
-            label("id", Group.id),
-            label("name", Group.groupname)
-        ).union(self.session.query(
-            label("type", literal(0)),
-            label("id", User.id),
-            label("name", User.username)
-        )).subquery()
-
-        requests = self.session.query(
-            Request.id,
-            Request.requested_at,
-            GroupEdge.expiration,
-            label("role", GroupEdge._role),
-            Request.status,
-            label("requester", User.username),
-            label("type", members.c.type),
-            label("requesting", members.c.name),
-            label("reason", Comment.comment),
-        ).filter(
-            Request.on_behalf_obj_pk == members.c.id,
-            Request.on_behalf_obj_type == members.c.type,
-            Request.requesting_id == self.id,
-            Request.requester_id == User.id,
-            Request.id == RequestStatusChange.request_id,
-            RequestStatusChange.from_status == None,
-            GroupEdge.id == Request.edge_id,
-            Comment.obj_type == 3,
-            Comment.obj_pk == RequestStatusChange.id
-        )
-
-        if status:
-            requests = requests.filter(
-                Request.status == status
-            )
-
-        if user:
-            requests = requests.filter(
-                Request.on_behalf_obj_pk == user.id,
-                Request.on_behalf_obj_type == 0
-            )
-
-        return requests
 
     def enable(self):
         self.enabled = True

@@ -1,4 +1,5 @@
 from grouper.fe.util import GrouperHandler
+from grouper.group_requests import get_requests_by_group
 from grouper.models.base.constants import REQUEST_STATUS_CHOICES
 from grouper.models.group import Group
 from grouper.models.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
@@ -18,7 +19,7 @@ class GroupRequests(GrouperHandler):
         if limit > 9000:
             limit = 9000
 
-        requests = group.my_requests(status).order_by(
+        requests = get_requests_by_group(self.session, group, status=status).order_by(
             Request.requested_at.desc()
         )
         members = group.my_members()

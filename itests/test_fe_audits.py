@@ -10,7 +10,7 @@ from tests.url_util import url
 from tests.util import add_member
 
 
-def test_remove_last_owner_via_audit(async_server, browser, users, groups, session):
+def test_remove_last_owner_via_audit(async_server, browser, users, groups, session):  # noqa: F811
     future = datetime.utcnow() + timedelta(1)
 
     add_member(groups["auditors"], users["cbguder@a.co"], role="owner")

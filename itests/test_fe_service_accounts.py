@@ -1,13 +1,17 @@
-from fixtures import async_server, browser  # noqa: F401
 from pages.groups import GroupViewPage
+from pages.service_accounts import (
+    ServiceAccountCreatePage,
+    ServiceAccountEnablePage,
+    ServiceAccountViewPage,
+)
 from pages.users import UsersViewPage
-from pages.service_accounts import (ServiceAccountCreatePage, ServiceAccountEnablePage,
-    ServiceAccountViewPage)
+
+from fixtures import async_server, browser  # noqa: F401
 from tests.fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401
 from tests.url_util import url
 
 
-def test_service_account_lifecycle(async_server, browser):
+def test_service_account_lifecycle(async_server, browser):  # noqa: F811
     browser.get(url(async_server, "/groups/team-sre"))
 
     page = GroupViewPage(browser)

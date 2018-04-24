@@ -1,6 +1,6 @@
-from selenium.webdriver.support.select import Select
-
 from base import BaseModal, BasePage
+
+from selenium.webdriver.support.select import Select
 
 
 class ServiceAccountViewPage(BasePage):

@@ -1,6 +1,7 @@
 from grouper.constants import USER_METADATA_SHELL_KEY
 from grouper.fe.util import Alert
 from grouper.graph import NoSuchGroup, NoSuchUser
+from grouper.group_requests import get_requests_by_group
 from grouper.group_service_account import get_service_accounts
 from grouper.models.audit_member import AUDIT_STATUS_CHOICES
 from grouper.models.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
@@ -43,7 +44,7 @@ def get_group_view_template_vars(session, actor, group, graph):
 
     ret["audited"] = group_md.get('audited', False)
     ret["log_entries"] = group.my_log_entries()
-    ret["num_pending"] = group.my_requests("pending").count()
+    ret["num_pending"] = get_requests_by_group(session, group, status="pending").count()
     ret["current_user_role"] = {
         'is_owner': user_role_index(actor, ret["members"]) in OWNER_ROLE_INDICES,
         'is_approver': user_role_index(actor, ret["members"]) in APPROVER_ROLE_INDICES,
@@ -65,7 +66,8 @@ def get_group_view_template_vars(session, actor, group, graph):
                 break
 
     ret["alerts"] = []
-    ret["self_pending"] = group.my_requests("pending", user=actor).count()
+    ret["self_pending"] = get_requests_by_group(session, group, status="pending",
+                                                user=actor).count()
     if ret["self_pending"]:
         ret["alerts"].append(Alert('info', 'You have a pending request to join this group.',
             None))

@@ -1,5 +1,5 @@
-from fixtures import graph, groups, permissions, session, standard_graph, users
-
+from fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401
+from grouper.group_requests import get_requests_by_group
 from grouper.models.request import Request
 from grouper.user import user_requests_aggregate
 from util import add_member
@@ -9,23 +9,25 @@ def test_basic_request(graph, groups, permissions, session, standard_graph, user
     group_sre = groups["team-sre"]
     group_not_sre = [g for name,g in groups.items() if name != "team-sre"]
 
-    assert not any([group.my_requests(status="pending").all() for group in groups.values()]), \
-            "no group should start with pending requests"
+    assert not any([get_requests_by_group(session, group, status="pending").all() for group in
+                    groups.values()]), "no group should start with pending requests"
 
     group_sre.add_member(users["testuser@a.co"], users["testuser@a.co"], reason="for the lulz")
     session.commit()
 
-    request_not_sre = [group.my_requests(status="pending").all() for group in group_not_sre]
+    request_not_sre = [get_requests_by_group(session, group, status="pending").all() for group in
+                       group_not_sre]
     assert not any(request_not_sre), "only affected group should show pending requests"
-    request_sre = group_sre.my_requests(status="pending").all()
+    request_sre = get_requests_by_group(session, group_sre, status="pending").all()
     assert len(request_sre) == 1, "affected group should have request"
 
     request = session.query(Request).filter_by(id=request_sre[0].id).scalar()
     request.update_status(users["gary@a.co"], "actioned", "for being a good person")
     session.commit()
 
-    assert not any([group.my_requests(status="pending").all() for group in groups.values()]), \
-            "no group should have requests after being actioned"
+    assert not any([get_requests_by_group(session, group, status="pending").all() for group in
+                    groups.values()]), "no group should have requests after being actioned"
+
 
 def test_aggregate_request(graph, groups, permissions, session, standard_graph, users):
     gary = users["gary@a.co"]

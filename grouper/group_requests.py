@@ -30,7 +30,7 @@ def get_requests_by_group(session, group, status=None, user=None):
     requests = session.query(
         Request.id,
         Request.requested_at,
-        GroupEdge.expiration,
+        Request.changes,
         label("role", GroupEdge._role),
         Request.status,
         label("requester", User.username),

@@ -31,8 +31,8 @@
                     <th class="col-sm-2">Expiration</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for request in requests %}
+            {% for request in requests %}
+                <tbody class="group-request-row">
                     <tr>
                         {% if current_user_role['is_approver'] %}
                             <td>
@@ -42,13 +42,13 @@
                                 </a>
                             </td>
                         {% endif %}
-                        <td>
+                        <td class="request-requested">
                             {{ TYPES[request.type] }}: {{ request.requesting }}
                         </td>
-                        <td>{{ request.requester }}</td>
-                        <td>{{ request.status }}</td>
-                        <td>{{ request.requested_at|print_date }}</td>
-                        <td>{{ request.expiration|print_date }}</td>
+                        <td class="request-requester">{{ request.requester }}</td>
+                        <td class="request-status">{{ request.status }}</td>
+                        <td class="request-requested-at">{{ request.requested_at|print_date }}</td>
+                        <td class="request-expiration">{{ request.changes['expiration'] }}</td>
                     </tr>
                     <tr>
                         {% if current_user_role['is_approver'] %}
@@ -56,13 +56,16 @@
                         {% endif %}
                         <td colspan="5">
                             <div style="padding-left: 10px;">
-                                <strong>Role:</strong> {{ROLES[request.role]}}<br />
-                                <strong>Reason:</strong> <em>{{request.reason}}</em>
+                                <strong>Role:</strong>
+                                <span class="request-role">{{ ROLES[request.role] }}</span>
+                                <br/>
+                                <strong>Reason:</strong>
+                                <em class="request-reason">{{ request.reason }}</em>
                             </div>
                         </td>
                     </tr>
-                {% endfor %}
-            </tbody>
+                </tbody>
+            {% endfor %}
         </table>
     </div></div>
 {% endblock %}

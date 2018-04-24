@@ -1,5 +1,4 @@
 from datetime import datetime
-import json
 
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.comment import Comment
@@ -32,7 +31,7 @@ def _serialize_changes(edge, **updates):
                 changes[key] = value.strftime("%m/%d/%Y") if value else ""
             else:
                 changes[key] = value
-    return json.dumps(changes)
+    return changes
 
 
 def _validate_role(member_type, role):
@@ -119,7 +118,7 @@ def persist_group_member_changes(session, group, requester, member, status, reas
     session.flush()
 
     if status == "actioned":
-        edge.apply_changes(request)
+        edge.apply_changes(request.changes)
         session.flush()
 
     Counter.incr(session, "updates")

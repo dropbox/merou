@@ -1,5 +1,11 @@
 from pages.exceptions import NoSuchElementException
-from pages.groups import GroupEditMemberPage, GroupsViewPage, GroupViewPage
+from pages.groups import (
+    GroupEditMemberPage,
+    GroupJoinPage,
+    GroupRequestsPage,
+    GroupsViewPage,
+    GroupViewPage,
+)
 from plugins import group_ownership_policy
 
 import pytest
@@ -91,3 +97,26 @@ def test_expire_last_owner(async_server, browser):  # noqa: F811
 
     assert page.current_url.endswith("/groups/sad-team/edit/user/zorkian@a.co")
     assert page.has_text(group_ownership_policy.EXCEPTION_MESSAGE)
+
+
+def test_request_to_join_group(async_server, browser):  # noqa: F811
+    fe_url = url(async_server, "/groups/sad-team/join")
+    browser.get(fe_url)
+
+    page = GroupJoinPage(browser)
+
+    page.set_reason("Testing")
+    page.set_expiration("12/31/2999")
+    page.submit()
+
+    fe_url = url(async_server, "/groups/sad-team/requests")
+    browser.get(fe_url)
+
+    page = GroupRequestsPage(browser)
+
+    request_row = page.find_request_row("User: cbguder@a.co")
+    assert request_row.requester == "cbguder@a.co"
+    assert request_row.status == "pending"
+    assert request_row.expiration == "12/31/2999"
+    assert request_row.role == "member"
+    assert request_row.reason == "Testing"

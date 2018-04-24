@@ -8,7 +8,7 @@ if [[ "$TRAVIS_PYTHON_VERSION" == 2* ]]; then
 
   py.test -x -v tests/
   py.test -x -v itests/
-  flake8 --count grouper/
+  flake8 --count grouper/ itests/
 fi
 
 if [[ "$TRAVIS_PYTHON_VERSION" == 3* ]]; then

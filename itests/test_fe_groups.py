@@ -1,13 +1,15 @@
+from pages.exceptions import NoSuchElementException
+from pages.groups import GroupEditMemberPage, GroupsViewPage, GroupViewPage, RoleUserViewPage
+from plugins import group_ownership_policy
+
 import pytest
 
-from fixtures import async_server, browser  # noqa: F401
-from grouper.role_user import create_role_user
-from pages.exceptions import NoSuchElementException
-from pages.groups import GroupEditMemberPage, GroupViewPage, GroupsViewPage, RoleUserViewPage
-from plugins import group_ownership_policy
 from tests.fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401
 from tests.fixtures import fe_app as app  # noqa: F401
 from tests.url_util import url
+
+from fixtures import async_server, browser  # noqa: F401
+from grouper.role_user import create_role_user
 
 
 def test_list_groups(async_server, browser, groups):  # noqa: F811

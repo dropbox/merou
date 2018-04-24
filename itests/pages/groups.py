@@ -1,7 +1,7 @@
-from selenium.webdriver.support.select import Select
-
 from base import BaseElement, BaseModal, BasePage
 from exceptions import NoSuchElementException
+
+from selenium.webdriver.support.select import Select
 
 
 class GroupEditMemberPage(BasePage):

@@ -8,6 +8,7 @@ from grouper.models.base.constants import REQUEST_STATUS_CHOICES
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
 from grouper.models.request import Request
+from grouper.request import get_on_behalf_by_request
 from grouper.user import user_role
 
 
@@ -26,13 +27,15 @@ class GroupRequestUpdate(GrouperHandler):
         if not request:
             return self.notfound()
 
+        on_behalf = get_on_behalf_by_request(self.session, request)
+
         form = GroupRequestModifyForm(self.request.arguments)
         form.status.choices = self._get_choices(request.status)
 
         updates = request.my_status_updates()
 
         self.render(
-            "group-request-update.html", group=group, request=request,
+            "group-request-update.html", group=group, request=request, on_behalf=on_behalf,
             members=members, form=form, statuses=REQUEST_STATUS_CHOICES, updates=updates
         )
 
@@ -50,6 +53,8 @@ class GroupRequestUpdate(GrouperHandler):
         if not request:
             return self.notfound()
 
+        on_behalf = get_on_behalf_by_request(self.session, request)
+
         form = GroupRequestModifyForm(self.request.arguments)
         form.status.choices = self._get_choices(request.status)
 
@@ -58,14 +63,14 @@ class GroupRequestUpdate(GrouperHandler):
         if not form.status.choices:
             alerts = [Alert("info", "Request has already been processed")]
             return self.render(
-                "group-request-update.html", group=group, request=request,
-                members=members, form=form, alerts=alerts,
-                statuses=REQUEST_STATUS_CHOICES, updates=updates
+                "group-request-update.html", group=group, request=request, on_behalf=on_behalf,
+                members=members, form=form, alerts=alerts, statuses=REQUEST_STATUS_CHOICES,
+                updates=updates
             )
 
         if not form.validate():
             return self.render(
-                "group-request-update.html", group=group, request=request,
+                "group-request-update.html", group=group, request=request, on_behalf=on_behalf,
                 members=members, form=form, alerts=self.get_form_alerts(form.errors),
                 statuses=REQUEST_STATUS_CHOICES, updates=updates
             )
@@ -75,14 +80,17 @@ class GroupRequestUpdate(GrouperHandler):
         if form.data["status"] != "cancelled":
             fail_message = 'This join is denied with this role at this time.'
             try:
-                user_can_join = assert_can_join(request.requesting, request.get_on_behalf(),
-                                                role=request.edge.role)
+                user_can_join = assert_can_join(
+                    request.requesting,
+                    on_behalf,
+                    role=request.edge.role,
+                )
             except UserNotAuditor as e:
                 user_can_join = False
                 fail_message = e
             if not user_can_join:
                 return self.render(
-                    "group-request-update.html", group=group, request=request,
+                    "group-request-update.html", group=group, request=request, on_behalf=on_behalf,
                     members=members, form=form, statuses=REQUEST_STATUS_CHOICES, updates=updates,
                     alerts=[
                         Alert('danger', fail_message, 'Audit Policy Enforcement')

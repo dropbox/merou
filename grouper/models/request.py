@@ -56,19 +56,6 @@ class Request(Model, CommentObjectMixin):
         # type: () -> str
         return reference_id(settings, "group", self)
 
-    def get_on_behalf(self):
-        # TODO(cbguder): get around circular dependencies
-        from grouper.models.group import Group
-
-        obj_type = OBJ_TYPES_IDX[self.on_behalf_obj_type]
-
-        if obj_type == "User":
-            obj = User
-        elif obj_type == "Group":
-            obj = Group
-
-        return self.session.query(obj).filter_by(id=self.on_behalf_obj_pk).scalar()
-
     def my_status_updates(self):
         requests = self.session.query(
             Request.id,

@@ -61,3 +61,23 @@ def get_requests_by_group(session, group, status=None, user=None):
         )
 
     return requests
+
+
+def count_requests_by_group(session, group, status=None, user=None):
+    # type: (Session, Group, Optional[str], Optional[User]) -> int
+    requests = session.query(Request).filter(
+        Request.requesting_id == group.id,
+    )
+
+    if status:
+        requests = requests.filter(
+            Request.status == status
+        )
+
+    if user:
+        requests = requests.filter(
+            Request.on_behalf_obj_pk == user.id,
+            Request.on_behalf_obj_type == 0
+        )
+
+    return requests.count()

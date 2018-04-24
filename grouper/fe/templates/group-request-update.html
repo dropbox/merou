@@ -6,7 +6,7 @@
 
 {% block subheading %}
     Request Update (<a href="/groups/{{group.groupname}}">{{group.groupname}}</a>) |
-    {{TYPES[request.on_behalf_obj_type]}}: {{ request.get_on_behalf().name }}
+    {{TYPES[request.on_behalf_obj_type]}}: {{ on_behalf.name }}
 {% endblock %}
 
 {% block content %}

@@ -5,15 +5,18 @@ not add any more logic to role users in the meantime.
 """
 
 from collections import namedtuple
+from typing import TYPE_CHECKING
 
 from grouper.constants import USER_ADMIN
 from grouper.models.audit_log import AuditLog
-from grouper.models.base.session import Session  # noqa
 from grouper.models.group import Group
 from grouper.models.user import User
 from grouper.user import disable_user, enable_user
 from grouper.user_group import user_can_manage_group
 from grouper.user_permissions import user_has_permission
+
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session  # noqa: F401
 
 
 class RoleUserNotFound(Exception):
@@ -25,7 +28,9 @@ RoleUser = namedtuple("RoleUser", ["user", "group"])
 
 def create_role_user(session, actor, name, description, canjoin):
     # type (Session, User, str, str, str) -> None
-    """Creates a service account with the given name, description, and canjoin status
+    """DEPRECATED: Do not use in production code
+
+    Creates a service account with the given name, description, and canjoin status
 
     Args:
         session: the database session

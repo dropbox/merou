@@ -2,22 +2,23 @@ from datetime import date, datetime, timedelta
 import json
 from urllib import urlencode
 
+from constants import SSH_KEY_1, SSH_KEY_BAD
+from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa: F401
+from fixtures import fe_app as app  # noqa: F401
+from url_util import url
+
 from mock import patch
 import pytest
 from tornado.httpclient import HTTPError
 
-from constants import SSH_KEY_1, SSH_KEY_BAD
-from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
-from fixtures import fe_app as app  # noqa
 from grouper.models.async_notification import AsyncNotification
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
 from grouper.models.request import Request
 from grouper.models.user import User
 from grouper.public_key import BadPublicKey, get_public_keys_of_user
-from grouper.role_user import (disable_role_user, enable_role_user,
-    get_role_user, is_role_user)
-from url_util import url
+from grouper.role_user import (create_role_user, disable_role_user, enable_role_user, get_role_user,
+    is_role_user)
 
 
 def _get_unsent_and_mark_as_sent_emails_with_username(session, username):
@@ -136,21 +137,7 @@ def test_sa_pubkeys(session, users, http_client, base_url):
     user = users['zorkian@a.co']
 
     # Add account
-    fe_url = url(base_url, '/service/create')
-    resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'name': 'bob@hello.com', "description": "Hi", "canjoin": "canjoin"}),
-            headers={'X-Grouper-User': user.username})
-    assert resp.code == 200
-
-    assert User.get(session, name="bob@hello.com") is None
-    assert Group.get(session, name="bob@hello.com") is None
-
-    # Add account
-    fe_url = url(base_url, '/service/create')
-    resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'name': 'bob@svc.localhost', "description": "Hi", "canjoin": "canjoin"}),
-            headers={'X-Grouper-User': user.username})
-    assert resp.code == 200
+    create_role_user(session, user, 'bob@svc.localhost', 'Hi', 'canjoin')
 
     u = User.get(session, name="bob@svc.localhost")
     g = Group.get(session, name="bob@svc.localhost")
@@ -262,21 +249,7 @@ def test_sa_tokens(session, users, http_client, base_url):
     user = users['zorkian@a.co']
 
     # Add account
-    fe_url = url(base_url, '/service/create')
-    resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'name': 'bob@hello.com', "description": "Hi", "canjoin": "canjoin"}),
-            headers={'X-Grouper-User': user.username})
-    assert resp.code == 200
-
-    assert User.get(session, name="bob@hello.com") is None
-    assert Group.get(session, name="bob@hello.com") is None
-
-    # Add account
-    fe_url = url(base_url, '/service/create')
-    resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'name': 'bob@svc.localhost', "description": "Hi", "canjoin": "canjoin"}),
-            headers={'X-Grouper-User': user.username})
-    assert resp.code == 200
+    create_role_user(session, user, 'bob@svc.localhost', 'Hi', 'canjoin')
 
     u = User.get(session, name="bob@svc.localhost")
     g = Group.get(session, name="bob@svc.localhost")
@@ -334,8 +307,7 @@ def test_sa_tokens(session, users, http_client, base_url):
 
 
 @pytest.mark.gen_test
-def test_request_emails_reference(session, groups, permissions, users, base_url,
-                        http_client):
+def test_request_emails_reference(session, groups, permissions, users, base_url, http_client):
     tech = groups["tech-ops"]
 
     tech.canjoin = "canask"
@@ -572,21 +544,7 @@ def test_add_role_user(session, users, http_client, base_url):
     user = users['zorkian@a.co']
 
     # Add account
-    fe_url = url(base_url, '/service/create')
-    resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'name': 'bob@hello.com', "description": "Hi", "canjoin": "canjoin"}),
-            headers={'X-Grouper-User': user.username})
-    assert resp.code == 200
-
-    assert User.get(session, name="bob@hello.com") is None
-    assert Group.get(session, name="bob@hello.com") is None
-
-    # Add account
-    fe_url = url(base_url, '/service/create')
-    resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'name': 'bob@svc.localhost', "description": "Hi", "canjoin": "canjoin"}),
-            headers={'X-Grouper-User': user.username})
-    assert resp.code == 200
+    create_role_user(session, user, 'bob@svc.localhost', 'Hi', 'canjoin')
 
     u = User.get(session, name="bob@svc.localhost")
     g = Group.get(session, name="bob@svc.localhost")
@@ -606,21 +564,7 @@ def test_disable_role_user(session, users, http_client, base_url):
     user = users['zorkian@a.co']
 
     # Add account
-    fe_url = url(base_url, '/service/create')
-    resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'name': 'bob@hello.com', "description": "Hi", "canjoin": "canjoin"}),
-            headers={'X-Grouper-User': user.username})
-    assert resp.code == 200
-
-    assert User.get(session, name="bob@hello.com") is None
-    assert Group.get(session, name="bob@hello.com") is None
-
-    # Add account
-    fe_url = url(base_url, '/service/create')
-    resp = yield http_client.fetch(fe_url, method="POST",
-            body=urlencode({'name': 'bob@svc.localhost', "description": "Hi", "canjoin": "canjoin"}),
-            headers={'X-Grouper-User': user.username})
-    assert resp.code == 200
+    create_role_user(session, user, 'bob@svc.localhost', 'Hi', 'canjoin')
 
     u = User.get(session, name="bob@svc.localhost")
     g = Group.get(session, name="bob@svc.localhost")

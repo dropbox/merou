@@ -56,10 +56,6 @@ class GroupViewPage(BasePage):
         button.click()
 
 
-class RoleUserViewPage(GroupViewPage):
-    pass
-
-
 class AuditModal(BaseModal):
     def find_member_row(self, name):
         for row in self.find_elements_by_class_name("audit-member-row"):

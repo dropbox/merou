@@ -339,18 +339,6 @@ class UserPasswordForm(Form):
     ])
 
 
-class RoleUserCreateForm(Form):
-    name = StringField("Name", [
-        validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
-        validators.DataRequired(),
-        ValidateRegex(constants.NAME_VALIDATION),
-        ValidateRegex(constants.USERNAME_VALIDATION),
-    ])
-    description = TextAreaField("Description")
-    canjoin = SelectField("Who Can Join?", choices=GROUP_CANJOIN_CHOICES,
-    default="canask")
-
-
 class ServiceAccountCreateForm(Form):
     name = StringField("Name", [
         validators.Length(min=3, max=constants.MAX_NAME_LENGTH),

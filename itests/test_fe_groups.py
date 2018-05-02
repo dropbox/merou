@@ -1,5 +1,5 @@
 from pages.exceptions import NoSuchElementException
-from pages.groups import GroupEditMemberPage, GroupsViewPage, GroupViewPage, RoleUserViewPage
+from pages.groups import GroupEditMemberPage, GroupsViewPage, GroupViewPage
 from plugins import group_ownership_policy
 
 import pytest
@@ -9,7 +9,6 @@ from tests.fixtures import fe_app as app  # noqa: F401
 from tests.url_util import url
 
 from fixtures import async_server, browser  # noqa: F401
-from grouper.role_user import create_role_user
 
 
 def test_list_groups(async_server, browser, groups):  # noqa: F811
@@ -91,22 +90,4 @@ def test_expire_last_owner(async_server, browser):  # noqa: F811
     page.submit()
 
     assert page.current_url.endswith("/groups/sad-team/edit/user/zorkian@a.co")
-    assert page.has_text(group_ownership_policy.EXCEPTION_MESSAGE)
-
-
-def test_remove_last_owner_of_service_account(async_server, browser, session, users):  # noqa: F811
-    create_role_user(session, users["gary@a.co"], "service@svc.localhost", "things", "canask")
-
-    fe_url = url(async_server, "/service/service@svc.localhost")
-    browser.get(fe_url)
-
-    page = RoleUserViewPage(browser)
-
-    row = page.find_member_row("gary@a.co")
-    row.click_remove_button()
-
-    modal = page.get_remove_user_modal()
-    modal.confirm()
-
-    assert page.current_url.endswith("/service/service@svc.localhost")
     assert page.has_text(group_ownership_policy.EXCEPTION_MESSAGE)

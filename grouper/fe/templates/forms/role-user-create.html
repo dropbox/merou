@@ -1,7 +1,0 @@
-{% from 'macros/ui.html' import form_field -%}
-
-{{ form_field(form.name, 3, 8, class_="form-control") }}
-{{ form_field(form.description, 3, 8, class_="form-control", rows=5) }}
-{{ form_field(form.canjoin, 3, 4, class_="form-control") }}
-
-{{ xsrf_form() }}

@@ -1,5 +1,4 @@
 from datetime import date, datetime, timedelta
-import json
 from urllib import urlencode
 
 from constants import SSH_KEY_1, SSH_KEY_BAD
@@ -456,7 +455,7 @@ def test_request_autoexpiration(graph, groups, permissions, session, standard_gr
     # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
     request = session.query(Request).filter_by(requesting_id=tech.id, requester_id=user.id).scalar()
-    assert datetime.strptime(json.loads(request.changes)['expiration'], "%m/%d/%Y").date() == (datetime.utcnow().date() + tech.auto_expire), "Request expirations should be the current date + group.auto_expire for canask groups"
+    assert datetime.strptime(request.changes['expiration'], "%m/%d/%Y").date() == (datetime.utcnow().date() + tech.auto_expire), "Request expirations should be the current date + group.auto_expire for canask groups"
 
     # REQUEST 2
 
@@ -472,7 +471,7 @@ def test_request_autoexpiration(graph, groups, permissions, session, standard_gr
     # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
     request = session.query(Request).filter_by(requesting_id=sre.id, requester_id=user.id).scalar()
-    assert datetime.strptime(json.loads(request.changes)['expiration'], "%m/%d/%Y").date() == (datetime.utcnow().date() + sre.auto_expire), "Request expirations should be the current date + group.auto_expire for canjoin groups"
+    assert datetime.strptime(request.changes['expiration'], "%m/%d/%Y").date() == (datetime.utcnow().date() + sre.auto_expire), "Request expirations should be the current date + group.auto_expire for canjoin groups"
 
     # REQUEST 3
 
@@ -488,7 +487,7 @@ def test_request_autoexpiration(graph, groups, permissions, session, standard_gr
     # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
     request = session.query(Request).filter_by(requesting_id=security.id, requester_id=user.id).scalar()
-    assert "expiration" not in json.loads(request.changes), "The request should not have an expiration if none is provided and there is no auto_expiration"
+    assert "expiration" not in request.changes, "The request should not have an expiration if none is provided and there is no auto_expiration"
 
     # REQUEST 4
 
@@ -504,7 +503,7 @@ def test_request_autoexpiration(graph, groups, permissions, session, standard_gr
     # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
     request = session.query(Request).filter_by(requesting_id=sad.id, requester_id=user.id).scalar()
-    assert datetime.strptime(json.loads(request.changes)['expiration'], "%m/%d/%Y").date() == date(year=2038, month=1, day=19), "User provided expiration times should not be overwritten by the auto_expiration"
+    assert datetime.strptime(request.changes['expiration'], "%m/%d/%Y").date() == date(year=2038, month=1, day=19), "User provided expiration times should not be overwritten by the auto_expiration"
 
     # REQUEST 5
 
@@ -520,7 +519,7 @@ def test_request_autoexpiration(graph, groups, permissions, session, standard_gr
     # Explicitly requery because pulling from the users dict causes DetachedSessionErrors
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
     request = session.query(Request).filter_by(requesting_id=infra.id, requester_id=user.id).scalar()
-    assert "expiration" not in json.loads(request.changes), "The request should not have an expiration if none is provided and the request was created by adding a member"
+    assert "expiration" not in request.changes, "The request should not have an expiration if none is provided and the request was created by adding a member"
 
     # REQUEST 6
 

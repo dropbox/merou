@@ -1,5 +1,5 @@
 from datetime import datetime
-import json
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, SmallInteger
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -9,6 +9,9 @@ from grouper.expiration import add_expiration, cancel_expiration
 from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.base.model_base import Model
 from grouper.models.user import User
+
+if TYPE_CHECKING:
+    from typing import Any, Dict  # noqa: F401
 
 # Note: the order of the GROUP_EDGE_ROLES tuple matters! New roles must be
 # appended!  When adding a new role, be sure to update the regression test.
@@ -100,7 +103,7 @@ class GroupEdge(Model):
                                   member_name=member_name,
                                   recipients=[recipient])
 
-    def apply_changes_dict(self, changes):
+    def apply_changes(self, changes):
         # TODO(cbguder): get around circular dependencies
         from grouper.models.group import Group
 
@@ -139,11 +142,6 @@ class GroupEdge(Model):
                     setattr(self, key, None)
             else:
                 setattr(self, key, value)
-
-    def apply_changes(self, request):
-        # TODO(tyleromeara): Move deserialization elsewhere
-        changes = json.loads(request.changes)
-        return self.apply_changes_dict(changes)
 
     def __repr__(self):
         return "%s(group_id=%s, member_type=%s, member_pk=%s)" % (

@@ -111,7 +111,7 @@ class BackgroundProcessor(object):
                 if edge.expiration and edge.expiration < now + exp_days:
                     continue
                 exp = (now + exp_days).date()
-                edge.apply_changes_dict(
+                edge.apply_changes(
                     {"expiration": "{}/{}/{}".format(exp.month, exp.day, exp.year)}
                 )
                 edge.add(session)

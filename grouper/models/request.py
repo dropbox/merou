@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Text
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import label
 
@@ -10,6 +10,7 @@ from grouper.models.base.session import flush_transaction
 from grouper.models.comment import Comment, CommentObjectMixin
 from grouper.models.counter import Counter
 from grouper.models.group_edge import GroupEdge
+from grouper.models.json_encoded_type import JsonEncodedType
 from grouper.models.request_status_change import RequestStatusChange
 from grouper.models.user import User
 from grouper.settings import settings
@@ -49,7 +50,7 @@ class Request(Model, CommentObjectMixin):
         Enum(*REQUEST_STATUS_CHOICES), default="pending", nullable=False
     )
 
-    changes = Column(Text, nullable=False)
+    changes = Column(JsonEncodedType, nullable=False)
 
     @property
     def reference_id(self):
@@ -101,6 +102,6 @@ class Request(Model, CommentObjectMixin):
             edge = self.session.query(GroupEdge).filter_by(
                 id=self.edge_id
             ).one()
-            edge.apply_changes(self)
+            edge.apply_changes(self.changes)
 
         Counter.incr(self.session, "updates")

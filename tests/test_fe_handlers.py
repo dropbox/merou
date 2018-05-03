@@ -40,6 +40,9 @@ def test_auth(users, http_client, base_url):
     with pytest.raises(HTTPError):
         resp = yield http_client.fetch(base_url, headers={'X-Grouper-User': 'nobody'})
 
+    with pytest.raises(HTTPError):
+        resp = yield http_client.fetch(base_url, headers={'X-Grouper-User': 'service@a.co'})
+
     # valid user
     resp = yield http_client.fetch(base_url, headers={'X-Grouper-User': 'zorkian@a.co'})
     assert resp.code == 200

@@ -138,6 +138,10 @@ class GrouperHandler(RequestHandler):
             Session.configure(bind=get_db_engine(get_database_url(settings)))
             raise DatabaseFailure()
 
+        # service accounts are, by definition, not interactive users
+        if user.is_service_account:
+            raise InvalidUser()
+
         return user
 
     def prepare(self):

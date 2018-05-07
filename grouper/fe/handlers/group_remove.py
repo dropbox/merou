@@ -2,7 +2,7 @@ from grouper.fe.forms import GroupRemoveForm
 from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
-from grouper.plugin import PluginRejectedGroupMembershipUpdate
+from grouper.plugin.exceptions import PluginRejectedGroupMembershipUpdate
 from grouper.role_user import get_role_user, is_role_user
 from grouper.user import get_user_or_group
 from grouper.user_group import user_can_manage_group

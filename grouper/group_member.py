@@ -6,7 +6,7 @@ from grouper.models.counter import Counter
 from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
 from grouper.models.request import Request
 from grouper.models.request_status_change import RequestStatusChange
-from grouper.plugin import get_plugins
+from grouper.plugin import get_plugin_proxy
 
 
 class InvalidRoleForMember(Exception):
@@ -76,8 +76,7 @@ def persist_group_member_changes(session, group, requester, member, status, reas
         role = updates["role"]
         _validate_role(member.member_type, role)
 
-    for plugin in get_plugins():
-        plugin.will_update_group_membership(session, group, member, **updates)
+    get_plugin_proxy().will_update_group_membership(session, group, member, **updates)
 
     if create_edge:
         edge = _create_edge(session, group, member, updates.get("role", "member"))

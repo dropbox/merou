@@ -4,7 +4,7 @@ import sshpubkeys
 
 from grouper.models.public_key import PublicKey
 from grouper.oneoff import BaseOneOff
-from grouper.plugin import PluginRejectedPublicKey, get_plugins
+from grouper.plugin import get_plugin_proxy, PluginRejectedPublicKey
 
 
 class CheckPublicKeys(BaseOneOff):
@@ -21,8 +21,7 @@ class CheckPublicKeys(BaseOneOff):
                 continue
 
             try:
-                for plugin in get_plugins():
-                    plugin.will_add_public_key(pubkey)
+                get_plugin_proxy().will_add_public_key(pubkey)
             except PluginRejectedPublicKey as e:
                 logging.error("Bad Key (id={}): {}".format(key.id, e.message))
                 continue

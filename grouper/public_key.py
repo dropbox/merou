@@ -10,7 +10,8 @@ from grouper.models.permission import Permission
 from grouper.models.public_key import PublicKey
 from grouper.models.public_key_tag_map import PublicKeyTagMap
 from grouper.models.tag_permission_map import TagPermissionMap
-from grouper.plugin import get_plugins, PluginRejectedPublicKey
+from grouper.plugin import get_plugin_proxy
+from grouper.plugin.exceptions import PluginRejectedPublicKey
 from grouper.user_permissions import user_permissions
 
 if TYPE_CHECKING:
@@ -93,8 +94,7 @@ def add_public_key(session, user, public_key_str):
         raise PublicKeyParseError(e.message)
 
     try:
-        for plugin in get_plugins():
-            plugin.will_add_public_key(pubkey)
+        get_plugin_proxy().will_add_public_key(pubkey)
     except PluginRejectedPublicKey as e:
         raise BadPublicKey(e.message)
 

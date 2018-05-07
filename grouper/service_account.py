@@ -11,21 +11,25 @@ service_account boolean field.
 """
 
 from collections import defaultdict, namedtuple
-from typing import Dict, List, Union  # noqa
+from typing import TYPE_CHECKING
 
 from sqlalchemy.exc import IntegrityError
 
 from grouper.group_service_account import add_service_account
 from grouper.models.audit_log import AuditLog
-from grouper.models.base.session import Session  # noqa
 from grouper.models.counter import Counter
-from grouper.models.group import Group  # noqa
 from grouper.models.permission import Permission
 from grouper.models.service_account import ServiceAccount
 from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.models.user import User
-from grouper.plugin import get_plugins, PluginRejectedMachineSet
+from grouper.plugin import get_plugin_proxy
+from grouper.plugin.exceptions import PluginRejectedMachineSet
 from grouper.user import disable_user, enable_user
+
+if TYPE_CHECKING:
+    from typing import Dict, List, Union  # noqa: F401
+    from grouper.models.base.session import Session  # noqa: F401
+    from grouper.models.group import Group  # noqa: F401
 
 # A single service account permission.
 ServiceAccountPermission = namedtuple("ServiceAccountPermission",
@@ -50,8 +54,7 @@ def _check_machine_set(service_account, machine_set):
         BadMachineSet: if some plugin rejected the machine set
     """
     try:
-        for plugin in get_plugins():
-            plugin.check_machine_set(service_account.user.username, machine_set)
+        get_plugin_proxy().check_machine_set(service_account.user.username, machine_set)
     except PluginRejectedMachineSet as e:
         raise BadMachineSet(str(e))
 

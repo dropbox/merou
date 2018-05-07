@@ -21,7 +21,7 @@ from grouper.models.permission_request import PermissionRequest
 from grouper.models.permission_request_status_change import PermissionRequestStatusChange
 from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.models.tag_permission_map import TagPermissionMap
-from grouper.plugin import get_plugins
+from grouper.plugin import get_plugin_proxy
 from grouper.user_group import get_groups_by_user
 from grouper.util import matches_glob
 
@@ -295,8 +295,7 @@ def get_owners_by_grantable_permission(session, separate_global=False):
             owners_by_arg_by_perm[perm.name][arg].append(group)
 
     # merge in plugin results
-    for plugin in get_plugins():
-        res = plugin.get_owner_by_arg_by_perm(session) or {}
+    for res in get_plugin_proxy().get_owner_by_arg_by_perm(session):
         for perm, owners_by_arg in res.items():
             for arg, owners in owners_by_arg.items():
                 owners_by_arg_by_perm[perm][arg] += owners

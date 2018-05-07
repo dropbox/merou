@@ -4,10 +4,10 @@ import sys
 
 from grouper import __version__
 from grouper.ctl import dump_sql, group, oneoff, shell, sync_db, user, user_proxy
-from grouper.plugin import load_plugins
+from grouper.plugin import initialize_plugins
+from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
 from grouper.settings import default_settings_path, settings
 from grouper.util import get_loglevel
-
 
 sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
@@ -48,7 +48,11 @@ def main(sys_argv=sys.argv, start_config_thread=True):
     log_level = get_loglevel(args, base=logging.INFO)
     logging.basicConfig(level=log_level, format=settings.log_format)
 
-    load_plugins(settings.plugin_dirs, settings.plugin_module_paths, service_name="grouper-ctl")
+    try:
+        initialize_plugins(settings.plugin_dirs, settings.plugin_module_paths, "grouper-ctl")
+    except PluginsDirectoryDoesNotExist as e:
+        logging.fatal("Plugin directory does not exist: {}".format(e))
+        sys.exit(1)
 
     if log_level < 0:
         sa_log.setLevel(logging.INFO)

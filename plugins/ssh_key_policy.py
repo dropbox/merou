@@ -1,4 +1,5 @@
-from grouper.plugin import BasePlugin, PluginRejectedPublicKey
+from grouper.plugin.base import BasePlugin
+from grouper.plugin.exceptions import PluginRejectedPublicKey
 
 MIN_KEY_SIZES = {
     "ssh-rsa": 2048,

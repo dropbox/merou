@@ -2,10 +2,13 @@ from sqlalchemy.sql import label
 
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.group import Group
-from grouper.models.group_edge import GROUP_EDGE_ROLES, OWNER_ROLE_INDICES, GroupEdge
+from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge, OWNER_ROLE_INDICES
 from grouper.models.user import User
-from grouper.plugin import (BasePlugin, PluginRejectedGroupMembershipUpdate,
-    PluginRejectedDisablingUser)
+from grouper.plugin.base import BasePlugin
+from grouper.plugin.exceptions import (
+    PluginRejectedDisablingUser,
+    PluginRejectedGroupMembershipUpdate,
+)
 
 EXCEPTION_MESSAGE = "You can't remove the last permanent owner of a group"
 

@@ -8,7 +8,7 @@ from grouper.models.comment import OBJ_TYPES
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
 from grouper.models.user import User
-from grouper.plugin import PluginRejectedGroupMembershipUpdate
+from grouper.plugin.exceptions import PluginRejectedGroupMembershipUpdate
 from grouper.user import user_role
 
 

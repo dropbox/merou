@@ -4,7 +4,8 @@ import sshpubkeys
 
 from grouper.models.public_key import PublicKey
 from grouper.oneoff import BaseOneOff
-from grouper.plugin import get_plugin_proxy, PluginRejectedPublicKey
+from grouper.plugin import get_plugin_proxy
+from grouper.plugin.exceptions import PluginRejectedPublicKey
 
 
 class CheckPublicKeys(BaseOneOff):

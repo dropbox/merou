@@ -8,9 +8,9 @@ from fixtures import graph, groups, permissions, session, standard_graph, users 
 from grouper.group_service_account import get_service_accounts
 from grouper.models.service_account import ServiceAccount
 from grouper.permissions import grant_permission_to_service_account
-from grouper.plugin import PluginProxy
 from grouper.plugin.base import BasePlugin
 from grouper.plugin.exceptions import PluginRejectedMachineSet
+from grouper.plugin.proxy import PluginProxy
 from grouper.service_account import (
     can_manage_service_account,
     create_service_account,

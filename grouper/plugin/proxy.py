@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from grouper.models.audit_log import AuditLog  # noqa: F401
     from grouper.models.group import Group  # noqa: F401
     from grouper.models.user import User  # noqa: F401
-    from grouper.plugin import BasePlugin  # noqa: F401
+    from grouper.plugin.base import BasePlugin  # noqa: F401
 
 
 class PluginProxy(object):

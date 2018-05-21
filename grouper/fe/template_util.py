@@ -11,17 +11,24 @@ from grouper.fe.settings import settings
 
 
 RESOURCE_INTEGRITY_VALUES = {}
+CHUNK_SIZE = 1024 * 16
 
 
 def get_integrity_of_static(path):
-    if settings.debug or not RESOURCE_INTEGRITY_VALUES[path]:
+    if settings or not RESOURCE_INTEGRITY_VALUES[path]:
+
         resolved_file = os.path.join(os.curdir, 'grouper/fe/static', path)
 
         resource_hash = sha384()
-        with open(resolved_file) as r:
-            resource_hash.update(r.read())
+        with open(resolved_file) as f:
+            bytes_read = f.read(CHUNK_SIZE)
+            while bytes_read:
+                resource_hash.update(bytes_read)
+                bytes_read = f.read(CHUNK_SIZE)
 
-        RESOURCE_INTEGRITY_VALUES[path] = b64encode(resource_hash.digest())
+        digest = resource_hash.digest()
+
+        RESOURCE_INTEGRITY_VALUES[path] = b64encode(digest)
 
     return "sha384-{hash}".format(hash=RESOURCE_INTEGRITY_VALUES[path])
 

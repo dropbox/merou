@@ -42,6 +42,7 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+.idea/
 
 # compiled python
 bin/grouper-apic

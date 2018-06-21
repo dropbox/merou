@@ -75,7 +75,8 @@ def test_basic_permission(standard_graph, session, users, groups, permissions): 
     assert sorted(get_user_permissions(graph, "zay@a.co")) == [
         "audited:", "ssh:*", "ssh:shell", "sudo:shell", "team-sre:*"]
     assert sorted(get_user_permissions(graph, "zorkian@a.co")) == [
-        "audited:", AUDIT_MANAGER + ":", PERMISSION_AUDITOR + ":", "ssh:*", "sudo:shell", "team-sre:*"]
+        "audited:", AUDIT_MANAGER + ":", PERMISSION_AUDITOR + ":", "owner:sad-team", "ssh:*",
+        "sudo:shell", "team-sre:*"]
     assert sorted(get_user_permissions(graph, "testuser@a.co")) == []
     assert sorted(get_user_permissions(graph, "figurehead@a.co")) == [
         "sudo:shell"]

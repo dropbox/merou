@@ -67,3 +67,15 @@ def test_list_public_keys(async_server, browser, session, users, groups):  # noq
 
     with pytest.raises(NoSuchElementException):
         page.find_public_key_row("SHA256:100")
+
+
+def test_show_user_hides_aliased_permissions(async_server, browser):  # noqa: F811
+    fe_url = url(async_server, "/users/oliver@a.co")
+    browser.get(fe_url)
+
+    page = UserViewPage(browser)
+
+    assert len(page.find_permission_rows("owner", "sad-team")) == 1
+
+    assert page.find_permission_rows("ssh", "owner=sad-team") == []
+    assert page.find_permission_rows("sudo", "sad-team") == []

@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ssl import SSLContext  # noqa: F401
-    from typing import Any, Dict, List, Union  # noqa: F401
+    from typing import Any, Dict, List, Tuple, Union  # noqa: F401
     from sqlalchemy.orm import Session  # noqa: F401
     from sshpubkeys import SSHKey  # noqa: F401
     from tornado.httpserver import HTTPRequest  # noqa: F401
@@ -31,6 +31,20 @@ class BasePlugin(object):
         """
         Called once the plugin is instantiated to identify the executable
         (grouper-api or grouper-fe).
+        """
+        pass
+
+    def get_aliases_for_mapped_permission(self, session, permission, argument):
+        # type: (Session, str, str) -> List[Tuple[str, str]]
+        """Called when building the graph to get aliases of a mapped permission.
+
+        Args:
+            session: database session
+            permission: the name of the permission
+            argument: the argument that the permission was granted with
+
+        Returns:
+            A list of (permission, argument) tuples that the permission is an alias for.
         """
         pass
 

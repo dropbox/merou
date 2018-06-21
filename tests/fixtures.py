@@ -13,7 +13,7 @@ from grouper.models.permission import Permission
 from grouper.models.user import User
 from grouper.permissions import enable_permission_auditing
 from grouper.service_account import create_service_account
-from path_util import src_path, db_url
+from path_util import db_url
 from util import add_member, grant_permission
 
 
@@ -102,6 +102,7 @@ def standard_graph(session, graph, users, groups, permissions):
 
     add_member(groups["sad-team"], users["zorkian@a.co"], role="owner")
     add_member(groups["sad-team"], users["oliver@a.co"])
+    grant_permission(groups["sad-team"], permissions["owner"], argument="sad-team")
 
     add_member(groups["audited-team"], users["zorkian@a.co"], role="owner")
     grant_permission(groups["audited-team"], permissions["audited"])
@@ -186,11 +187,14 @@ def groups(session):
 
 @pytest.fixture
 def permissions(session, users):
+    all_permissions = ["owner", "ssh", "sudo", "audited", AUDIT_MANAGER, PERMISSION_AUDITOR,
+                       "team-sre", USER_ADMIN, GROUP_ADMIN]
+
     permissions = {
         permission: Permission.get_or_create(
-            session, name=permission, description="{} permission".format(permission))[0]
-        for permission in ("ssh", "sudo", "audited", AUDIT_MANAGER, PERMISSION_AUDITOR, "team-sre",
-            USER_ADMIN, GROUP_ADMIN)
+            session, name=permission, description="{} permission".format(permission)
+        )[0]
+        for permission in all_permissions
     }
 
     enable_permission_auditing(session, permissions["audited"].name, users['zorkian@a.co'].id)

@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ssl import SSLContext  # noqa: F401
-    from typing import Any, Dict, List, Iterable, Optional, Union  # noqa: F401
+    from typing import Any, Dict, List, Iterable, Optional, Tuple, Union  # noqa: F401
     from sqlalchemy.orm import Session  # noqa: F401
     from sshpubkeys import SSHKey  # noqa: F401
     from tornado.httpserver import HTTPRequest  # noqa: F401
@@ -26,6 +26,15 @@ class PluginProxy(object):
         # type: (str) -> None
         for plugin in self._plugins:
             plugin.configure(service_name)
+
+    def get_aliases_for_mapped_permission(self, session, permission, argument):
+        # type: (Session, str, str) -> Iterable[Tuple[str, str]]
+        for plugin in self._plugins:
+            aliases = plugin.get_aliases_for_mapped_permission(session, permission, argument)
+            if aliases is None:
+                continue
+            for alias in aliases:
+                yield alias
 
     def get_owner_by_arg_by_perm(self, session):
         # type: (Session) -> Iterable[Dict[str, Dict[str, Group]]]

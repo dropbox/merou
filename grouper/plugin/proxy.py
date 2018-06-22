@@ -28,7 +28,7 @@ class PluginProxy(object):
             plugin.configure(service_name)
 
     def get_owner_by_arg_by_perm(self, session):
-        # type: (Session) -> Iterable[Dict[str, Dict[str, Group]]]
+        # type: (Session) -> Iterable[Dict[str, Dict[str, List[Group]]]]
         for plugin in self._plugins:
             owners = plugin.get_owner_by_arg_by_perm(session)
             if owners is not None:

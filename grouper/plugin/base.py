@@ -49,7 +49,7 @@ class BasePlugin(object):
         pass
 
     def get_owner_by_arg_by_perm(self, session):
-        # type: (Session) -> Dict[str, Dict[str, Group]]
+        # type: (Session) -> Dict[str, Dict[str, List[Group]]]
         """Called when determining owners for permission+arg granting.
 
         Args:

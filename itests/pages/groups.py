@@ -1,5 +1,6 @@
 from base import BaseElement, BaseModal, BasePage
 from exceptions import NoSuchElementException
+from permissions import PermissionRow
 
 from selenium.webdriver.support.select import Select
 
@@ -41,6 +42,17 @@ class GroupViewPage(BasePage):
                 return member_row
 
         raise NoSuchElementException("Can't find member with name {}".format(name))
+
+    def find_permission_rows(self, name, argument=None):
+        elements = self.find_elements_by_class_name("permission-row")
+        rows = [PermissionRow(el) for el in elements]
+
+        rows = [row for row in rows if row.name == name]
+
+        if argument:
+            rows = [row for row in rows if row.argument == argument]
+
+        return rows
 
     def get_remove_user_modal(self):
         element = self.find_element_by_id("removeUserModal")

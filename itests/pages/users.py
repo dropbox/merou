@@ -1,5 +1,6 @@
 from base import BaseElement, BaseModal, BasePage
 from exceptions import NoSuchElementException
+from permissions import PermissionRow
 
 
 class PublicKeysPage(BasePage):
@@ -40,6 +41,17 @@ class UserViewPage(BasePage):
     def get_disable_user_modal(self):
         element = self.find_element_by_id("disableModal")
         return DisableUserModal(element)
+
+    def find_permission_rows(self, name, argument=None):
+        elements = self.find_elements_by_class_name("permission-row")
+        rows = [PermissionRow(el) for el in elements]
+
+        rows = [row for row in rows if row.name == name]
+
+        if argument:
+            rows = [row for row in rows if row.argument == argument]
+
+        return rows
 
 
 class DisableUserModal(BaseModal):

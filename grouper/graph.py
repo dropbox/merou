@@ -19,6 +19,7 @@ from grouper.models.service_account import ServiceAccount
 from grouper.models.user import User
 from grouper.models.user_metadata import UserMetadata
 from grouper.models.user_password import UserPassword
+from grouper.plugin import get_plugin_proxy
 from grouper.public_key import get_all_public_key_tags
 from grouper.role_user import is_role_user
 from grouper.service_account import all_service_account_permissions
@@ -217,19 +218,37 @@ class GroupGraph(object):
         Returns a dict of groupname: { list of permissions }.
         '''
         out = defaultdict(list)  # groupid -> [ ... ]
+
         permissions = session.query(Permission, PermissionMap).filter(
             Permission.id == PermissionMap.permission_id,
             PermissionMap.group_id == Group.id,
             Group.enabled == True,
         )
-        for permission in permissions:
-            out[permission[1].group.name].append(MappedPermission(
-                permission=permission[0].name,
-                audited=permission[0].audited,
-                argument=permission[1].argument,
-                groupname=permission[1].group.name,
-                granted_on=permission[1].granted_on,
+
+        for (permission, permission_map) in permissions:
+            out[permission_map.group.name].append(MappedPermission(
+                permission=permission.name,
+                audited=permission.audited,
+                argument=permission_map.argument,
+                groupname=permission_map.group.name,
+                granted_on=permission_map.granted_on,
+                alias=False,
             ))
+
+            aliases = get_plugin_proxy().get_aliases_for_mapped_permission(
+                session, permission.name, permission_map.argument
+            )
+
+            for (name, arg) in aliases:
+                out[permission_map.group.name].append(MappedPermission(
+                    permission=name,
+                    audited=permission.audited,
+                    argument=arg,
+                    groupname=permission_map.group.name,
+                    granted_on=permission_map.granted_on,
+                    alias=True,
+                ))
+
         return out
 
     @staticmethod
@@ -535,6 +554,7 @@ class GroupGraph(object):
                         "granted_on": (permission.granted_on - EPOCH).total_seconds(),
                         "distance": len(path) - 1,
                         "path": [elem[1] for elem in path],
+                        "alias": permission.alias,
                     })
             for permission in self.permission_metadata.get(groupname, []):
                 if show_permission is not None and permission.permission != show_permission:
@@ -547,6 +567,7 @@ class GroupGraph(object):
                     "granted_on": (permission.granted_on - EPOCH).total_seconds(),
                     "distance": 0,
                     "path": [groupname],
+                    "alias": permission.alias,
                 })
 
             data["audited"] = group_audited
@@ -629,6 +650,7 @@ class GroupGraph(object):
                         "granted_on": (permission.granted_on - EPOCH).total_seconds(),
                         "path": [elem[1] for elem in path],
                         "distance": len(path) - 1,
+                        "alias": permission.alias,
                     })
 
             return user_details

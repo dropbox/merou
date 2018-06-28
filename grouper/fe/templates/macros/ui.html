@@ -464,18 +464,18 @@ enabled. Membership in this group is regularly reviewed.
                     </tr>
                 </thead>
                 <tbody>
-                {% for map in mappings %}
-                    <tr>
-                        <td>{{ permission(map) }}</td>
-                        <td class="col-sm-2">{{ map.argument|default("(unargumented)", True)|escape }}</td>
-                        <td class="col-sm-2">
+                {% for map in mappings if not map.alias %}
+                    <tr class="permission-row">
+                        <td class="permission-name">{{ permission(map) }}</td>
+                        <td class="permission-argument col-sm-2">{{ map.argument|default("(unargumented)", True)|escape }}</td>
+                        <td class="permission-source col-sm-2">
                         {% if map.distance == 0 %}
                             (direct)
                         {% else %}
                             {{ account(map.path[-1], type='group') }}
                         {% endif %}
                         </td>
-                        <td class="col-sm-2" title="{{ map.granted_on|print_date }}">
+                        <td class="permission-granted-on col-sm-2" title="{{ map.granted_on|print_date }}">
                             {{ map.granted_on|long_ago_str }}
                         </td>
                         {% if is_owner %}

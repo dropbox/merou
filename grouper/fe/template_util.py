@@ -1,10 +1,29 @@
+from base64 import b64encode
 from datetime import datetime
+from hashlib import sha384
+import os.path
 
 from dateutil.relativedelta import relativedelta
 from jinja2 import Environment, PackageLoader
 from pytz import UTC
 
 from grouper.fe.settings import settings
+
+
+RESOURCE_INTEGRITY_VALUES = {}
+
+
+def get_integrity_of_static(path):
+    if settings.debug or not RESOURCE_INTEGRITY_VALUES[path]:
+        resolved_file = os.path.join(os.curdir, 'grouper/fe/static', path)
+
+        resource_hash = sha384()
+        with open(resolved_file) as r:
+            resource_hash.update(r.read())
+
+        RESOURCE_INTEGRITY_VALUES[path] = b64encode(resource_hash.digest())
+
+    return "sha384-{hash}".format(hash=RESOURCE_INTEGRITY_VALUES[path])
 
 
 def _make_date_obj(date_obj):
@@ -114,6 +133,7 @@ def get_template_env(package="grouper.fe", deployment_name="",
         "deployment_name": deployment_name,
         "ROLES": GROUP_EDGE_ROLES,
         "TYPES": OBJ_TYPES_IDX,
+        "get_integrity_of_static": get_integrity_of_static,
     }
 
     if extra_filters:

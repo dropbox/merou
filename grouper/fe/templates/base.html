@@ -13,10 +13,28 @@
         <link href="{{cdnjs_prefix}}/ajax/libs/bootstrap-datetimepicker/3.0.0/css/bootstrap-datetimepicker.min.css"
               rel="stylesheet"
               media="screen">
-    <link href="/{{cdnjs_prefix}}/ajax/libs/datatables/1.10.10/css/dataTables.bootstrap.min.css"
-          rel="stylesheet"
-          media="screen">
-        <link href="/static/css/grouper.css" rel="stylesheet" media="screen">
+
+        <link href="{{cdnjs_prefix}}/ajax/libs/datatables/1.10.10/css/dataTables.bootstrap.min.css"
+              integrity="sha384-I0DlhgMWj8tVEByK8+8wZdxzlNCIakbmQxjjrn1vqZ09eNyKQUS4z4EsCkbtAmFO"
+              crossorigin="anonymous"
+              rel="stylesheet"
+              media="screen">
+        <link href="{{cdnjs_prefix}}/ajax/libs/chosen/1.4.2/chosen.css"
+              integrity="sha384-BYX87TwtwSNNw1aAkI5mKr5HfFp72LMSPURUnlnq/eYA7H4fGAc7XYyJpZ9r3nzH"
+              crossorigin="anonymous"
+              rel="stylesheet"
+              media="screen">
+        <link href="/static/css/ext/chosen-bootstrap-1.0.4/chosen.bootstrap.min.css"
+              rel="stylesheet"
+              media="screen"
+              integrity="sha384-1RgGYnScE/R+eBp1NoM3XqWaj/xmoKeN4uCwf0kYgiXmT9lI3b1p4jCsLW5JTKbO"
+              crossorigin="anonymous">
+
+        <link href="/static/css/grouper.css"
+              rel="stylesheet"
+              media="screen"
+              integrity="{{ get_integrity_of_static('css/grouper.css') }}"
+              crossorigin="anonymous">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         {% block head %} {% endblock %}
@@ -98,12 +116,9 @@
       </div>
     </footer>
 
-        <script src="{{cdnjs_prefix}}/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/twitter-bootstrap/3.1.1/js/bootstrap.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/moment.js/2.7.0/moment.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/datatables/1.10.10/js/jquery.dataTables.min.js"></script>
-        <script src="/static/js/grouper.js"></script>
+        <script src="/static/js/grouper.js"
+                integrity="{{ get_integrity_of_static('js/grouper.js') }}"
+                crossorigin="anonymous"></script>
         {% block script %} {% endblock %}
 
     </body>

@@ -72,6 +72,54 @@ class GrouperHandler(RequestHandler):
         stats.log_rate("requests", 1)
         stats.log_rate("requests_{}".format(self.__class__.__name__), 1)
 
+    def set_default_headers(self):
+
+        style_items = [
+            '/ajax/libs/twitter-bootstrap/3.1.1/css/bootstrap.min.css',
+            '/ajax/libs/font-awesome/4.1.0/css/font-awesome.min.css',
+            '/ajax/libs/bootstrap-datetimepicker/3.0.0/css/bootstrap-datetimepicker.min.css',
+            '/ajax/libs/datatables/1.10.10/css/dataTables.bootstrap.min.css',
+            '/ajax/libs/chosen/1.4.2/chosen.css'
+        ]
+
+        script_items = [
+            '/ajax/libs/jquery/2.1.1/jquery.min.js',
+            '/ajax/libs/lodash.js/2.4.1/lodash.min.js',
+            '/ajax/libs/twitter-bootstrap/3.1.1/js/bootstrap.min.js',
+            '/ajax/libs/moment.js/2.7.0/moment.min.js',
+            '/ajax/libs/datatables/1.10.10/js/jquery.dataTables.min.js',
+            '/ajax/libs/bootstrap-datetimepicker/3.0.0/js/bootstrap-datetimepicker.min.js',
+            '/ajax/libs/chosen/1.4.2/chosen.jquery.min.js'
+        ]
+
+        font_items = [
+            '/ajax/libs/twitter-bootstrap/3.1.1/fonts/glyphicons-halflings-regular.woff',
+            '/ajax/libs/twitter-bootstrap/3.1.1/fonts/glyphicons-halflings-regular.ttf',
+            '/ajax/libs/font-awesome/4.1.0/fonts/fontawesome-webfont.woff',
+            '/ajax/libs/font-awesome/4.1.0/fonts/fontawesome-webfont.ttf'
+        ]
+
+        policy = "default-src 'none'; img-src 'self'; style-src 'self' 'unsafe-inline'"
+
+        for item in style_items:
+            policy += " {cdn_url}{item}".format(cdn_url=settings["cdnjs_prefix"], item=item)
+
+        policy += "; script-src 'self'"
+
+        for item in script_items:
+            policy += " {cdn_url}{item}".format(cdn_url=settings["cdnjs_prefix"], item=item)
+
+        policy += "; font-src"
+
+        for item in font_items:
+            policy += " {cdn_url}{item}".format(cdn_url=settings["cdnjs_prefix"], item=item)
+
+        policy += "; block-all-mixed-content; require-sri-for style script"
+        policy += "; sandbox allow-scripts allow-forms allow-same-origin"
+        policy += "; form-action 'self'"
+
+        self.set_header("Content-Security-Policy", policy)
+
     def write_error(self, status_code, **kwargs):
         """Override for custom error page."""
         if status_code >= 500 and status_code < 600:

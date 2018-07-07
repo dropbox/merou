@@ -34,6 +34,9 @@ $(document).ready(function(){
         form.attr("action", "/groups/{{group.name}}/service/{{user.username}}/revoke/" + mappingId);
     });
 
+    // The removeUserModal is generated once per page but could be used for any
+    // member being removed. So, when the modal shows up, make sure to populate its
+    // text and set its form actions to correspond to the selected user.
     $("#removeUserModal").on("show.bs.modal", function(e) {
         var button = $(e.relatedTarget);
         var memberName = button.data("member-name");

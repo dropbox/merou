@@ -4,7 +4,7 @@ from urllib import urlencode
 
 import pytest
 
-from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
+from fixtures import standard_graph, graph, users, groups, service_accounts, session, permissions  # noqa
 from fixtures import fe_app as app  # noqa
 from grouper.audit import (
     assert_can_join, assert_controllers_are_auditors, get_audits, user_is_auditor,

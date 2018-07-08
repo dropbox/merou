@@ -3,7 +3,7 @@ from urllib import urlencode
 import pytest
 from tornado.httpclient import HTTPError
 
-from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
+from fixtures import standard_graph, graph, users, groups, service_accounts, session, permissions  # noqa
 from fixtures import fe_app as app  # noqa
 from grouper.models.user import User
 from grouper.user_password import PasswordAlreadyExists, add_new_user_password, delete_user_password, user_passwords

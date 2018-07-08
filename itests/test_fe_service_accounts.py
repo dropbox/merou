@@ -7,7 +7,7 @@ from pages.service_accounts import (
 from pages.users import UsersViewPage
 
 from fixtures import async_server, browser  # noqa: F401
-from tests.fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401
+from tests.fixtures import graph, groups, service_accounts, permissions, session, standard_graph, users  # noqa: F401
 from tests.url_util import url
 
 

@@ -18,7 +18,7 @@ from util import add_member, grant_permission
 
 
 @pytest.fixture
-def standard_graph(session, graph, users, groups, permissions):
+def standard_graph(session, graph, users, groups, service_accounts, permissions):
     """Setup a standard graph used for many tests. In graph form:
 
     +-----------------------+
@@ -126,11 +126,6 @@ def standard_graph(session, graph, users, groups, permissions):
     add_member(groups["group-admins"], users["cbguder@a.co"], role="owner")
     grant_permission(groups["group-admins"], permissions[GROUP_ADMIN])
 
-    create_service_account(
-        session, users["zay@a.co"], "service@a.co", "some service account", "some machines",
-        groups["team-sre"]
-    )
-
     session.commit()
     graph.update_from_db(session)
 
@@ -183,6 +178,18 @@ def groups(session):
     }
     session.commit()
     return groups
+
+
+@pytest.fixture
+def service_accounts(session, users, groups):
+    service_accounts = {
+        "service@a.co": create_service_account(
+            session, users["zay@a.co"], "service@a.co", "some service account", "some machines",
+            groups["team-sre"]
+        ),
+    }
+    session.commit()
+    return service_accounts
 
 
 @pytest.fixture

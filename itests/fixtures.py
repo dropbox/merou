@@ -1,7 +1,10 @@
 from contextlib import closing
+import errno
 import socket
 import subprocess
+import time
 
+from groupy.client import Groupy
 import pytest
 import selenium
 
@@ -48,10 +51,35 @@ def async_server(standard_graph, tmpdir):
         p = subprocess.Popen(cmd)
         subprocesses.append(p)
 
+    wait_until_accept(proxy_port)
+
     yield "http://localhost:{}".format(proxy_port)
 
     for p in subprocesses:
         p.kill()
+
+
+@pytest.yield_fixture
+def async_api_server(standard_graph, tmpdir):
+    api_port = _get_unused_port()
+
+    cmd = [
+        src_path("bin", "grouper-api"),
+        "-c",
+        src_path("config", "dev.yaml"),
+        "-p",
+        str(api_port),
+        "-d",
+        db_url(tmpdir),
+    ]
+
+    p = subprocess.Popen(cmd)
+
+    wait_until_accept(api_port)
+
+    yield "localhost:{}".format(api_port)
+
+    p.kill()
 
 
 @pytest.yield_fixture
@@ -66,3 +94,30 @@ def browser():
     yield driver
 
     driver.quit()
+
+
+@pytest.fixture
+def api_client(async_api_server):
+    return Groupy(async_api_server)
+
+
+def wait_until_accept(port, timeout=3.0):
+    deadline = time.time() + timeout
+
+    while True:
+        try:
+            socket_timeout = deadline - time.time()
+            if socket_timeout < 0.0:
+                raise Exception("Deadline exceeded")
+
+            s = socket.socket()
+            s.settimeout(socket_timeout)
+            s.connect(("localhost", port))
+        except socket.timeout:
+            pass
+        except socket.error as e:
+            if e.errno not in [errno.ETIMEDOUT, errno.ECONNREFUSED]:
+                raise
+        else:
+            s.close()
+            return

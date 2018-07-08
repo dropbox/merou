@@ -6,7 +6,7 @@ from tornado.httpclient import HTTPError
 
 from constants import SSH_KEY_1, SSH_KEY_2
 from fixtures import fe_app as app
-from fixtures import standard_graph, users, graph, groups, session, permissions  # noqa
+from fixtures import standard_graph, users, graph, groups, service_accounts, session, permissions  # noqa
 from grouper.constants import TAG_EDIT
 from grouper.models.group import Group
 from grouper.models.permission import Permission

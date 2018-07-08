@@ -5,7 +5,7 @@ import pytest
 from tornado.httpclient import HTTPError
 
 from fixtures import fe_app as app
-from fixtures import standard_graph, users, graph, groups, session, permissions  # noqa
+from fixtures import standard_graph, users, graph, groups, service_accounts, session, permissions  # noqa
 from grouper.models.group import Group
 from url_util import url
 from util import add_member, get_groups, get_users

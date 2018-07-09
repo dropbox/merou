@@ -24,13 +24,13 @@ def test_groups_aliased_permissions(mocker, session, standard_graph, http_client
     body = json.loads(resp.body)
 
     permissions = [
-        (p['permission'], p['argument'], p['alias'])
+        (p['permission'], p['argument'])
         for p in body['data']['permissions']
     ]
 
-    assert ('owner', 'sad-team', False) in permissions
-    assert ('ssh', 'owner=sad-team', True) in permissions
-    assert ('sudo', 'sad-team', True) in permissions
+    assert ('owner', 'sad-team') in permissions
+    assert ('ssh', 'owner=sad-team') in permissions
+    assert ('sudo', 'sad-team') in permissions
 
 
 @pytest.mark.gen_test
@@ -47,13 +47,13 @@ def test_users_aliased_permissions(mocker, session, standard_graph, http_client,
     body = json.loads(resp.body)
 
     permissions = [
-        (p['permission'], p['argument'], p['alias'])
+        (p['permission'], p['argument'])
         for p in body['data']['permissions']
     ]
 
-    assert ('owner', 'sad-team', False) in permissions
-    assert ('ssh', 'owner=sad-team', True) in permissions
-    assert ('sudo', 'sad-team', True) in permissions
+    assert ('owner', 'sad-team') in permissions
+    assert ('ssh', 'owner=sad-team') in permissions
+    assert ('sudo', 'sad-team') in permissions
 
 
 @pytest.mark.gen_test
@@ -70,9 +70,9 @@ def test_permissions_aliased_permissions(mocker, session, standard_graph, http_c
     body = json.loads(resp.body)
 
     permissions = [
-        (group, p['argument'], p['alias'])
+        (group, p['argument'])
         for group, g in body['data']['groups'].iteritems()
         for p in g['permissions']
     ]
 
-    assert ('sad-team', 'owner=sad-team', True) in permissions
+    assert ('sad-team', 'owner=sad-team') in permissions

@@ -410,7 +410,7 @@ class GroupGraph(object):
             permissions = filter(lambda p: p.audited, permissions)
         return permissions
 
-    def get_permission_details(self, name):
+    def get_permission_details(self, name, expose_aliases=True):
         """ Get a permission and what groups and service accounts it's assigned to. """
 
         with self.lock:
@@ -425,7 +425,7 @@ class GroupGraph(object):
                 for permission in permissions:
                     if permission.permission == name:
                         data["groups"][groupname] = self.get_group_details(
-                            groupname, show_permission=name)
+                            groupname, show_permission=name, expose_aliases=expose_aliases)
                         direct_groups.add(groupname)
 
             # Now find all members of these groups going down the tree.
@@ -443,7 +443,7 @@ class GroupGraph(object):
                         continue
                     checked_groups.add(member_name)
                     data["groups"][member_name] = self.get_group_details(
-                        member_name, show_permission=name)
+                        member_name, show_permission=name, expose_aliases=expose_aliases)
 
             # Finally, add all service accounts.
             for account, permissions in self.service_account_permissions.iteritems():
@@ -494,7 +494,7 @@ class GroupGraph(object):
                                 key=lambda g: g.groupname)
         return groups
 
-    def get_group_details(self, groupname, cutoff=None, show_permission=None):
+    def get_group_details(self, groupname, cutoff=None, show_permission=None, expose_aliases=True):
         """ Get users and permissions that belong to a group. Raise NoSuchGroup
         for missing groups. """
 
@@ -548,32 +548,43 @@ class GroupGraph(object):
                         continue
                     if permission.audited:
                         group_audited = True
-                    data["permissions"].append({
+
+                    perm_data = {
                         "permission": permission.permission,
                         "argument": permission.argument,
                         "granted_on": (permission.granted_on - EPOCH).total_seconds(),
                         "distance": len(path) - 1,
                         "path": [elem[1] for elem in path],
-                        "alias": permission.alias,
-                    })
+                    }
+
+                    if expose_aliases:
+                        perm_data["alias"] = permission.alias
+
+                    data["permissions"].append(perm_data)
+
             for permission in self.permission_metadata.get(groupname, []):
                 if show_permission is not None and permission.permission != show_permission:
                     continue
                 if permission.audited:
                     group_audited = True
-                data["permissions"].append({
+
+                perm_data = {
                     "permission": permission.permission,
                     "argument": permission.argument,
                     "granted_on": (permission.granted_on - EPOCH).total_seconds(),
                     "distance": 0,
                     "path": [groupname],
-                    "alias": permission.alias,
-                })
+                }
+
+                if expose_aliases:
+                    perm_data["alias"] = permission.alias
+
+                data["permissions"].append(perm_data)
 
             data["audited"] = group_audited
             return data
 
-    def get_user_details(self, username, cutoff=None):
+    def get_user_details(self, username, cutoff=None, expose_aliases=True):
         """ Get a user's groups and permissions.  Raise NoSuchUser for missing users."""
         max_dist = cutoff - 1 if (cutoff is not None) else None
 
@@ -644,13 +655,17 @@ class GroupGraph(object):
                 }
 
                 for permission in self.permission_metadata[parent_name]:
-                    permissions.append({
+                    perm_data = {
                         "permission": permission.permission,
                         "argument": permission.argument,
                         "granted_on": (permission.granted_on - EPOCH).total_seconds(),
                         "path": [elem[1] for elem in path],
                         "distance": len(path) - 1,
-                        "alias": permission.alias,
-                    })
+                    }
+
+                    if expose_aliases:
+                        perm_data["alias"] = permission.alias
+
+                    permissions.append(perm_data)
 
             return user_details

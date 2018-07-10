@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from fixtures import graph, users, groups, session, permissions, standard_graph  # noqa
+from fixtures import graph, users, groups, service_accounts, session, permissions, standard_graph  # noqa
 from grouper.background.background_processor import BackgroundProcessor
 from grouper.fe.settings import settings
 from grouper.models.async_notification import AsyncNotification

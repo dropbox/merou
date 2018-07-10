@@ -3,7 +3,7 @@ import json
 import pytest
 
 from fixtures import api_app as app  # noqa
-from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
+from fixtures import standard_graph, graph, users, groups, service_accounts, session, permissions  # noqa
 from grouper.models.counter import Counter
 from grouper.plugin import PluginProxy
 from plugins.permission_aliases import PermissionAliasesPlugin

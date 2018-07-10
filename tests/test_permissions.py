@@ -6,7 +6,7 @@ import pytest
 from tornado.httpclient import HTTPError
 from wtforms.validators import ValidationError
 
-from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
+from fixtures import standard_graph, graph, users, groups, service_accounts, session, permissions  # noqa
 from fixtures import fe_app as app  # noqa
 from grouper.constants import (
         ARGUMENT_VALIDATION,

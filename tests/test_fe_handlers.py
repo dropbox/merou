@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 from urllib import urlencode
 
 from constants import SSH_KEY_1, SSH_KEY_BAD
-from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa: F401
+from fixtures import standard_graph, graph, users, groups, service_accounts, session, permissions  # noqa: F401
 from fixtures import fe_app as app  # noqa: F401
 from url_util import url
 

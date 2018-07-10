@@ -4,7 +4,7 @@ import pytest
 from tornado.httpclient import HTTPError
 
 from fixtures import fe_app as app  # noqa: F401
-from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa: F401
+from fixtures import standard_graph, graph, users, groups, service_accounts, session, permissions  # noqa: F401
 from grouper.constants import USER_ADMIN
 from grouper.models.permission import Permission
 from grouper.models.user import User

@@ -4,7 +4,7 @@ import pytest
 
 from constants import SSH_KEY_1
 from fixtures import api_app as app  # noqa
-from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
+from fixtures import standard_graph, graph, users, groups, service_accounts, session, permissions  # noqa
 from grouper.constants import TAG_EDIT
 from grouper.models.group import Group
 from grouper.models.permission import Permission

@@ -65,7 +65,8 @@ def start_server(args, sentry_client):
 
     # setup database
     logging.debug("configure database session")
-    Session.configure(bind=get_db_engine(get_database_url(settings)))
+    database_url = args.database_url or get_database_url(settings)
+    Session.configure(bind=get_db_engine(database_url))
 
     settings.start_config_thread(args.config, "api")
 

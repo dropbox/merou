@@ -1,4 +1,4 @@
-from fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401
+from fixtures import graph, groups, service_accounts, permissions, session, standard_graph, users  # noqa: F401
 from grouper.group_requests import get_requests_by_group
 from grouper.models.request import Request
 from grouper.user import user_requests_aggregate

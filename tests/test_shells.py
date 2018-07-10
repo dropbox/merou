@@ -3,7 +3,7 @@ from urllib import urlencode
 from mock import patch
 import pytest
 
-from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
+from fixtures import standard_graph, graph, users, groups, service_accounts, session, permissions  # noqa
 from fixtures import fe_app as app  # noqa
 from url_util import url
 

@@ -176,7 +176,7 @@ api:
 
     # How often to pull cache data from database in seconds.
     # Type: int
-    refresh_interval: 10
+    refresh_interval: 1
 
     # Sentry DSN for logging exceptions
     # Type: str

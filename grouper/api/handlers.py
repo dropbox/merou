@@ -55,7 +55,7 @@ def get_individual_user_info(handler, name, cutoff, service_account):
             if service_account != is_service_account:
                 raise NoSuchUser
 
-        details = handler.graph.get_user_details(name, cutoff)
+        details = handler.graph.get_user_details(name, cutoff, expose_aliases=False)
         out = {"user": {"name": name}}
         # Updates the output with the user's metadata
         try_update(out["user"], md)
@@ -232,7 +232,7 @@ class Groups(GraphHandler):
             if name not in self.graph.groups:
                 return self.notfound("Group (%s) not found." % name)
 
-            details = self.graph.get_group_details(name, cutoff)
+            details = self.graph.get_group_details(name, cutoff, expose_aliases=False)
 
             out = {"group": {"name": name}}
             try_update(out["group"], self.graph.group_metadata.get(name, {}))
@@ -254,7 +254,7 @@ class Permissions(GraphHandler):
             if name not in self.graph.permissions:
                 return self.notfound("Permission (%s) not found." % name)
 
-            details = self.graph.get_permission_details(name)
+            details = self.graph.get_permission_details(name, expose_aliases=False)
 
             out = {"permission": {"name": name}}
             try_update(out, details)

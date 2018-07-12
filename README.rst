@@ -107,3 +107,4 @@ Once chromedriver is installed, the tests can be run using pytest:
     pip install -r requirements.txt
     pip install -r requirements-dev.txt
     py.test tests
+    py.test itests

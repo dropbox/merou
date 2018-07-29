@@ -396,6 +396,7 @@ def create_request(session, user, group, permission, argument, reason):
     Raises:
         RequestAlreadyExists if trying to create a request that is already pending
         NoOwnersAvailable if no owner is available for the requested perm + arg.
+        grouper.audit.UserNotAuditor if the group has owners that are not auditors
     """
     # check if group already has perm + arg pair
     for _, existing_perm_name, _, existing_perm_argument, _ in group.my_permissions():
@@ -424,6 +425,10 @@ def create_request(session, user, group, permission, argument, reason):
 
     if not owner_arg_list:
         raise NoOwnersAvailable()
+
+    if permission.audited:
+        # will raise UserNotAuditor if any owner of the group is not an auditor
+        assert_controllers_are_auditors(group)
 
     pending_status = "pending"
     now = datetime.utcnow()

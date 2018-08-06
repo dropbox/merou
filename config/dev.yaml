@@ -125,9 +125,11 @@ fe:
     # Type: int
     refresh_interval: 1
 
-    # How to get help from the people who run this Grouper deployment.
+    # How to get help from the people who run this Grouper deployment. Should be in the form
+    # of an imperative sentence https://en.wikipedia.org/wiki/Sentence_function#Imperative
+    # For example: "email grouper-admin@example.com"
     # Type: str
-    how_to_get_help: "not arranged"
+    how_to_get_help: "if this is prod, ask someone to fix the how_to_get_help setting"
 
     # Help text given when a dropdown permission argument is available in
     # permission request. This is probably help around how this dropdown was

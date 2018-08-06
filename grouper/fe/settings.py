@@ -16,6 +16,7 @@ class FeSettings(Settings):
 
 settings = FeSettings.from_settings(base_settings, {
     "address": None,
+    "admin_email_address": None,
     "cdnjs_prefix": "//cdnjs.cloudflare.com",
     "date_format": "%Y-%m-%d %I:%M %p",
     "debug": False,

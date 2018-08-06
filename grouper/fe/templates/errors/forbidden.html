@@ -11,6 +11,12 @@
 {% block content %}
 <p class="lead">No way, dude.</p>
 
-<p>The operation you tried to complete is unauthorized. If you believe this message is error,
+{% if admin_email is not none %}
+<p>The operation you tried to complete is unauthorized. If you believe this message is an error,
+please contact <a href="mailto:{{ admin_email }}">the administrators</a>.</p>
+{% else %}
+<p>The operation you tried to complete is unauthorized. If you believe this message is an error,
 please contact the administrators.</p>
+{% endif %}
+
 {% endblock %}

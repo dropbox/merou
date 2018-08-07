@@ -253,7 +253,7 @@ class GrouperHandler(RequestHandler):
     def forbidden(self, format_type=None):
         self.set_status(403)
         self.raise_and_log_exception(tornado.web.HTTPError(403))
-        self.render("errors/forbidden.html")
+        self.render("errors/forbidden.html", how_to_get_help=settings.how_to_get_help)
 
     def notfound(self, format_type=None):
         self.set_status(404)

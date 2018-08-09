@@ -1,6 +1,7 @@
 import json
 
 from grouper import permissions
+from grouper.audit import UserNotAuditor
 from grouper.fe.forms import GroupPermissionRequestDropdownForm, GroupPermissionRequestTextForm
 from grouper.fe.settings import settings
 from grouper.fe.util import Alert, GrouperHandler
@@ -94,6 +95,8 @@ class GroupPermissionRequest(GrouperHandler):
                     permission_name=permission.name, argument=form.argument.data)
             alerts = [Alert("danger", "No owners available for requested permission and argument."
                     " If this error persists please contact an adminstrator.")]
+        except UserNotAuditor as e:
+            alerts = [Alert("danger", str(e))]
         else:
             alerts = None
 

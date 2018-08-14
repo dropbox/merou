@@ -140,6 +140,12 @@ class PermissionTests(unittest.TestCase):
         self.assertRaises(ValidationError, eval_argument, 'exclaimation!point')
 
 
+def assert_same_recipients(emails, recipients, msg="email recipients did not match expectation"):
+    actual_recipients = sorted(map(lambda email: email.email, emails))
+    expected_recipients = sorted(recipients)
+    assert actual_recipients == expected_recipients, msg
+
+
 def test_grant_permission(session, standard_graph, groups, permissions):
     grant_permission(groups["sad-team"], permissions["ssh"], argument="host +other-host")
     with pytest.raises(AssertionError):
@@ -246,6 +252,8 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
     notifications are sent correctly."""
     perm_grant, _, perm1, perm2 = grantable_permissions
     grant_permission(groups["all-teams"], perm_grant, argument="grantable.*")
+    grant_permission(groups["security-team"], perm_grant, argument="grantable.one")
+    grant_permission(groups["tech-ops"], perm_grant, argument="grantable.two")
 
     # REQUEST: permission with an invalid argument
     groupname = "serving-team"
@@ -268,7 +276,7 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
     assert resp.code == 200
 
     emails = _get_unsent_and_mark_as_sent_emails(session)
-    assert len(emails) == 1, "only one user (and no group) should receive notification for request"
+    assert_same_recipients(emails, [u"testuser@a.co", u"security-team@a.co"])
 
     perms = _load_permissions_by_group_name(session, 'serving-team')
     assert len(perms) == 1
@@ -296,7 +304,7 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
     assert "grantable.one" in perms, "requested permission shouldn't be granted immediately"
 
     emails = _get_unsent_and_mark_as_sent_emails(session)
-    assert len(emails) == 1, "requester should receive email as well"
+    assert_same_recipients(emails, [u"zorkian@a.co"])
 
     # (re)REQUEST: 'grantable.one', 'some argument' for 'serving-team'
     groupname = "serving-team"
@@ -323,7 +331,8 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
     assert resp.code == 200
 
     emails = _get_unsent_and_mark_as_sent_emails(session)
-    assert len(emails) == 1, "only one user (and no group) should receive notification for request"
+    # because tech-ops team doesn't have an email, all of its members should get emailed instead
+    assert_same_recipients(emails, [u"testuser@a.co", u"zay@a.co", u"gary@a.co", u"figurehead@a.co"])
 
     perms = _load_permissions_by_group_name(session, 'serving-team')
     assert len(perms) == 2
@@ -346,7 +355,7 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
     assert resp.code == 200
 
     emails = _get_unsent_and_mark_as_sent_emails(session)
-    assert len(emails) == 1, "rejection email should be sent"
+    assert_same_recipients(emails, [u"zorkian@a.co"])
 
     perms = _load_permissions_by_group_name(session, 'serving-team')
     assert len(perms) == 2
@@ -377,9 +386,7 @@ def test_limited_permissions(session, standard_graph, groups, grantable_permissi
     assert resp.code == 200
 
     emails = _get_unsent_and_mark_as_sent_emails(session)
-    assert len(emails) == 2, "email only sent to security-team"
-    assert not security_team_members.difference(e.email for e in emails), \
-            "only security-team members get notification"
+    assert_same_recipients(emails, [u"security-team@a.co"])
 
 @pytest.mark.gen_test
 def test_limited_permissions_global_approvers(session, standard_graph, groups, grantable_permissions,
@@ -406,9 +413,7 @@ def test_limited_permissions_global_approvers(session, standard_graph, groups, g
     assert resp.code == 200
 
     emails = _get_unsent_and_mark_as_sent_emails(session)
-    assert len(emails) == 2, "email only sent to security-team"
-    assert not security_team_members.difference(e.email for e in emails), \
-            "only security-team members get notification"
+    assert_same_recipients(emails, [u"security-team@a.co"])
 
 @pytest.mark.gen_test
 def test_regress_permreq_global_approvers(session, standard_graph, groups, grantable_permissions,

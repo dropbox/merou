@@ -9,7 +9,7 @@ from grouper.fe.template_util import expires_when_str, long_ago_str, print_date
 
 def fake_settings_getitem(key):
     if key == "timezone":
-        return pytz.timezone('US/Pacific-New')
+        return pytz.timezone('US/Pacific')
     elif key == "date_format":
         return "%Y-%m-%d %I:%M %p"
 

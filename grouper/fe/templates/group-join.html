@@ -47,23 +47,3 @@
 {% endif %}
 
 {% endblock %}
-
-{% block script %}
-
-<script type="text/javascript">
-    $(function () {
-        $('#join-form-expiration').datetimepicker({
-            pickTime: false,
-            icons: {
-                time: "fa fa-clock-o",
-                date: "fa fa-calendar",
-                up: "fa fa-arrow-up",
-                down: "fa fa-arrow-down"
-            },
-            useCurrent: false,
-            minDate: moment(),
-        });
-    });
-</script>
-
-{% endblock %}

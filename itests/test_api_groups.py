@@ -17,4 +17,4 @@ def test_get_group(api_client):  # noqa: F811
     assert sorted(perms) == [("audited", ""), ("ssh", "*"), ("sudo", "shell"), ("team-sre", "*")]
 
     assert group.audited
-    assert group.contacts == {"email": None}
+    assert group.contacts == {"email": "team-sre@a.co"}

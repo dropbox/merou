@@ -176,6 +176,9 @@ def groups(session):
                           "security-team", "auditors", "sad-team", "audited-team", "user-admins",
                           "group-admins")
     }
+    groups_with_emails = ("team-sre", "serving-team", "security-team")
+    for group in groups_with_emails:
+        groups[group].email_address = "{}@a.co".format(group)
     session.commit()
     return groups
 

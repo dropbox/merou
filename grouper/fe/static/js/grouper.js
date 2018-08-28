@@ -1,4 +1,4 @@
-$(document).ready(function(){
+$(function () {
     $(".public-key").click(function(){
         $("#key-body").text($(this).attr("key-body"));
         $("#key-modal").modal('show');
@@ -19,12 +19,8 @@ $(document).ready(function(){
     } catch(e) {
         console.log("error in datatable init: ", e);
     }
-});
 
-$(function () {
-    $("select#member")
-    .attr("data-placeholder", "Select a user or group")
-    .chosen();
+    $("select#member").attr("data-placeholder", "Select a user or group").chosen();
 
     $('#add-form-expiration').datetimepicker({
         pickTime: false,
@@ -37,9 +33,7 @@ $(function () {
         useCurrent: false,
         minDate: moment(),
     });
-});
 
-$(function () {
     $('#audit-form-ends-at').datetimepicker({
         pickTime: false,
         icons: {
@@ -51,9 +45,7 @@ $(function () {
         useCurrent: false,
         minDate: moment(),
     });
-});
 
-$(function () {
     $('#edit-form-expiration').datetimepicker({
         pickTime: false,
         icons: {
@@ -65,9 +57,7 @@ $(function () {
         useCurrent: false,
         minDate: moment(),
     });
-});
 
-$(function () {
     $('#join-form-expiration').datetimepicker({
         pickTime: false,
         icons: {
@@ -79,12 +69,11 @@ $(function () {
         useCurrent: false,
         minDate: moment(),
     });
-});
 
-// The removeUserModal is generated once per page but could be used for any
-// member being removed. So, when the modal shows up, make sure to populate its
-// text and set its form actions to correspond to the selected user.
-$(function () {
+    // The removeUserModal is generated once per page but could be used for any
+    // member being removed. So, when the modal shows up, make sure to populate its
+    // text and set its form actions to correspond to the selected user.
+
     $("#removeUserModal").on("show.bs.modal", function(e) {
         var groupId = $('#removeUserModal').data('group-id');
         var button = $(e.relatedTarget);
@@ -99,22 +88,19 @@ $(function () {
         form.find("input[name=member]").val(memberName);
         form.find("input[name=member_type]").val(memberType);
     });
-});
-
-$(function(){
 
     $("#createModal").on("shown.bs.modal", function(){
         $("#groupname").focus();
     });
+
     $("#formSubmit").click(function() {
         $("#createFrom").submit();
     });
-});
 
-// The revokeModal is generated once per page but could be used for any member being removed. So,
-// when the modal shows up, make sure to populate its text and set its form actions to correspond to
-// the selected user.
-$(function () {
+    // The revokeModal is generated once per page but could be used for any member being removed. So,
+    // when the modal shows up, make sure to populate its text and set its form actions to correspond to
+    // the selected user.
+
     $("#revokeModal").on("show.bs.modal", function(e) {
         var button = $(e.relatedTarget);
         var mappingId = button.data("mapping-id");
@@ -124,14 +110,9 @@ $(function () {
         var form = modal.find(".revoke-permission-form")
         form.attr("action", "/groups/{{group.name}}/service/{{user.username}}/revoke/" + mappingId);
     });
-});
 
-$(function(){
-
-    $("#createModal").on("shown.bs.modal", function(){
-        $("#tagname").focus();
-    });
-    $("#formSubmit").click(function() {
-        $("#createFrom").submit();
-    });
+    var auditModal = $('#auditModal');
+    if (auditModal.data('show') === true) {
+        auditModal.modal('show');
+    }
 });

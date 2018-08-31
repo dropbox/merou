@@ -48,11 +48,14 @@ def async_server(standard_graph, tmpdir):
     subprocesses = []
 
     for cmd in cmds:
+        print("Starting command: " + " ".join(cmd))
         p = subprocess.Popen(cmd)
         subprocesses.append(p)
 
+    print("Waiting on server to come online")
     wait_until_accept(proxy_port)
 
+    print("Connection established")
     yield "http://localhost:{}".format(proxy_port)
 
     for p in subprocesses:
@@ -73,10 +76,13 @@ def async_api_server(standard_graph, tmpdir):
         db_url(tmpdir),
     ]
 
+    print("Starting server with command: " + " ".join(cmd))
     p = subprocess.Popen(cmd)
 
+    print("Waiting on server to come online")
     wait_until_accept(api_port)
 
+    print("Connection established")
     yield "localhost:{}".format(api_port)
 
     p.kill()
@@ -120,4 +126,7 @@ def wait_until_accept(port, timeout=3.0):
                 raise
         else:
             s.close()
+            # When running in TravisCI, there seems to be a race condition causing the next
+            # connect to error with ECONNREFUSED.  This pause seems to eliminate that
+            time.sleep(0.25)
             return

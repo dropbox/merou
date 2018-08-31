@@ -171,7 +171,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="removeUserModal" tabindex="-1" role="dialog"
+<div class="modal fade" id="removeUserModal" tabindex="-1" role="dialog" data-group-id="{{ group.id }}"
       aria-labelledby="removeUserModal" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -221,7 +221,7 @@
 {% endmacro %}
 
 <div class="modal fade" id="auditModal" tabindex="-1" role="dialog"
-      aria-labelledby="auditModal" aria-hidden="true">
+      aria-labelledby="auditModal" aria-hidden="true" data-show="{{ "true" if group.audit and not group.audit.complete and current_user_role['is_owner'] else "false" }}">
     <div class="modal-dialog">
         <form action="/audits/{{ group.audit.id }}/complete" method="post"
               style="display: inline;">
@@ -270,35 +270,4 @@
 </div>
 {% endif %}
 
-{% endblock %}
-
-{% block script %}
-{# The removeUserModal is generated once per page but could be used for any
-member being removed. So, when the modal shows up, make sure to populate its
-text and set its form actions to correspond to the selected user. #}
-<script type="text/javascript">
-    $(function () {
-        $("#removeUserModal").on("show.bs.modal", function(e) {
-            var button = $(e.relatedTarget);
-            var memberName = button.data("member-name");
-            var memberType = button.data("member-type");
-
-            var modal = $(e.currentTarget);
-            modal.find(".member-name").html(memberName);
-
-            var form = modal.find(".remove-member-form")
-            form.attr("action", "/groups/{{ group.id }}/remove");
-            form.find("input[name=member]").val(memberName);
-            form.find("input[name=member_type]").val(memberType);
-        });
-    });
-</script>
-
-{% if group.audit and not group.audit.complete and current_user_role['is_owner'] %}
-<script type="text/javascript">
-$(function () {
-    $('#auditModal').modal('show');
-});
-</script>
-{% endif %}
 {% endblock %}

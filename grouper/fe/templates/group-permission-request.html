@@ -8,81 +8,8 @@
     Request Permission for Group {{ group.name }}
 {% endblock %}
 
-{% block script %}
-<script type="text/javascript">
-    $(function () {
-        var args_by_perm = {{ args_by_perm_json }};
-
-        var $reason_divs = $('.form-group-reason');
-        var $argument_divs = $('.form-group-argument');
-
-        var $argument_select = $('#dropdown_form #argument');
-        var $argument_text = $('#text_form #argument');
-
-        var $dropdown_form_div = $('#dropdown_form');
-        var $text_form_div = $('#text_form');
-
-        var $perm_fields = $('.input-permission_name');
-        var $reason_fields = $('.input-reason');
-
-        function update_args() {
-            var args = args_by_perm[$perm_fields.val()];
-            if ($perm_fields.val() == "") {
-                {# default we show dropdown form (we have to choose one) and
-                    hide argument and reason fields (ux hint to select permission
-                    first) #}
-                $argument_divs.hide();
-                $reason_divs.hide();
-
-                $dropdown_form_div.show();
-                $text_form_div.hide();
-            } else if (args.length == 1 && args[0] == "*") {
-                {# change to text form field cause permission allows a wildcard argument #}
-                $argument_divs.show();
-                $reason_divs.show();
-
-                $dropdown_form_div.hide();
-                $text_form_div.show();
-
-                $argument_text.empty();
-            } else {
-                {# change to dropdown form field cause permission only specific
-                    specific arguments #}
-                $argument_divs.show();
-                $reason_divs.show();
-
-                $dropdown_form_div.show();
-                $text_form_div.hide();
-
-                $argument_select.empty();
-                $.each(args, function(index, arg) {
-                    $option = $("<option></option>").attr("value", arg).text(arg);
-                    $argument_select.append($option);
-                });
-            }
-        }
-
-        {# prime it #}
-        update_args();
-
-        $perm_fields.change(function() {
-            {# keep permission values synced #}
-            $perm_fields.val($(this).val());
-
-            {# update view of the world #}
-            update_args();
-        });
-
-        $reason_fields.keyup(function() {
-            {# keep reason values synced #}
-            $reason_fields.val($(this).val());
-        });
-    });
-</script>
-{% endblock %}
-
 {% block content %}
-<div class="col-md-6 col-md-offset-3">
+<div class="col-md-6 col-md-offset-3" id="groupPermissionRequest" {{ { "data-permission" : args_by_perm_json } | xmlattr }}>
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Request Permission for Group {{ group.name }}</h3>

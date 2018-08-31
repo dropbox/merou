@@ -126,5 +126,7 @@ def wait_until_accept(port, timeout=3.0):
                 raise
         else:
             s.close()
+            # When running in TravisCI, there seems to be a race condition causing the next
+            # connect to error with ECONNREFUSED.  This pause seems to eliminate that
             time.sleep(0.25)
             return

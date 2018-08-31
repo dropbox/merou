@@ -110,18 +110,3 @@
 </div>
 
 {% endblock %}
-
-{% block script %}
-
-<script type="text/javascript">
-    $(function(){
-
-        $("#createModal").on("shown.bs.modal", function(){
-            $("#groupname").focus();
-        });
-        $("#formSubmit").click(function() {
-            $("#createFrom").submit();
-        });
-    });
-</script>
-{% endblock %}

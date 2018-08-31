@@ -38,24 +38,3 @@
     </div>
 </div>
 {% endblock %}
-
-{% block script %}
-<script src="{{cdnjs_prefix}}/ajax/libs/bootstrap-datetimepicker/3.0.0/js/bootstrap-datetimepicker.min.js">
-</script>
-
-<script type="text/javascript">
-    $(function () {
-        $('#audit-form-ends-at').datetimepicker({
-            pickTime: false,
-            icons: {
-                time: "fa fa-clock-o",
-                date: "fa fa-calendar",
-                up: "fa fa-arrow-up",
-                down: "fa fa-arrow-down"
-            },
-            useCurrent: false,
-            minDate: moment(),
-        });
-    });
-</script>
-{% endblock %}

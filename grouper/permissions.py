@@ -488,7 +488,10 @@ def create_request(session, user, group, permission, argument, reason):
         mailto_owner_arg_list = owner_arg_list
 
     for owner, arg in mailto_owner_arg_list:
-        mail_to += [u for t, u in owner.my_members() if t == 'User']
+        if owner.email_address:
+            mail_to.append(owner.email_address)
+        else:
+            mail_to.extend([u for t, u in owner.my_members() if t == 'User'])
 
     subj = get_template_env().get_template('email/pending_permission_request_subj.tmpl').render(
         permission=permission.name, group=group.name

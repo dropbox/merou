@@ -96,21 +96,21 @@
 
 <div class="row">
     <div class="col-md-7">
-        {{ member_panel(390, group, members, current_user, current_user_role) }}
+        {{ member_panel(group, members, current_user, current_user_role) }}
     </div>
     <div class="col-md-5">
-        {{ group_panel(390, groups, current_user_role['role']) }}
-        {{ service_account_panel(390, group.name, service_accounts, current_user_role["is_member"]) }}
+        {{ group_panel(groups, current_user_role['role']) }}
+        {{ service_account_panel(group.name, service_accounts, current_user_role["is_member"]) }}
     </div>
 </div>
 <div class="row">
     <div class="col-md-12">
-        {{ permission_panel(390, permissions, group=group, can_grant=grantable, is_member=current_user.is_member(members), pending_requests=permission_requests_pending, is_owner=current_user_role["is_owner"]) }}
+        {{ permission_panel(permissions, group=group, can_grant=grantable, is_member=current_user.is_member(members), pending_requests=permission_requests_pending, is_owner=current_user_role["is_owner"]) }}
     </div>
 </div>
 <div class="row">
     <div class="col-md-12">
-        {{ log_entry_panel(390, log_entries) }}
+        {{ log_entry_panel(log_entries) }}
     </div>
 </div>
 

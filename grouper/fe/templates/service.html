@@ -97,38 +97,38 @@
 
 <div class="row">
     <div class="col-md-7">
-        {{ member_panel(390, group, members, current_user, current_user_role) }}
+        {{ member_panel(group, members, current_user, current_user_role) }}
     </div>
     <div class="col-md-5">
-        {{ group_panel(390, groups, current_user_role['role']) }}
+        {{ group_panel(groups, current_user_role['role']) }}
     </div>
 </div>
 <div class="row">
     <div class="col-md-12">
-        {{ public_key_panel(390, user, public_keys, can_control) }}
+        {{ public_key_panel(user, public_keys, can_control) }}
     </div>
 </div>
 <div class="row">
     <div class="col-md-12">
-        {{ permission_panel(390, permissions, group=group, can_grant=grantable, is_member=current_user.is_member(members), pending_requests=permission_requests_pending, is_owner=current_user_role["is_owner"]) }}
+        {{ permission_panel(permissions, group=group, can_grant=grantable, is_member=current_user.is_member(members), pending_requests=permission_requests_pending, is_owner=current_user_role["is_owner"]) }}
     </div>
 </div>
 {% if can_control %}
     <div class="row">
         <div class="col-md-4">
-            {{ tokens_panel(390, user, user_tokens, can_control) }}
+            {{ tokens_panel(user, user_tokens, can_control) }}
         </div>
         <div class="col-md-4">
-            {{ shell_panel(390, user, shell, can_control) }}
+            {{ shell_panel(user, shell, can_control) }}
         </div>
         <div class="col-md-4">
-            {{ passwords_panel(390, user, passwords, can_control) }}
+            {{ passwords_panel(user, passwords, can_control) }}
         </div>
     </div>
 {% endif %}
 <div class="row">
     <div class="col-md-12">
-        {{ log_entry_panel(390, log_entries) }}
+        {{ log_entry_panel(log_entries) }}
     </div>
 </div>
 

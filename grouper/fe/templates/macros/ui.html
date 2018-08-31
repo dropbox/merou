@@ -81,7 +81,7 @@
     </td>
 {%- endmacro %}
 
-{% macro public_key_panel(max_height, user, public_keys, can_control=False) -%}
+{% macro public_key_panel(user, public_keys, can_control=False) -%}
     {{ public_key_modal() }}
     <div class="panel panel-default">
         <div class="panel-heading">
@@ -135,7 +135,7 @@
     {% endif %}
     </td>
 {%- endmacro %}
-{% macro tokens_panel(max_height, user, tokens, can_control=False) -%}
+{% macro tokens_panel(user, tokens, can_control=False) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Access Tokens</h3>
@@ -170,7 +170,7 @@
     </div>
 {%- endmacro %}
 
-{% macro shell_panel(max_height, user, shell, can_control=False) -%}
+{% macro shell_panel(user, shell, can_control=False) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Shell</h3>
@@ -217,7 +217,7 @@ enabled. Membership in this group is regularly reviewed.
 "
 {%- endmacro %}
 
-{% macro group_panel(max_height, groups, show_role=False) -%}
+{% macro group_panel(groups, show_role=False) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Groups</h3>
@@ -257,7 +257,7 @@ enabled. Membership in this group is regularly reviewed.
 {% macro one_service_account_row(groupname, accountname) -%}
     <td><a href="/groups/{{ groupname }}/service/{{ accountname }}">{{ accountname }}</a></td>
 {%- endmacro %}
-{% macro service_account_panel(max_height, groupname, service_accounts, can_control) -%}
+{% macro service_account_panel(groupname, service_accounts, can_control) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Service Accounts</h3>
@@ -355,7 +355,7 @@ enabled. Membership in this group is regularly reviewed.
     </tr>
 {%- endmacro %}
 
-{% macro member_panel(max_height, group, members, current_user, current_user_role) -%}
+{% macro member_panel(group, members, current_user, current_user_role) -%}
     <div id="members-panel" class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Members</h3>
@@ -388,7 +388,7 @@ enabled. Membership in this group is regularly reviewed.
     </div>
 {%- endmacro %}
 
-{% macro log_entry_panel(max_height, log_entries) -%}
+{% macro log_entry_panel(log_entries) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Recent Activity</h3>
@@ -442,7 +442,7 @@ enabled. Membership in this group is regularly reviewed.
     </div>
 {%- endmacro %}
 
-{% macro permission_panel(max_height, mappings, group=None, can_grant=None, is_member=None, pending_requests=None, is_owner=False) -%}
+{% macro permission_panel(mappings, group=None, can_grant=None, is_member=None, pending_requests=None, is_owner=False) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Permissions</h3>
@@ -595,7 +595,7 @@ enabled. Membership in this group is regularly reviewed.
     </div>
 {%- endmacro %}
 
-{% macro tag_permission_panel(max_height, mappings, tag, can_grant=None) -%}
+{% macro tag_permission_panel(mappings, tag, can_grant=None) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Permissions</h3>
@@ -685,7 +685,7 @@ enabled. Membership in this group is regularly reviewed.
     </td>
 {%- endmacro %}
 
-{% macro passwords_panel(max_height, user, passwords, can_control=False) -%}
+{% macro passwords_panel(user, passwords, can_control=False) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">Passwords</h3>

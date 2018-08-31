@@ -126,4 +126,5 @@ def wait_until_accept(port, timeout=3.0):
                 raise
         else:
             s.close()
+            time.sleep(0.25)
             return

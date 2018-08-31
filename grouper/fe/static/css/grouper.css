@@ -327,3 +327,8 @@ a.white {
 .fingerprint-padding {
     padding: 15px 0px;
 }
+
+.standard-panel {
+    max-height: 390px;
+    overflow-y: auto;
+}

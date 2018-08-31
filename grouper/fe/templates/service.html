@@ -146,7 +146,7 @@
             <form action="/users/{{user.id}}/enable" method="post">
                 <div class="modal-body">
                     <p>Are you sure you want to enable this user?</p>
-                    <label class="checkbox" style="font-weight: normal">
+                    <label class="checkbox normal-weight">
                         <i>preserve any pre-existing group membership (you don't want this)</i>
                         <input type="checkbox" name="preserve_membership" value="true"/>
                     </label>
@@ -180,7 +180,7 @@
                 <button type="button" class="btn btn-default"
                         data-dismiss="modal">Close</button>
                 <form action="/users/{{user.id}}/disable" method="post"
-                      style="display: inline;">
+                      class="inline">
                     {{ xsrf_form() }}
                     <button type="submit" class="btn btn-primary">Disable</button>
                 </form>
@@ -208,12 +208,11 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-default"
                         data-dismiss="modal">Close</button>
-                <form class="remove-member-form"
+                <form class="remove-member-form inline"
                       {# action is set dynamically in on("show.bs.modal") #}
-                      action="#" method="post"
-                      style="display: inline;">
-                    <input type="hidden" name="member"></input>
-                    <input type="hidden" name="member_type"></input>
+                      action="#" method="post">
+                    <input type="hidden" name="member" />
+                    <input type="hidden" name="member_type" />
                     {{ xsrf_form() }}
                     <button type="submit" class="btn btn-primary">Remove</button>
                 </form>
@@ -242,7 +241,7 @@
       aria-labelledby="auditModal" aria-hidden="true">
     <div class="modal-dialog">
         <form action="/audits/{{ group.audit.id }}/complete" method="post"
-              style="display: inline;">
+              class="inline">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">

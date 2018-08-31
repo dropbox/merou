@@ -132,7 +132,7 @@
                 <button type="button" class="btn btn-default"
                         data-dismiss="modal">Close</button>
                 <form action="/groups/{{group.id}}/enable" method="post"
-                      style="display: inline;">
+                      class="inline">
                     {{ xsrf_form() }}
                     <button type="submit" class="btn btn-primary">Enable</button>
                 </form>
@@ -162,7 +162,7 @@
                 <button type="button" class="btn btn-default"
                         data-dismiss="modal">Close</button>
                 <form action="/groups/{{group.id}}/disable" method="post"
-                      style="display: inline;">
+                      class="inline">
                     {{ xsrf_form() }}
                     <button type="submit" class="btn btn-primary">Disable</button>
                 </form>
@@ -193,9 +193,9 @@
                 <form class="remove-member-form"
                       {# action is set dynamically in on("show.bs.modal") #}
                       action="#" method="post"
-                      style="display: inline;">
-                    <input type="hidden" name="member"></input>
-                    <input type="hidden" name="member_type"></input>
+                      class="inline">
+                    <input type="hidden" name="member" />
+                    <input type="hidden" name="member_type" />
                     {{ xsrf_form() }}
                     <button type="submit" class="btn btn-primary">Remove</button>
                 </form>
@@ -224,7 +224,7 @@
       aria-labelledby="auditModal" aria-hidden="true" data-show="{{ "true" if group.audit and not group.audit.complete and current_user_role['is_owner'] else "false" }}">
     <div class="modal-dialog">
         <form action="/audits/{{ group.audit.id }}/complete" method="post"
-              style="display: inline;">
+              class="inline">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">

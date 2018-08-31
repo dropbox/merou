@@ -13,7 +13,7 @@
         </button>
     {% if can_control %}
         <a class="btn btn-default btn-xs" href="/users/{{ username }}/public-key/{{ key.id }}/delete">
-            <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span>
+            <span class="glyphicon glyphicon-remove glyphicon-vertical-adjust"></span>
         </a>
         </span>
     {% endif %}
@@ -50,7 +50,7 @@
     <td>
         {% for tag in key.tags %}
             {% if can_control %}
-            <form action="/users/{{ username }}/public-key/{{ key.id }}/delete_tag/{{ tag.id }}" method="post" style="display: inline">
+            <form action="/users/{{ username }}/public-key/{{ key.id }}/delete_tag/{{ tag.id }}" method="post" class="inline">
             {% endif %}
                 <button type="submit" class="btn btn-danger">
                     {{ tag.name }}
@@ -71,10 +71,10 @@
         </button>
     {% if can_control %}
         <a class="btn btn-default btn-xs" href="/users/{{ username }}/public-key/{{ key.id }}/tag">
-            <span class="glyphicon glyphicon-tag" style="vertical-align: -1px"></span>
+            <span class="glyphicon glyphicon-tag glyphicon-vertical-adjust"></span>
         </a>
         <a class="btn btn-default btn-xs" href="/users/{{ username }}/public-key/{{ key.id }}/delete">
-            <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span>
+            <span class="glyphicon glyphicon-remove glyphicon-vertical-adjust"></span>
         </a>
         </span>
     {% endif %}
@@ -130,7 +130,7 @@
     {% if can_control %}
         <a class="btn btn-default btn-xs pull-right"
            href="/users/{{ username }}/tokens/{{ token.id }}/disable">
-            <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span>
+            <span class="glyphicon glyphicon-remove glyphicon-vertical-adjust"></span>
         </a>
     {% endif %}
     </td>
@@ -360,10 +360,7 @@ enabled. Membership in this group is regularly reviewed.
         <div class="panel-heading">
             <h3 class="panel-title">Members</h3>
         </div>
-        <div style="
-            max-height: {{max_height}}px;
-            overflow-y: auto;
-        ">
+        <div style="max-height: {{max_height}}px; overflow-y: auto;">
             <table class="datatable table table-striped table-condensed">
                 <thead>
                     <tr>
@@ -482,7 +479,7 @@ enabled. Membership in this group is regularly reviewed.
                             <td class="col-sm-2">
                             {% if map.distance == 0 %}
                                 <a class="btn btn-default btn-xs" href="/permissions/{{ map.permission }}/revoke/{{ map.mapping_id }}">
-                                <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span> Revoke
+                                <span class="glyphicon glyphicon-remove glyphicon-vertical-adjust"></span> Revoke
                                 </a>
                             {% endif %}
                             </td>
@@ -493,7 +490,7 @@ enabled. Membership in this group is regularly reviewed.
                             {% for grantable in can_grant if grantable[0].name == map.permission %}
                                 {% if loop.first %}
                                     <a class="btn btn-default btn-xs" href="/permissions/{{ map.permission }}/revoke/{{ map.mapping_id }}">
-                                    <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span> Revoke
+                                    <span class="glyphicon glyphicon-remove glyphicon-vertical-adjust"></span> Revoke
                                     </a>
                                 {% endif %}
                             {% endfor %}
@@ -568,7 +565,7 @@ enabled. Membership in this group is regularly reviewed.
 
 
 {% macro paginator(offset, limit, total) -%}
-    <div class="btn-group" style="padding-right: 10px;">
+    <div class="btn-group pad-right">
         {% set pages = (total/limit)|round(method='ceil')|int %}
         {% if offset == 0 %}
             <a class="btn btn-default disabled"><i class="fa fa-angle-double-left"></i></a>
@@ -628,7 +625,7 @@ enabled. Membership in this group is regularly reviewed.
                             {% for grantable in can_grant if grantable.name == map.name %}
                                 {% if loop.first %}
                                     <a class="btn btn-default btn-xs" href="/permissions/{{ map.name }}/revoke_tag/{{ map.mapping_id }}">
-                                    <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span> Revoke
+                                    <span class="glyphicon glyphicon-remove glyphicon-vertical-adjust"></span> Revoke
                                     </a>
                                 {% endif %}
                             {% endfor %}
@@ -682,7 +679,7 @@ enabled. Membership in this group is regularly reviewed.
     {% if can_control %}
         <a class="btn btn-default btn-xs pull-right"
            href="/users/{{ username }}/passwords/{{ password.id }}/delete">
-            <span class="glyphicon glyphicon-remove" style="vertical-align: -1px"></span>
+            <span class="glyphicon glyphicon-remove glyphicon-vertical-adjust"></span>
         </a>
     {% endif %}
     </td>

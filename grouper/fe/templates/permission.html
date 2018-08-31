@@ -82,7 +82,7 @@
                 <button type="button" class="btn btn-default"
                         data-dismiss="modal">Close</button>
                 <form action="/permissions/{{permission.name}}/enable-auditing" method="post"
-                      style="display: inline;">
+                      class="inline">
                     {{ xsrf_form() }}
                     <button type="submit" class="btn btn-primary">Enable</button>
                 </form>
@@ -109,7 +109,7 @@
                 <button type="button" class="btn btn-default"
                         data-dismiss="modal">Close</button>
                 <form action="/permissions/{{permission.name}}/disable-auditing" method="post"
-                      style="display: inline;">
+                      class="inline">
                     {{ xsrf_form() }}
                     <button type="submit" class="btn btn-primary">Disable</button>
                 </form>

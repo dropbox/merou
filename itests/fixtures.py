@@ -29,7 +29,7 @@ def _get_unused_ports(count):
         for s in sockets:
             s.close()
 
-    if ports.count != count:
+    if len(ports) != count:
         raise Exception("Could not allocate all ports")
 
     return ports

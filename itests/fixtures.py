@@ -107,7 +107,7 @@ def api_client(async_api_server):
     return Groupy(async_api_server)
 
 
-def wait_until_accept(port, timeout=3.0):
+def wait_until_accept(port, timeout=10.0):
     deadline = time.time() + timeout
 
     while True:
@@ -128,5 +128,5 @@ def wait_until_accept(port, timeout=3.0):
             s.close()
             # When running in TravisCI, there seems to be a race condition causing the next
             # connect to error with ECONNREFUSED.  This pause seems to eliminate that
-            time.sleep(0.25)
+            time.sleep(0.5)
             return

@@ -3,7 +3,7 @@
 set -eux
 
 if [[ "$TRAVIS_PYTHON_VERSION" == 2* ]]; then
-  wget "https://chromedriver.storage.googleapis.com/2.37/chromedriver_linux64.zip"
+  wget "https://chromedriver.storage.googleapis.com/2.41/chromedriver_linux64.zip"
   unzip chromedriver_linux64.zip -d chromedriver
 
   pip install -r requirements-dev.txt

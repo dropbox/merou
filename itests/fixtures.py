@@ -13,8 +13,10 @@ from tests.path_util import db_url, src_path
 
 def _get_unused_port():
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(('', 0))
-        return s.getsockname()[1]
+        s.bind(('0.0.0.0', 0))
+        port = s.getsockname()[1]
+        s.close()
+        return port
 
 
 @pytest.yield_fixture

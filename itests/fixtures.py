@@ -12,17 +12,35 @@ from tests.path_util import db_url, src_path
 
 
 def _get_unused_port():
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(('0.0.0.0', 0))
-        port = s.getsockname()[1]
-        s.close()
-        return port
+    return _get_unused_ports(1)[0]
+
+
+def _get_unused_ports(count):
+    sockets = []
+    ports = []
+    try:
+        for _ in range(count):
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sockets.append(s)
+            s.bind(('0.0.0.0', 0))
+            ports.append(s.getsockname()[1])
+            s.close()
+    finally:
+        for s in sockets:
+            s.close()
+
+    if ports.count != count:
+        raise Exception("Could not allocate all ports")
+
+    return ports
 
 
 @pytest.yield_fixture
 def async_server(standard_graph, tmpdir):
-    proxy_port = _get_unused_port()
-    fe_port = _get_unused_port()
+    ports = _get_unused_ports(2)
+
+    proxy_port = ports[0]
+    fe_port = ports[1]
 
     cmds = [
         [

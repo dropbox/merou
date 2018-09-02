@@ -21,7 +21,7 @@ from grouper.fe.settings import settings
 from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.user import User
-from grouper.user_permissions import user_permissions
+from grouper.user_permissions import user_permissions, user_has_audit_permissions
 from grouper.util import get_database_url
 
 
@@ -181,6 +181,9 @@ class GrouperHandler(RequestHandler):
             return "active"
         return ""
 
+    def current_user_has_audit(self):
+        return user_has_audit_permissions(self.session, self.current_user)
+
     def get_template_namespace(self):
         namespace = super(GrouperHandler, self).get_template_namespace()
         namespace.update({
@@ -189,6 +192,7 @@ class GrouperHandler(RequestHandler):
             "perf_trace_uuid": self.perf_trace_uuid,
             "xsrf_form": self.xsrf_form_html,
             "alerts": self.get_alerts(),
+            "current_user_has_audit": self.current_user_has_audit,
         })
         return namespace
 

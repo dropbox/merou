@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import asc, or_
 
 from grouper.constants import (GROUP_ADMIN, PERMISSION_ADMIN, PERMISSION_CREATE,
-    PERMISSION_GRANT, USER_ADMIN)
+    PERMISSION_GRANT, USER_ADMIN, AUDIT_MANAGER, AUDIT_SECURITY, AUDIT_VIEWER)
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
 from grouper.models.permission import Permission
@@ -123,3 +123,9 @@ def user_is_group_admin(session, user):
 
 def user_is_permission_admin(session, user):
     return user_has_permission(session, user, PERMISSION_ADMIN)
+
+
+def user_has_audit_permissions(session, user):
+    return (user_has_permission(session, user, AUDIT_VIEWER) or
+            user_has_permission(session, user, AUDIT_MANAGER) or
+            user_has_permission(session, user, AUDIT_SECURITY))

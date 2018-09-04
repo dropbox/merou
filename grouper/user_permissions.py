@@ -2,8 +2,8 @@ from datetime import datetime
 
 from sqlalchemy import asc, or_
 
-from grouper.constants import (GROUP_ADMIN, PERMISSION_ADMIN, PERMISSION_CREATE,
-    PERMISSION_GRANT, USER_ADMIN, AUDIT_MANAGER, AUDIT_SECURITY, AUDIT_VIEWER)
+from grouper.constants import (AUDIT_MANAGER, AUDIT_SECURITY, AUDIT_VIEWER, GROUP_ADMIN,
+                               PERMISSION_ADMIN, PERMISSION_CREATE, PERMISSION_GRANT, USER_ADMIN)
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
 from grouper.models.permission import Permission

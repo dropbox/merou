@@ -27,7 +27,6 @@ def standard_graph(session, graph, users, groups, service_accounts, permissions)
     |    * gary (o)         +---------------------------------+
     |    * zay              |                                 |
     |    * zorkian          |                                 |
-    |    * cbguder          |                                 |
     |    * service (s)      |                     +-----------v-----------+
     |                       |                     |                       |
     +-----------------------+                     |  serving-team         |
@@ -82,7 +81,6 @@ def standard_graph(session, graph, users, groups, service_accounts, permissions)
     Arrows denote member of the source in the destination group. (o) for
     owners, (np) for non-permissioned owners, (s) for service accounts.
     """
-    add_member(groups["team-sre"], users["cbguder@a.co"], role="owner")
     add_member(groups["team-sre"], users["gary@a.co"], role="owner")
     add_member(groups["team-sre"], users["zay@a.co"])
     add_member(groups["team-sre"], users["zorkian@a.co"])

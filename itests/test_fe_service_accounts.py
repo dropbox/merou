@@ -12,7 +12,7 @@ from tests.url_util import url
 
 
 def test_service_account_lifecycle(async_server, browser):  # noqa: F811
-    browser.get(url(async_server, "/groups/team-sre"))
+    browser.get(url(async_server, "/groups/user-admins"))
 
     page = GroupViewPage(browser)
     page.click_add_service_account_button()
@@ -40,5 +40,5 @@ def test_service_account_lifecycle(async_server, browser):  # noqa: F811
     page.click_enable_button()
 
     page = ServiceAccountEnablePage(browser)
-    page.select_owner("Group: team-sre")
+    page.select_owner("Group: user-admins")
     page.submit()

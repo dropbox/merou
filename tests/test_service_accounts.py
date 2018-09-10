@@ -192,6 +192,17 @@ def test_service_account_fe_perms(session, standard_graph, http_client, base_url
     owner = "zay@a.co"
     plebe = "oliver@a.co"
 
+    # Unrelated people cannot create a service account
+    fe_url = url(base_url, "/groups/team-sre/service/create")
+    with pytest.raises(HTTPError):
+        yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": plebe},
+                body=urlencode({
+                    "name": "service_account", "description": "*", "machine_set": "*"}))
+    # But group members can create service accounts
+    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": owner},
+            body=urlencode({"name": "service_account", "description": "*", "machine_set": "*"})) 
+    assert resp.code == 200
+
     # Unrelated people cannot grant a permission.
     fe_url = url(base_url, "/groups/team-sre/service/service@a.co/grant")
     with pytest.raises(HTTPError):

@@ -29,7 +29,7 @@
 {% block content %}
     <div class="row">
         <div class="col-md-12">
-            {{ log_entry_panel(390, audit_log_entries) }}
+            {{ log_entry_panel(audit_log_entries) }}
         </div>
     </div>
     <div class="row">
@@ -48,7 +48,7 @@
                         <tbody>
                         {% if not audits %}
                             <tr>
-                                <td colspan="4" style="text-align: center;">There are no audits to view.</td>
+                                <td colspan="4" class="center">There are no audits to view.</td>
                             </tr>
                         {% else %}
                         {% for audit in audits %}

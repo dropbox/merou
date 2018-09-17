@@ -59,6 +59,10 @@ def _check_machine_set(service_account, machine_set):
         raise BadMachineSet(str(e))
 
 
+def can_create_service_account(session, actor, group):
+    return actor.is_member(group.my_members())
+
+
 def create_service_account(session, actor, name, description, machine_set, owner):
     # type: (Session, User, str, str, str, Group) -> ServiceAccount
     """Creates a service account and its underlying user.

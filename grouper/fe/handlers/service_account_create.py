@@ -4,7 +4,12 @@ from grouper.fe.forms import ServiceAccountCreateForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
 from grouper.models.group import Group
-from grouper.service_account import BadMachineSet, create_service_account, DuplicateServiceAccount
+from grouper.service_account import (
+    BadMachineSet,
+    can_create_service_account,
+    create_service_account,
+    DuplicateServiceAccount,
+)
 
 
 class ServiceAccountCreate(GrouperHandler):
@@ -12,6 +17,10 @@ class ServiceAccountCreate(GrouperHandler):
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
+
+        if not can_create_service_account(self.session, self.current_user, group):
+            return self.forbidden()
+
         form = ServiceAccountCreateForm()
         return self.render("service-account-create.html", form=form, group=group)
 
@@ -22,6 +31,9 @@ class ServiceAccountCreate(GrouperHandler):
 
         if "@" not in self.request.arguments["name"][0]:
             self.request.arguments["name"][0] += "@" + settings.service_account_email_domain
+
+        if not can_create_service_account(self.session, self.current_user, group):
+            return self.forbidden()
 
         form = ServiceAccountCreateForm(self.request.arguments)
         if not form.validate():

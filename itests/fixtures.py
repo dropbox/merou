@@ -1,4 +1,3 @@
-from contextlib import closing
 import errno
 import socket
 import subprocess

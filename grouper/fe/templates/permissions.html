@@ -16,7 +16,7 @@
     {{ dropdown("limit", limit, [100, 250, 500]) }}
     {{ paginator(offset, limit, total) }}
     {% if audited_permissions %}
-    <a class="btn btn-warning" href="/permissions?limit={{limit}}&audited=0">
+    <a class="btn btn-warning" href="{{update_qs(audited='0', offset='0')}}">
         <i class="fa"></i> Show all permissions
     </a>
     {% else %}
@@ -25,7 +25,7 @@
         <i class="fa fa-plus"></i> Create
     </a>
     {% endif %}
-    <a class="btn btn-warning" href="/permissions?limit={{limit}}&audited=1">
+    <a class="btn btn-warning" href="{{update_qs(audited='1', offset='0')}}">
         <i class="fa"></i> Show audited permissions only
     </a>
     {% endif %}
@@ -36,8 +36,9 @@
         <table class="table table-elist">
             <thead>
                 <tr>
-                    <th class="col-sm-2">Name</th>
+                    <th class="col-sm-2"><a href="{{update_qs(sort_by='name', order='desc' if sort_key == 'name' and sort_dir == 'asc' else 'asc', offset='0')}}" class="white">Name</a></th>
                     <th class="col-sm-5">Description</th>
+                    <th class="col-sm-2"><a href="{{update_qs(sort_by='date', order='asc' if sort_key == 'date' and sort_dir == 'desc' else 'desc', offset='0')}}" class="white">Created On</a></th>
                 </tr>
             </thead>
             <tbody>
@@ -45,6 +46,7 @@
                 <tr>
                     <td>{{ permission(perm) }}</td>
                     <td>{{ perm.description|default("", True) | escape }}</td>
+                    <td>{{ perm.created_on | print_date}}</td>
                 </tr>
             {% endfor %}
             </tbody>

@@ -173,7 +173,7 @@ class GrouperHandler(RequestHandler):
     def update_qs(self, **kwargs):
         qs = self.request.arguments.copy()
         qs.update(kwargs)
-        return "?" + urllib.urlencode(qs, True)
+        return "?" + urllib.urlencode(sorted(qs.items()), True)
 
     def is_active(self, test_path):
         path = self.request.path

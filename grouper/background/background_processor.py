@@ -1,11 +1,11 @@
 from contextlib import closing
 from datetime import datetime, timedelta
 import logging
+import os
 from time import sleep
 from typing import TYPE_CHECKING
 
 from sqlalchemy import and_
-from sqlalchemy.exc import OperationalError
 
 from grouper import stats
 from grouper.constants import PERMISSION_AUDITOR
@@ -16,7 +16,7 @@ from grouper.email_util import (
 )
 from grouper.graph import Graph
 from grouper.group import get_audited_groups
-from grouper.models.base.session import get_db_engine, Session
+from grouper.models.base.session import Session
 from grouper.models.group import Group
 from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge
 from grouper.models.user import User
@@ -48,6 +48,9 @@ class BackgroundProcessor(object):
     def _capture_exception(self):
         if self.sentry_client:
             self.sentry_client.captureException()
+
+    def crash(self):
+        os._exit(1)
 
     def expire_edges(self, session):
         # type: (Session) -> None
@@ -120,8 +123,11 @@ class BackgroundProcessor(object):
 
     def run(self):
         # type: () -> None
+        initial_url = get_database_url(self.settings)
         while True:
             try:
+                if get_database_url(self.settings) != initial_url:
+                    self.crash()
                 with closing(Session()) as session:
                     self.logger.info("Expiring edges....")
                     self.expire_edges(session)
@@ -139,18 +145,12 @@ class BackgroundProcessor(object):
 
                 stats.log_gauge("successful-background-update", 1)
                 stats.log_gauge("failed-background-update", 0)
-            except OperationalError:
-                Session.configure(bind=get_db_engine(get_database_url(self.settings)))
-                self.logger.critical("Failed to connect to database.")
-                stats.log_gauge("successful-background-update", 0)
-                stats.log_gauge("failed-background-update", 1)
-                self._capture_exception()
             except:
                 stats.log_gauge("successful-background-update", 0)
                 stats.log_gauge("failed-background-update", 1)
                 self._capture_exception()
                 self.logger.exception("Unexpected exception occurred in background thread.")
-                raise
+                self.crash()
 
             self.logger.debug("Sleeping for {} seconds...".format(self.settings.sleep_interval))
             sleep(self.settings.sleep_interval)

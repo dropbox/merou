@@ -287,6 +287,48 @@ span.disabled {
     text-align: center;
 }
 
+.text-left {
+    text-align: left;
+}
+
 a.white {
     color: #fff;
+}
+
+.search-input {
+    width: 230px;
+    margin-right: 10px;
+}
+
+.pad-left {
+    padding-left: 10px;
+}
+
+.pad-right {
+    padding-right: 10px;
+}
+
+.inline {
+    display: inline;
+}
+
+.no-margin-bottom {
+    margin-bottom: 0px;
+}
+
+.glyphicon-vertical-adjust {
+    vertical-align: -1px;
+}
+
+.normal-weight {
+    font-weight: normal;
+}
+
+.fingerprint-padding {
+    padding: 15px 0px;
+}
+
+.standard-panel {
+    max-height: 390px;
+    overflow-y: auto;
 }

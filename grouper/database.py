@@ -1,12 +1,11 @@
 from contextlib import closing
 import logging
+import os
 from threading import Thread
 from time import sleep
 
-from sqlalchemy.exc import OperationalError
-
 from grouper import stats
-from grouper.models.base.session import get_db_engine, Session
+from grouper.models.base.session import Session
 from grouper.util import get_database_url
 
 
@@ -24,25 +23,25 @@ class DbRefreshThread(Thread):
         if self.sentry_client:
             self.sentry_client.captureException()
 
+    def crash(self):
+        os._exit(1)
+
     def run(self):
+        initial_url = get_database_url(self.settings)
         while True:
             self.logger.debug("Updating Graph from Database.")
             try:
+                if get_database_url(self.settings) != initial_url:
+                    self.crash()
                 with closing(Session()) as session:
                     self.graph.update_from_db(session)
 
                 stats.log_gauge("successful-db-update", 1)
                 stats.log_gauge("failed-db-update", 0)
-            except OperationalError:
-                Session.configure(bind=get_db_engine(get_database_url(self.settings)))
-                self.logger.critical("Failed to connect to database.")
-                stats.log_gauge("successful-db-update", 0)
-                stats.log_gauge("failed-db-update", 1)
-                self.capture_exception()
             except:
                 stats.log_gauge("successful-db-update", 0)
                 stats.log_gauge("failed-db-update", 1)
                 self.capture_exception()
-                raise
+                self.crash()
 
             sleep(self.refresh_interval)

@@ -104,7 +104,23 @@ Once chromedriver is installed, the tests can be run using pytest:
 
 .. code:: bash
 
+    export PYTHONPATH=$(pwd)
+    export GROUPER_SETTINGS=$(pwd)/config/dev.yaml
+
     pip install -r requirements.txt
     pip install -r requirements-dev.txt
     py.test tests
     py.test itests
+
+If you see test failures and suspect incompatible library versions
+(e.g., an existing tornado install at a different major release than
+that in our `requirements.txt`), then you can try using a virtual
+environment.
+
+.. code:: bash
+
+    virtualenv ~/merou-venv
+    ~/merou-venv/bin/pip install -r requirements.txt
+    ~/merou-venv/bin/pip install -r requirements-dev.txt
+    ~/merou-venv/bin/py.test tests
+    ~/merou-venv/bin/py.test itests

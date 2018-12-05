@@ -2,7 +2,7 @@ import pytest
 
 from grouper.api.routes import HANDLERS as API_HANDLERS
 from grouper.app import Application
-from grouper.constants import AUDIT_MANAGER, GROUP_ADMIN, PERMISSION_AUDITOR, USER_ADMIN
+from grouper.constants import AUDIT_MANAGER, AUDIT_VIEWER, GROUP_ADMIN, PERMISSION_AUDITOR, USER_ADMIN
 from grouper.fe.routes import HANDLERS as FE_HANDLERS
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
@@ -113,6 +113,7 @@ def standard_graph(session, graph, users, groups, service_accounts, permissions)
     grant_permission(groups["team-infra"], permissions["sudo"], argument="shell")
 
     add_member(groups["auditors"], users["zorkian@a.co"], role="owner")
+    grant_permission(groups["auditors"], permissions[AUDIT_VIEWER])
     grant_permission(groups["auditors"], permissions[AUDIT_MANAGER])
     grant_permission(groups["auditors"], permissions[PERMISSION_AUDITOR])
 
@@ -197,8 +198,8 @@ def service_accounts(session, users, groups):
 
 @pytest.fixture
 def permissions(session, users):
-    all_permissions = ["owner", "ssh", "sudo", "audited", AUDIT_MANAGER, PERMISSION_AUDITOR,
-                       "team-sre", USER_ADMIN, GROUP_ADMIN]
+    all_permissions = ["owner", "ssh", "sudo", "audited", AUDIT_MANAGER, AUDIT_VIEWER,
+                       PERMISSION_AUDITOR, "team-sre", USER_ADMIN, GROUP_ADMIN]
 
     permissions = {
         permission: Permission.get_or_create(

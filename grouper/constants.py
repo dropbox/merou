@@ -53,7 +53,7 @@ SYSTEM_PERMISSIONS = [
     (USER_ADMIN, "Ability to to disable/enable any User account and modify its attributes."),
     (GROUP_ADMIN, "Ability to approve/deny/revoke membership to any group."),
     (AUDIT_SECURITY, "Ability to audit security related activity on the system."),
-    (AUDIT_MANAGER, "Ability to start global audits and view audit status."),
+    (AUDIT_MANAGER, "Ability to start and view global audits, and toggle if a perm is audited."),
     (AUDIT_VIEWER, "Ability to view audit results and status."),
     (USER_ENABLE, "Ability to enable a disabled user."),
     (USER_DISABLE, "Ability to disable an enabled user."),

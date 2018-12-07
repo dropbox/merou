@@ -1,9 +1,9 @@
 import logging
 
 from grouper.ctl.util import ensure_valid_service_account_name, make_session
-from grouper.models.user import User
 from grouper.models.group import Group
 from grouper.models.service_account import ServiceAccount
+from grouper.models.user import User
 from grouper.service_account import create_service_account
 
 

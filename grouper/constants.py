@@ -55,7 +55,7 @@ SYSTEM_PERMISSIONS = [
     (AUDIT_SECURITY, "Ability to audit security related activity on the system."),
     (AUDIT_MANAGER, "Ability to start and view global audits, and toggle if a perm is audited."),
     (AUDIT_VIEWER, "Ability to view audit results and status."),
-    (USER_ENABLE, "Ability to enable a disabled user."),
+    (USER_ENABLE, "Ability to enable a disabled user without preserving group membership."),
     (USER_DISABLE, "Ability to disable an enabled user."),
     (TAG_EDIT, "Ability to edit the permissions granted to a tag."),
 ]

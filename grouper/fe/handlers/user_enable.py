@@ -13,8 +13,14 @@ class UserEnable(GrouperHandler):
     def check_access(session, actor, target):
         return (
             user_has_permission(session, actor, USER_ADMIN) or
-            user_has_permission(session, actor, USER_ENABLE, argument=target.name) or
             (target.role_user and is_owner_of_role_user(session, actor, tuser=target))
+        )
+
+    @staticmethod
+    def check_access_preserving_membership(session, actor, target):
+        return (
+            self.check_access(session, actor, target) or
+            user_has_permission(session, actor, USER_ENABLE, argument=target.name)
         )
 
     def post(self, user_id=None, name=None):
@@ -22,13 +28,17 @@ class UserEnable(GrouperHandler):
         if not user:
             return self.notfound()
 
-        if not self.check_access(self.session, self.current_user, user):
-            return self.forbidden()
-
         form = UserEnableForm(self.request.arguments)
         if not form.validate():
             # TODO: add error message
             return self.redirect("/users/{}?refresh=yes".format(user.name))
+
+        if form.preserve_membership.data:
+            if not self.check_access_preserving_membership(self.session, self.current_user, user):
+                return self.forbidden()
+        else:
+            if not self.check_access(self.session, self.current_user, user):
+                return self.forbidden()
 
         if user.role_user:
             enable_role_user(self.session, actor=self.current_user,

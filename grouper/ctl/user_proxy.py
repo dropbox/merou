@@ -35,8 +35,6 @@ def build_user_proxy_server(username, backend_port, listen_host, listen_port):
             self.backend_port = backend_port
             self.header = ["X-Grouper-User: %s" % username]
 
-    listen_port = 8889
-    print "Going to try user proxy on {}:{}".format(listen_host, listen_port)
     server = BaseHTTPServer.HTTPServer(
         (listen_host, listen_port), ProxyHandler
     )

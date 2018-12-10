@@ -5,7 +5,7 @@ from tornado.httpclient import HTTPError
 
 from fixtures import fe_app as app  # noqa: F401
 from fixtures import standard_graph, graph, users, groups, service_accounts, session, permissions  # noqa: F401
-from grouper.constants import USER_ADMIN
+from grouper.constants import USER_ADMIN, USER_ENABLE
 from grouper.models.permission import Permission
 from grouper.models.user import User
 from grouper.models.user_token import UserToken
@@ -79,6 +79,16 @@ def user_admin_perm_to_auditors(session, groups):
     grant_permission(groups["auditors"], user_admin_perm)
 
 
+@pytest.fixture
+def user_enable_perm_to_sre(session, groups):
+    """Adds the (USER_ENABLE, *) permission to the group `team-sre` """
+    user_enable_perm, is_new = Permission.get_or_create(session, name=USER_ENABLE,
+        description="grouper.user.enable perm")
+    session.commit()
+
+    grant_permission(groups["team-sre"], user_enable_perm, argument="*")
+
+
 @pytest.mark.gen_test
 def test_user_tok_acls(session, graph, users, user_admin_perm_to_auditors, http_client, base_url):
     role_user = "role@a.co"
@@ -123,34 +133,47 @@ def test_graph_disable(session, graph, users, groups, user_admin_perm_to_auditor
 
 
 @pytest.mark.gen_test
-def test_user_disable(session, graph, users, user_admin_perm_to_auditors, http_client, base_url):
+def test_user_enable_disable(session, graph, users, user_admin_perm_to_auditors,
+                             user_enable_perm_to_sre, http_client, base_url):
     username = u"oliver@a.co"
     old_groups = sorted(get_groups(graph, username))
+    headers_admin = {"X-Grouper-User": "zorkian@a.co"}
+    headers_enable = {"X-Grouper-User": "zay@a.co"}
+    body_preserve = urlencode({"preserve_membership": "true"})
+    body_base = urlencode({})
 
     # disable user
     fe_url = url(base_url, "/users/{}/disable".format(username))
     resp = yield http_client.fetch(fe_url, method="POST",
-            headers={"X-Grouper-User": "zorkian@a.co"}, body=urlencode({}))
+                                   headers=headers_admin, body=body_base)
     assert resp.code == 200
 
-    # enable user, PRESERVE groups
+    # Attempt to enable user, preserving groups, as user with `grouper.user.enable`.
+    # Should fail due to lack of admin perm.
+    fe_url = url(base_url, "/users/{}/enable".format(username))
+    with pytest.raises(HTTPError):
+        resp = yield http_client.fetch(fe_url, method="POST",
+                                       headers=headers_enable, body=body_preserve)
+    
+    # enable user, PRESERVE groups, as a user with the correct admin permission
     fe_url = url(base_url, "/users/{}/enable".format(username))
     resp = yield http_client.fetch(fe_url, method="POST",
-            headers={"X-Grouper-User": "zorkian@a.co"},
-            body=urlencode({"preserve_membership": "true"}))
+                                   headers=headers_admin, body=body_preserve)
     assert resp.code == 200
     graph.update_from_db(session)
     assert old_groups == sorted(get_groups(graph, username)), 'nothing should be removed'
 
-    # disable and enable, PURGE groups
+    # disable user again
     fe_url = url(base_url, "/users/{}/disable".format(username))
     resp = yield http_client.fetch(fe_url, method="POST",
-            headers={"X-Grouper-User": "zorkian@a.co"}, body=urlencode({}))
+                                   headers=headers_admin, body=body_base)
     assert resp.code == 200
 
+    # Attempt to enable user, PURGE groups. Should now succeed even with
+    # only the `grouper.user.enable` perm.
     fe_url = url(base_url, "/users/{}/enable".format(username))
     resp = yield http_client.fetch(fe_url, method="POST",
-            headers={"X-Grouper-User": "zorkian@a.co"}, body=urlencode({}))
+                                   headers=headers_enable, body=body_base)
     assert resp.code == 200
 
     graph.update_from_db(session)

@@ -9,7 +9,7 @@ from sys import stdout
 
 from typing import Generator  # noqa
 
-from grouper.constants import NAME_VALIDATION, USERNAME_VALIDATION
+from grouper.constants import NAME_VALIDATION, SERVICE_ACCOUNT_VALIDATION, USERNAME_VALIDATION
 from grouper.models.base.session import get_db_engine, Session
 from grouper.settings import settings
 from grouper.util import get_database_url
@@ -41,6 +41,18 @@ def ensure_valid_groupname(f):
     def wrapper(args):
         if not re.match("^{}$".format(NAME_VALIDATION), args.groupname):
             logging.error("Invalid group name {}".format(args.groupname))
+            return
+
+        return f(args)
+
+    return wrapper
+
+
+def ensure_valid_service_account_name(f):
+    @wraps(f)
+    def wrapper(args):
+        if not re.match("^{}$".format(SERVICE_ACCOUNT_VALIDATION), args.name):
+            logging.error("Invalid service account name \"{}\"".format(args.name))
             return
 
         return f(args)

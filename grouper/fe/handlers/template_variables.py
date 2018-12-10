@@ -87,7 +87,7 @@ def get_user_view_template_vars(session, actor, user, graph):
         )
         ret["can_disable"] = ret["can_control"]
         ret["can_enable"] = user_is_user_admin(session, actor)
-        ret["can_enable_with_permissions"] = user_is_user_admin(session, actor)
+        ret["can_enable_preserving_membership"] = user_is_user_admin(session, actor)
         ret["account"] = user.service_account
     else:
         ret["can_control"] = (user.name == actor.name or user_is_user_admin(session, actor))

@@ -87,11 +87,13 @@ def get_user_view_template_vars(session, actor, user, graph):
         )
         ret["can_disable"] = ret["can_control"]
         ret["can_enable"] = user_is_user_admin(session, actor)
+        ret["can_enable_preserving_membership"] = user_is_user_admin(session, actor)
         ret["account"] = user.service_account
     else:
         ret["can_control"] = (user.name == actor.name or user_is_user_admin(session, actor))
         ret["can_disable"] = UserDisable.check_access(session, actor, user)
-        ret["can_enable"] = UserEnable.check_access(session, actor, user)
+        ret["can_enable_preserving_membership"] = UserEnable.check_access(session, actor, user)
+        ret["can_enable"] = UserEnable.check_access_without_membership(session, actor, user)
 
     if user.id == actor.id:
         ret["num_pending_group_requests"] = user_requests_aggregate(session, actor).count()

@@ -50,6 +50,7 @@ class GroupEdit(GrouperHandler):
         group.description = form.data["description"]
         group.canjoin = form.data["canjoin"]
         group.auto_expire = form.data["auto_expire"]
+        group.require_clickthru_tojoin = form.data["require_clickthru_tojoin"]
         Counter.incr(self.session, "updates")
 
         try:

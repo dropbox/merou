@@ -99,6 +99,7 @@ class GroupCreateForm(Form):
     canjoin = SelectField("Who Can Join?", choices=GROUP_CANJOIN_CHOICES,
         default="canask")
     auto_expire = DaysTimeDeltaField("Default Expiration (Days)")
+    require_clickthru_tojoin = BooleanField("Require Clickthru", default=False)
 
 
 class GroupEditForm(Form):
@@ -115,6 +116,7 @@ class GroupEditForm(Form):
     canjoin = SelectField("Who Can Join?", choices=GROUP_CANJOIN_CHOICES,
         default="canask")
     auto_expire = DaysTimeDeltaField("Default Expiration (Days)")
+    require_clickthru_tojoin = BooleanField("Require Clickthru", default=False)
 
 
 class AuditCreateForm(Form):
@@ -186,6 +188,9 @@ class GroupJoinForm(Form):
     expiration = StringField("Expiration", [
         ValidateDate(),
     ], id="join-form-expiration")
+    clickthru_agreement = BooleanField(
+        "Acknowledge reading and accepting the terms of this group's membership",
+        [validators.Optional()])
 
 
 class GroupEditMemberForm(Form):

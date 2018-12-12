@@ -64,6 +64,20 @@ class GroupJoin(GrouperHandler):
                 ]
             )
 
+        if group.require_clickthru_tojoin:
+            if not form["clickthru_agreement"]:
+                return self.render(
+                        "group-join.html",
+                        form=form,
+                        group=group,
+                        alerts=[
+                            Alert(
+                                "danger",
+                                "please accept review of the group's description",
+                                "Clickthru Enforcement"
+                                ),
+                        ])
+
         # We only use the default expiration time if no expiration time was given
         # This does mean that if a user wishes to join a group with no expiration
         # (even with an owner's permission) that has an auto expiration, they must

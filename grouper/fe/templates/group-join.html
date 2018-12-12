@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% from 'macros/ui.html' import form_field %}
+
 {% block heading %}
     <a href="/groups">Groups</a>
 {% endblock %}
@@ -26,13 +28,29 @@
                 <form class="form-horizontal join-group-form" role="form"
                       method="post" action="/groups/{{group.name}}/join">
                     {% include "forms/group-join.html" %}
+                    {% if group.require_clickthru_tojoin %}
+                    <input class="clickthru-checkbox" type="checkbox" name="clickthru_agreement",
+                            style="display:none"/>
+                    {% else %}
                     <div class="form-group">
                         <div class="col-sm-offset-3 col-sm-4">
                             <button type="submit" class="btn btn-primary">Submit</button>
                         </div>
                     </div>
+                    {% endif %}
 
                 </form>
+                {% if group.require_clickthru_tojoin %}
+                <div class="form-group">
+                    <div class="col-sm-offset-3 col-sm-4">
+                        <button id="join-clickthru-btn" class="btn btn-primary" data-toggle="modal"
+                                data-target="#clickthruModal">
+                            Join
+                        </button>
+                    </div>
+                </div>
+                {% else %}
+                {% endif %}
             </div>
         </div>
     </div>
@@ -45,5 +63,34 @@
         </div>
     </div>
 {% endif %}
+
+<div class="modal fade" id="clickthruModal" tabindex="-1" role="dialog"
+      aria-labelledby="clickthruModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                    <span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">Join Group Agreement</h4>
+           </div>
+            <div class="modal-body">
+                <div>
+                    Your membership request is predicated on you reading and
+                    acknowledging the group's description:
+                </div>
+                <div class="jumbotron">
+                    {{ group.description|escape }}
+                </div>
+            <div class="modal-footer">
+                <button id="agree-clickthru-btn" type="submit" class="btn btn-primary">
+                    Agree
+                </button>
+            </div>
+                </form>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

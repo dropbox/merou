@@ -189,6 +189,7 @@ class GrouperHandler(RequestHandler):
             "perf_trace_uuid": self.perf_trace_uuid,
             "xsrf_form": self.xsrf_form_html,
             "alerts": self.get_alerts(),
+            "static_url": self.static_url,
         })
         return namespace
 

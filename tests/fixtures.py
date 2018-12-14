@@ -223,9 +223,9 @@ def api_app(session, standard_graph):
 
 
 @pytest.fixture
-def fe_app(session, standard_graph):
+def fe_app(session, standard_graph, tmpdir):
     my_settings = {
             "db_session": lambda: session,
             "template_env": get_template_env(),
             }
-    return Application(FE_HANDLERS, my_settings=my_settings)
+    return Application(FE_HANDLERS, my_settings=my_settings, static_path=str(tmpdir))

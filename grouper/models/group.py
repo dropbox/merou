@@ -50,7 +50,7 @@ class Group(Model, CommentObjectMixin):
     # NOTE: This only applies to users who join a group via a request in the front end. It does
     # not apply to users who are added to a group by an approver
     auto_expire = Column(Interval)
-    require_clickthru_tojoin = Column(Boolean, default=False)
+    require_clickthru_tojoin = Column(Boolean, nullable=False, default=False)
 
     audit_id = Column(Integer, nullable=True)
     audit = relationship("Audit", foreign_keys=[audit_id],

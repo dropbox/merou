@@ -186,4 +186,10 @@ $(function () {
             $reason_fields.val($(this).val());
         });
     }
+
+
+    $("#clickthruModal #agree-clickthru-btn").on("click", function(e) {
+        $(".join-group-form .clickthru-checkbox").prop("checked", true);
+        $(".join-group-form").submit();
+    });
 });

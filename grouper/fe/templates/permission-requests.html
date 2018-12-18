@@ -36,20 +36,22 @@
                 </tr>
                 {% endif %}
                 {% for request in request_tuple.requests %}
-                <tr>
-                    <td>
+                <tr class="request-row">
+                    <td class="request-modify">
                         <a href="/permissions/requests/{{ request.id }}"
                            class="btn btn-default btn-xs">
                             <i class="fa fa-edit"></i>
                         </a>
                     </td>
-                    <td>
+                    <td class="request-requested">
                         {{ request.permission.name }}, {{ request.argument }}
                     </td>
-                    <td>{{ request.requester }}</td>
-		    <td>{{ ", ".join(granters[request.permission.name][request.argument]) }}</td>
-                    <td>{{ request.status }}</td>
-                    <td>{{ request.requested_at | print_date }}</td>
+                    <td class="request-requester">{{ request.requester }}</td>
+		    <td class="request-approvers">
+		        {{ ", ".join(granters[request.permission.name][request.argument]) }}
+		    </td>
+                    <td class="request-status">{{ request.status }}</td>
+                    <td class="request-requested-at">{{ request.requested_at | print_date }}</td>
                 </tr>
                 {% for status_change in request_tuple.status_change_by_request_id[request.id] %}
                 {% set comment = request_tuple.comment_by_status_change_id[status_change.id] %}
@@ -57,13 +59,15 @@
                     <td>&nbsp;</td>
                     <td colspan="5">
                         <dl class="dl-horizontal no-margin-bottom">
-                            <dt>Group:</dt><dd>{{ request.group.name }}</dd>
+                            <dt>Group:</dt>
+			    <dd class="request-group">{{ request.group.name }}</dd>
                             <dt>Who:</dt>
-                            <dd>
+                            <dd class="request-who">
                                 {{ status_change.user.name  }}
                                 ({{ status_change.change_at|long_ago_str }})
                             </dd>
-                            <dt>Reason:</dt> <dd>{{ comment.comment }}</dd>
+                            <dt>Reason:</dt>
+			    <dd class="request-reason">{{ comment.comment }}</dd>
                         </dl>
                     </td>
                 </tr>

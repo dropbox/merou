@@ -252,6 +252,8 @@ def get_owners_by_grantable_permission(session, separate_global=False):
 
     Args:
         session(sqlalchemy.orm.session.Session): database session
+        separate_global(bool): Whether or not to construct a specific entry for
+                               GLOBAL_OWNER in the output map
 
     Returns:
         A map of permission to argument to owners of the form {permission:
@@ -347,6 +349,9 @@ def get_owner_arg_list(session, permission, argument, owners_by_arg_by_perm=None
         session(sqlalchemy.orm.session.Session): database session
         permission(models.Permission): permission in question
         argument(str): argument for the permission
+        owners_by_arg_by_perm(Dict): list of groups that can grant a given
+            permission, argument pair in the format of
+            {perm_name: {argument: [group1, group2, ...], ...}, ...}
     Returns:
         list of 2-tuple of (group, argument) where group is the models.Group
         grouper groups responsibile for permimssion+argument and argument is
@@ -528,7 +533,7 @@ def can_approve_request(session, request, owner, group_ids=None, owners_by_arg_b
     return group_ids.intersection([o.id for o, arg in owner_arg_list])
 
 
-def get_requests_by_owner(session, owner, status, limit, offset):
+def get_requests_by_owner(session, owner, status, limit, offset, owners_by_arg_by_perm=None):
     """Load pending requests for a particular owner.
 
     Args:
@@ -538,6 +543,9 @@ def get_requests_by_owner(session, owner, status, limit, offset):
                 filter by particular status
         limit(int): how many results to return
         offset(int): the offset into the result set that should be applied
+        owners_by_arg_by_perm(Dict): list of groups that can grant a given
+            permission, argument pair in the format of
+            {perm_name: {argument: [group1, group2, ...], ...}, ...}
 
     Returns:
         2-tuple of (Requests, total) where total is total result size and
@@ -554,7 +562,8 @@ def get_requests_by_owner(session, owner, status, limit, offset):
 
     all_requests = all_requests.order_by(PermissionRequest.requested_at.desc()).all()
 
-    owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
+    if owners_by_arg_by_perm is None:
+        owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
 
     requests = []
     for request in all_requests:

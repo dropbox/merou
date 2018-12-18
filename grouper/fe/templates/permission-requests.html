@@ -23,7 +23,6 @@
                 <tr>
                     <th class="col-sm-1">Modify</th>
                     <th class="col-sm-2">Requested</th>
-                    <th class="col-sm-2">Requester</th>
 		    <th class="col-sm-2">Approvers</th>
                     <th class="col-sm-2">Status</th>
                     <th class="col-sm-2">Requested At</th>
@@ -32,7 +31,7 @@
             <tbody>
                 {% if not request_tuple or not request_tuple.requests %}
                 <tr>
-                    <td colspan="5" class="text-center">no requests fit the criteria</td>
+                    <td colspan="4" class="text-center">no requests fit the criteria</td>
                 </tr>
                 {% endif %}
                 {% for request in request_tuple.requests %}
@@ -46,7 +45,6 @@
                     <td class="request-requested">
                         {{ request.permission.name }}, {{ request.argument }}
                     </td>
-                    <td class="request-requester">{{ request.requester }}</td>
 		    <td class="request-approvers">
 		        {{ ", ".join(granters[request.permission.name][request.argument]) }}
 		    </td>

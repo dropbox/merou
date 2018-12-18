@@ -31,7 +31,7 @@
             <tbody>
                 {% if not request_tuple or not request_tuple.requests %}
                 <tr>
-                    <td colspan="4" class="text-center">no requests fit the criteria</td>
+                    <td colspan="4" class="text-center request-dne">no requests fit the criteria</td>
                 </tr>
                 {% endif %}
                 {% for request in request_tuple.requests %}
@@ -53,9 +53,9 @@
                 </tr>
                 {% for status_change in request_tuple.status_change_by_request_id[request.id] %}
                 {% set comment = request_tuple.comment_by_status_change_id[status_change.id] %}
-                <tr class="active">
+                <tr class="active request-status-change-row">
                     <td>&nbsp;</td>
-                    <td colspan="5">
+                    <td colspan="4">
                         <dl class="dl-horizontal no-margin-bottom">
                             <dt>Group:</dt>
 			    <dd class="request-group">{{ request.group.name }}</dd>

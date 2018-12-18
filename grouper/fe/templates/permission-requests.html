@@ -47,7 +47,7 @@
                         {{ request.permission.name }}, {{ request.argument }}
                     </td>
                     <td>{{ request.requester }}</td>
-		    <td>{{ ", ".join(grants[request.permission.name][request.argument]) }}</td>
+		    <td>{{ ", ".join(granters[request.permission.name][request.argument]) }}</td>
                     <td>{{ request.status }}</td>
                     <td>{{ request.requested_at | print_date }}</td>
                 </tr>
@@ -55,7 +55,7 @@
                 {% set comment = request_tuple.comment_by_status_change_id[status_change.id] %}
                 <tr class="active">
                     <td>&nbsp;</td>
-                    <td colspan="4">
+                    <td colspan="5">
                         <dl class="dl-horizontal no-margin-bottom">
                             <dt>Group:</dt><dd>{{ request.group.name }}</dd>
                             <dt>Who:</dt>

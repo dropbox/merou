@@ -24,9 +24,9 @@ class PermissionsRequests(GrouperHandler):
                     owners_by_arg_by_perm=owners_by_arg_by_perm)
             granters_by_arg_by_perm = {}
             for request in request_tuple.requests:
-                owners = get_owner_arg_list(self.session, request.permission, request.argument,
-                                            owners_by_arg_by_perm=owners_by_arg_by_perm)
-                granters_by_arg = {request.argument: owners}
+                owners = permissions.get_owner_arg_list(self.session, request.permission,
+                        request.argument, owners_by_arg_by_perm=owners_by_arg_by_perm)
+                granters_by_arg = {request.argument: [owner_pair[0].name for owner_pair in owners]}
                 granters_by_arg_by_perm[request.permission.name] = granters_by_arg
 
         return self.render("permission-requests.html", form=form, request_tuple=request_tuple,

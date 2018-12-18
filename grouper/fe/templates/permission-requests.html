@@ -24,6 +24,7 @@
                     <th class="col-sm-1">Modify</th>
                     <th class="col-sm-2">Requested</th>
                     <th class="col-sm-2">Requester</th>
+		    <th class="col-sm-2">Approvers</th>
                     <th class="col-sm-2">Status</th>
                     <th class="col-sm-2">Requested At</th>
                 </tr>
@@ -46,6 +47,7 @@
                         {{ request.permission.name }}, {{ request.argument }}
                     </td>
                     <td>{{ request.requester }}</td>
+		    <td>{{ ", ".join(grants[request.permission.name][request.argument]) }}</td>
                     <td>{{ request.status }}</td>
                     <td>{{ request.requested_at | print_date }}</td>
                 </tr>

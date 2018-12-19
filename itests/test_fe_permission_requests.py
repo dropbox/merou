@@ -54,6 +54,10 @@ def do_request_perms(groups, permissions, session, users):
     create_request(session, users[REQUESTING_USER], groups[REQUESTING_TEAM],
                    test_perm_nogranter, ARGUMENT, REASON)
 
+    # Finally make one more request from a user other than REQUESTING_USER
+    create_request(session, users[GRANTING_USER], groups[GRANTING_TEAM],
+                   admin_perm, ARGUMENT, REASON)
+
     session.commit()
 
 
@@ -80,16 +84,17 @@ def test_pending_inbound_requests(async_server, browser, do_request_perms):  # n
     request_rows = page.request_rows
     expected_perms = [
         '{}, {}'.format(PERM_WITH_GRANTER, ARGUMENT),
-        '{}, {}'.format(PERM_NO_GRANTER, ARGUMENT)
+        '{}, {}'.format(PERM_NO_GRANTER, ARGUMENT),
+        '{}, {}'.format(PERMISSION_ADMIN, ARGUMENT),
     ]
     request_perms = [row.requested for row in request_rows]
     assert sorted(expected_perms) == sorted(request_perms)
 
     # Check the status change rows as well
     sc_rows = page.status_change_rows
-    expected_groups = [REQUESTING_TEAM, REQUESTING_TEAM]
+    expected_groups = [REQUESTING_TEAM, REQUESTING_TEAM, GRANTING_TEAM]
     request_groups = [row.group for row in sc_rows]
-    assert expected_groups == request_groups
+    assert sorted(expected_groups) == sorted(request_groups)
 
     # and make sure the "no requests" row doesn't show up
     with pytest.raises(Exception):
@@ -105,14 +110,15 @@ def test_completed_inbound_requests(async_server, browser, do_action_requests): 
     request_rows = page.request_rows
     expected_perms = [
         '{}, {}'.format(PERM_WITH_GRANTER, ARGUMENT),
-        '{}, {}'.format(PERM_NO_GRANTER, ARGUMENT)
+        '{}, {}'.format(PERM_NO_GRANTER, ARGUMENT),
+        '{}, {}'.format(PERMISSION_ADMIN, ARGUMENT),
     ]
     request_perms = [row.requested for row in request_rows]
     assert sorted(expected_perms) == sorted(request_perms)
 
     # Check the status change rows as well
     sc_rows = page.status_change_rows
-    expected_whos = ([REQUESTING_USER] * 3) + [GRANTING_USER]
+    expected_whos = ([REQUESTING_USER] * 3) + ([GRANTING_USER] * 2)
     expected_whos = ['{} (now)'.format(user) for user in expected_whos]
     request_whos = [row.who for row in sc_rows]
     assert sorted(expected_whos) == sorted(request_whos)
@@ -122,8 +128,34 @@ def test_completed_inbound_requests(async_server, browser, do_action_requests): 
         page.no_requests_row
 
 
+def test_outbound_requests(async_server, browser, do_request_perms):  # noqa: F811
+    fe_url = url(async_server, "/permissions/requests?direction=outbound")
+    browser.get(fe_url)
+
+    # Check that the request rows have info we expect, namely the 2 requests
+    # made by REQUESTING_USER but not the one request made by another user
+    page = PermissionRequestsPage(browser)
+    request_rows = page.request_rows
+    expected_perms = [
+        '{}, {}'.format(PERM_WITH_GRANTER, ARGUMENT),
+        '{}, {}'.format(PERM_NO_GRANTER, ARGUMENT),
+    ]
+    request_perms = [row.requested for row in request_rows]
+    assert sorted(expected_perms) == sorted(request_perms)
+
+    # Check the status change rows as well
+    sc_rows = page.status_change_rows
+    expected_groups = [REQUESTING_TEAM, REQUESTING_TEAM]
+    request_groups = [row.group for row in sc_rows]
+    assert sorted(expected_groups) == sorted(request_groups)
+
+    # and make sure the "no requests" row doesn't show up
+    with pytest.raises(Exception):
+        page.no_requests_row
+
+
 def test_no_requests(async_server, browser, do_action_requests):  # noqa: F811
-    fe_url = url(async_server, "/permissions/requests?status=pending")
+    fe_url = url(async_server, "/permissions/requests?status=pending&direction=outbound")
     browser.get(fe_url)
 
     page = PermissionRequestsPage(browser)

@@ -248,9 +248,8 @@ class PermissionRequestsForm(Form):
     status = SelectField("New Status", [
         validators.Optional(),
     ], default='')
-    direction = SelectField("Direction", [validators.DataRequired(),],
+    direction = SelectField("Direction", [validators.DataRequired()],
         choices=[("inbound", "inbound"), ("outbound", "outbound")], default="inbound")
-        
 
 
 class PermissionRequestUpdateForm(Form):

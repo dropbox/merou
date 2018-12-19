@@ -1,20 +1,19 @@
+from pages.permission_requests import PermissionRequestsPage
+
 import pytest
 
-from fixtures import async_server, browser
+from fixtures import async_server, browser  # noqa: F401
+
+from tests.fixtures import (  # noqa: F401
+    graph, groups, service_accounts, permissions, session, standard_graph, users
+)
+from tests.url_util import url
+from tests.util import grant_permission
 
 from grouper.constants import PERMISSION_ADMIN, PERMISSION_GRANT
 from grouper.models.permission import Permission
 from grouper.models.permission_request import PermissionRequest
 from grouper.permissions import create_request, update_request
-
-from pages.exceptions import NoSuchElementException
-from pages.permission_requests import PermissionRequestsPage, RequestViewRow, StatusChangeRow
-
-from tests.fixtures import (
-    graph, groups, service_accounts, permissions, session, standard_graph, users
-)
-from tests.url_util import url
-from tests.util import grant_permission
 
 # Set up a permission requesting scenario in which REQUESTING_USER has both
 # inbound and outbound requests that they should be able to see on the requests
@@ -31,7 +30,8 @@ REQUESTING_USER = 'cbguder@a.co'
 ADMIN_TEAM = 'group-admins'
 ADMIN_USER = 'cbguder@a.co'
 
-@pytest.fixture
+
+@pytest.fixture  # noqa: F811
 def do_request_perms(groups, permissions, session, users):
     # Create the two test perms + PERMISSION_GRANT + PERMISSION_ADMIN, give GRANTING_TEAM
     # appropriate PERMISSION_GRANT, and make sure there's an admin (has PERMISSION_ADMIN)
@@ -57,8 +57,8 @@ def do_request_perms(groups, permissions, session, users):
     session.commit()
 
 
-@pytest.fixture
-def do_action_requests(session, permissions, users, do_request_perms):
+@pytest.fixture  # noqa: F811
+def do_action_requests(session, permissions, users, do_request_perms):  # noqa: F811
     # Action (approve) the request for PERM_WITH_GRANTER, and
     # cancel (deny) the request for PERM_NO_GRANTER.
     all_requests = session.query(PermissionRequest)
@@ -71,7 +71,7 @@ def do_action_requests(session, permissions, users, do_request_perms):
     session.commit()
 
 
-def test_pending_inbound_requests(async_server, browser, do_request_perms):
+def test_pending_inbound_requests(async_server, browser, do_request_perms):  # noqa: F811
     fe_url = url(async_server, "/permissions/requests?status=pending")
     browser.get(fe_url)
 
@@ -90,13 +90,13 @@ def test_pending_inbound_requests(async_server, browser, do_request_perms):
     expected_groups = [REQUESTING_TEAM, REQUESTING_TEAM]
     request_groups = [row.group for row in sc_rows]
     assert expected_groups == request_groups
-            
+
     # and make sure the "no requests" row doesn't show up
     with pytest.raises(Exception):
-        dne_row = page.no_requests_row
+        page.no_requests_row
 
 
-def test_completed_inbound_requests(async_server, browser, do_action_requests):
+def test_completed_inbound_requests(async_server, browser, do_action_requests):  # noqa: F811
     fe_url = url(async_server, "/permissions/requests?")
     browser.get(fe_url)
 
@@ -116,12 +116,13 @@ def test_completed_inbound_requests(async_server, browser, do_action_requests):
     expected_whos = ['{} (now)'.format(user) for user in expected_whos]
     request_whos = [row.who for row in sc_rows]
     assert sorted(expected_whos) == sorted(request_whos)
-            
+
     # and make sure the "no requests" row doesn't show up
     with pytest.raises(Exception):
-        dne_row = page.no_requests_row
+        page.no_requests_row
 
-def test_no_requests(async_server, browser, do_action_requests):
+
+def test_no_requests(async_server, browser, do_action_requests):  # noqa: F811
     fe_url = url(async_server, "/permissions/requests?status=pending")
     browser.get(fe_url)
 

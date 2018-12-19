@@ -1,5 +1,6 @@
 from base import BaseElement, BasePage
 
+
 class PermissionRequestsPage(BasePage):
     @property
     def request_rows(self):
@@ -52,4 +53,3 @@ class StatusChangeRow(BaseElement):
     @property
     def reason(self):
         return self.find_element_by_class_name('request-reason').text
-        

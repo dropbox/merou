@@ -31,7 +31,7 @@
             <tbody>
                 {% if not request_tuple or not request_tuple.requests %}
                 <tr>
-                    <td colspan="4" class="text-center request-dne">no requests fit the criteria</td>
+                    <td colspan="5" class="text-center request-dne">no requests fit the criteria</td>
                 </tr>
                 {% endif %}
                 {% for request in request_tuple.requests %}

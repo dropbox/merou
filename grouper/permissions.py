@@ -571,16 +571,20 @@ def can_approve_request(session, request, owner, group_ids=None, owners_by_arg_b
     return group_ids.intersection([o.id for o, arg in owner_arg_list])
 
 
-def get_requests_by_owner(session, owner, status, limit, offset, owners_by_arg_by_perm=None):
-    """Load pending requests for a particular owner.
+def get_requests(session, status, limit, offset,
+                 owner=None, requester=None, owners_by_arg_by_perm=None):
+    """Load requests using the given filters.
 
     Args:
         session(sqlalchemy.orm.session.Session): database session
-        owner(models.User): model of user in question
         status(models.base.constants.REQUEST_STATUS_CHOICES): if not None,
                 filter by particular status
         limit(int): how many results to return
         offset(int): the offset into the result set that should be applied
+        owner(models.User): if not None, filter by requests that the owner
+            can action
+        requester(models.User): if not None, filter by requests that the
+            requester made
         owners_by_arg_by_perm(Dict): list of groups that can grant a given
             permission, argument pair in the format of
             {perm_name: {argument: [group1, group2, ...], ...}, ...}
@@ -590,24 +594,25 @@ def get_requests_by_owner(session, owner, status, limit, offset, owners_by_arg_b
         Requests is the namedtuple with requests and associated
         comments/changes.
     """
-    # get owners groups
-    group_ids = {g.id for g, _ in get_groups_by_user(session, owner)}
-
     # get all requests
     all_requests = session.query(PermissionRequest)
     if status:
         all_requests = all_requests.filter(PermissionRequest.status == status)
+    if requester:
+        all_requests = all_requests.filter(PermissionRequest.requester_id == requester.id)
 
     all_requests = all_requests.order_by(PermissionRequest.requested_at.desc()).all()
 
     if owners_by_arg_by_perm is None:
         owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
 
-    requests = []
-    for request in all_requests:
-        if can_approve_request(session, request, owner, group_ids=group_ids,
-                               owners_by_arg_by_perm=owners_by_arg_by_perm):
-            requests.append(request)
+    if owner:
+        group_ids = {g.id for g, _ in get_groups_by_user(session, owner)}
+        requests = [request for request in all_requests if
+                    can_approve_request(session, request, owner, group_ids=group_ids,
+                                        owners_by_arg_by_perm=owners_by_arg_by_perm)]
+    else:
+        requests = all_requests
 
     total = len(requests)
     requests = requests[offset:limit]

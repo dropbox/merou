@@ -18,9 +18,15 @@ class PermissionsRequests(GrouperHandler):
         else:
             alerts = []
             owners_by_arg_by_perm = permissions.get_owners_by_grantable_permission(self.session)
-            request_tuple, total = permissions.get_requests_by_owner(self.session,
-                    self.current_user, status=form.status.data,
-                    limit=form.limit.data, offset=form.offset.data,
+            if form.direction.data == "inbound":
+                owner = self.current_user
+                requester = None
+            else: # Outbound
+                owner = None
+                requester = self.current_user
+                
+            request_tuple, total = permissions.get_requests(self.session, status=form.status.data,
+                    limit=form.limit.data, offset=form.offset.data, owner=owner, requester=requester,
                     owners_by_arg_by_perm=owners_by_arg_by_perm)
             granters_by_arg_by_perm = {}
             for request in request_tuple.requests:

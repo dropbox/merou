@@ -31,7 +31,7 @@ from grouper.permissions import (
         get_grantable_permissions,
         get_owner_arg_list,
         get_owners_by_grantable_permission,
-        get_requests_by_owner,
+        get_requests,
         grant_permission_to_service_account,
         )
 from grouper.models.permission import Permission
@@ -412,11 +412,11 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
     assert "grantable.one" not in perms, "requested permission shouldn't be granted immediately"
 
     user = User.get(session, name='zorkian@a.co')
-    request_tuple, total = get_requests_by_owner(session, user, "pending", 10, 0)
+    request_tuple, total = get_requests(session, "pending", 10, 0, owner=user)
     assert len(request_tuple.requests) == 0, "random user shouldn't have a request"
 
     user = User.get(session, name='testuser@a.co')
-    request_tuple, total = get_requests_by_owner(session, user, "pending", 10, 0)
+    request_tuple, total = get_requests(session, "pending", 10, 0, owner=user)
     assert len(request_tuple.requests) == 1, "user in group with grant should have a request"
 
     # APPROVE grant: have 'testuser@a.co' action this request as owner of
@@ -446,7 +446,7 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
     assert resp.code == 200
 
     user = User.get(session, name='testuser@a.co')
-    request_tuple, total = get_requests_by_owner(session, user, "pending", 10, 0)
+    request_tuple, total = get_requests(session, "pending", 10, 0, owner=user)
     assert len(request_tuple.requests) == 0, "request for existing perm should fail"
 
     # REQUEST: 'grantable.two', 'some argument' for 'serving-team'
@@ -468,11 +468,11 @@ def test_permission_request_flow(session, standard_graph, groups, grantable_perm
     assert "grantable.two" not in perms, "requested permission shouldn't be granted immediately"
 
     user = User.get(session, name='zorkian@a.co')
-    request_tuple, total = get_requests_by_owner(session, user, "pending", 10, 0)
+    request_tuple, total = get_requests(session, "pending", 10, 0, owner=user)
     assert len(request_tuple.requests) == 0, "random user shouldn't have a request"
 
     user = User.get(session, name='testuser@a.co')
-    request_tuple, total = get_requests_by_owner(session, user, "pending", 10, 0)
+    request_tuple, total = get_requests(session, "pending", 10, 0, owner=user)
     assert len(request_tuple.requests) == 1, "user in group with grant should have a request"
 
     # CANCEL request: have 'testuser@a.co' cancel this request

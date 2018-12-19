@@ -11,6 +11,7 @@
 
 {% block headingbuttons %}
     {{ dropdown("status", form.status.data, statuses, allow_none=True) }}
+    {{ dropdown("direction", form.direction.data, ["inbound", "outbound"]) }}
     {{ dropdown("limit", form.limit.data, [100, 250, 500]) }}
     {{ paginator(form.offset.data, form.limit.data, total) }}
 {% endblock %}

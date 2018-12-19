@@ -55,8 +55,8 @@ class PermissionsRequestUpdate(GrouperHandler):
             return self.notfound()
 
         # check that this user should be actioning this request
-        user_requests, total = permissions.get_requests_by_owner(self.session,
-                self.current_user, status="pending", limit=None, offset=0)
+        user_requests, total = permissions.get_requests(self.session,
+                status="pending", limit=None, offset=0, owner=self.current_user)
         user_request_ids = [ur.id for ur in user_requests.requests]
         if request.id not in user_request_ids:
             return self.forbidden()

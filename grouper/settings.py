@@ -91,6 +91,7 @@ def default_settings_path():
     return os.environ.get("GROUPER_SETTINGS", "/etc/grouper.yaml")
 
 settings = Settings({
+    "auditors_group": None,
     "database": None,
     "database_source": None,
     "expiration_notice_days": 7,

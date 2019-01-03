@@ -4,11 +4,12 @@ import pytest
 from constants import SSH_KEY_1, SSH_KEY_BAD
 from ctl_util import call_main
 from fixtures import standard_graph, graph, users, groups, session, permissions  # noqa
-from grouper.constants import GROUP_ADMIN, PERMISSION_ADMIN, USER_ADMIN
+from grouper.constants import GROUP_ADMIN, PERMISSION_ADMIN, PERMISSION_AUDITOR, USER_ADMIN
 from grouper.models.base.model_base import Model
 from grouper.models.group import Group
 from grouper.models.user import User
 from grouper.public_key import get_public_keys_of_user
+from grouper.settings import default_settings_path, settings
 
 noop = lambda *k: None
 
@@ -110,6 +111,11 @@ def test_user_public_key(make_session, session, users):
 def test_sync_db_default_group(make_session, session, users, groups):
     make_session.return_value = session
 
+    settings.update_from_config(default_settings_path())
+
+    auditors_group = Group.get(session, name=settings.auditors_group)
+    assert not auditors_group, "Auditors group should not exist yet"
+
     call_main('sync_db')
     admin_group = Group.get(session, name="grouper-administrators")
     assert admin_group, "Group should have been autocreated"
@@ -119,6 +125,11 @@ def test_sync_db_default_group(make_session, session, users, groups):
         assert permission in admin_group_permission_names, \
                 "Expected permission missing: %s" % permission
 
+    auditors_group = Group.get(session, name=settings.auditors_group)
+    assert auditors_group, "Auditors group should have been autocreated"
+    auditors_group_permission_names = [perm[1] for perm in auditors_group.my_permissions()]
+    assert PERMISSION_AUDITOR in auditors_group_permission_names, \
+        "Expected permission missing: %s" % PERMISSION_AUDITOR
 
 @patch('grouper.ctl.oneoff.load_plugins')
 @patch('grouper.ctl.oneoff.make_session')

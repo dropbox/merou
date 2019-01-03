@@ -129,7 +129,7 @@ def test_completed_inbound_requests(async_server, browser, do_action_requests): 
 
 
 def test_outbound_requests(async_server, browser, do_request_perms):  # noqa: F811
-    fe_url = url(async_server, "/permissions/requests?direction=outbound")
+    fe_url = url(async_server, "/permissions/requests?direction=Requested+by+me")
     browser.get(fe_url)
 
     # Check that the request rows have info we expect, namely the 2 requests
@@ -155,7 +155,7 @@ def test_outbound_requests(async_server, browser, do_request_perms):  # noqa: F8
 
 
 def test_no_requests(async_server, browser, do_action_requests):  # noqa: F811
-    fe_url = url(async_server, "/permissions/requests?status=pending&direction=outbound")
+    fe_url = url(async_server, "/permissions/requests?status=pending&direction=Requested+by+me")
     browser.get(fe_url)
 
     page = PermissionRequestsPage(browser)

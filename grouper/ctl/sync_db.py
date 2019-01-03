@@ -17,6 +17,9 @@ from grouper.settings import settings
 from grouper.util import get_database_url
 
 
+def get_auditors_group_name(settings):
+    return settings.auditors_group
+
 def sync_db_command(args):
     # Models not implicitly or explictly imported above are explicitly imported
     # here:
@@ -64,10 +67,11 @@ def sync_db_command(args):
 
         session.commit()
 
-    auditors_group = Group.get(session, name=settings.auditors_group)
+    auditors_group_name = get_auditors_group_name(settings)
+    auditors_group = Group.get(session, name=auditors_group_name)
     if not auditors_group:
         auditors_group = Group(
-                groupname=settings.auditors_group,
+                groupname=auditors_group_name,
                 description="Group for auditors, who can be owners of audited groups.",
                 canjoin="canjoin",
         )
@@ -77,7 +81,7 @@ def sync_db_command(args):
             session.flush()
         except IntegrityError:
             session.rollback()
-            raise Exception('Failed to create group: {}'.format(settings.auditors_group))
+            raise Exception('Failed to create group: {}'.format(auditors_group_name))
 
         permission = Permission.get(session, PERMISSION_AUDITOR)
         assert permission, "Permission should have been created earlier!"

@@ -9,7 +9,6 @@ from grouper.models.base.model_base import Model
 from grouper.models.group import Group
 from grouper.models.user import User
 from grouper.public_key import get_public_keys_of_user
-from grouper.settings import default_settings_path, settings
 
 noop = lambda *k: None
 
@@ -105,15 +104,15 @@ def test_user_public_key(make_session, session, users):
 
 
 @patch('grouper.ctl.sync_db.make_session')
+@patch('grouper.ctl.sync_db.get_auditors_group_name')
 @patch('grouper.ctl.sync_db.get_database_url', new=noop)
 @patch('grouper.ctl.sync_db.get_db_engine', new=noop)
 @patch.object(Model.metadata, 'create_all', new=noop)
-def test_sync_db_default_group(make_session, session, users, groups):
+def test_sync_db_default_group(mock_get_auditors_group_name, make_session, session, users, groups):
     make_session.return_value = session
+    mock_get_auditors_group_name.return_value = 'my-auditors'
 
-    settings.update_from_config(default_settings_path())
-
-    auditors_group = Group.get(session, name=settings.auditors_group)
+    auditors_group = Group.get(session, name='my-auditors')
     assert not auditors_group, "Auditors group should not exist yet"
 
     call_main('sync_db')
@@ -125,7 +124,7 @@ def test_sync_db_default_group(make_session, session, users, groups):
         assert permission in admin_group_permission_names, \
                 "Expected permission missing: %s" % permission
 
-    auditors_group = Group.get(session, name=settings.auditors_group)
+    auditors_group = Group.get(session, name='my-auditors')
     assert auditors_group, "Auditors group should have been autocreated"
     auditors_group_permission_names = [perm[1] for perm in auditors_group.my_permissions()]
     assert PERMISSION_AUDITOR in auditors_group_permission_names, \

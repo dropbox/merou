@@ -18,10 +18,10 @@ class PermissionsRequests(GrouperHandler):
         else:
             alerts = []
             owners_by_arg_by_perm = permissions.get_owners_by_grantable_permission(self.session)
-            if form.direction.data == "inbound":
+            if form.direction.data == "Waiting my approval":
                 owner = self.current_user
                 requester = None
-            else:  # outbound
+            else:  # "Requested by me"
                 owner = None
                 requester = self.current_user
 

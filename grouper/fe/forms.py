@@ -249,7 +249,7 @@ class PermissionRequestsForm(Form):
         validators.Optional(),
     ], default='')
     direction = SelectField("Direction", [validators.DataRequired()],
-        choices=[("inbound", "inbound"), ("outbound", "outbound")], default="inbound")
+        choices=[("Waiting my approval", ""), ("Requested by me", "")], default="Waiting my approval")
 
 
 class PermissionRequestUpdateForm(Form):

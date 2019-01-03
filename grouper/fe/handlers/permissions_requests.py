@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from grouper import permissions
 from grouper.fe.forms import PermissionRequestsForm
 from grouper.fe.util import GrouperHandler
@@ -28,13 +30,11 @@ class PermissionsRequests(GrouperHandler):
             request_tuple, total = permissions.get_requests(self.session, status=form.status.data,
                     limit=form.limit.data, offset=form.offset.data, owner=owner,
                     requester=requester, owners_by_arg_by_perm=owners_by_arg_by_perm)
-            granters_by_arg_by_perm = {}
+            granters_by_arg_by_perm = defaultdict(dict)
             for request in request_tuple.requests:
                 owners = permissions.get_owner_arg_list(self.session, request.permission,
                         request.argument, owners_by_arg_by_perm=owners_by_arg_by_perm)
                 granters_by_arg = [owner_pair[0].name for owner_pair in owners]
-                if request.permission.name not in granters_by_arg_by_perm:
-                    granters_by_arg_by_perm[request.permission.name] = {}
                 granters_by_arg_by_perm[request.permission.name][request.argument] = granters_by_arg
 
         return self.render("permission-requests.html", form=form, request_tuple=request_tuple,

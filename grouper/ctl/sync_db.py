@@ -20,6 +20,7 @@ from grouper.util import get_database_url
 def get_auditors_group_name(settings):
     return settings.auditors_group
 
+
 def sync_db_command(args):
     # Models not implicitly or explictly imported above are explicitly imported
     # here:
@@ -88,6 +89,7 @@ def sync_db_command(args):
         grant_permission(session, auditors_group.id, permission.id)
 
         session.commit()
+
 
 def add_parser(subparsers):
     sync_db_parser = subparsers.add_parser("sync_db", help="Apply database schema to database.")

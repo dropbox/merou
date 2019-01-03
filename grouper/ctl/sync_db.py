@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from grouper.constants import (
         GROUP_ADMIN,
         PERMISSION_ADMIN,
+        PERMISSION_AUDITOR,
         SYSTEM_PERMISSIONS,
         USER_ADMIN,
         )
@@ -63,6 +64,26 @@ def sync_db_command(args):
 
         session.commit()
 
+    auditors_group = Group.get(session, name=settings.auditors_group)
+    if not auditors_group:
+        auditors_group = Group(
+                groupname=settings.auditors_group,
+                description="Group for auditors, who can be owners of audited groups.",
+                canjoin="canjoin",
+        )
+
+        try:
+            auditors_group.add(session)
+            session.flush()
+        except IntegrityError:
+            session.rollback()
+            raise Exception('Failed to create group: {}'.format(settings.auditors_group))
+
+        permission = Permission.get(session, PERMISSION_AUDITOR)
+        assert permission, "Permission should have been created earlier!"
+        grant_permission(session, auditors_group.id, permission.id)
+
+        session.commit()
 
 def add_parser(subparsers):
     sync_db_parser = subparsers.add_parser("sync_db", help="Apply database schema to database.")

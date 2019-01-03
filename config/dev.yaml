@@ -1,4 +1,9 @@
 common:
+    # The default group that will have the auditing permission
+    #
+    # Type: str
+    auditors_group: "grouper-auditors"
+
     # Takes a SqlAlchemy URL to the database. More details
     # can be found at the following URL:
     # http://docs.sqlalchemy.org/en/rel_0_9/core/engines.html#database-urls

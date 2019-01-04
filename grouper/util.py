@@ -38,6 +38,10 @@ def try_update(dct, update):
     dct.update(update)
 
 
+def get_auditors_group_name(settings):
+    return settings.auditors_group
+
+
 def get_database_url(settings, retries=3, retry_wait_seconds=1):
     """Given settings, load a database URL either from our executable source or the bare string."""
     if not settings.database_source:

@@ -197,7 +197,7 @@ def service_accounts(session, users, groups):
 
 
 @pytest.fixture
-def permissions(session, users):
+def permissions(session, users, groups):
     all_permissions = ["owner", "ssh", "sudo", "audited", AUDIT_MANAGER, AUDIT_VIEWER,
                        PERMISSION_AUDITOR, "team-sre", USER_ADMIN, GROUP_ADMIN]
 
@@ -208,7 +208,12 @@ def permissions(session, users):
         for permission in all_permissions
     }
 
-    enable_permission_auditing(session, permissions["audited"].name, users['zorkian@a.co'].id)
+    # during tests, by default, settings.auditors_group is None, so
+    # enable_permission_auditing() will complain.  this is the easy
+    # hack. alternately, we can make enable_permission_auditing() take
+    # a boolean `auto_promote_auditors` flag to disable the new code
+    permissions["audited"]._audited = True
+    session.commit()
 
     return permissions
 

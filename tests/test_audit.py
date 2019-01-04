@@ -1,6 +1,8 @@
 from collections import namedtuple
 from datetime import datetime, timedelta
+from mock import patch
 from urllib import urlencode
+
 from grouper.constants import AUDIT_MANAGER, AUDIT_VIEWER
 
 import pytest
@@ -79,38 +81,39 @@ def test_assert_controllers_are_auditors(groups):  # noqa
 
 @pytest.mark.gen_test
 def test_toggle_perm_audited(groups, permissions, http_client, base_url):
-    perm_name = 'audited' # perm that is already audited
-    nonpriv_user_name = 'oliver@a.co' # user with no audit perms and without PERMISSION_ADMIN
-    nonpriv_user_team = 'sad-team'
-    nonpriv_headers = {'X-Grouper-User': nonpriv_user_name}
-    priv_user_name = 'zorkian@a.co' # user with AUDIT_MANAGER
-    priv_headers = {'X-Grouper-User': priv_user_name}
-    enable_url = url(base_url, '/permissions/{}/enable-auditing'.format(perm_name))
-    disable_url = url(base_url, '/permissions/{}/disable-auditing'.format(perm_name))
+    with patch('grouper.permissions.get_auditors_group_name', return_value='auditors'):
+        perm_name = 'audited' # perm that is already audited
+        nonpriv_user_name = 'oliver@a.co' # user with no audit perms and without PERMISSION_ADMIN
+        nonpriv_user_team = 'sad-team'
+        nonpriv_headers = {'X-Grouper-User': nonpriv_user_name}
+        priv_user_name = 'zorkian@a.co' # user with AUDIT_MANAGER
+        priv_headers = {'X-Grouper-User': priv_user_name}
+        enable_url = url(base_url, '/permissions/{}/enable-auditing'.format(perm_name))
+        disable_url = url(base_url, '/permissions/{}/disable-auditing'.format(perm_name))
 
-    # Give nonpriv user audit view permissions, which shouldn't allow enabling/disabling auditing
-    grant_permission(groups[nonpriv_user_team], permissions[AUDIT_VIEWER], argument="")
+        # Give nonpriv user audit view permissions, which shouldn't allow enabling/disabling auditing
+        grant_permission(groups[nonpriv_user_team], permissions[AUDIT_VIEWER], argument="")
 
-    # attempt to enable/disable auditing; both should fail due to lack of perms
-    with pytest.raises(HTTPError):
-        resp = yield http_client.fetch(enable_url, method="POST", headers=nonpriv_headers, body="")
-    with pytest.raises(HTTPError):
-        resp = yield http_client.fetch(disable_url, method="POST", headers=nonpriv_headers, body="")
+        # attempt to enable/disable auditing; both should fail due to lack of perms
+        with pytest.raises(HTTPError):
+            resp = yield http_client.fetch(enable_url, method="POST", headers=nonpriv_headers, body="")
+        with pytest.raises(HTTPError):
+            resp = yield http_client.fetch(disable_url, method="POST", headers=nonpriv_headers, body="")
 
-    # Now confirm that enabling/disabling auditing works as a privileged user
-    # Note that enabling audits on an audited perm succeeds (same for disabling)
-    resp = yield http_client.fetch(enable_url, method="POST", headers=priv_headers, body="")
-    assert resp.code == 200
-    # Perm is still audited
-    resp = yield http_client.fetch(disable_url, method="POST", headers=priv_headers, body="")
-    assert resp.code == 200
-    # Perm no longer audited
-    resp = yield http_client.fetch(disable_url, method="POST", headers=priv_headers, body="")
-    assert resp.code == 200
-    # Perm still not audited
-    resp = yield http_client.fetch(enable_url, method="POST", headers=priv_headers, body="")
-    assert resp.code == 200
-    # Perm audited again
+        # Now confirm that enabling/disabling auditing works as a privileged user
+        # Note that enabling audits on an audited perm succeeds (same for disabling)
+        resp = yield http_client.fetch(enable_url, method="POST", headers=priv_headers, body="")
+        assert resp.code == 200
+        # Perm is still audited
+        resp = yield http_client.fetch(disable_url, method="POST", headers=priv_headers, body="")
+        assert resp.code == 200
+        # Perm no longer audited
+        resp = yield http_client.fetch(disable_url, method="POST", headers=priv_headers, body="")
+        assert resp.code == 200
+        # Perm still not audited
+        resp = yield http_client.fetch(enable_url, method="POST", headers=priv_headers, body="")
+        assert resp.code == 200
+        # Perm audited again
     
 
 @pytest.mark.gen_test

@@ -1,8 +1,10 @@
-from collections import namedtuple
+import pytest
 import unittest
+
+from collections import namedtuple
+from mock import patch
 from urllib import urlencode
 
-import pytest
 from tornado.httpclient import HTTPError
 from wtforms.validators import ValidationError
 
@@ -25,6 +27,7 @@ from grouper.models.service_account import ServiceAccount
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
 from grouper.permissions import (
+        enable_permission_auditing,
         get_grantable_permissions,
         get_owner_arg_list,
         get_owners_by_grantable_permission,
@@ -34,7 +37,13 @@ from grouper.permissions import (
 from grouper.models.permission import Permission
 from grouper.user_permissions import user_grantable_permissions, user_has_permission
 from url_util import url
-from util import get_group_permissions, get_user_permissions, grant_permission
+from util import (
+    add_member,
+    get_group_permissions,
+    get_user_permissions,
+    grant_permission,
+    get_users,
+)
 
 
 @pytest.fixture
@@ -239,6 +248,125 @@ def test_permission_grant_to_owners(session, standard_graph, groups, grantable_p
         assert perm.name in owners_by_arg_by_perm, 'all permission should be represented'
         assert groups["security-team"] in owners_by_arg_by_perm[perm.name]["*"], \
                 'permission admin should be wildcard owners'
+
+
+def test_auditor_promition_when_enabling_permission_auditing(
+        session, graph, permissions):
+    """Test automatic promotion of non-auditor approvers
+
+    Two cases for this promotion: 1) when a permission becomes
+    audited, it can cause groups to be come audited, and we promote
+    non-auditor approvers of those groups; 2) when a non-auditor
+    approver is added to an audited group.
+
+    We use the standard_graph fixture here only for the `auditors`
+    group that it sets up---though we may choose to not use it at all
+    and just set up. Then we set up our own little graph in here for
+    testing because it would be a little too annoying to modify the
+    existing standard_graph fixture while not breaking existing tests.
+
+    very-special-auditors:
+      (initially empty)
+
+    group-1:
+      * user11 (o)
+      * user12
+      * user13 (np-o)
+      * user14 (o, a)
+
+    group-2:
+      * user21 (o)
+      * user22
+      * service
+
+    group-3:
+      * user22 (o)
+      * user12 (o)
+
+    group-4:
+      * user41
+      * user42 (o)
+      * user43 (np-o)
+
+    o: owner, np-o: no-permission owner, a: auditor
+
+    group-1 and group-2 have the permission that we will enable
+    auditing. group-4 will also have it, inheriting from group-1.
+
+    The expected outcome is: user11, user13, user21, user42, and
+    user43 will be added to the auditors group.
+    """
+
+    #
+    # set up our test part of the graph
+    #
+
+    # create groups
+    AUDITORS_GROUP = "very-special-auditors"
+    groups = {
+        groupname: Group.get_or_create(session, groupname=groupname)[0]
+        for groupname in ("group-1", "group-2", "group-3", "group-4", AUDITORS_GROUP)
+    }
+    # create users
+    users = {
+        username + '@a.co': User.get_or_create(session, username=username + '@a.co')[0]
+        for username in ("user11", "user12", "user13", "user14",
+                         "user21", "user22", "user23",
+                         "user41", "user42", "user43",
+        )
+    }
+    # create permissions
+    permissions.update({
+        permission: Permission.get_or_create(
+            session, name=permission, description="{} permission".format(permission)
+        )[0]
+        for permission in ["test-permission"]
+    })
+    # add users to groups
+    for (groupname, username, role) in (("group-1", "user11", "owner"),
+                                        ("group-1", "user12", "member"),
+                                        ("group-1", "user13", "np-owner"),
+                                        ("group-1", "user14", "owner"),
+                                        ("group-2", "user21", "owner"),
+                                        ("group-2", "user22", "member"),
+                                        ("group-3", "user12", "owner"),
+                                        ("group-3", "user22", "owner"),
+                                        ("group-4", "user41", "member"),
+                                        ("group-4", "user42", "owner"),
+                                        ("group-4", "user43", "np-owner"),
+                                        ):
+        add_member(groups[groupname], users[username + "@a.co"], role=role)
+    # add group-4 as member of group-1
+    add_member(groups["group-1"], groups["group-4"])
+    # grant permissions to groups
+    #
+    # give the test permission to groups 1 and 2, and group 4 should
+    # also inherit from group 1
+    grant_permission(groups["group-1"], permissions["test-permission"])
+    grant_permission(groups["group-2"], permissions["test-permission"])
+    grant_permission(groups[AUDITORS_GROUP], permissions[PERMISSION_AUDITOR])
+
+    session.commit()
+    graph.update_from_db(session)
+    # done setting up
+
+    # now a few pre-op checks
+    assert not graph.get_group_details('group-1').get('audited')
+    assert not graph.get_group_details('group-4').get('audited')
+    assert not get_users(graph, AUDITORS_GROUP)
+    assert get_users(graph, "group-3") == set(["user12@a.co", "user22@a.co"])
+
+    # DO IT!
+    with patch('grouper.permissions.get_auditors_group_name', return_value=AUDITORS_GROUP):
+        enable_permission_auditing(session, "test-permission",
+                                   User.get(session, name="cbguder@a.co"))
+
+    # check it!
+    graph.update_from_db(session)
+    assert graph.get_group_details('group-1').get('audited')
+    assert graph.get_group_details('group-4').get('audited')
+    assert get_users(graph, AUDITORS_GROUP) == set([
+        "user14@a.co", "user11@a.co", "user13@a.co", "user21@a.co", "user42@a.co", "user43@a.co"])
 
 
 def _load_permissions_by_group_name(session, group_name):

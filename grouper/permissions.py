@@ -352,6 +352,7 @@ def get_owner_arg_list(session, permission, argument, owners_by_arg_by_perm=None
         owners_by_arg_by_perm(Dict): list of groups that can grant a given
             permission, argument pair in the format of
             {perm_name: {argument: [group1, group2, ...], ...}, ...}
+            This is for convenience/caching if the value has already been fetched.
     Returns:
         list of 2-tuple of (group, argument) where group is the models.Group
         grouper groups responsibile for permimssion+argument and argument is
@@ -550,6 +551,7 @@ def get_requests(session, status, limit, offset,
         owners_by_arg_by_perm(Dict): list of groups that can grant a given
             permission, argument pair in the format of
             {perm_name: {argument: [group1, group2, ...], ...}, ...}
+            This is for convenience/caching if the value has already been fetched.
 
     Returns:
         2-tuple of (Requests, total) where total is total result size and

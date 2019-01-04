@@ -6,24 +6,34 @@ from typing import TYPE_CHECKING
 from sqlalchemy.exc import IntegrityError
 
 from grouper.audit import assert_controllers_are_auditors
-from grouper.constants import ARGUMENT_VALIDATION, PERMISSION_ADMIN, PERMISSION_GRANT
+from grouper.constants import (
+    ARGUMENT_VALIDATION,
+    PERMISSION_ADMIN,
+    PERMISSION_AUDITOR,
+    PERMISSION_GRANT,
+)
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
 from grouper.fe.template_util import get_template_env
+from grouper.graph import Graph, NoSuchGroup
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
 from grouper.models.group import Group
+from grouper.models.group_edge import APPROVER_ROLE_INDICES
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.permission_request import PermissionRequest
 from grouper.models.permission_request_status_change import PermissionRequestStatusChange
 from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.models.tag_permission_map import TagPermissionMap
+from grouper.models.user import User
 from grouper.plugin import get_plugin_proxy
+from grouper.user import user_role_index
 from grouper.user_group import get_groups_by_user
-from grouper.util import matches_glob
+from grouper.user_permissions import user_has_permission
+from grouper.util import get_auditors_group_name, matches_glob
 
 if TYPE_CHECKING:
     from typing import Dict, List, Set, TYPE_CHECKING  # noqa
@@ -134,22 +144,50 @@ def grant_permission_to_tag(session, tag_id, permission_id, argument=''):
     return True
 
 
-def enable_permission_auditing(session, permission_name, actor_user_id):
+def enable_permission_auditing(session, permission_name, actor_user):
     """Set a permission as audited.
 
     Args:
         session(models.base.session.Session): database session
         permission_name(str): name of permission in question
-        actor_user_id(int): id of user who is enabling auditing
+        actor_user(User): User object of user who is enabling auditing
     """
     permission = Permission.get(session, permission_name)
     if not permission:
         raise NoSuchPermission(name=permission_name)
 
+    auditors_group = Group.get(session, name=get_auditors_group_name(settings))
+    if not auditors_group:
+        raise NoSuchGroup('Please ask your admin to configure the default group for auditors')
+    # maybe we can insist that the auditors group actually has the
+    # PERMISSION_AUDITOR, but doesn't seem a big deal to skip it.
+
     permission._audited = True
 
-    AuditLog.log(session, actor_user_id, 'enable_auditing', 'Enabled auditing.',
+    AuditLog.log(session, actor_user.id, 'enable_auditing', 'Enabled auditing.',
             on_permission_id=permission.id)
+
+    # get all the groups that have this permissions, and promote
+    # approvers of these groups to auditors if they are not already
+    # auditors
+    non_auditor_approvers = set()
+    graph = Graph()
+    for group_name in graph.get_permission_details(permission_name)['groups'].keys():
+        group = Group.get(session, name=group_name)
+        members = group.my_members()
+        # Go through every member of the group and collect non-auditor
+        # approvers
+        for (type_, member), _ in members.iteritems():
+            if type_ == "Group":
+                continue
+            member = User.get(session, name=member)
+            member_is_approver = user_role_index(member, members) in APPROVER_ROLE_INDICES
+            member_is_auditor = user_has_permission(session, member, PERMISSION_AUDITOR)
+            if member_is_approver and not member_is_auditor:
+                non_auditor_approvers.add(member)
+    reason = 'auto-promoted when enabling auditing on permission "{}"'.format(permission_name)
+    for user in non_auditor_approvers:
+        auditors_group.add_member(actor_user, user, reason, status="actioned")
 
     Counter.incr(session, "updates")
 

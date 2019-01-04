@@ -252,6 +252,8 @@ def get_owners_by_grantable_permission(session, separate_global=False):
 
     Args:
         session(sqlalchemy.orm.session.Session): database session
+        separate_global(bool): Whether or not to construct a specific entry for
+                               GLOBAL_OWNER in the output map
 
     Returns:
         A map of permission to argument to owners of the form {permission:
@@ -347,6 +349,10 @@ def get_owner_arg_list(session, permission, argument, owners_by_arg_by_perm=None
         session(sqlalchemy.orm.session.Session): database session
         permission(models.Permission): permission in question
         argument(str): argument for the permission
+        owners_by_arg_by_perm(Dict): list of groups that can grant a given
+            permission, argument pair in the format of
+            {perm_name: {argument: [group1, group2, ...], ...}, ...}
+            This is for convenience/caching if the value has already been fetched.
     Returns:
         list of 2-tuple of (group, argument) where group is the models.Group
         grouper groups responsibile for permimssion+argument and argument is
@@ -528,39 +534,49 @@ def can_approve_request(session, request, owner, group_ids=None, owners_by_arg_b
     return group_ids.intersection([o.id for o, arg in owner_arg_list])
 
 
-def get_requests_by_owner(session, owner, status, limit, offset):
-    """Load pending requests for a particular owner.
+def get_requests(session, status, limit, offset,
+                 owner=None, requester=None, owners_by_arg_by_perm=None):
+    """Load requests using the given filters.
 
     Args:
         session(sqlalchemy.orm.session.Session): database session
-        owner(models.User): model of user in question
         status(models.base.constants.REQUEST_STATUS_CHOICES): if not None,
                 filter by particular status
         limit(int): how many results to return
         offset(int): the offset into the result set that should be applied
+        owner(models.User): if not None, filter by requests that the owner
+            can action
+        requester(models.User): if not None, filter by requests that the
+            requester made
+        owners_by_arg_by_perm(Dict): list of groups that can grant a given
+            permission, argument pair in the format of
+            {perm_name: {argument: [group1, group2, ...], ...}, ...}
+            This is for convenience/caching if the value has already been fetched.
 
     Returns:
         2-tuple of (Requests, total) where total is total result size and
         Requests is the namedtuple with requests and associated
         comments/changes.
     """
-    # get owners groups
-    group_ids = {g.id for g, _ in get_groups_by_user(session, owner)}
-
     # get all requests
     all_requests = session.query(PermissionRequest)
     if status:
         all_requests = all_requests.filter(PermissionRequest.status == status)
+    if requester:
+        all_requests = all_requests.filter(PermissionRequest.requester_id == requester.id)
 
     all_requests = all_requests.order_by(PermissionRequest.requested_at.desc()).all()
 
-    owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
+    if owners_by_arg_by_perm is None:
+        owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
 
-    requests = []
-    for request in all_requests:
-        if can_approve_request(session, request, owner, group_ids=group_ids,
-                               owners_by_arg_by_perm=owners_by_arg_by_perm):
-            requests.append(request)
+    if owner:
+        group_ids = {g.id for g, _ in get_groups_by_user(session, owner)}
+        requests = [request for request in all_requests if
+                    can_approve_request(session, request, owner, group_ids=group_ids,
+                                        owners_by_arg_by_perm=owners_by_arg_by_perm)]
+    else:
+        requests = all_requests
 
     total = len(requests)
     requests = requests[offset:limit]

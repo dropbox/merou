@@ -11,6 +11,7 @@
 
 {% block headingbuttons %}
     {{ dropdown("status", form.status.data, statuses, allow_none=True) }}
+    {{ dropdown("direction", form.direction.data, ["Waiting my approval", "Requested by me"]) }}
     {{ dropdown("limit", form.limit.data, [100, 250, 500]) }}
     {{ paginator(form.offset.data, form.limit.data, total) }}
 {% endblock %}
@@ -23,7 +24,7 @@
                 <tr>
                     <th class="col-sm-1">Modify</th>
                     <th class="col-sm-2">Requested</th>
-                    <th class="col-sm-2">Requester</th>
+		    <th class="col-sm-2">Approvers</th>
                     <th class="col-sm-2">Status</th>
                     <th class="col-sm-2">Requested At</th>
                 </tr>
@@ -31,37 +32,41 @@
             <tbody>
                 {% if not request_tuple or not request_tuple.requests %}
                 <tr>
-                    <td colspan="5" class="text-center">no requests fit the criteria</td>
+                    <td colspan="5" class="text-center request-dne">no requests fit the criteria</td>
                 </tr>
                 {% endif %}
                 {% for request in request_tuple.requests %}
-                <tr>
-                    <td>
+                <tr class="request-row">
+                    <td class="request-modify">
                         <a href="/permissions/requests/{{ request.id }}"
                            class="btn btn-default btn-xs">
                             <i class="fa fa-edit"></i>
                         </a>
                     </td>
-                    <td>
+                    <td class="request-requested">
                         {{ request.permission.name }}, {{ request.argument }}
                     </td>
-                    <td>{{ request.requester }}</td>
-                    <td>{{ request.status }}</td>
-                    <td>{{ request.requested_at | print_date }}</td>
+		    <td class="request-approvers">
+		        {{ ", ".join(granters[request.permission.name][request.argument]) }}
+		    </td>
+                    <td class="request-status">{{ request.status }}</td>
+                    <td class="request-requested-at">{{ request.requested_at | print_date }}</td>
                 </tr>
                 {% for status_change in request_tuple.status_change_by_request_id[request.id] %}
                 {% set comment = request_tuple.comment_by_status_change_id[status_change.id] %}
-                <tr class="active">
+                <tr class="active request-status-change-row">
                     <td>&nbsp;</td>
                     <td colspan="4">
                         <dl class="dl-horizontal no-margin-bottom">
-                            <dt>Group:</dt><dd>{{ request.group.name }}</dd>
+                            <dt>Group:</dt>
+			    <dd class="request-group">{{ request.group.name }}</dd>
                             <dt>Who:</dt>
-                            <dd>
+                            <dd class="request-who">
                                 {{ status_change.user.name  }}
                                 ({{ status_change.change_at|long_ago_str }})
                             </dd>
-                            <dt>Reason:</dt> <dd>{{ comment.comment }}</dd>
+                            <dt>Reason:</dt>
+			    <dd class="request-reason">{{ comment.comment }}</dd>
                         </dl>
                     </td>
                 </tr>

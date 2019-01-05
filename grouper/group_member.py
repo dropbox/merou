@@ -1,9 +1,12 @@
 from datetime import datetime
+# from grouper.models.group import Group
 
+from grouper.constants import PERMISSION_AUDITOR
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.comment import Comment
+from grouper.models.user import User
 from grouper.models.counter import Counter
-from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
+from grouper.models.group_edge import APPROVER_ROLE_INDICES, GROUP_EDGE_ROLES, GroupEdge
 from grouper.models.request import Request
 from grouper.models.request_status_change import RequestStatusChange
 from grouper.plugin import get_plugin_proxy
@@ -70,6 +73,10 @@ def _create_edge(session, group, member, role):
 
 def persist_group_member_changes(session, group, requester, member, status, reason,
                                  create_edge=False, **updates):
+    # TODO: to avoid import cycle
+    from grouper.audit import get_auditors_group
+    from grouper.user_permissions import user_has_permission
+
     requested_at = datetime.utcnow()
 
     if "role" in updates:

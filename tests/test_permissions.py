@@ -8,6 +8,8 @@ from urllib import urlencode
 from tornado.httpclient import HTTPError
 from wtforms.validators import ValidationError
 
+import grouper.fe.util
+
 from fixtures import standard_graph, graph, users, groups, service_accounts, session, permissions  # noqa
 from fixtures import fe_app as app  # noqa
 from grouper.constants import (
@@ -20,9 +22,10 @@ from grouper.constants import (
         PERMISSION_VALIDATION,
         )
 from grouper.fe.forms import ValidateRegex
-import grouper.fe.util
+from grouper.graph import Graph, NoSuchGroup
 from grouper.models.async_notification import AsyncNotification
 from grouper.models.group import Group
+from grouper.models.group_edge import APPROVER_ROLE_INDICES, GROUP_EDGE_ROLES
 from grouper.models.service_account import ServiceAccount
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
@@ -39,6 +42,8 @@ from grouper.user_permissions import user_grantable_permissions, user_has_permis
 from url_util import url
 from util import (
     add_member,
+    edit_member,
+    revoke_member,
     get_group_permissions,
     get_user_permissions,
     get_users,
@@ -81,9 +86,11 @@ def test_basic_permission(standard_graph, session, users, groups, permissions): 
     assert sorted(get_group_permissions(graph, "all-teams")) == []
 
     assert sorted(get_user_permissions(graph, "gary@a.co")) == [
-        "audited:", "ssh:*", "ssh:shell", "sudo:shell", "team-sre:*"]
+        "audited:", AUDIT_MANAGER + ":", AUDIT_VIEWER + ":", PERMISSION_AUDITOR + ":",
+        "ssh:*", "ssh:shell", "sudo:shell", "team-sre:*"]
     assert sorted(get_user_permissions(graph, "zay@a.co")) == [
-        "audited:", "ssh:*", "ssh:shell", "sudo:shell", "team-sre:*"]
+        "audited:", AUDIT_MANAGER + ":", AUDIT_VIEWER + ":", PERMISSION_AUDITOR + ":",
+        "ssh:*", "ssh:shell", "sudo:shell", "team-sre:*"]
     assert sorted(get_user_permissions(graph, "zorkian@a.co")) == [
         "audited:", AUDIT_MANAGER + ":", AUDIT_VIEWER + ":", PERMISSION_AUDITOR + ":",
         "owner:sad-team", "ssh:*", "sudo:shell", "team-sre:*"]
@@ -250,7 +257,9 @@ def test_permission_grant_to_owners(session, standard_graph, groups, grantable_p
                 'permission admin should be wildcard owners'
 
 
-def test_auditor_promition_when_enabling_permission_auditing(
+@patch('grouper.audit.get_auditors_group_name', return_value="very-special-auditors")
+def test_auditor_promotion_when_enabling_permission_auditing(
+        mock_gagg,
         session, graph, permissions, users):
     """Test automatic promotion of non-auditor approvers
 
@@ -259,11 +268,11 @@ def test_auditor_promition_when_enabling_permission_auditing(
     non-auditor approvers of those groups; 2) when a non-auditor
     approver is added to an audited group.
 
-    We use the standard_graph fixture here only for the `auditors`
-    group that it sets up---though we may choose to not use it at all
-    and just set up. Then we set up our own little graph in here for
-    testing because it would be a little too annoying to modify the
-    existing standard_graph fixture while not breaking existing tests.
+    We set up our own group/user/permission for testing instead of
+    using the `standard_graph` fixture---retrofitting it to work for
+    us and also not break existing tests is too cumbersome.
+
+    So here are our groups:
 
     very-special-auditors:
       (initially empty)
@@ -272,12 +281,11 @@ def test_auditor_promition_when_enabling_permission_auditing(
       * user11 (o)
       * user12
       * user13 (np-o)
-      * user14 (o, a)
+      * user14 (o)
 
     group-2:
       * user21 (o)
       * user22
-      * service
 
     group-3:
       * user22 (o)
@@ -288,21 +296,24 @@ def test_auditor_promition_when_enabling_permission_auditing(
       * user42 (o)
       * user43 (np-o)
 
-    o: owner, np-o: no-permission owner, a: auditor
+    o: owner, np-o: no-permission owner
 
     group-1 and group-2 have the permission that we will enable
     auditing. group-4 will also have it, inheriting from group-1.
 
-    The expected outcome is: user11, user13, user21, user42, and
-    user43 will be added to the auditors group.
+    The expected outcome is: user11, user13, user14, user21, user42,
+    and user43 will be added to the auditors group.
+
     """
 
     #
     # set up our test part of the graph
     #
 
-    # create groups
     AUDITORS_GROUP = "very-special-auditors"
+    PERMISSION_NAME = "test-permission"
+
+    # create groups
     groups = {
         groupname: Group.get_or_create(session, groupname=groupname)[0]
         for groupname in ("group-1", "group-2", "group-3", "group-4", AUDITORS_GROUP)
@@ -320,7 +331,7 @@ def test_auditor_promition_when_enabling_permission_auditing(
         permission: Permission.get_or_create(
             session, name=permission, description="{} permission".format(permission)
         )[0]
-        for permission in ["test-permission"]
+        for permission in [PERMISSION_NAME]
     })
     # add users to groups
     for (groupname, username, role) in (("group-1", "user11", "owner"),
@@ -342,9 +353,9 @@ def test_auditor_promition_when_enabling_permission_auditing(
     #
     # give the test permission to groups 1 and 2, and group 4 should
     # also inherit from group 1
-    grant_permission(groups["group-1"], permissions["test-permission"])
-    grant_permission(groups["group-2"], permissions["test-permission"])
     grant_permission(groups[AUDITORS_GROUP], permissions[PERMISSION_AUDITOR])
+    grant_permission(groups["group-1"], permissions[PERMISSION_NAME], argument='*')
+    grant_permission(groups["group-2"], permissions[PERMISSION_NAME], argument='foo_bar')
 
     session.commit()
     graph.update_from_db(session)
@@ -356,17 +367,105 @@ def test_auditor_promition_when_enabling_permission_auditing(
     assert not get_users(graph, AUDITORS_GROUP)
     assert get_users(graph, "group-3") == set(["user12@a.co", "user22@a.co"])
 
-    # DO IT!
-    with patch('grouper.permissions.get_auditors_group_name', return_value=AUDITORS_GROUP):
-        enable_permission_auditing(session, "test-permission",
-                                   User.get(session, name="cbguder@a.co"))
+    # TRY to enable auditing but fail
+    with patch('grouper.audit.get_auditors_group_name', return_value="doesnotexist"):
+        with pytest.raises(NoSuchGroup) as exc:
+            enable_permission_auditing(session, PERMISSION_NAME,
+                                       User.get(session, name="cbguder@a.co"))
+        assert exc.value.message == (
+            'Please ask your admin to configure the default group for auditors')
+    # nothing should have changed
+    graph.update_from_db(session)
+    assert not graph.get_group_details('group-1').get('audited')
+    assert not graph.get_group_details('group-4').get('audited')
+    assert not get_users(graph, AUDITORS_GROUP)
 
+    # now succeed at enabling auditing
+    with patch('grouper.audit.get_auditors_group_name', return_value=AUDITORS_GROUP):
+        enable_permission_auditing(session, PERMISSION_NAME,
+                                   User.get(session, name="cbguder@a.co"))
     # check it!
     graph.update_from_db(session)
     assert graph.get_group_details('group-1').get('audited')
     assert graph.get_group_details('group-4').get('audited')
     assert get_users(graph, AUDITORS_GROUP) == set([
         "user14@a.co", "user11@a.co", "user13@a.co", "user21@a.co", "user42@a.co", "user43@a.co"])
+
+
+@patch('grouper.audit.get_auditors_group_name', return_value="very-special-auditors")
+def test_auditor_promotion_on_member_change(
+        mock_gagg,
+        session,
+        standard_graph,
+        graph,
+        permissions,
+        users,
+        ):
+    """Test automatic promotion of non-auditor user when added as or
+    changed to an approver in an audited group
+    """
+    AUDITED_GROUP = "this-group-is-audited"
+    AUDITORS_GROUP = "very-special-auditors"
+    groups = {
+        groupname: Group.get_or_create(session, groupname=groupname)[0]
+        for groupname in (AUDITED_GROUP, AUDITORS_GROUP)
+    }
+    user = User.get_or_create(session, username='whateverman@a.co')[0]
+
+    grant_permission(groups[AUDITORS_GROUP], permissions[PERMISSION_AUDITOR])
+    grant_permission(groups[AUDITED_GROUP], permissions["audited"])
+    session.commit()
+    graph.update_from_db(session)
+
+    # add to audited group as an approver -> promotion
+    for new_role_idx in APPROVER_ROLE_INDICES:
+        assert not get_users(graph, AUDITORS_GROUP)
+        new_role = GROUP_EDGE_ROLES[new_role_idx]
+        import pdb
+        # pdb.set_trace()
+        add_member(groups[AUDITED_GROUP], user, role=new_role)
+        session.commit()
+        graph.update_from_db(session)
+        # the user should be added to auditors group
+        assert get_users(graph, AUDITORS_GROUP) == set([user.username])
+        # remove from audited group -> should not affect membership in
+        # auditors group
+        revoke_member(groups[AUDITED_GROUP], user)
+        session.commit()
+        graph.update_from_db(session)
+        assert get_users(graph, AUDITORS_GROUP) == set([user.username])
+        # now remove from auditors group to reset
+        revoke_member(groups[AUDITORS_GROUP], user)
+        session.commit()
+        graph.update_from_db(session)
+        assert not get_users(graph, AUDITORS_GROUP)
+
+    # add as a "member" -> no promotion
+    add_member(groups[AUDITED_GROUP], user, role="member")
+    session.commit()
+    graph.update_from_db(session)
+    assert not get_users(graph, AUDITORS_GROUP)
+
+    # now edit the user to become an approver, and each time the user
+    # should be promoted to auditors
+    for new_role_idx in APPROVER_ROLE_INDICES:
+        new_role = GROUP_EDGE_ROLES[new_role_idx]
+        edit_member(groups[AUDITED_GROUP], user, role=new_role)
+        session.commit()
+        graph.update_from_db(session)
+        # the user should be added to auditors group
+        assert get_users(graph, AUDITORS_GROUP) == set([user.username])
+        # restore to 'member' role -> should not affect membership in
+        # auditors group
+        edit_member(groups[AUDITED_GROUP], user, role='member')
+        session.commit()
+        graph.update_from_db(session)
+        assert get_users(graph, AUDITORS_GROUP) == set([user.username])
+        # now remove from auditors group to reset
+        revoke_member(groups[AUDITORS_GROUP], user)
+        session.commit()
+        graph.update_from_db(session)
+        assert not get_users(graph, AUDITORS_GROUP)
 
 
 def _load_permissions_by_group_name(session, group_name):

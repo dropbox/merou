@@ -1,6 +1,7 @@
-from datetime import datetime, timedelta
-
 import pytest
+
+from datetime import datetime, timedelta
+from mock import patch
 
 from fixtures import graph, users, groups, service_accounts, session, permissions, standard_graph  # noqa
 from grouper.background.background_processor import BackgroundProcessor
@@ -75,69 +76,3 @@ def test_expire_edges(expired_graph, session):  # noqa
     assert len(audits) == 3
 
 
-def test_expire_nonauditors(standard_graph, users, groups, session, permissions):
-    """ Test expiration auditing and notification. """
-
-    graph = standard_graph  # noqa
-
-    # Test audit autoexpiration for all approvers
-
-    approver_roles = ["owner", "np-owner", "manager"]
-
-    for role in approver_roles:
-
-        # Add non-auditor as an owner to an audited group
-        add_member(groups["audited-team"], users["testuser@a.co"], role=role)
-        session.commit()
-        graph.update_from_db(session)
-
-        group_md = graph.get_group_details("audited-team")
-
-        assert group_md.get('audited', False)
-
-        # Expire the edges.
-        background = BackgroundProcessor(settings, None)
-        background.expire_nonauditors(session)
-
-        # Check that the edges are now marked as inactive.
-        edge = session.query(GroupEdge).filter_by(group_id=groups["audited-team"].id, member_pk=users["testuser@a.co"].id).scalar()
-        assert edge.expiration is not None
-        assert edge.expiration < datetime.utcnow() + timedelta(days=settings.nonauditor_expiration_days)
-        assert edge.expiration > datetime.utcnow() + timedelta(days=settings.nonauditor_expiration_days - 1)
-
-        assert any(["Subject: Membership in audited-team set to expire" in email.body and "To: testuser@a.co" in email.body for email in _get_unsent_emails_and_send(session)])
-
-        audits = AuditLog.get_entries(session, action="nonauditor_flagged")
-        assert len(audits) == 3 + 1 * (approver_roles.index(role) + 1)
-
-        revoke_member(groups["audited-team"], users["testuser@a.co"])
-
-    # Ensure nonauditor, nonapprovers in audited groups do not get set to expired
-
-    member_roles = ["member"]
-
-    for role in member_roles:
-
-        # Add non-auditor as an owner to an audited group
-        add_member(groups["audited-team"], users["testuser@a.co"], role=role)
-        session.commit()
-        graph.update_from_db(session)
-
-        group_md = graph.get_group_details("audited-team")
-
-        assert group_md.get('audited', False)
-
-        # Expire the edges.
-        background = BackgroundProcessor(settings, None)
-        background.expire_nonauditors(session)
-
-        # Check that the edges are now marked as inactive.
-        edge = session.query(GroupEdge).filter_by(group_id=groups["audited-team"].id, member_pk=users["testuser@a.co"].id).scalar()
-        assert edge.expiration is None
-
-        assert not any(["Subject: Membership in audited-team set to expire" in email.body and "To: testuser@a.co" in email.body for email in _get_unsent_emails_and_send(session)])
-
-        audits = AuditLog.get_entries(session, action="nonauditor_flagged")
-        assert len(audits) == 3 + 1 * len(approver_roles)
-
-        revoke_member(groups["audited-team"], users["testuser@a.co"])

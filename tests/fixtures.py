@@ -1,4 +1,5 @@
 import pytest
+from mock import patch
 
 from grouper.api.routes import HANDLERS as API_HANDLERS
 from grouper.app import Application
@@ -208,6 +209,7 @@ def permissions(session, users):
         for permission in all_permissions
     }
 
+    # enable_permission_auditing(session, permissions["audited"].name, users['zorkian@a.co'])
     # during tests, by default, settings.auditors_group is None, so
     # enable_permission_auditing() will complain.  this is the easy
     # hack. alternately, we can make enable_permission_auditing() take

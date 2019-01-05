@@ -1,7 +1,9 @@
 from grouper.constants import PERMISSION_AUDITOR
-from grouper.graph import Graph
+from grouper.graph import Graph, NoSuchGroup
 from grouper.models.audit import Audit
-
+from grouper.models.group import Group
+from grouper.settings import settings
+from grouper.util import get_auditors_group_name
 
 class UserNotAuditor(Exception):
     pass
@@ -130,3 +132,15 @@ def get_audits(session, only_open):
         query = query.filter(Audit.complete == False)
 
     return query
+
+
+def get_auditors_group(session):
+    group_name = get_auditors_group_name(settings)
+    if not group_name:
+        raise NoSuchGroup('Please ask your admin to configure the default auditors group name')
+    auditors_group = Group.get(session, name=group_name)
+    if not auditors_group:
+        raise NoSuchGroup('Please ask your admin to configure the default group for auditors')
+    # maybe we can insist that the auditors group actually has the
+    # PERMISSION_AUDITOR, but doesn't seem a big deal to skip it.
+    return auditors_group

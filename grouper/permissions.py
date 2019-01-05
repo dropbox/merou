@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy.exc import IntegrityError
 
-from grouper.audit import assert_controllers_are_auditors
+from grouper.audit import assert_controllers_are_auditors, get_auditors_group
 from grouper.constants import (
     ARGUMENT_VALIDATION,
     PERMISSION_ADMIN,
@@ -33,7 +33,7 @@ from grouper.plugin import get_plugin_proxy
 from grouper.user import user_role_index
 from grouper.user_group import get_groups_by_user
 from grouper.user_permissions import user_has_permission
-from grouper.util import get_auditors_group_name, matches_glob
+from grouper.util import matches_glob
 
 if TYPE_CHECKING:
     from typing import Dict, List, Set, TYPE_CHECKING  # noqa
@@ -156,11 +156,12 @@ def enable_permission_auditing(session, permission_name, actor_user):
     if not permission:
         raise NoSuchPermission(name=permission_name)
 
-    auditors_group = Group.get(session, name=get_auditors_group_name(settings))
-    if not auditors_group:
-        raise NoSuchGroup('Please ask your admin to configure the default group for auditors')
-    # maybe we can insist that the auditors group actually has the
-    # PERMISSION_AUDITOR, but doesn't seem a big deal to skip it.
+    # auditors_group = Group.get(session, name=get_auditors_group_name(settings))
+    # if not auditors_group:
+    #     raise NoSuchGroup('Please ask your admin to configure the default group for auditors')
+    # # maybe we can insist that the auditors group actually has the
+    # # PERMISSION_AUDITOR, but doesn't seem a big deal to skip it.
+    auditors_group = get_auditors_group(session)
 
     permission._audited = True
 

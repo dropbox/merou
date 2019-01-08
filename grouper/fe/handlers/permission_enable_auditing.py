@@ -11,7 +11,7 @@ class PermissionEnableAuditing(GrouperHandler):
             return self.forbidden()
 
         try:
-            enable_permission_auditing(self.session, name, self.current_user)
+            enable_permission_auditing(self.session, name, self.current_user.id)
         except NoSuchPermission:
             return self.notfound()
 

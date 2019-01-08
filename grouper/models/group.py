@@ -9,7 +9,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm.util import aliased
 from sqlalchemy.sql import label, literal
 
-from grouper.constants import MAX_NAME_LENGTH, PERMISSION_AUDITOR
+from grouper.constants import MAX_NAME_LENGTH
 from grouper.group_member import persist_group_member_changes
 from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog
@@ -18,7 +18,7 @@ from grouper.models.base.model_base import Model
 from grouper.models.base.session import flush_transaction
 from grouper.models.comment import CommentObjectMixin
 from grouper.models.counter import Counter
-from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge, OWNER_ROLE_INDICES, GROUP_EDGE_ROLES
+from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge, OWNER_ROLE_INDICES
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
@@ -105,36 +105,6 @@ class Group(Model, CommentObjectMixin):
             "Editing member (%s) in %s", user_or_group.name, self.groupname
         )
 
-        # import here cuz there are import cycles :(
-        from grouper.audit import get_auditors_group
-        from grouper.graph import Graph
-        from grouper.user_permissions import user_has_permission
-        promote_to_auditor = False
-        graph = Graph()
-        graph.update_from_db(self.session)
-        if (graph.get_group_details(self.groupname)["audited"]
-                and OBJ_TYPES_IDX[user_or_group.member_type] == "User"
-                and not user_or_group.role_user
-                and not user_or_group.is_service_account
-                and "role" in kwargs):
-            new_role_idx = GROUP_EDGE_ROLES.index(kwargs["role"])
-            if new_role_idx in APPROVER_ROLE_INDICES:
-                # ok, we wanna check if user is transitioning from
-                # non-approver to approver role
-
-                # the edge might not exist yet?
-                edge = GroupEdge.get(
-                    self.session,
-                    group_id=self.id,
-                    member_type=user_or_group.member_type,
-                    member_pk=user_or_group.id
-                )
-                if not edge:
-                    raise MemberNotFound()
-                if edge.role == 'member':
-                    promote_to_auditor = not user_has_permission(
-                        self.session, user_or_group, PERMISSION_AUDITOR)
-
         persist_group_member_changes(
             session=self.session,
             group=self,
@@ -151,12 +121,6 @@ class Group(Model, CommentObjectMixin):
             OBJ_TYPES_IDX[member_type].lower(), user_or_group.name, reason)
         AuditLog.log(self.session, requester.id, 'edit_member',
                      message, on_group_id=self.id)
-
-        if promote_to_auditor:
-            auditors_group = get_auditors_group(self.session)
-            reason = ('automatically promoted to auditors when becoming '
-                      'an approver in an audited group')
-            auditors_group.add_member(requester, user_or_group, reason, status='actioned')
 
     @flush_transaction
     def add_member(self, requester, user_or_group, reason, status="pending",
@@ -176,23 +140,7 @@ class Group(Model, CommentObjectMixin):
             "Adding member (%s) to %s", user_or_group.name, self.groupname
         )
 
-        # import here cuz there are import cycles :(
-        promote_to_auditor = False
-        if status == "actioned":
-            from grouper.audit import get_auditors_group
-            from grouper.graph import Graph
-            from grouper.user_permissions import user_has_permission
-            graph = Graph()
-            graph.update_from_db(self.session)
-            if (graph.get_group_details(self.groupname)["audited"]
-                    and OBJ_TYPES_IDX[user_or_group.member_type] == "User"
-                    and not user_or_group.role_user
-                    and not user_or_group.is_service_account
-                    and GROUP_EDGE_ROLES.index(role) in APPROVER_ROLE_INDICES):
-                promote_to_auditor = not user_has_permission(
-                    self.session, user_or_group, PERMISSION_AUDITOR)
-
-        request = persist_group_member_changes(
+        return persist_group_member_changes(
             session=self.session,
             group=self,
             requester=requester,
@@ -204,14 +152,6 @@ class Group(Model, CommentObjectMixin):
             expiration=expiration,
             active=True
         )
-
-        if promote_to_auditor:
-            auditors_group = get_auditors_group(self.session)
-            reason = ('automatically promoted to auditors when becoming '
-                      'an approver in an audited group')
-            auditors_group.add_member(requester, user_or_group, reason, status='actioned')
-
-        return request
 
     def my_permissions(self):
 

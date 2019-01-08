@@ -5,34 +5,24 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy.exc import IntegrityError
 
-from grouper.audit import assert_controllers_are_auditors, get_auditors_group
-from grouper.constants import (
-    ARGUMENT_VALIDATION,
-    PERMISSION_ADMIN,
-    PERMISSION_AUDITOR,
-    PERMISSION_GRANT,
-)
+from grouper.audit import assert_controllers_are_auditors
+from grouper.constants import ARGUMENT_VALIDATION, PERMISSION_ADMIN, PERMISSION_GRANT
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
 from grouper.fe.template_util import get_template_env
-from grouper.graph import Graph, NoSuchGroup
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
 from grouper.models.group import Group
-from grouper.models.group_edge import APPROVER_ROLE_INDICES
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.permission_request import PermissionRequest
 from grouper.models.permission_request_status_change import PermissionRequestStatusChange
 from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.models.tag_permission_map import TagPermissionMap
-from grouper.models.user import User
 from grouper.plugin import get_plugin_proxy
-from grouper.user import user_role_index
 from grouper.user_group import get_groups_by_user
-from grouper.user_permissions import user_has_permission
 from grouper.util import matches_glob
 
 if TYPE_CHECKING:
@@ -76,46 +66,13 @@ def grant_permission(session, group_id, permission_id, argument=''):
     assert re.match(ARGUMENT_VALIDATION + r"$", argument), \
         'Permission argument does not match regex.'
 
-    graph = Graph()
-    group_name = Group.get(session, pk=group_id).groupname
-    group_details = graph.get_group_details(group_name)
-    prev_audited = group_details['audited']
-
     mapping = PermissionMap(permission_id=permission_id, group_id=group_id, argument=argument)
     mapping.add(session)
-
-    session.flush()
 
     Counter.incr(session, "updates")
 
     session.commit()
 
-    graph.update_from_db(session)
-    group_details = graph.get_group_details(group_name)
-    if not prev_audited and group_details['audited']:
-        # this permission grant has caused to group to become audited,
-        # so we need to traverse to convert non-auditor approvers in
-        # subgroups
-        non_auditor_approvers = set()
-        for sg_name in group_details['subgroups']:
-            sg = Group.get(session, name=sg_name)
-            members = sg.my_members()
-            # Go through every member of the group and collect non-auditor
-            # approvers
-            for (type_, member), _ in members.iteritems():
-                if type_ == "Group":
-                    continue
-                member = User.get(session, name=member)
-                member_is_approver = user_role_index(member, members) in APPROVER_ROLE_INDICES
-                member_is_auditor = user_has_permission(session, member, PERMISSION_AUDITOR)
-                if member_is_approver and not member_is_auditor:
-                    non_auditor_approvers.add(member)
-        if non_auditor_approvers:
-            reason = 'auto-promoted when granting permission id "{}" to group "{}"'.format(permission_id, group_name)
-            auditors_group = get_auditors_group(session)
-            print group_name, non_auditor_approvers
-            for user in non_auditor_approvers:
-                auditors_group.add_member(None, user, reason, status="actioned")
 
 def grant_permission_to_service_account(session, account, permission, argument=''):
     """
@@ -177,46 +134,22 @@ def grant_permission_to_tag(session, tag_id, permission_id, argument=''):
     return True
 
 
-def enable_permission_auditing(session, permission_name, actor_user):
+def enable_permission_auditing(session, permission_name, actor_user_id):
     """Set a permission as audited.
 
     Args:
         session(models.base.session.Session): database session
         permission_name(str): name of permission in question
-        actor_user(User): User object of user who is enabling auditing
+        actor_user_id(int): id of user who is enabling auditing
     """
     permission = Permission.get(session, permission_name)
     if not permission:
         raise NoSuchPermission(name=permission_name)
 
-    auditors_group = get_auditors_group(session)
-
     permission._audited = True
 
-    AuditLog.log(session, actor_user.id, 'enable_auditing', 'Enabled auditing.',
+    AuditLog.log(session, actor_user_id, 'enable_auditing', 'Enabled auditing.',
             on_permission_id=permission.id)
-
-    # get all the groups that have this permissions, and promote
-    # approvers of these groups to auditors if they are not already
-    # auditors
-    non_auditor_approvers = set()
-    graph = Graph()
-    for group_name in graph.get_permission_details(permission_name)['groups'].keys():
-        group = Group.get(session, name=group_name)
-        members = group.my_members()
-        # Go through every member of the group and collect non-auditor
-        # approvers
-        for (type_, member), _ in members.iteritems():
-            if type_ == "Group":
-                continue
-            member = User.get(session, name=member)
-            member_is_approver = user_role_index(member, members) in APPROVER_ROLE_INDICES
-            member_is_auditor = user_has_permission(session, member, PERMISSION_AUDITOR)
-            if member_is_approver and not member_is_auditor:
-                non_auditor_approvers.add(member)
-    reason = 'auto-promoted when enabling auditing on permission "{}"'.format(permission_name)
-    for user in non_auditor_approvers:
-        auditors_group.add_member(actor_user, user, reason, status="actioned")
 
     Counter.incr(session, "updates")
 

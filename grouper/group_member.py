@@ -95,7 +95,7 @@ def persist_group_member_changes(session, group, requester, member, status, reas
     changes = _serialize_changes(edge, **updates)
 
     request = Request(
-        requester_id=requester.id,
+        requester_id=requester.id if requester else 0,
         requesting_id=group.id,
         on_behalf_obj_type=member.member_type,
         on_behalf_obj_pk=member.id,
@@ -108,7 +108,7 @@ def persist_group_member_changes(session, group, requester, member, status, reas
 
     request_status_change = RequestStatusChange(
         request=request,
-        user_id=requester.id,
+        user_id=requester.id if requester else 0,
         to_status=status,
         change_at=requested_at,
     ).add(session)
@@ -117,7 +117,7 @@ def persist_group_member_changes(session, group, requester, member, status, reas
     Comment(
         obj_type=OBJ_TYPES["RequestStatusChange"],
         obj_pk=request_status_change.id,
-        user_id=requester.id,
+        user_id=requester.id if requester else 0,
         comment=reason,
         created_on=requested_at,
     ).add(session)

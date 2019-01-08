@@ -85,6 +85,10 @@ def test_basic_permission(standard_graph, session, users, groups, permissions): 
     assert sorted(get_group_permissions(graph, "team-infra")) == ["sudo:shell"]
     assert sorted(get_group_permissions(graph, "all-teams")) == []
 
+    # import pdb
+    # pdb.set_trace()
+    # assert graph.get_group_details('team-sre')['audited']
+    # assert 0, sorted(get_user_permissions(graph, "gary@a.co"))
     assert sorted(get_user_permissions(graph, "gary@a.co")) == [
         "audited:", AUDIT_MANAGER + ":", AUDIT_VIEWER + ":", PERMISSION_AUDITOR + ":",
         "ssh:*", "ssh:shell", "sudo:shell", "team-sre:*"]
@@ -421,8 +425,6 @@ def test_auditor_promotion_on_member_change(
     for new_role_idx in APPROVER_ROLE_INDICES:
         assert not get_users(graph, AUDITORS_GROUP)
         new_role = GROUP_EDGE_ROLES[new_role_idx]
-        import pdb
-        # pdb.set_trace()
         add_member(groups[AUDITED_GROUP], user, role=new_role)
         session.commit()
         graph.update_from_db(session)

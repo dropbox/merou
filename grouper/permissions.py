@@ -76,13 +76,46 @@ def grant_permission(session, group_id, permission_id, argument=''):
     assert re.match(ARGUMENT_VALIDATION + r"$", argument), \
         'Permission argument does not match regex.'
 
+    graph = Graph()
+    group_name = Group.get(session, pk=group_id).groupname
+    group_details = graph.get_group_details(group_name)
+    prev_audited = group_details['audited']
+
     mapping = PermissionMap(permission_id=permission_id, group_id=group_id, argument=argument)
     mapping.add(session)
+
+    session.flush()
 
     Counter.incr(session, "updates")
 
     session.commit()
 
+    graph.update_from_db(session)
+    group_details = graph.get_group_details(group_name)
+    if not prev_audited and group_details['audited']:
+        # this permission grant has caused to group to become audited,
+        # so we need to traverse to convert non-auditor approvers in
+        # subgroups
+        non_auditor_approvers = set()
+        for sg_name in group_details['subgroups']:
+            sg = Group.get(session, name=sg_name)
+            members = sg.my_members()
+            # Go through every member of the group and collect non-auditor
+            # approvers
+            for (type_, member), _ in members.iteritems():
+                if type_ == "Group":
+                    continue
+                member = User.get(session, name=member)
+                member_is_approver = user_role_index(member, members) in APPROVER_ROLE_INDICES
+                member_is_auditor = user_has_permission(session, member, PERMISSION_AUDITOR)
+                if member_is_approver and not member_is_auditor:
+                    non_auditor_approvers.add(member)
+        if non_auditor_approvers:
+            reason = 'auto-promoted when granting permission id "{}" to group "{}"'.format(permission_id, group_name)
+            auditors_group = get_auditors_group(session)
+            print group_name, non_auditor_approvers
+            for user in non_auditor_approvers:
+                auditors_group.add_member(None, user, reason, status="actioned")
 
 def grant_permission_to_service_account(session, account, permission, argument=''):
     """
@@ -156,11 +189,6 @@ def enable_permission_auditing(session, permission_name, actor_user):
     if not permission:
         raise NoSuchPermission(name=permission_name)
 
-    # auditors_group = Group.get(session, name=get_auditors_group_name(settings))
-    # if not auditors_group:
-    #     raise NoSuchGroup('Please ask your admin to configure the default group for auditors')
-    # # maybe we can insist that the auditors group actually has the
-    # # PERMISSION_AUDITOR, but doesn't seem a big deal to skip it.
     auditors_group = get_auditors_group(session)
 
     permission._audited = True

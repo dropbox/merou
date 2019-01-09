@@ -1,9 +1,8 @@
-import logging
-import os
-
 from collections import defaultdict
 from contextlib import closing
 from datetime import datetime
+import logging
+import os
 from time import sleep
 from typing import TYPE_CHECKING
 
@@ -32,6 +31,7 @@ from grouper.util import get_database_url
 if TYPE_CHECKING:
     from grouper.settings import Settings  # noqa: F401
     from grouper.error_reporting import SentryProxy  # noqa: F401
+    from typing import Dict, Set
 
 
 class BackgroundProcessor(object):
@@ -99,7 +99,7 @@ class BackgroundProcessor(object):
         graph.update_from_db(session)
         # map from user object to names of audited groups in which
         # user is a nonauditor approver
-        nonauditor_approver_to_groups = defaultdict(set)
+        nonauditor_approver_to_groups = defaultdict(set)  # type: Dict[User, Set[str]]
         # TODO(tyleromeara): replace with graph call
         for group in get_audited_groups(session):
             members = group.my_members()
@@ -139,8 +139,8 @@ class BackgroundProcessor(object):
                     self.logger.info("Expiring edges....")
                     self.expire_edges(session)
 
-                    self.logger.info("Expiring nonauditor approvers in audited groups...")
-                    self.expire_nonauditors(session)
+                    self.logger.info("Promote nonauditor approvers in audited groups...")
+                    self.promote_nonauditors(session)
 
                     self.logger.info("Sending emails...")
                     process_async_emails(self.settings, session, datetime.utcnow())

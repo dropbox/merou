@@ -5,6 +5,7 @@ from grouper.models.group import Group
 from grouper.settings import settings
 from grouper.util import get_auditors_group_name
 
+
 class UserNotAuditor(Exception):
     pass
 

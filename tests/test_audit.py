@@ -1,9 +1,11 @@
+import pytest
+
 from collections import namedtuple
 from datetime import datetime, timedelta
+from mock import call, patch
 from urllib import urlencode
-from grouper.constants import AUDIT_MANAGER, AUDIT_VIEWER
 
-import pytest
+
 from tornado.httpclient import HTTPError
 
 from fixtures import standard_graph, graph, users, groups, service_accounts, session, permissions  # noqa
@@ -12,9 +14,16 @@ from grouper.audit import (
     assert_can_join, assert_controllers_are_auditors, get_audits, user_is_auditor,
     UserNotAuditor,
 )
-from url_util import url
-from util import add_member, grant_permission
+from grouper.background.background_processor import BackgroundProcessor
+from grouper.constants import AUDIT_MANAGER, AUDIT_VIEWER, PERMISSION_AUDITOR
 from grouper.models.audit_log import AuditLogCategory, AuditLog
+from grouper.models.group import Group
+from grouper.models.permission import Permission
+from grouper.models.user import User
+from grouper.permissions import enable_permission_auditing
+from grouper.settings import settings
+from url_util import url
+from util import add_member, get_users, grant_permission
 
 
 def test_group_audited(standard_graph, session, groups, permissions):  # noqa
@@ -200,3 +209,157 @@ def test_audit_end_to_end(session, users, groups, http_client, base_url, graph):
 
     assert len(AuditLog.get_entries(session, on_user_id=gary_id,
             category=AuditLogCategory.audit)) == 1, 'removal AuditLog entry on user'
+
+
+@patch('grouper.audit.get_auditors_group_name')
+def test_auditor_promotion(mock_gagn, session, graph, permissions, users):
+    """Test automatic promotion of non-auditor approvers
+
+    Two cases for this promotion: 1) when a permission becomes
+    audited, it can cause groups to be come audited, and we promote
+    non-auditor approvers of those groups; 2) when a non-auditor
+    approver is added to an audited group.
+
+    We use the standard_graph fixture here only for the `auditors`
+    group that it sets up---though we may choose to not use it at all
+    and just set up. Then we set up our own little graph in here for
+    testing because it would be a little too annoying to modify the
+    existing standard_graph fixture while not breaking existing tests.
+
+    very-special-auditors:
+      (initially empty)
+
+    group-1:
+      * user11 (o)
+      * user12
+      * user13 (np-o)
+      * user14 (o, a)
+
+    group-2:
+      * user21 (o)
+      * user22
+      * service
+
+    group-3:
+      * user22 (o)
+      * user12 (o)
+
+    group-4:
+      * user41
+      * user42 (o)
+      * user43 (np-o)
+
+    o: owner, np-o: no-permission owner, a: auditor
+
+    group-1 and group-2 have the permission that we will enable
+    auditing. group-4 will also have it, inheriting from group-1.
+
+    The expected outcome is: user11, user13, user21, user42, and
+    user43 will be added to the auditors group.
+    """
+
+    #
+    # set up our test part of the graph
+    #
+
+    # create groups
+    AUDITORS_GROUP = mock_gagn.return_value = "very-special-auditors"
+    groups = {
+        groupname: Group.get_or_create(session, groupname=groupname)[0]
+        for groupname in ("group-1", "group-2", "group-3", "group-4", AUDITORS_GROUP)
+    }
+    # create users
+    users.update({
+        username + '@a.co': User.get_or_create(session, username=username + '@a.co')[0]
+        for username in ("user11", "user12", "user13", "user14",
+                         "user21", "user22", "user23",
+                         "user41", "user42", "user43",
+        )
+    })
+    # create permissions
+    permissions.update({
+        permission: Permission.get_or_create(
+            session, name=permission, description="{} permission".format(permission)
+        )[0]
+        for permission in ["test-permission"]
+    })
+    # add users to groups
+    for (groupname, username, role) in (("group-1", "user11", "owner"),
+                                        ("group-1", "user12", "member"),
+                                        ("group-1", "user13", "np-owner"),
+                                        ("group-1", "user14", "owner"),
+                                        ("group-2", "user21", "owner"),
+                                        ("group-2", "user22", "member"),
+                                        ("group-3", "user12", "owner"),
+                                        ("group-3", "user22", "owner"),
+                                        ("group-4", "user41", "member"),
+                                        ("group-4", "user42", "owner"),
+                                        ("group-4", "user43", "np-owner"),
+                                        ):
+        add_member(groups[groupname], users[username + "@a.co"], role=role)
+    # add group-4 as member of group-1
+    add_member(groups["group-1"], groups["group-4"])
+    # add user14 to auditors group
+    add_member(groups[AUDITORS_GROUP], users["user14@a.co"])
+    # grant permissions to groups
+    #
+    # give the test permission to groups 1 and 2, and group 4 should
+    # also inherit from group 1
+    grant_permission(groups["group-1"], permissions["test-permission"])
+    grant_permission(groups["group-2"], permissions["test-permission"])
+    grant_permission(groups[AUDITORS_GROUP], permissions[PERMISSION_AUDITOR])
+
+    session.commit()
+    graph.update_from_db(session)
+    # done setting up
+
+    # now a few pre-op checks
+    assert not graph.get_group_details('group-1').get('audited')
+    assert not graph.get_group_details('group-4').get('audited')
+    assert get_users(graph, AUDITORS_GROUP) == set(["user14@a.co"])
+    assert get_users(graph, "group-3") == set(["user12@a.co", "user22@a.co"])
+
+    #
+    # run the promotion logic -> nothing should happen because the
+    # test-permission is not yet audited
+    #
+    with patch('grouper.background.background_processor.notify_nonauditor_promoted') as mock_nnp:
+        background = BackgroundProcessor(settings, None)
+        background.promote_nonauditors(session)
+    session.commit()
+    graph.update_from_db(session)
+
+    # nothing should have happened
+    assert not graph.get_group_details('group-1').get('audited')
+    assert not graph.get_group_details('group-4').get('audited')
+    assert get_users(graph, AUDITORS_GROUP) == set(["user14@a.co"])
+    assert mock_nnp.call_count == 0
+
+    #
+    # now enable auditing for the permission and run the promotion
+    # logic again
+    #
+    enable_permission_auditing(session, "test-permission", users['zorkian@a.co'].id)
+    session.commit()
+    graph.update_from_db(session)
+    assert graph.get_group_details('group-1').get('audited')
+    assert graph.get_group_details('group-4').get('audited')
+
+    with patch('grouper.background.background_processor.notify_nonauditor_promoted') as mock_nnp:
+        background = BackgroundProcessor(settings, None)
+        background.promote_nonauditors(session)
+    session.commit()
+    graph.update_from_db(session)
+
+    # check that stuff happened
+    assert get_users(graph, AUDITORS_GROUP) == set([
+        "user11@a.co", "user13@a.co", "user14@a.co", "user21@a.co", "user42@a.co", "user43@a.co"])
+    expected_calls = [
+        call(settings, session, users["user11@a.co"], groups[AUDITORS_GROUP], set(['group-1'])),
+        call(settings, session, users["user13@a.co"], groups[AUDITORS_GROUP], set(['group-1'])),
+        call(settings, session, users["user21@a.co"], groups[AUDITORS_GROUP], set(['group-2'])),
+        call(settings, session, users["user42@a.co"], groups[AUDITORS_GROUP], set(['group-4'])),
+        call(settings, session, users["user43@a.co"], groups[AUDITORS_GROUP], set(['group-4'])),
+    ]
+    assert mock_nnp.call_count == len(expected_calls)
+    mock_nnp.assert_has_calls(expected_calls, any_order=True)

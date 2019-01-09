@@ -1,16 +1,17 @@
 import pytest
 
 from datetime import datetime, timedelta
-from mock import patch
+from mock import call, patch
 
 from fixtures import graph, users, groups, service_accounts, session, permissions, standard_graph  # noqa
+from grouper.constants import PERMISSION_AUDITOR
 from grouper.background.background_processor import BackgroundProcessor
-from grouper.fe.settings import settings
 from grouper.models.async_notification import AsyncNotification
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
-from util import add_member, revoke_member
+from grouper.settings import settings
+from util import add_member, get_users, revoke_member
 
 
 def _get_unsent_emails_and_send(session):
@@ -76,3 +77,68 @@ def test_expire_edges(expired_graph, session):  # noqa
     assert len(audits) == 3
 
 
+@patch('grouper.audit.get_auditors_group_name', return_value='auditors')
+def test_promote_nonauditors(mock_gagn, standard_graph, users, groups, session, permissions):
+    """ Test expiration auditing and notification. """
+
+    graph = standard_graph  # noqa
+
+    assert graph.get_group_details("audited-team")['audited']
+
+    # Test auditors promotion for all approvers
+    approver_roles = ["owner", "np-owner", "manager"]
+
+    for role in approver_roles:
+
+        # Add non-auditor as an approver to an audited group
+        add_member(groups["audited-team"], users["testuser@a.co"], role=role)
+        session.commit()
+        graph.update_from_db(session)
+        assert "testuser@a.co" not in get_users(graph, "auditors")
+
+        # do the promotion logic
+        background = BackgroundProcessor(settings, None)
+        background.promote_nonauditors(session)
+
+        session.commit()
+        graph.update_from_db(session)
+
+        # Check that the user is now added to auditors group
+        assert "testuser@a.co" in get_users(graph, "auditors")
+        assert any(["Subject: Added as member to group \"auditors\"" in email.body and "To: testuser@a.co" in email.body for email in _get_unsent_emails_and_send(session)])
+
+        audits = AuditLog.get_entries(session, action="nonauditor_promoted")
+        assert len(audits) == 3 + 1 * (approver_roles.index(role) + 1)
+
+        # reset for next iteration
+        revoke_member(groups["audited-team"], users["testuser@a.co"])
+        revoke_member(groups["auditors"], users["testuser@a.co"])
+
+    # Ensure nonauditor, nonapprovers in audited groups do not get promoted
+    member_roles = ["member"]
+
+    for role in member_roles:
+
+        # Add non-auditor as a non-approver to an audited group
+        add_member(groups["audited-team"], users["testuser@a.co"], role=role)
+        session.commit()
+        graph.update_from_db(session)
+        assert "testuser@a.co" not in get_users(graph, "auditors")
+
+        # do the promotion logic
+        background = BackgroundProcessor(settings, None)
+        background.promote_nonauditors(session)
+
+        session.commit()
+        graph.update_from_db(session)
+
+        # Check that the user is not added to auditors group
+        assert "testuser@a.co" not in get_users(graph, "auditors")
+
+        assert not any(["Subject: Added as member to group \"auditors\"" in email.body and "To: testuser@a.co" in email.body for email in _get_unsent_emails_and_send(session)])
+
+        audits = AuditLog.get_entries(session, action="nonauditor_promoted")
+        assert len(audits) == 3 + 1 * len(approver_roles)
+
+        revoke_member(groups["audited-team"], users["testuser@a.co"])
+        revoke_member(groups["auditors"], users["testuser@a.co"])

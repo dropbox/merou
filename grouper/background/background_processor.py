@@ -31,7 +31,6 @@ from grouper.util import get_database_url
 if TYPE_CHECKING:
     from grouper.settings import Settings  # noqa: F401
     from grouper.error_reporting import SentryProxy  # noqa: F401
-    from typing import Dict, Set
 
 
 class BackgroundProcessor(object):

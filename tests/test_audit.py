@@ -212,22 +212,18 @@ def test_audit_end_to_end(session, users, groups, http_client, base_url, graph):
 
 
 @patch('grouper.audit.get_auditors_group_name')
-def test_auditor_promotion(mock_gagn, session, graph, permissions, users):
+@patch('grouper.background.background_processor.notify_nonauditor_promoted')
+def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, users):
     """Test automatic promotion of non-auditor approvers
 
-    Two cases for this promotion: 1) when a permission becomes
-    audited, it can cause groups to be come audited, and we promote
-    non-auditor approvers of those groups; 2) when a non-auditor
-    approver is added to an audited group.
+    We set up our own group/user/permission for testing instead of
+    using the `standard_graph` fixture---retrofitting it to work for
+    us and also not break existing tests is too cumbersome.
 
-    We use the standard_graph fixture here only for the `auditors`
-    group that it sets up---though we may choose to not use it at all
-    and just set up. Then we set up our own little graph in here for
-    testing because it would be a little too annoying to modify the
-    existing standard_graph fixture while not breaking existing tests.
+    So here are our groups:
 
     very-special-auditors:
-      (initially empty)
+      * user14
 
     group-1:
       * user11 (o)
@@ -236,6 +232,7 @@ def test_auditor_promotion(mock_gagn, session, graph, permissions, users):
       * user14 (o, a)
 
     group-2:
+      * user13 (np-o)
       * user21 (o)
       * user22
       * service
@@ -245,6 +242,7 @@ def test_auditor_promotion(mock_gagn, session, graph, permissions, users):
       * user12 (o)
 
     group-4:
+      * user21 (np-o)
       * user41
       * user42 (o)
       * user43 (np-o)
@@ -252,10 +250,12 @@ def test_auditor_promotion(mock_gagn, session, graph, permissions, users):
     o: owner, np-o: no-permission owner, a: auditor
 
     group-1 and group-2 have the permission that we will enable
-    auditing. group-4 will also have it, inheriting from group-1.
+    auditing. group-4 will be a subgroup of group-1 and thus will
+    inherit the audited permission from group-1.
 
     The expected outcome is: user11, user13, user21, user42, and
     user43 will be added to the auditors group.
+
     """
 
     #
@@ -288,10 +288,12 @@ def test_auditor_promotion(mock_gagn, session, graph, permissions, users):
                                         ("group-1", "user12", "member"),
                                         ("group-1", "user13", "np-owner"),
                                         ("group-1", "user14", "owner"),
+                                        ("group-2", "user13", "np-owner"),
                                         ("group-2", "user21", "owner"),
                                         ("group-2", "user22", "member"),
                                         ("group-3", "user12", "owner"),
                                         ("group-3", "user22", "owner"),
+                                        ("group-4", "user21", "np-owner"),
                                         ("group-4", "user41", "member"),
                                         ("group-4", "user42", "owner"),
                                         ("group-4", "user43", "np-owner"),
@@ -323,9 +325,8 @@ def test_auditor_promotion(mock_gagn, session, graph, permissions, users):
     # run the promotion logic -> nothing should happen because the
     # test-permission is not yet audited
     #
-    with patch('grouper.background.background_processor.notify_nonauditor_promoted') as mock_nnp:
-        background = BackgroundProcessor(settings, None)
-        background.promote_nonauditors(session)
+    background = BackgroundProcessor(settings, None)
+    background.promote_nonauditors(session)
     session.commit()
     graph.update_from_db(session)
 
@@ -345,9 +346,8 @@ def test_auditor_promotion(mock_gagn, session, graph, permissions, users):
     assert graph.get_group_details('group-1').get('audited')
     assert graph.get_group_details('group-4').get('audited')
 
-    with patch('grouper.background.background_processor.notify_nonauditor_promoted') as mock_nnp:
-        background = BackgroundProcessor(settings, None)
-        background.promote_nonauditors(session)
+    background = BackgroundProcessor(settings, None)
+    background.promote_nonauditors(session)
     session.commit()
     graph.update_from_db(session)
 
@@ -356,10 +356,19 @@ def test_auditor_promotion(mock_gagn, session, graph, permissions, users):
         "user11@a.co", "user13@a.co", "user14@a.co", "user21@a.co", "user42@a.co", "user43@a.co"])
     expected_calls = [
         call(settings, session, users["user11@a.co"], groups[AUDITORS_GROUP], set(['group-1'])),
-        call(settings, session, users["user13@a.co"], groups[AUDITORS_GROUP], set(['group-1'])),
-        call(settings, session, users["user21@a.co"], groups[AUDITORS_GROUP], set(['group-2'])),
+        call(settings, session, users["user13@a.co"], groups[AUDITORS_GROUP], set(['group-1', 'group-2'])),
+        call(settings, session, users["user21@a.co"], groups[AUDITORS_GROUP], set(['group-2', 'group-4'])),
         call(settings, session, users["user42@a.co"], groups[AUDITORS_GROUP], set(['group-4'])),
         call(settings, session, users["user43@a.co"], groups[AUDITORS_GROUP], set(['group-4'])),
     ]
     assert mock_nnp.call_count == len(expected_calls)
     mock_nnp.assert_has_calls(expected_calls, any_order=True)
+
+    #
+    # run the background promotion logic again, and nothing should
+    # happen
+    #
+    mock_nnp.reset_mock()
+    background = BackgroundProcessor(settings, None)
+    background.promote_nonauditors(session)
+    assert mock_nnp.call_count == 0

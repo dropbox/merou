@@ -104,13 +104,12 @@ def test_user_public_key(make_session, session, users):
 
 
 @patch('grouper.ctl.sync_db.make_session')
-@patch('grouper.ctl.sync_db.get_auditors_group_name')
+@patch('grouper.ctl.sync_db.get_auditors_group_name', return_value='my-auditors')
 @patch('grouper.ctl.sync_db.get_database_url', new=noop)
 @patch('grouper.ctl.sync_db.get_db_engine', new=noop)
 @patch.object(Model.metadata, 'create_all', new=noop)
 def test_sync_db_default_group(mock_get_auditors_group_name, make_session, session, users, groups):
     make_session.return_value = session
-    mock_get_auditors_group_name.return_value = 'my-auditors'
 
     auditors_group = Group.get(session, name='my-auditors')
     assert not auditors_group, "Auditors group should not exist yet"

@@ -306,7 +306,10 @@ def notify_nonauditor_promoted(settings, session, user, auditors_group, group_na
     Args:
         settings (Settings): Grouper Settings object for current run.
         session (Session): Object for db session.
-        edges (list of GroupEdge): Edges representing memberships in audited groups
+        user (User): The user that has been promoted.
+        auditors_group (Group): The auditors group
+        group_names (set of str): The audited groups in which the user was previsouly
+            a non-auditor approver.
     """
     member_name = user.username
     recipients = [member_name]

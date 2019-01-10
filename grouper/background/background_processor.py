@@ -87,9 +87,8 @@ class BackgroundProcessor(object):
     def promote_nonauditors(self, session):
         # type: (Session) -> None
         """Checks all enabled audited groups and ensures that all approvers for that group have
-        the PERMISSION_AUDITOR permission. All approvers of audited groups that aren't auditors
-        have their membership in the audited group set to expire
-        settings.nonauditor_expiration_days days in the future.
+        the PERMISSION_AUDITOR permission. All non-auditor approvers of audited groups will be
+        promoted to be auditors, i.e., added to the auditors group.
 
         Args:
             session (Session): database session

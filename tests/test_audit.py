@@ -313,7 +313,6 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
     grant_permission(groups["group-2"], permissions[PERMISSION_NAME])
     grant_permission(groups[AUDITORS_GROUP], permissions[PERMISSION_AUDITOR])
 
-    session.commit()
     graph.update_from_db(session)
     # done setting up
 
@@ -329,7 +328,6 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
     #
     background = BackgroundProcessor(settings, None)
     background.promote_nonauditors(session)
-    session.commit()
     graph.update_from_db(session)
 
     # nothing should have happened
@@ -343,14 +341,12 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
     # logic again
     #
     enable_permission_auditing(session, PERMISSION_NAME, users['zorkian@a.co'].id)
-    session.commit()
     graph.update_from_db(session)
     assert graph.get_group_details('group-1').get(AUDITED_GROUP)
     assert graph.get_group_details('group-4').get(AUDITED_GROUP)
 
     background = BackgroundProcessor(settings, None)
     background.promote_nonauditors(session)
-    session.commit()
     graph.update_from_db(session)
 
     # check that stuff happened

@@ -138,7 +138,7 @@ class BackgroundProcessor(object):
                     self.logger.info("Expiring edges....")
                     self.expire_edges(session)
 
-                    self.logger.info("Promote nonauditor approvers in audited groups...")
+                    self.logger.info("Promoting nonauditor approvers in audited groups...")
                     self.promote_nonauditors(session)
 
                     self.logger.info("Sending emails...")

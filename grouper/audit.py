@@ -136,6 +136,23 @@ def get_audits(session, only_open):
 
 
 def get_auditors_group(session):
+    """Retrieve the group for auditors
+
+    Arg(s):
+        session (session): database session
+
+    Return:
+        Group object for the group for Grouper auditors, whose name is
+        specified with `auditors_group` settings. Note that the group
+        is NOT checked to make sure it has the PERMISSION_AUDITOR
+        permission.
+
+    Raise:
+        Raise NoSuchGroup exception if either the name for the
+        auditors group is not configured, or the group does not exist
+        in the database.
+
+    """
     group_name = get_auditors_group_name(settings)
     if not group_name:
         raise NoSuchGroup('Please ask your admin to configure the default auditors group name')

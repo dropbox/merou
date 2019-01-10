@@ -11,11 +11,12 @@ from tornado.httpclient import HTTPError
 from fixtures import standard_graph, graph, users, groups, service_accounts, session, permissions  # noqa
 from fixtures import fe_app as app  # noqa
 from grouper.audit import (
-    assert_can_join, assert_controllers_are_auditors, get_audits, user_is_auditor,
-    UserNotAuditor,
+    assert_can_join, assert_controllers_are_auditors, get_auditors_group, get_audits,
+    user_is_auditor, UserNotAuditor,
 )
 from grouper.background.background_processor import BackgroundProcessor
 from grouper.constants import AUDIT_MANAGER, AUDIT_VIEWER, PERMISSION_AUDITOR
+from grouper.graph import NoSuchGroup
 from grouper.models.audit_log import AuditLogCategory, AuditLog
 from grouper.models.group import Group
 from grouper.models.permission import Permission
@@ -235,7 +236,6 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
       * user13 (np-o)
       * user21 (o)
       * user22
-      * service
 
     group-3:
       * user22 (o)
@@ -263,7 +263,9 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
     #
 
     # create groups
+    AUDITED_GROUP = 'audited'
     AUDITORS_GROUP = mock_gagn.return_value = "very-special-auditors"
+    PERMISSION_NAME = "test-permission"
     groups = {
         groupname: Group.get_or_create(session, groupname=groupname)[0]
         for groupname in ("group-1", "group-2", "group-3", "group-4", AUDITORS_GROUP)
@@ -281,7 +283,7 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
         permission: Permission.get_or_create(
             session, name=permission, description="{} permission".format(permission)
         )[0]
-        for permission in ["test-permission"]
+        for permission in [PERMISSION_NAME]
     })
     # add users to groups
     for (groupname, username, role) in (("group-1", "user11", "owner"),
@@ -307,8 +309,8 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
     #
     # give the test permission to groups 1 and 2, and group 4 should
     # also inherit from group 1
-    grant_permission(groups["group-1"], permissions["test-permission"])
-    grant_permission(groups["group-2"], permissions["test-permission"])
+    grant_permission(groups["group-1"], permissions[PERMISSION_NAME])
+    grant_permission(groups["group-2"], permissions[PERMISSION_NAME])
     grant_permission(groups[AUDITORS_GROUP], permissions[PERMISSION_AUDITOR])
 
     session.commit()
@@ -316,8 +318,8 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
     # done setting up
 
     # now a few pre-op checks
-    assert not graph.get_group_details('group-1').get('audited')
-    assert not graph.get_group_details('group-4').get('audited')
+    assert not graph.get_group_details('group-1').get(AUDITED_GROUP)
+    assert not graph.get_group_details('group-4').get(AUDITED_GROUP)
     assert get_users(graph, AUDITORS_GROUP) == set(["user14@a.co"])
     assert get_users(graph, "group-3") == set(["user12@a.co", "user22@a.co"])
 
@@ -331,8 +333,8 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
     graph.update_from_db(session)
 
     # nothing should have happened
-    assert not graph.get_group_details('group-1').get('audited')
-    assert not graph.get_group_details('group-4').get('audited')
+    assert not graph.get_group_details('group-1').get(AUDITED_GROUP)
+    assert not graph.get_group_details('group-4').get(AUDITED_GROUP)
     assert get_users(graph, AUDITORS_GROUP) == set(["user14@a.co"])
     assert mock_nnp.call_count == 0
 
@@ -340,11 +342,11 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
     # now enable auditing for the permission and run the promotion
     # logic again
     #
-    enable_permission_auditing(session, "test-permission", users['zorkian@a.co'].id)
+    enable_permission_auditing(session, PERMISSION_NAME, users['zorkian@a.co'].id)
     session.commit()
     graph.update_from_db(session)
-    assert graph.get_group_details('group-1').get('audited')
-    assert graph.get_group_details('group-4').get('audited')
+    assert graph.get_group_details('group-1').get(AUDITED_GROUP)
+    assert graph.get_group_details('group-4').get(AUDITED_GROUP)
 
     background = BackgroundProcessor(settings, None)
     background.promote_nonauditors(session)
@@ -372,3 +374,17 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
     background = BackgroundProcessor(settings, None)
     background.promote_nonauditors(session)
     assert mock_nnp.call_count == 0
+
+
+def test_get_auditors_group(session, standard_graph):
+    with patch('grouper.audit.get_auditors_group_name', return_value=None), \
+         pytest.raises(NoSuchGroup) as exc:
+        get_auditors_group(session)
+    assert exc.value.message == 'Please ask your admin to configure the default auditors group name'
+    with patch('grouper.audit.get_auditors_group_name', return_value='auditors'):
+        auditors_group = get_auditors_group(session)
+        assert auditors_group is not None
+    with patch('grouper.audit.get_auditors_group_name', return_value='do-not-exist'), \
+         pytest.raises(NoSuchGroup) as exc:
+        get_auditors_group(session)
+    assert exc.value.message == 'Please ask your admin to configure the default group for auditors'

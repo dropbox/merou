@@ -12,7 +12,7 @@ from fixtures import standard_graph, graph, users, groups, service_accounts, ses
 from fixtures import fe_app as app  # noqa
 from grouper.audit import (
     assert_can_join, assert_controllers_are_auditors, get_auditors_group, get_audits,
-    user_is_auditor, UserNotAuditor,
+    GroupDoesNotHaveAuditPermission, user_is_auditor, UserNotAuditor,
 )
 from grouper.background.background_processor import BackgroundProcessor
 from grouper.constants import AUDIT_MANAGER, AUDIT_VIEWER, PERMISSION_AUDITOR
@@ -20,6 +20,7 @@ from grouper.graph import NoSuchGroup
 from grouper.models.audit_log import AuditLogCategory, AuditLog
 from grouper.models.group import Group
 from grouper.models.permission import Permission
+from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
 from grouper.permissions import enable_permission_auditing
 from grouper.settings import settings
@@ -377,10 +378,19 @@ def test_get_auditors_group(session, standard_graph):
          pytest.raises(NoSuchGroup) as exc:
         get_auditors_group(session)
     assert exc.value.message == 'Please ask your admin to configure the default auditors group name'
-    with patch('grouper.audit.get_auditors_group_name', return_value='auditors'):
-        auditors_group = get_auditors_group(session)
-        assert auditors_group is not None
     with patch('grouper.audit.get_auditors_group_name', return_value='do-not-exist'), \
          pytest.raises(NoSuchGroup) as exc:
         get_auditors_group(session)
     assert exc.value.message == 'Please ask your admin to configure the default group for auditors'
+    with patch('grouper.audit.get_auditors_group_name', return_value='auditors'):
+        auditors_group = get_auditors_group(session)
+        assert auditors_group is not None
+    # revoke the permission and make sure we raise the
+    # GroupDoesNotHaveAuditPermission exception
+    perms = [p for p in auditors_group.my_permissions() if p.name == PERMISSION_AUDITOR]
+    assert len(perms) == 1
+    mapping = PermissionMap.get(session, id=perms[0].mapping_id)
+    mapping.delete(session)
+    with patch('grouper.audit.get_auditors_group_name', return_value='auditors'), \
+         pytest.raises(GroupDoesNotHaveAuditPermission):
+        get_auditors_group(session)

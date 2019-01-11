@@ -10,6 +10,10 @@ class UserNotAuditor(Exception):
     pass
 
 
+class GroupDoesNotHaveAuditPermission(Exception):
+    pass
+
+
 def user_is_auditor(username):
     """Check if a user is an auditor
 
@@ -143,22 +147,20 @@ def get_auditors_group(session):
 
     Return:
         Group object for the group for Grouper auditors, whose name is
-        specified with `auditors_group` settings. Note that the group
-        is NOT checked to make sure it has the PERMISSION_AUDITOR
-        permission.
+        specified with `auditors_group` settings.
 
     Raise:
         Raise NoSuchGroup exception if either the name for the
         auditors group is not configured, or the group does not exist
-        in the database.
-
+        in the database. Raise GroupDoesNotHaveAuditPermission if the group
+        does not actually have the PERMISSION_AUDITOR permission.
     """
     group_name = get_auditors_group_name(settings)
     if not group_name:
         raise NoSuchGroup('Please ask your admin to configure the default auditors group name')
-    auditors_group = Group.get(session, name=group_name)
-    if not auditors_group:
+    group = Group.get(session, name=group_name)
+    if not group:
         raise NoSuchGroup('Please ask your admin to configure the default group for auditors')
-    # maybe we can insist that the auditors group actually has the
-    # PERMISSION_AUDITOR, but doesn't seem a big deal to skip it.
-    return auditors_group
+    if not any([p.name == PERMISSION_AUDITOR for p in group.my_permissions()]):
+        raise GroupDoesNotHaveAuditPermission()
+    return group

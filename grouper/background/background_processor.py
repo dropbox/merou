@@ -100,7 +100,8 @@ class BackgroundProcessor(object):
         # user is a nonauditor approver
         nonauditor_approver_to_groups = defaultdict(set)  # type: Dict[User, Set[str]]
         # TODO(tyleromeara): replace with graph call
-        for group in get_audited_groups(session):
+        for group_tuple in graph.get_groups(audited=True, directly_audited=False):
+            group = Group.get(session, pk=group_tuple.id)
             members = group.my_members()
             # Go through every member of the group and add them to
             # auditors group if they are an approver but not an

@@ -14,11 +14,7 @@ from grouper.models.group import Group
 from grouper.models.permission import Permission
 from grouper.permissions import grant_permission
 from grouper.settings import settings
-from grouper.util import get_database_url
-
-
-def get_auditors_group_name(settings):
-    return settings.auditors_group
+from grouper.util import get_auditors_group_name, get_database_url
 
 
 def sync_db_command(args):

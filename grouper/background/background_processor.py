@@ -1,5 +1,6 @@
+from collections import defaultdict
 from contextlib import closing
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 import os
 from time import sleep
@@ -8,10 +9,11 @@ from typing import TYPE_CHECKING
 from sqlalchemy import and_
 
 from grouper import stats
+from grouper.audit import get_auditors_group
 from grouper.constants import PERMISSION_AUDITOR
 from grouper.email_util import (
     notify_edge_expiration,
-    notify_nonauditor_flagged,
+    notify_nonauditor_promoted,
     process_async_emails
 )
 from grouper.graph import Graph
@@ -29,6 +31,7 @@ from grouper.util import get_database_url
 if TYPE_CHECKING:
     from grouper.settings import Settings  # noqa: F401
     from grouper.error_reporting import SentryProxy  # noqa: F401
+    from typing import Dict, Set  # noqa: F401
 
 
 class BackgroundProcessor(object):
@@ -81,26 +84,27 @@ class BackgroundProcessor(object):
             edge.active = False
             session.commit()
 
-    def expire_nonauditors(self, session):
+    def promote_nonauditors(self, session):
         # type: (Session) -> None
         """Checks all enabled audited groups and ensures that all approvers for that group have
-        the PERMISSION_AUDITOR permission. All approvers of audited groups that aren't auditors
-        have their membership in the audited group set to expire
-        settings.nonauditor_expiration_days days in the future.
+        the PERMISSION_AUDITOR permission. All non-auditor approvers of audited groups will be
+        promoted to be auditors, i.e., added to the auditors group.
 
         Args:
             session (Session): database session
         """
-        now = datetime.utcnow()
         graph = Graph()
-        exp_days = timedelta(days=self.settings.nonauditor_expiration_days)
         # Hack to ensure the graph is loaded before we access it
         graph.update_from_db(session)
+        # map from user object to names of audited groups in which
+        # user is a nonauditor approver
+        nonauditor_approver_to_groups = defaultdict(set)  # type: Dict[User, Set[str]]
         # TODO(tyleromeara): replace with graph call
         for group in get_audited_groups(session):
             members = group.my_members()
-            # Go through every member of the group and set them to expire if they are an approver
-            # but not an auditor
+            # Go through every member of the group and add them to
+            # auditors group if they are an approver but not an
+            # auditor
             for (type_, member), edge in members.iteritems():
                 # Auditing is already inherited, so we don't need to handle that here
                 if type_ == "Group":
@@ -110,15 +114,17 @@ class BackgroundProcessor(object):
                 member_is_auditor = user_has_permission(session, member, PERMISSION_AUDITOR)
                 if not member_is_approver or member_is_auditor:
                     continue
-                edge = GroupEdge.get(session, id=edge.edge_id)
-                if edge.expiration and edge.expiration < now + exp_days:
-                    continue
-                exp = (now + exp_days).date()
-                edge.apply_changes(
-                    {"expiration": "{}/{}/{}".format(exp.month, exp.day, exp.year)}
-                )
-                edge.add(session)
-                notify_nonauditor_flagged(self.settings, session, edge)
+                nonauditor_approver_to_groups[member].add(group.groupname)
+
+        if nonauditor_approver_to_groups:
+            auditors_group = get_auditors_group(session)
+            for user, group_names in nonauditor_approver_to_groups.items():
+                reason = 'auto-added due to having approver role(s) in group(s): {}'.format(
+                    ', '.join(group_names))
+                auditors_group.add_member(user, user, reason, status="actioned")
+                notify_nonauditor_promoted(
+                    self.settings, session, user, auditors_group, group_names)
+
         session.commit()
 
     def run(self):
@@ -132,8 +138,8 @@ class BackgroundProcessor(object):
                     self.logger.info("Expiring edges....")
                     self.expire_edges(session)
 
-                    self.logger.info("Expiring nonauditor approvers in audited groups...")
-                    self.expire_nonauditors(session)
+                    self.logger.info("Promoting nonauditor approvers in audited groups...")
+                    self.promote_nonauditors(session)
 
                     self.logger.info("Sending emails...")
                     process_async_emails(self.settings, session, datetime.utcnow())

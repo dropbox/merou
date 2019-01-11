@@ -1,9 +1,16 @@
 from grouper.constants import PERMISSION_AUDITOR
-from grouper.graph import Graph
+from grouper.graph import Graph, NoSuchGroup
 from grouper.models.audit import Audit
+from grouper.models.group import Group
+from grouper.settings import settings
+from grouper.util import get_auditors_group_name
 
 
 class UserNotAuditor(Exception):
+    pass
+
+
+class GroupDoesNotHaveAuditPermission(Exception):
     pass
 
 
@@ -130,3 +137,30 @@ def get_audits(session, only_open):
         query = query.filter(Audit.complete == False)
 
     return query
+
+
+def get_auditors_group(session):
+    """Retrieve the group for auditors
+
+    Arg(s):
+        session (session): database session
+
+    Return:
+        Group object for the group for Grouper auditors, whose name is
+        specified with `auditors_group` settings.
+
+    Raise:
+        Raise NoSuchGroup exception if either the name for the
+        auditors group is not configured, or the group does not exist
+        in the database. Raise GroupDoesNotHaveAuditPermission if the group
+        does not actually have the PERMISSION_AUDITOR permission.
+    """
+    group_name = get_auditors_group_name(settings)
+    if not group_name:
+        raise NoSuchGroup('Please ask your admin to configure the default auditors group name')
+    group = Group.get(session, name=group_name)
+    if not group:
+        raise NoSuchGroup('Please ask your admin to configure the default group for auditors')
+    if not any([p.name == PERMISSION_AUDITOR for p in group.my_permissions()]):
+        raise GroupDoesNotHaveAuditPermission()
+    return group

@@ -296,3 +296,41 @@ def notify_nonauditor_flagged(settings, session, edge):
         settings=settings,
         context=email_context,
     )
+
+
+def notify_nonauditor_promoted(settings, session, user, auditors_group, group_names):
+    """Send notification that a nonauditor has been promoted to be an auditor
+
+    Handles email notification and audit logging.
+
+    Args:
+        settings (Settings): Grouper Settings object for current run.
+        session (Session): Object for db session.
+        user (User): The user that has been promoted.
+        auditors_group (Group): The auditors group
+        group_names (set of str): The audited groups in which the user was previsouly
+            a non-auditor approver.
+    """
+    member_name = user.username
+    recipients = [member_name]
+    auditors_group_name = auditors_group.groupname
+
+    audit_data = {
+        "action": "nonauditor_promoted",
+        "actor_id": user.id,
+        "description": "Added {} to group {}".format(member_name, auditors_group_name),
+    }
+    AuditLog.log(session, on_user_id=user.id, on_group_id=auditors_group.id, **audit_data)
+
+    email_context = {
+        "auditors_group_name": auditors_group_name,
+        "member_name": member_name,
+    }
+    send_email(
+        session=session,
+        recipients=recipients,
+        subject="Added as member to group \"{}\"".format(auditors_group_name),
+        template="nonauditor_promoted",
+        settings=settings,
+        context=email_context,
+    )

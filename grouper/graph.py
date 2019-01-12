@@ -467,7 +467,16 @@ class GroupGraph(object):
             return sorted(self.disabled_group_tuples.values(), key=lambda g: g.groupname)
 
     def get_groups(self, audited=False, directly_audited=False):
-        """ Get the list of groups as GroupTuple instances sorted by groupname. """
+        """Get the list of groups as GroupTuple instances sorted by groupname.
+
+        Arg(s):
+            audited (bool): true to get only audited groups
+            directly_audited (bool): true to get only directly audited
+                groups (implies `audited` is true)
+
+        Return:
+            List of GroupTuple
+        """
         if directly_audited:
             audited = True
         with self.lock:

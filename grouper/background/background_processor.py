@@ -102,10 +102,6 @@ class BackgroundProcessor(object):
         user_is_auditor = {}  # type: Dict[str, bool]
         for group_tuple in graph.get_groups(audited=True, directly_audited=False):
             group_md = graph.get_group_details(group_tuple.groupname, expose_aliases=False)
-            # members = group.my_members()
-            # # Go through every member of the group and add them to
-            # # auditors group if they are an approver but not an
-            # # auditor
             for username, user_md in group_md['users'].items():
                 if username not in user_is_auditor:
                     user_perms = graph.get_user_details(username)['permissions']

@@ -99,29 +99,32 @@ class BackgroundProcessor(object):
         # map from user object to names of audited groups in which
         # user is a nonauditor approver
         nonauditor_approver_to_groups = defaultdict(set)  # type: Dict[User, Set[str]]
-        # TODO(tyleromeara): replace with graph call
+        user_is_auditor = {}  # type: Dict[str, bool]
         for group_tuple in graph.get_groups(audited=True, directly_audited=False):
-            group = Group.get(session, pk=group_tuple.id)
-            members = group.my_members()
-            # Go through every member of the group and add them to
-            # auditors group if they are an approver but not an
-            # auditor
-            for (type_, member), edge in members.iteritems():
-                # Auditing is already inherited, so we don't need to handle that here
-                if type_ == "Group":
+            group_md = graph.get_group_details(group_tuple.groupname, expose_aliases=False)
+            # members = group.my_members()
+            # # Go through every member of the group and add them to
+            # # auditors group if they are an approver but not an
+            # # auditor
+            for username, user_md in group_md['users'].items():
+                if username not in user_is_auditor:
+                    user_perms = graph.get_user_details(username)['permissions']
+                    user_is_auditor[username] = any(
+                        [p['permission'] == PERMISSION_AUDITOR for p in user_perms])
+                if user_is_auditor[username]:
+                    # user is already auditor so can skip
                     continue
-                member = User.get(session, name=member)
-                member_is_approver = user_role_index(member, members) in APPROVER_ROLE_INDICES
-                member_is_auditor = user_has_permission(session, member, PERMISSION_AUDITOR)
-                if not member_is_approver or member_is_auditor:
+                member_is_approver = user_md['role'] in APPROVER_ROLE_INDICES
+                if not member_is_approver:
                     continue
-                nonauditor_approver_to_groups[member].add(group.groupname)
+                nonauditor_approver_to_groups[username].add(group_tuple.groupname)
 
         if nonauditor_approver_to_groups:
             auditors_group = get_auditors_group(session)
-            for user, group_names in nonauditor_approver_to_groups.items():
+            for username, group_names in nonauditor_approver_to_groups.items():
                 reason = 'auto-added due to having approver role(s) in group(s): {}'.format(
                     ', '.join(group_names))
+                user = User.get(session, name=username)
                 auditors_group.add_member(user, user, reason, status="actioned")
                 notify_nonauditor_promoted(
                     self.settings, session, user, auditors_group, group_names)

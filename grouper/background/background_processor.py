@@ -107,10 +107,9 @@ class BackgroundProcessor(object):
                 if user_is_auditor[username]:
                     # user is already auditor so can skip
                     continue
-                member_is_approver = user_md['role'] in APPROVER_ROLE_INDICES
-                if not member_is_approver:
-                    continue
-                nonauditor_approver_to_groups[username].add(group_tuple.groupname)
+                if user_md['role'] in APPROVER_ROLE_INDICES:
+                    # non-auditor approver. BAD!
+                    nonauditor_approver_to_groups[username].add(group_tuple.groupname)
 
         if nonauditor_approver_to_groups:
             auditors_group = get_auditors_group(session)

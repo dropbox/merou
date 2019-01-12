@@ -17,15 +17,12 @@ from grouper.email_util import (
     process_async_emails
 )
 from grouper.graph import Graph
-from grouper.group import get_audited_groups
 from grouper.models.base.session import Session
 from grouper.models.group import Group
 from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge
 from grouper.models.user import User
 from grouper.models.user_token import UserToken  # noqa: F401
 from grouper.perf_profile import prune_old_traces
-from grouper.user import user_role_index
-from grouper.user_permissions import user_has_permission
 from grouper.util import get_database_url
 
 if TYPE_CHECKING:

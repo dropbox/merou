@@ -2,7 +2,7 @@ import pytest
 
 from collections import namedtuple
 from datetime import datetime, timedelta
-from mock import call, patch
+from mock import call, patch, Mock
 from urllib import urlencode
 
 
@@ -374,23 +374,20 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
 
 
 def test_get_auditors_group(session, standard_graph):
-    with patch('grouper.audit.get_auditors_group_name', return_value=None), \
-         pytest.raises(NoSuchGroup) as exc:
-        get_auditors_group(session)
-    assert exc.value.message == 'Please ask your admin to configure the default auditors group name'
-    with patch('grouper.audit.get_auditors_group_name', return_value='do-not-exist'), \
-         pytest.raises(NoSuchGroup) as exc:
-        get_auditors_group(session)
+    with pytest.raises(NoSuchGroup) as exc:
+        get_auditors_group(Mock(auditors_group=None), session)
+    assert exc.value.message == 'Please ask your admin to configure the `auditors_group` settings'
+    with pytest.raises(NoSuchGroup) as exc:
+        get_auditors_group(Mock(auditors_group='do-not-exist'), session)
     assert exc.value.message == 'Please ask your admin to configure the default group for auditors'
-    with patch('grouper.audit.get_auditors_group_name', return_value='auditors'):
-        auditors_group = get_auditors_group(session)
-        assert auditors_group is not None
+    # now should be able to get the group
+    auditors_group = get_auditors_group(Mock(auditors_group='auditors'), session)
+    assert auditors_group is not None
     # revoke the permission and make sure we raise the
     # GroupDoesNotHaveAuditPermission exception
     perms = [p for p in auditors_group.my_permissions() if p.name == PERMISSION_AUDITOR]
     assert len(perms) == 1
     mapping = PermissionMap.get(session, id=perms[0].mapping_id)
     mapping.delete(session)
-    with patch('grouper.audit.get_auditors_group_name', return_value='auditors'), \
-         pytest.raises(GroupDoesNotHaveAuditPermission):
-        get_auditors_group(session)
+    with pytest.raises(GroupDoesNotHaveAuditPermission):
+        get_auditors_group(Mock(auditors_group='auditors'), session)

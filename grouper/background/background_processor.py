@@ -112,7 +112,7 @@ class BackgroundProcessor(object):
                     nonauditor_approver_to_groups[username].add(group_tuple.groupname)
 
         if nonauditor_approver_to_groups:
-            auditors_group = get_auditors_group(session)
+            auditors_group = get_auditors_group(self.settings, session)
             for username, group_names in nonauditor_approver_to_groups.items():
                 reason = 'auto-added due to having approver role(s) in group(s): {}'.format(
                     ', '.join(group_names))

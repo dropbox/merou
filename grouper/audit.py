@@ -2,7 +2,6 @@ from grouper.constants import PERMISSION_AUDITOR
 from grouper.graph import Graph, NoSuchGroup
 from grouper.models.audit import Audit
 from grouper.models.group import Group
-from grouper.settings import settings
 from grouper.util import get_auditors_group_name
 
 
@@ -139,10 +138,11 @@ def get_audits(session, only_open):
     return query
 
 
-def get_auditors_group(session):
+def get_auditors_group(settings, session):
     """Retrieve the group for auditors
 
     Arg(s):
+        settings (settings): settings, to get the `auditors_group` name
         session (session): database session
 
     Return:
@@ -157,7 +157,7 @@ def get_auditors_group(session):
     """
     group_name = get_auditors_group_name(settings)
     if not group_name:
-        raise NoSuchGroup('Please ask your admin to configure the default auditors group name')
+        raise NoSuchGroup('Please ask your admin to configure the `auditors_group` settings')
     group = Group.get(session, name=group_name)
     if not group:
         raise NoSuchGroup('Please ask your admin to configure the default group for auditors')

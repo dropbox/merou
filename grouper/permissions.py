@@ -289,7 +289,8 @@ def get_owners_by_grantable_permission(session, separate_global=False):
         {argument: [owner1, ...], }, } where 'owners' are models.Group objects.
         And 'argument' can be '*' which means 'anything'.
     """
-    all_permissions = {permission.name: permission for permission in get_all_enabled_permissions(session)}
+    all_permissions = {permission.name: permission
+                       for permission in get_all_enabled_permissions(session)}
     all_groups = session.query(Group).filter(Group.enabled == True).all()
 
     owners_by_arg_by_perm = defaultdict(lambda: defaultdict(list))

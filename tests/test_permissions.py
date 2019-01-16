@@ -540,3 +540,22 @@ def test_disabling_permission(session, groups, standard_graph, http_client, base
         yield http_client.fetch(
             disable_url_non_exist_perm, method="POST", headers=priv_headers, body="")
     assert exc.value.code == 404
+
+    #
+    # make sure that when disabling the permission, all mappings of
+    # it, i.e., with different arguments, are disabled
+    #
+
+    # the standard_graph grants 'ssh' with args '*' and 'shell' to two
+    # different groups
+    assert "ssh:*" in get_group_permissions(graph, "team-sre")
+    assert "ssh:shell" in get_group_permissions(graph, "tech-ops")
+    # disable the perm
+    disable_url_ssh_pem = url(base_url, '/permissions/ssh/disable')
+    resp = yield http_client.fetch(
+        disable_url_ssh_pem, method="POST", headers=priv_headers, body="")
+    assert resp.code == 200
+    assert not Permission.get(session, name="ssh").enabled
+    graph.update_from_db(session)
+    assert not "ssh:*" in get_group_permissions(graph, "team-sre")
+    assert not "ssh:shell" in get_group_permissions(graph, "tech-ops")

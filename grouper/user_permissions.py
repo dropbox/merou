@@ -13,6 +13,8 @@ from grouper.models.permission_map import PermissionMap
 def user_has_permission(session, user, permission, argument=None):
     """See if this user has a given permission/argument
 
+    NOTE: only enabled permissions are considered.
+
     This walks a user's permissions (local/direct only) and determines if they have the given
     permission. If an argument is specified, we validate if they have exactly that argument
     or if they have the wildcard ('*') argument.
@@ -35,6 +37,7 @@ def user_has_permission(session, user, permission, argument=None):
 
 
 def user_permissions(session, user):
+    """Return a user's enabled permissions"""
 
     # TODO: Make this walk the tree, so we can get a user's entire set of permissions.
     now = datetime.utcnow()
@@ -52,6 +55,7 @@ def user_permissions(session, user):
         GroupEdge.active == True,
         user.enabled == True,
         Group.enabled == True,
+        Permission.enabled == True,
         or_(
             GroupEdge.expiration > now,
             GroupEdge.expiration == None

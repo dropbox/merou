@@ -26,6 +26,7 @@ class Permission(Model):
     description = Column(Text, nullable=False)
     created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
     _audited = Column('audited', Boolean, default=False, nullable=False)
+    enabled = Column('enabled', Boolean, default=True, nullable=False)
 
     @staticmethod
     def get(session, name=None):

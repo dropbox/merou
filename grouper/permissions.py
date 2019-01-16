@@ -134,6 +134,24 @@ def grant_permission_to_tag(session, tag_id, permission_id, argument=''):
     return True
 
 
+def disable_permission(session, permission_name, actor_user_id):
+    """Set a permission as disabled.
+
+    Args:
+        session(models.base.session.Session): database session
+        permission_name(str): name of permission in question
+        actor_user_id(int): id of user who is disabling the permission
+    """
+    permission = Permission.get(session, permission_name)
+    if not permission:
+        raise NoSuchPermission(name=permission_name)
+    permission.enabled = False
+    AuditLog.log(session, actor_user_id, 'disable_permission', 'Disabled permission.',
+            on_permission_id=permission.id)
+    Counter.incr(session, "updates")
+    session.commit()
+
+
 def enable_permission_auditing(session, permission_name, actor_user_id):
     """Set a permission as audited.
 
@@ -271,6 +289,7 @@ def get_owners_by_grantable_permission(session, separate_global=False):
             PermissionMap.granted_on,
             Group,
     ).filter(
+            Permission.enabled == True,
             PermissionMap.group_id == Group.id,
             Permission.id == PermissionMap.permission_id,
     ).all()
@@ -385,6 +404,15 @@ class NoOwnersAvailable(PermissionRequestException):
 
 class RequestAlreadyGranted(PermissionRequestException):
     """Group already has requested permission + argument pair."""
+
+
+# hmm maybe don't need this. people can do things to the permission,
+# e.g., grant it to groups, request grants for it, revoke it from
+# groups, etc. and we kind of don't care, as long as the permission's
+# disabled state prevents it from being used, which is the important
+# bit
+class PermissionIsDisabled(PermissionRequestException):
+    """Trying to operate on a permission that is disabled."""
 
 
 def create_request(session, user, group, permission, argument, reason):

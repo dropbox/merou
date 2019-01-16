@@ -25,6 +25,7 @@ from grouper.models.service_account import ServiceAccount
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
 from grouper.permissions import (
+        disable_permission,
         get_grantable_permissions,
         get_owner_arg_list,
         get_owners_by_grantable_permission,
@@ -491,3 +492,49 @@ def test_grant_and_revoke(session, standard_graph, graph, groups, permissions,
 
     graph.update_from_db(session)
     assert not _check_graph_for_perm(graph), "permissions revoked successfully"
+
+
+@pytest.mark.gen_test
+def test_disabling_permission(session, groups, standard_graph, http_client, base_url):
+    perm_name = 'sudo'
+    nonpriv_user_name = 'oliver@a.co' # user without PERMISSION_ADMIN
+    nonpriv_headers = {'X-Grouper-User': nonpriv_user_name}
+    priv_user_name = 'cbguder@a.co' # user with PERMISSION_ADMIN
+    priv_headers = {'X-Grouper-User': priv_user_name}
+    disable_url = url(base_url, '/permissions/{}/disable'.format(perm_name))
+
+    graph = standard_graph
+
+    perm_admin, _ = Permission.get_or_create(session, name=PERMISSION_ADMIN, description="")
+    session.commit()
+    # overload `group-admins` for also permission admin
+    grant_permission(groups["group-admins"], perm_admin)
+
+    assert Permission.get(session, name=perm_name).enabled
+    assert 'sudo:shell' in get_user_permissions(graph, 'gary@a.co')
+    assert 'sudo:shell' in get_user_permissions(graph, 'oliver@a.co')
+
+    # attempt to disable the permission -> should fail cuz actor
+    # doesn't have PERMISSION_ADMIN
+    with pytest.raises(HTTPError) as exc:
+        yield http_client.fetch(disable_url, method="POST", headers=nonpriv_headers, body="")
+    assert exc.value.code == 403
+    # check that no change
+    assert Permission.get(session, name=perm_name).enabled
+    graph.update_from_db(session)
+    assert 'sudo:shell' in get_user_permissions(graph, 'gary@a.co')
+    assert 'sudo:shell' in get_user_permissions(graph, 'oliver@a.co')
+
+    # an actor with PERMISSION_ADMIN is allowed to disable the
+    # permission
+    resp = yield http_client.fetch(disable_url, method="POST", headers=priv_headers, body="")
+    assert resp.code == 200
+    assert not Permission.get(session, name=perm_name).enabled
+    graph.update_from_db(session)
+    assert not 'sudo:shell' in get_user_permissions(graph, 'gary@a.co')
+    assert not 'sudo:shell' in get_user_permissions(graph, 'oliver@a.co')
+
+    with pytest.raises(HTTPError) as exc:
+        yield http_client.fetch(
+            url(base_url, '/permissions/no.exists/disable'), method="POST", headers=priv_headers, body="")
+    assert exc.value.code == 404

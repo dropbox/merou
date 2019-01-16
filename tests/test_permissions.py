@@ -26,6 +26,7 @@ from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
 from grouper.permissions import (
         disable_permission,
+        get_all_enabled_permissions,
         get_grantable_permissions,
         get_owner_arg_list,
         get_owners_by_grantable_permission,
@@ -235,7 +236,7 @@ def test_permission_grant_to_owners(session, standard_graph, groups, grantable_p
     grant_permission(groups["security-team"], perm_admin)
 
     owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
-    all_permissions = Permission.get_all(session)
+    all_permissions = get_all_enabled_permissions(session)
     for perm in all_permissions:
         assert perm.name in owners_by_arg_by_perm, 'all permission should be represented'
         assert groups["security-team"] in owners_by_arg_by_perm[perm.name]["*"], \
@@ -502,6 +503,7 @@ def test_disabling_permission(session, groups, standard_graph, http_client, base
     priv_user_name = 'cbguder@a.co' # user with PERMISSION_ADMIN
     priv_headers = {'X-Grouper-User': priv_user_name}
     disable_url = url(base_url, '/permissions/{}/disable'.format(perm_name))
+    disable_url_non_exist_perm = url(base_url, '/permissions/no.exists/disable')
 
     graph = standard_graph
 
@@ -536,5 +538,5 @@ def test_disabling_permission(session, groups, standard_graph, http_client, base
 
     with pytest.raises(HTTPError) as exc:
         yield http_client.fetch(
-            url(base_url, '/permissions/no.exists/disable'), method="POST", headers=priv_headers, body="")
+            disable_url_non_exist_perm, method="POST", headers=priv_headers, body="")
     assert exc.value.code == 404

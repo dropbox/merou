@@ -3,6 +3,7 @@ from datetime import datetime
 import re
 from typing import TYPE_CHECKING
 
+from sqlalchemy import asc
 from sqlalchemy.exc import IntegrityError
 
 from grouper.audit import assert_controllers_are_auditors
@@ -48,6 +49,16 @@ class NoSuchPermission(Exception):
     def __init__(self, name):
         # type: (str) -> None
         self.name = name
+
+
+def get_all_enabled_permissions(session):
+    # type: (Session) -> List[Permission]
+    return session.query(Permission).filter(Permission.enabled == True).order_by(asc("name")).all()
+
+
+def get_all_permissions(session):
+    # type: (Session) -> List[Permission]
+    return session.query(Permission).order_by(asc("name")).all()
 
 
 def grant_permission(session, group_id, permission_id, argument=''):
@@ -245,7 +256,7 @@ def filter_grantable_permissions(session, grants, all_permissions=None):
 
     if all_permissions is None:
         all_permissions = {permission.name: permission for permission in
-                Permission.get_all(session)}
+                get_all_enabled_permissions(session)}
 
     result = []
     for grant in grants:
@@ -278,7 +289,7 @@ def get_owners_by_grantable_permission(session, separate_global=False):
         {argument: [owner1, ...], }, } where 'owners' are models.Group objects.
         And 'argument' can be '*' which means 'anything'.
     """
-    all_permissions = {permission.name: permission for permission in Permission.get_all(session)}
+    all_permissions = {permission.name: permission for permission in get_all_enabled_permissions(session)}
     all_groups = session.query(Group).filter(Group.enabled == True).all()
 
     owners_by_arg_by_perm = defaultdict(lambda: defaultdict(list))

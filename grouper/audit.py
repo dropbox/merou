@@ -155,6 +155,8 @@ def get_auditors_group(settings, session):
         in the database. Raise GroupDoesNotHaveAuditPermission if the group
         does not actually have the PERMISSION_AUDITOR permission.
     """
+    # TODO: switch to exc.NoSuchGroup to remove one source dependency
+    # on graph.py
     group_name = get_auditors_group_name(settings)
     if not group_name:
         raise NoSuchGroup('Please ask your admin to configure the `auditors_group` settings')

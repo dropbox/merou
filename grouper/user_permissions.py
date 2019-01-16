@@ -79,10 +79,10 @@ def user_grantable_permissions(session, user):
     Returns a list of tuples (Permission, argument) that the user is allowed to grant.
     '''
     # avoid circular dependency
-    from grouper.permissions import filter_grantable_permissions
+    from grouper.permissions import filter_grantable_permissions, get_all_enabled_permissions
 
     all_permissions = {permission.name: permission
-                       for permission in Permission.get_all(session)}
+                       for permission in get_all_enabled_permissions(session)}
     if user_is_permission_admin(session, user):
         result = [(perm, '*') for perm in all_permissions.values()]
         return sorted(result, key=lambda x: x[0].name + x[1])

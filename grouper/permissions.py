@@ -27,7 +27,7 @@ from grouper.user_group import get_groups_by_user
 from grouper.util import matches_glob
 
 if TYPE_CHECKING:
-    from typing import Dict, List, Set, TYPE_CHECKING  # noqa
+    from typing import Dict, List, Optional, Set  # noqa
     from grouper.models.base.session import Session  # noqa
 
 # Singleton
@@ -63,7 +63,7 @@ def create_permission(session, name, description):
     Returns:
         The created permission that has been added to the session
     """
-    permission = Permission(session, name=name, description=description)
+    permission = Permission(name=name, description=description)
     permission.add(session)
     return permission
 
@@ -259,8 +259,8 @@ def disable_permission_auditing(session, permission_name, actor_user_id):
 
 
 def get_groups_by_permission(session, permission):
-    """For a given permission, return the groups and associated arguments that
-    have that permission.
+    """For an enabled permission, return the groups and associated arguments that
+    have that permission. If the permission is disabled, return empty list.
 
     Args:
         session(models.base.session.Session): database session

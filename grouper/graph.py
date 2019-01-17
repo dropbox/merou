@@ -258,11 +258,10 @@ class GroupGraph(object):
         '''
         Returns a set of PermissionTuple instances.
         '''
+        # TODO: import here to avoid circular dependency
+        from grouper.permissions import get_all_enabled_permissions
         out = set()
-        permissions = (
-            session.query(Permission)
-            .order_by(Permission.name)
-        )
+        permissions = get_all_enabled_permissions(session)
         for permission in permissions:
             out.add(PermissionTuple(
                 id=permission.id,

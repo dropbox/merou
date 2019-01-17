@@ -15,12 +15,12 @@ class PermissionView(GrouperHandler):
             return self.notfound()
 
         can_change_audit_status = user_is_permission_admin(self.session, self.current_user)
-        can_delete = user_is_permission_admin(self.session, self.current_user)
+        can_disable = user_is_permission_admin(self.session, self.current_user)
         mapped_groups = get_groups_by_permission(self.session, permission)
         log_entries = get_log_entries_by_permission(self.session, permission)
 
         self.render(
-            "permission.html", permission=permission, can_delete=can_delete,
+            "permission.html", permission=permission, can_disable=can_disable,
             mapped_groups=mapped_groups, log_entries=log_entries,
             can_change_audit_status=can_change_audit_status,
         )

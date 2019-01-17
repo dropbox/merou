@@ -213,11 +213,13 @@ def get_groups_by_permission(session, permission):
 
     Args:
         session(models.base.session.Session): database session
-        permission_name(Permission): permission in question
+        permission(models.Permission): permission in question
 
     Returns:
         List of 2-tuple of the form (Group, argument).
     """
+    if not permission.enabled:
+        return []
     return session.query(
         Group.groupname,
         PermissionMap.argument,
@@ -301,9 +303,9 @@ def get_owners_by_grantable_permission(session, separate_global=False):
             PermissionMap.granted_on,
             Group,
     ).filter(
-            Permission.enabled == True,
             PermissionMap.group_id == Group.id,
             Permission.id == PermissionMap.permission_id,
+            Permission.enabled == True,
     ).all()
 
     grants_by_group = defaultdict(list)

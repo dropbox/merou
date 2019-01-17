@@ -99,7 +99,7 @@ def get_all_permissions(session):
 
 
 def get_permission(session, name):
-    # type: (Session) -> Optional[Permission]
+    # type: (Session, str) -> Optional[Permission]
     """Get a permission
 
     Arg(s):

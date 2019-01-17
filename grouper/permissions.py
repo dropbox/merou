@@ -51,6 +51,23 @@ class NoSuchPermission(Exception):
         self.name = name
 
 
+def create_permission(session, name, description):
+    # type: (Session, str, str) -> Permission
+    """Create and add a new permission to database
+
+    Arg(s):
+        session(models.base.session.Session): database session
+        name(str): the name of the permission
+        description(str): the description of the permission
+
+    Returns:
+        The created permission that has been added to the session
+    """
+    permission = Permission(session, name=name, description=description)
+    permission.add(session)
+    return permission
+
+
 def get_all_enabled_permissions(session):
     # type: (Session) -> List[Permission]
     """Get all enabled permissions
@@ -61,7 +78,11 @@ def get_all_enabled_permissions(session):
     Returns:
         List of all enabled permissions, sorted by ascending permission name
     """
-    return session.query(Permission).filter(Permission.enabled == True).order_by(asc(Permission.name)).all()
+    return session.query(
+        Permission,
+    ).filter(
+        Permission.enabled == True,
+    ).order_by(asc(Permission.name)).all()
 
 
 def get_all_permissions(session):

@@ -1,15 +1,12 @@
 from grouper.constants import PERMISSION_AUDITOR, PERMISSION_CREATE, PERMISSION_GRANT, TAG_EDIT
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.models.permission import Permission
+from grouper.permissions import get_all_enabled_permissions
 
 
 class Help(GrouperHandler):
     def get(self):
-        permissions = (
-            self.session.query(Permission)
-            .order_by(Permission.name)
-        )
+        permissions = get_all_enabled_permissions(self.session)
         d = {permission.name: permission for permission in permissions}
 
         self.render("help.html",

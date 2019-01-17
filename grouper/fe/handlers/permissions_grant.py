@@ -5,8 +5,7 @@ from grouper.fe.forms import PermissionGrantForm
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
-from grouper.models.permission import Permission
-from grouper.permissions import grant_permission
+from grouper.permissions import get_permission, grant_permission
 from grouper.user_permissions import user_grantable_permissions
 from grouper.util import matches_glob
 
@@ -52,7 +51,7 @@ class PermissionsGrant(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors)
             )
 
-        permission = Permission.get(self.session, form.data["permission"])
+        permission = get_permission(self.session, form.data["permission"])
         if not permission:
             return self.notfound()  # Shouldn't happen.
 

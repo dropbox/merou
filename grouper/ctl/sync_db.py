@@ -12,7 +12,7 @@ from grouper.models.base.model_base import Model
 from grouper.models.base.session import get_db_engine
 from grouper.models.group import Group
 from grouper.models.permission import Permission
-from grouper.permissions import grant_permission
+from grouper.permissions import get_permission, grant_permission
 from grouper.settings import settings
 from grouper.util import get_auditors_group_name, get_database_url
 
@@ -29,7 +29,7 @@ def sync_db_command(args):
     session = make_session()
 
     for name, description in SYSTEM_PERMISSIONS:
-        test = Permission.get(session, name)
+        test = get_permission(session, name)
         if test:
             continue
         permission = Permission(name=name, description=description)
@@ -58,7 +58,7 @@ def sync_db_command(args):
             raise Exception('Failed to create group: grouper-administrators')
 
         for permission_name in (GROUP_ADMIN, PERMISSION_ADMIN, USER_ADMIN):
-            permission = Permission.get(session, permission_name)
+            permission = get_permission(session, permission_name)
             assert permission, "Permission should have been created earlier!"
             grant_permission(session, admin_group.id, permission.id)
 
@@ -80,7 +80,7 @@ def sync_db_command(args):
             session.rollback()
             raise Exception('Failed to create group: {}'.format(auditors_group_name))
 
-        permission = Permission.get(session, PERMISSION_AUDITOR)
+        permission = get_permission(session, PERMISSION_AUDITOR)
         assert permission, "Permission should have been created earlier!"
         grant_permission(session, auditors_group.id, permission.id)
 

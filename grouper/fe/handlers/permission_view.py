@@ -1,13 +1,16 @@
 from grouper.fe.util import GrouperHandler
-from grouper.models.permission import Permission
-from grouper.permissions import get_groups_by_permission, get_log_entries_by_permission
+from grouper.permissions import (
+    get_groups_by_permission,
+    get_log_entries_by_permission,
+    get_permission,
+)
 from grouper.user_permissions import user_is_permission_admin
 
 
 class PermissionView(GrouperHandler):
     def get(self, name=None):
         # TODO: use cached data instead, add refresh to appropriate redirects.
-        permission = Permission.get(self.session, name)
+        permission = get_permission(self.session, name)
         if not permission:
             return self.notfound()
 

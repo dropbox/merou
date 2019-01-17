@@ -1,7 +1,7 @@
 from grouper.constants import TAG_EDIT
 from grouper.fe.util import GrouperHandler
-from grouper.models.permission import Permission
 from grouper.models.public_key_tag import PublicKeyTag
+from grouper.permissions import get_all_enabled_permissions
 from grouper.public_key import get_public_key_tag_permissions
 from grouper.user_permissions import user_has_permission
 
@@ -16,7 +16,7 @@ class TagView(GrouperHandler):
         permissions = get_public_key_tag_permissions(self.session, tag)
         log_entries = tag.my_log_entries()
         is_owner = user_has_permission(self.session, self.current_user, TAG_EDIT, tag.name)
-        can_grant = self.session.query(Permission).all() if is_owner else []
+        can_grant = get_all_enabled_permissions(self.session) if is_owner else []
 
         self.render(
             "tag.html", tag=tag, permissions=permissions, can_grant=can_grant,

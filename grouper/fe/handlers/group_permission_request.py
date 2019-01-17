@@ -6,8 +6,7 @@ from grouper.fe.forms import GroupPermissionRequestDropdownForm, GroupPermission
 from grouper.fe.settings import settings
 from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.group import Group
-from grouper.models.permission import Permission
-from grouper.permissions import get_grantable_permissions
+from grouper.permissions import get_grantable_permissions, get_permission
 
 
 class GroupPermissionRequest(GrouperHandler):
@@ -78,7 +77,7 @@ class GroupPermissionRequest(GrouperHandler):
                     text_help=settings.permission_request_text_help,
                     )
 
-        permission = Permission.get(self.session, form.permission_name.data)
+        permission = get_permission(self.session, form.permission_name.data)
         assert permission is not None, "our prefilled permission should exist or we have problems"
 
         # save off request

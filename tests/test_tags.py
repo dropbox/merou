@@ -13,7 +13,7 @@ from grouper.models.permission import Permission
 from grouper.models.public_key import PublicKey
 from grouper.models.public_key_tag import PublicKeyTag
 from grouper.models.user import User
-from grouper.permissions import permission_intersection
+from grouper.permissions import get_permission, permission_intersection
 from grouper.public_key import get_public_key_permissions, get_public_key_tag_permissions, get_public_key_tags
 from grouper.user_permissions import user_permissions
 from url_util import url
@@ -256,7 +256,8 @@ def test_grant_permission_to_tag(users, http_client, base_url, session):
     perm.add(session)
     session.commit()
 
-    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(), session.query(Permission).filter_by(name=TAG_EDIT).scalar(), "*")
+    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(),
+                     get_permission(session, TAG_EDIT), "*")
 
     fe_url = url(base_url, '/tags')
     resp = yield http_client.fetch(fe_url, method="POST",
@@ -274,7 +275,7 @@ def test_grant_permission_to_tag(users, http_client, base_url, session):
 
     assert resp.code == 200
     tag = PublicKeyTag.get(session, name="tyler_was_here")
-    perm = Permission.get(session, TAG_EDIT)
+    perm = get_permission(session, TAG_EDIT)
     assert len(get_public_key_tag_permissions(session, tag)) == 1, "The tag should have exactly 1 permission"
     assert get_public_key_tag_permissions(session, tag)[0].name == perm.name, "The tag's permission should be the one we added"
     assert get_public_key_tag_permissions(session, tag)[0].argument == "*", "The tag's permission should be the one we added"
@@ -428,7 +429,7 @@ def test_revoke_permission_from_tag(users, http_client, base_url, session):
 
     assert resp.code == 200
     tag = PublicKeyTag.get(session, name="tyler_was_here")
-    perm = Permission.get(session, TAG_EDIT)
+    perm = get_permission(session, TAG_EDIT)
     assert len(get_public_key_tag_permissions(session, tag)) == 1, "The tag should have exactly 1 permission"
 
     user = session.query(User).filter_by(username="testuser@a.co").scalar()

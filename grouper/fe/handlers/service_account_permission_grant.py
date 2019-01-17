@@ -5,9 +5,8 @@ from grouper.fe.forms import ServiceAccountPermissionGrantForm
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
-from grouper.models.permission import Permission
 from grouper.models.service_account import ServiceAccount
-from grouper.permissions import grant_permission_to_service_account
+from grouper.permissions import get_permission, grant_permission_to_service_account
 from grouper.service_account import can_manage_service_account
 from grouper.user_permissions import user_has_permission
 from grouper.util import matches_glob
@@ -73,7 +72,7 @@ class ServiceAccountPermissionGrant(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors)
             )
 
-        permission = Permission.get(self.session, form.data["permission"])
+        permission = get_permission(self.session, form.data["permission"])
         if not permission:
             return self.notfound()
 

@@ -53,12 +53,42 @@ class NoSuchPermission(Exception):
 
 def get_all_enabled_permissions(session):
     # type: (Session) -> List[Permission]
-    return session.query(Permission).filter(Permission.enabled == True).order_by(asc("name")).all()
+    """Get all enabled permissions
+
+    Arg(s):
+        session(models.base.session.Session): database session
+
+    Returns:
+        List of all enabled permissions, sorted by ascending permission name
+    """
+    return session.query(Permission).filter(Permission.enabled == True).order_by(asc(Permission.name)).all()
 
 
 def get_all_permissions(session):
     # type: (Session) -> List[Permission]
-    return session.query(Permission).order_by(asc("name")).all()
+    """Get all permissions, enabled or disabled
+
+    Arg(s):
+        session(models.base.session.Session): database session
+
+    Returns:
+        List of all permissions---enabled or not---sorted by ascending permission name
+    """
+    return session.query(Permission).order_by(asc(Permission.name)).all()
+
+
+def get_permission(session, name):
+    # type: (Session) -> Optional[Permission]
+    """Get a permission
+
+    Arg(s):
+        session(models.base.session.Session): database session
+        name(str): the name of the permission
+
+    Returns:
+        The permission if found, None otherwise
+    """
+    return Permission.get(session, name=name)
 
 
 def grant_permission(session, group_id, permission_id, argument=''):
@@ -153,7 +183,7 @@ def disable_permission(session, permission_name, actor_user_id):
         permission_name(str): name of permission in question
         actor_user_id(int): id of user who is disabling the permission
     """
-    permission = Permission.get(session, permission_name)
+    permission = get_permission(session, permission_name)
     if not permission:
         raise NoSuchPermission(name=permission_name)
     permission.enabled = False
@@ -171,7 +201,7 @@ def enable_permission_auditing(session, permission_name, actor_user_id):
         permission_name(str): name of permission in question
         actor_user_id(int): id of user who is enabling auditing
     """
-    permission = Permission.get(session, permission_name)
+    permission = get_permission(session, permission_name)
     if not permission:
         raise NoSuchPermission(name=permission_name)
 
@@ -193,7 +223,7 @@ def disable_permission_auditing(session, permission_name, actor_user_id):
         permission_name(str): name of permission in question
         actor_user_id(int): id of user who is disabling auditing
     """
-    permission = Permission.get(session, permission_name)
+    permission = get_permission(session, permission_name)
     if not permission:
         raise NoSuchPermission(name=permission_name)
 

@@ -3,7 +3,7 @@ from grouper.fe.forms import PermissionGrantTagForm
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.public_key_tag import PublicKeyTag
-from grouper.permissions import get_all_enabled_permissions, get_permission, grant_permission_to_tag
+from grouper.permissions import get_all_permissions, get_permission, grant_permission_to_tag
 from grouper.user_permissions import user_has_permission
 
 
@@ -19,7 +19,7 @@ class PermissionsGrantTag(GrouperHandler):
         form = PermissionGrantTagForm()
         form.permission.choices = [["", "(select one)"]]
 
-        for perm in get_all_enabled_permissions(self.session):
+        for perm in get_all_permissions(self.session):
             form.permission.choices.append([perm.name, "{} (*)".format(perm.name)])
 
         return self.render(
@@ -37,7 +37,7 @@ class PermissionsGrantTag(GrouperHandler):
         form = PermissionGrantTagForm(self.request.arguments)
         form.permission.choices = [["", "(select one)"]]
 
-        for perm in get_all_enabled_permissions(self.session):
+        for perm in get_all_permissions(self.session):
             form.permission.choices.append([perm.name, "{} (*)".format(perm.name)])
 
         if not form.validate():

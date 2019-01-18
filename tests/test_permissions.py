@@ -30,7 +30,6 @@ from grouper.permissions import (
         create_permission,
         disable_permission,
         filter_grantable_permissions,
-        get_all_enabled_permissions,
         get_all_permissions,
         get_grantable_permissions,
         get_groups_by_permission,
@@ -247,7 +246,7 @@ def test_permission_grant_to_owners(session, standard_graph, groups, grantable_p
     grant_permission(groups["security-team"], perm_admin)
 
     owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
-    all_permissions = get_all_enabled_permissions(session)
+    all_permissions = get_all_permissions(session)
     for perm in all_permissions:
         assert perm.name in owners_by_arg_by_perm, 'all permission should be represented'
         assert groups["security-team"] in owners_by_arg_by_perm[perm.name]["*"], \
@@ -601,8 +600,9 @@ def test_exclude_inactive_permissions(
     grant_perms = [x for x in user_permissions(session, users['cbguder@a.co'])
                    if x.name == PERMISSION_GRANT]
     assert 'ssh' == filter_grantable_permissions(session, grant_perms)[0][0].name
-    assert "ssh" in (p.name for p in get_all_enabled_permissions(session))
     assert "ssh" in (p.name for p in get_all_permissions(session))
+    assert "ssh" in (p.name for p in get_all_permissions(session, include_disabled=False))
+    assert "ssh" in (p.name for p in get_all_permissions(session, include_disabled=True))
     assert "ssh" in get_grantable_permissions(session, [])
     assert "team-sre" in [g[0] for g in get_groups_by_permission(session, perm_ssh)]
     assert get_owner_arg_list(session, perm_ssh, "*")
@@ -617,8 +617,9 @@ def test_exclude_inactive_permissions(
     grant_perms = [x for x in user_permissions(session, users['cbguder@a.co'])
                    if x.name == PERMISSION_GRANT]
     assert not filter_grantable_permissions(session, grant_perms)
-    assert not "ssh" in (p.name for p in get_all_enabled_permissions(session))
-    assert "ssh" in (p.name for p in get_all_permissions(session))
+    assert not "ssh" in (p.name for p in get_all_permissions(session))
+    assert not "ssh" in (p.name for p in get_all_permissions(session, include_disabled=False))
+    assert "ssh" in (p.name for p in get_all_permissions(session, include_disabled=True))
     assert not "ssh" in get_grantable_permissions(session, [])
     assert not get_groups_by_permission(session, perm_ssh)
     assert not get_owner_arg_list(session, perm_ssh, "*")

@@ -85,34 +85,23 @@ def create_permission(session, name, description=''):
     return permission
 
 
-def get_all_enabled_permissions(session):
+def get_all_permissions(session, include_disabled=False):
     # type: (Session) -> List[Permission]
-    """Get all enabled permissions
+    """Get permissions that exist in the database, either only enabled
+    permissions, or both enabled and disabled ones
 
     Arg(s):
         session(models.base.session.Session): database session
+        include_disabled(bool): True to include also disabled
+            permissions. Make sure you really want this.
 
     Returns:
-        List of all enabled permissions, sorted by ascending permission name
+        List of permissions
     """
-    return session.query(
-        Permission,
-    ).filter(
-        Permission.enabled == True,
-    ).order_by(asc(Permission.name)).all()
-
-
-def get_all_permissions(session):
-    # type: (Session) -> List[Permission]
-    """Get all permissions, enabled or disabled
-
-    Arg(s):
-        session(models.base.session.Session): database session
-
-    Returns:
-        List of all permissions---enabled or not---sorted by ascending permission name
-    """
-    return session.query(Permission).order_by(asc(Permission.name)).all()
+    query = session.query(Permission)
+    if not include_disabled:
+        query = query.filter(Permission.enabled == True)
+    return query.order_by(asc(Permission.name)).all()
 
 
 def get_permission(session, name):
@@ -348,7 +337,7 @@ def filter_grantable_permissions(session, grants, all_permissions=None):
 
     if all_permissions is None:
         all_permissions = {permission.name: permission for permission in
-                get_all_enabled_permissions(session)}
+                get_all_permissions(session)}
 
     result = []
     for grant in grants:
@@ -382,7 +371,7 @@ def get_owners_by_grantable_permission(session, separate_global=False):
         And 'argument' can be '*' which means 'anything'.
     """
     all_permissions = {permission.name: permission
-                       for permission in get_all_enabled_permissions(session)}
+                       for permission in get_all_permissions(session)}
     all_groups = session.query(Group).filter(Group.enabled == True).all()
 
     owners_by_arg_by_perm = defaultdict(lambda: defaultdict(list))

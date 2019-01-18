@@ -86,7 +86,7 @@ def create_permission(session, name, description=''):
 
 
 def get_all_permissions(session, include_disabled=False):
-    # type: (Session) -> List[Permission]
+    # type: (Session, Optional[bool]) -> List[Permission]
     """Get permissions that exist in the database, either only enabled
     permissions, or both enabled and disabled ones
 

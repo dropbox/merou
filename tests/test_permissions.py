@@ -42,10 +42,10 @@ from util import get_group_permissions, get_user_permissions, grant_permission
 
 @pytest.fixture
 def grantable_permissions(session, standard_graph):
-    perm_grant = create_permission(session, PERMISSION_GRANT, "")
-    perm0 = create_permission(session, "grantable", "")
-    perm1 = create_permission(session, "grantable.one", "")
-    perm2 = create_permission(session, "grantable.two", "")
+    perm_grant = create_permission(session, PERMISSION_GRANT)
+    perm0 = create_permission(session, "grantable")
+    perm1 = create_permission(session, "grantable.one")
+    perm2 = create_permission(session, "grantable.two")
     session.commit()
 
     return perm_grant, perm0, perm1, perm2
@@ -232,7 +232,7 @@ def test_permission_grant_to_owners(session, standard_graph, groups, grantable_p
     assert sorted(res) == [groups["all-teams"]], "negative test of substring wildcard matches"
 
     # permission admins have all the power
-    perm_admin = create_permission(session, PERMISSION_ADMIN, "")
+    perm_admin = create_permission(session, PERMISSION_ADMIN)
     session.commit()
     grant_permission(groups["security-team"], perm_admin)
 
@@ -397,7 +397,7 @@ def test_limited_permissions_global_approvers(session, standard_graph, groups, g
         http_client, base_url):
     """Test that notifications are not sent to global approvers."""
     perm_grant, _, perm1, _ = grantable_permissions
-    perm_admin = create_permission(session, PERMISSION_ADMIN, "")
+    perm_admin = create_permission(session, PERMISSION_ADMIN)
     session.commit()
     # one circuit-breaking admin grant, one wildcard grant
     grant_permission(groups["sad-team"], perm_admin, argument="")
@@ -424,7 +424,7 @@ def test_regress_permreq_global_approvers(session, standard_graph, groups, grant
         http_client, base_url):
     """Validates that we can render a permission request form where a global approver exists"""
     perm_grant, _, perm1, _ = grantable_permissions
-    perm_admin = create_permission(session, PERMISSION_ADMIN, "")
+    perm_admin = create_permission(session, PERMISSION_ADMIN)
     session.commit()
     grant_permission(groups["security-team"], perm_admin)
 
@@ -448,7 +448,7 @@ def test_grant_and_revoke(session, standard_graph, graph, groups, permissions,
                 graph.permission_metadata[group_name]))
 
     # make some permission admins
-    perm_admin = create_permission(session, PERMISSION_ADMIN, "")
+    perm_admin = create_permission(session, PERMISSION_ADMIN)
     session.commit()
     grant_permission(groups["security-team"], perm_admin)
 
@@ -508,7 +508,7 @@ def test_disabling_permission(session, groups, standard_graph, http_client, base
 
     graph = standard_graph
 
-    perm_admin = create_permission(session, PERMISSION_ADMIN, "")
+    perm_admin = create_permission(session, PERMISSION_ADMIN)
     session.commit()
     # overload `group-admins` for also permission admin
     grant_permission(groups["group-admins"], perm_admin)

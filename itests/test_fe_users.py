@@ -31,7 +31,7 @@ def test_disable_last_owner(async_server, browser):  # noqa: F811
 
 
 def test_list_public_keys(async_server, browser, session, users, groups):  # noqa: F811
-    permission = get_or_create_permission(session, AUDIT_SECURITY, description="")[0]
+    permission = get_or_create_permission(session, AUDIT_SECURITY)[0]
     user = users["cbguder@a.co"]
     group = groups["group-admins"]
 

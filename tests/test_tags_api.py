@@ -19,10 +19,10 @@ from util import grant_permission
 
 @pytest.mark.gen_test
 def test_tags(session, http_client, base_url, graph):
-    perm = create_permission(session, TAG_EDIT, "Why is this not nullable?")
+    perm = create_permission(session, TAG_EDIT)
     session.commit()
 
-    perm2 = create_permission(session, "it.literally.does.not.matter", "Why is this not nullable?")
+    perm2 = create_permission(session, "it.literally.does.not.matter")
     session.commit()
 
     grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(), get_permission(session, TAG_EDIT), "*")

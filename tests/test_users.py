@@ -72,18 +72,20 @@ def test_usertokens(standard_graph, session, users, groups, permissions):  # noq
 @pytest.fixture
 def user_admin_perm_to_auditors(session, groups):
     """Adds a USER_ADMIN permission to the "auditors" group"""
-    user_admin_perm, _ = get_or_create_permission(
-        session, USER_ADMIN, description="grouper.admin.users permission")
+    user_admin_perm, is_new = get_or_create_permission(session, USER_ADMIN,
+        description="grouper.admin.users permission")
     session.commit()
+
     grant_permission(groups["auditors"], user_admin_perm)
 
 
 @pytest.fixture
 def user_enable_perm_to_sre(session, groups):
     """Adds the (USER_ENABLE, *) permission to the group `team-sre` """
-    user_enable_perm, _ = get_or_create_permission(
-        session, USER_ENABLE, description="grouper.user.enable perm")
+    user_enable_perm, is_new = get_or_create_permission(session, USER_ENABLE,
+        description="grouper.user.enable perm")
     session.commit()
+
     grant_permission(groups["team-sre"], user_enable_perm, argument="*")
 
 

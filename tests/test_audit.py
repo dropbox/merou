@@ -21,7 +21,7 @@ from grouper.models.audit_log import AuditLogCategory, AuditLog
 from grouper.models.group import Group
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
-from grouper.permissions import create_permission, enable_permission_auditing
+from grouper.permissions import enable_permission_auditing, get_or_create_permission
 from grouper.settings import settings
 from url_util import url
 from util import add_member, get_users, grant_permission
@@ -280,9 +280,9 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
     })
     # create permissions
     permissions.update({
-        permission: create_permission(
-            session, permission, "{} permission".format(permission)
-        )
+        permission: get_or_create_permission(
+            session, permission, description="{} permission".format(permission)
+        )[0]
         for permission in [PERMISSION_NAME]
     })
     # add users to groups

@@ -112,6 +112,26 @@ def get_permission(session, name):
     return Permission.get(session, name=name)
 
 
+def get_or_create_permission(session, name, description=None):
+    # type: (Session, str, Optional[str]) -> Tuple[Optional[Permission], bool]
+    """Get a permission or create it if it doesn't already exist
+
+    Arg(s):
+        session(models.base.session.Session): database session
+        name(str): the name of the permission
+        description(str): the description for the permission if it is created
+
+    Returns:
+        (permission, is_new) tuple
+    """
+    perm = get_permission(session, name)
+    is_new = False
+    if not perm:
+        is_new = True
+        perm = create_permission(session, name, description)
+    return perm, is_new
+
+
 def grant_permission(session, group_id, permission_id, argument=''):
     """
     Grant a permission to this group. This will fail if the (permission, argument) has already

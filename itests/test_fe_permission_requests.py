@@ -11,9 +11,8 @@ from tests.url_util import url
 from tests.util import grant_permission
 
 from grouper.constants import PERMISSION_ADMIN, PERMISSION_GRANT
-from grouper.models.permission import Permission
 from grouper.models.permission_request import PermissionRequest
-from grouper.permissions import create_request, update_request
+from grouper.permissions import create_request, get_or_create_permission, update_request
 
 # Set up a permission requesting scenario in which REQUESTING_USER has both
 # inbound and outbound requests that they should be able to see on the requests
@@ -35,12 +34,12 @@ ADMIN_USER = 'cbguder@a.co'
 def do_request_perms(groups, permissions, session, users):
     # Create the two test perms + PERMISSION_GRANT + PERMISSION_ADMIN, give GRANTING_TEAM
     # appropriate PERMISSION_GRANT, and make sure there's an admin (has PERMISSION_ADMIN)
-    test_perm_granter = Permission.get_or_create(
-        session, name=PERM_WITH_GRANTER, description='perm with granter')[0]
-    test_perm_nogranter = Permission.get_or_create(
-        session, name=PERM_NO_GRANTER, description='perm without granter')[0]
-    grant_perm = Permission.get_or_create(session, name=PERMISSION_GRANT, description='')[0]
-    admin_perm = Permission.get_or_create(session, name=PERMISSION_ADMIN, description='')[0]
+    test_perm_granter = get_or_create_permission(
+        session, PERM_WITH_GRANTER, description='perm with granter')[0]
+    test_perm_nogranter = get_or_create_permission(
+        session, PERM_NO_GRANTER, description='perm without granter')[0]
+    grant_perm = get_or_create_permission(session, PERMISSION_GRANT, description='')[0]
+    admin_perm = get_or_create_permission(session, PERMISSION_ADMIN, description='')[0]
 
     session.commit()
 

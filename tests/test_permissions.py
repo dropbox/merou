@@ -25,15 +25,16 @@ from grouper.models.service_account import ServiceAccount
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
 from grouper.permissions import (
+        create_permission,
         disable_permission,
         get_all_enabled_permissions,
         get_grantable_permissions,
         get_owner_arg_list,
         get_owners_by_grantable_permission,
+        get_permission,
         get_requests,
         grant_permission_to_service_account,
         )
-from grouper.models.permission import Permission
 from grouper.user_permissions import user_grantable_permissions, user_has_permission
 from url_util import url
 from util import get_group_permissions, get_user_permissions, grant_permission
@@ -41,10 +42,10 @@ from util import get_group_permissions, get_user_permissions, grant_permission
 
 @pytest.fixture
 def grantable_permissions(session, standard_graph):
-    perm_grant, _ = Permission.get_or_create(session, name=PERMISSION_GRANT, description="")
-    perm0, _ = Permission.get_or_create(session, name="grantable", description="")
-    perm1, _ = Permission.get_or_create(session, name="grantable.one", description="")
-    perm2, _ = Permission.get_or_create(session, name="grantable.two", description="")
+    perm_grant = create_permission(session, PERMISSION_GRANT, "")
+    perm0 = create_permission(session, "grantable", "")
+    perm1 = create_permission(session, "grantable.one", "")
+    perm2 = create_permission(session, "grantable.two", "")
     session.commit()
 
     return perm_grant, perm0, perm1, perm2
@@ -231,7 +232,7 @@ def test_permission_grant_to_owners(session, standard_graph, groups, grantable_p
     assert sorted(res) == [groups["all-teams"]], "negative test of substring wildcard matches"
 
     # permission admins have all the power
-    perm_admin, _ = Permission.get_or_create(session, name=PERMISSION_ADMIN, description="")
+    perm_admin = create_permission(session, PERMISSION_ADMIN, "")
     session.commit()
     grant_permission(groups["security-team"], perm_admin)
 
@@ -396,7 +397,7 @@ def test_limited_permissions_global_approvers(session, standard_graph, groups, g
         http_client, base_url):
     """Test that notifications are not sent to global approvers."""
     perm_grant, _, perm1, _ = grantable_permissions
-    perm_admin, _ = Permission.get_or_create(session, name=PERMISSION_ADMIN, description="")
+    perm_admin = create_permission(session, PERMISSION_ADMIN, "")
     session.commit()
     # one circuit-breaking admin grant, one wildcard grant
     grant_permission(groups["sad-team"], perm_admin, argument="")
@@ -423,7 +424,7 @@ def test_regress_permreq_global_approvers(session, standard_graph, groups, grant
         http_client, base_url):
     """Validates that we can render a permission request form where a global approver exists"""
     perm_grant, _, perm1, _ = grantable_permissions
-    perm_admin, _ = Permission.get_or_create(session, name=PERMISSION_ADMIN, description="")
+    perm_admin = create_permission(session, PERMISSION_ADMIN, "")
     session.commit()
     grant_permission(groups["security-team"], perm_admin)
 
@@ -447,7 +448,7 @@ def test_grant_and_revoke(session, standard_graph, graph, groups, permissions,
                 graph.permission_metadata[group_name]))
 
     # make some permission admins
-    perm_admin, _ = Permission.get_or_create(session, name=PERMISSION_ADMIN, description="")
+    perm_admin = create_permission(session, PERMISSION_ADMIN, "")
     session.commit()
     grant_permission(groups["security-team"], perm_admin)
 
@@ -471,7 +472,7 @@ def test_grant_and_revoke(session, standard_graph, graph, groups, permissions,
     assert _check_graph_for_perm(graph), "permissions granted, successfully"
 
     # figure out mapping_id of grant
-    permission_id = Permission.get(session, name=permission_name).id
+    permission_id = get_permission(session, permission_name).id
     group_id = Group.get(session, name=group_name).id
     mapping = session.query(PermissionMap).filter(
             PermissionMap.permission_id == permission_id,
@@ -507,12 +508,12 @@ def test_disabling_permission(session, groups, standard_graph, http_client, base
 
     graph = standard_graph
 
-    perm_admin, _ = Permission.get_or_create(session, name=PERMISSION_ADMIN, description="")
+    perm_admin = create_permission(session, PERMISSION_ADMIN, "")
     session.commit()
     # overload `group-admins` for also permission admin
     grant_permission(groups["group-admins"], perm_admin)
 
-    assert Permission.get(session, name=perm_name).enabled
+    assert get_permission(session, perm_name).enabled
     assert 'sudo:shell' in get_user_permissions(graph, 'gary@a.co')
     assert 'sudo:shell' in get_user_permissions(graph, 'oliver@a.co')
 
@@ -522,7 +523,7 @@ def test_disabling_permission(session, groups, standard_graph, http_client, base
         yield http_client.fetch(disable_url, method="POST", headers=nonpriv_headers, body="")
     assert exc.value.code == 403
     # check that no change
-    assert Permission.get(session, name=perm_name).enabled
+    assert get_permission(session, perm_name).enabled
     graph.update_from_db(session)
     assert 'sudo:shell' in get_user_permissions(graph, 'gary@a.co')
     assert 'sudo:shell' in get_user_permissions(graph, 'oliver@a.co')
@@ -531,7 +532,7 @@ def test_disabling_permission(session, groups, standard_graph, http_client, base
     # permission
     resp = yield http_client.fetch(disable_url, method="POST", headers=priv_headers, body="")
     assert resp.code == 200
-    assert not Permission.get(session, name=perm_name).enabled
+    assert not get_permission(session, perm_name).enabled
     graph.update_from_db(session)
     assert not 'sudo:shell' in get_user_permissions(graph, 'gary@a.co')
     assert not 'sudo:shell' in get_user_permissions(graph, 'oliver@a.co')
@@ -555,7 +556,7 @@ def test_disabling_permission(session, groups, standard_graph, http_client, base
     resp = yield http_client.fetch(
         disable_url_ssh_pem, method="POST", headers=priv_headers, body="")
     assert resp.code == 200
-    assert not Permission.get(session, name="ssh").enabled
+    assert not get_permission(session, "ssh").enabled
     graph.update_from_db(session)
     assert not "ssh:*" in get_group_permissions(graph, "team-sre")
     assert not "ssh:shell" in get_group_permissions(graph, "tech-ops")

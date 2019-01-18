@@ -11,8 +11,7 @@ from grouper.ctl.util import make_session
 from grouper.models.base.model_base import Model
 from grouper.models.base.session import get_db_engine
 from grouper.models.group import Group
-from grouper.models.permission import Permission
-from grouper.permissions import get_permission, grant_permission
+from grouper.permissions import create_permission, get_permission, grant_permission
 from grouper.settings import settings
 from grouper.util import get_auditors_group_name, get_database_url
 
@@ -32,9 +31,8 @@ def sync_db_command(args):
         test = get_permission(session, name)
         if test:
             continue
-        permission = Permission(name=name, description=description)
         try:
-            permission.add(session)
+            permission = create_permission(session, name, description)
             session.flush()
         except IntegrityError:
             session.rollback()

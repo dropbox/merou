@@ -265,6 +265,7 @@ def get_public_key_tag_permissions(session, tag):
     ).filter(
         TagPermissionMap.permission_id == Permission.id,
         TagPermissionMap.tag_id == tag.id,
+        Permission.enabled == True,
     ).all()
 
     return permissions

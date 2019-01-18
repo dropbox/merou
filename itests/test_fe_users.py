@@ -11,8 +11,8 @@ from tests.util import add_member, grant_permission
 
 from fixtures import async_server, browser  # noqa: F401
 from grouper.constants import AUDIT_SECURITY
-from grouper.permissions import get_or_create_permission
 from grouper.models.public_key import PublicKey
+from grouper.permissions import get_or_create_permission
 
 
 def test_disable_last_owner(async_server, browser):  # noqa: F811

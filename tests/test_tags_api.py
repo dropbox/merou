@@ -25,10 +25,8 @@ def test_tags(session, http_client, base_url, graph):
     perm2 = create_permission(session, "it.literally.does.not.matter", "Why is this not nullable?")
     session.commit()
 
-    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(),
-                     get_permission(session, TAG_EDIT), "*")
-    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(),
-                     get_permission(session, "it.literally.does.not.matter"), "*")
+    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(), get_permission(session, TAG_EDIT), "*")
+    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(), get_permission(session, "it.literally.does.not.matter"), "*")
 
     tag = PublicKeyTag(name="tyler_was_here")
     tag.add(session)

@@ -251,11 +251,10 @@ def test_grant_permission_to_tag(users, http_client, base_url, session):
 
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
 
-    perm = create_permission(session, TAG_EDIT, "Why is this not nullable?")
+    perm = create_permission(session, TAG_EDIT)
     session.commit()
 
-    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(),
-                     get_permission(session, TAG_EDIT), "*")
+    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(), get_permission(session, TAG_EDIT), "*")
 
     fe_url = url(base_url, '/tags')
     resp = yield http_client.fetch(fe_url, method="POST",
@@ -294,11 +293,10 @@ def test_edit_tag(users, http_client, base_url, session):
 
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
 
-    perm = create_permission(session, TAG_EDIT, "Why is this not nullable?")
+    perm = create_permission(session, TAG_EDIT)
     session.commit()
 
-    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(),
-                     get_permission(session, TAG_EDIT), "*")
+    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(), get_permission(session, TAG_EDIT), "*")
 
     fe_url = url(base_url, '/tags')
     resp = yield http_client.fetch(fe_url, method="POST",
@@ -327,17 +325,14 @@ def test_permissions(users, http_client, base_url, session):
 
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
 
-    perm = create_permission(session, TAG_EDIT, "Why is this not nullable?")
+    perm = create_permission(session, TAG_EDIT)
     session.commit()
 
-    perm = create_permission(session, "it.literally.does.not.matter",
-                             "Why is this not nullable?")
+    perm = create_permission(session, "it.literally.does.not.matter")
     session.commit()
 
-    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(),
-                     get_permission(session, TAG_EDIT), "*")
-    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(),
-                     get_permission(session, "it.literally.does.not.matter"), "*")
+    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(), get_permission(session, TAG_EDIT), "*")
+    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(), get_permission(session, "it.literally.does.not.matter"), "*")
 
     fe_url = url(base_url, '/tags')
     resp = yield http_client.fetch(fe_url, method="POST",
@@ -406,11 +401,10 @@ def test_revoke_permission_from_tag(users, http_client, base_url, session):
 
     user = session.query(User).filter_by(username="testuser@a.co").scalar()
 
-    perm = create_permission(session, TAG_EDIT, "Why is this not nullable?")
+    perm = create_permission(session, TAG_EDIT)
     session.commit()
 
-    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(),
-                     get_permission(session, TAG_EDIT), "*")
+    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(), get_permission(session, TAG_EDIT), "*")
 
     fe_url = url(base_url, '/tags')
     resp = yield http_client.fetch(fe_url, method="POST",

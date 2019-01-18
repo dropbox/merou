@@ -51,8 +51,8 @@ class NoSuchPermission(Exception):
         self.name = name
 
 
-def create_permission(session, name, description):
-    # type: (Session, str, str) -> Permission
+def create_permission(session, name, description=''):
+    # type: (Session, str, Optional[str]) -> Permission
     """Create and add a new permission to database
 
     Arg(s):
@@ -63,7 +63,7 @@ def create_permission(session, name, description):
     Returns:
         The created permission that has been added to the session
     """
-    permission = Permission(name=name, description=description)
+    permission = Permission(name=name, description=description or '')
     permission.add(session)
     return permission
 
@@ -112,7 +112,7 @@ def get_permission(session, name):
     return Permission.get(session, name=name)
 
 
-def get_or_create_permission(session, name, description=None):
+def get_or_create_permission(session, name, description=''):
     # type: (Session, str, Optional[str]) -> Tuple[Optional[Permission], bool]
     """Get a permission or create it if it doesn't already exist
 
@@ -128,7 +128,7 @@ def get_or_create_permission(session, name, description=None):
     is_new = False
     if not perm:
         is_new = True
-        perm = create_permission(session, name, description)
+        perm = create_permission(session, name, description=description or '')
     return perm, is_new
 
 

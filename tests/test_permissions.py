@@ -582,10 +582,10 @@ def test_reject_disabling_system_permissions(perm_name, session, permissions):
     assert exc.value.name == perm_name
 
 
-def test_exclude_inactive_permissions(
+def test_exclude_disabled_permissions(
         session, standard_graph, users, groups, permissions):
     """
-    Ensure disabled permissions are excluded from various
+    Ensure that disabled permissions are excluded from various
     functions/methods that return data from the models.
     """
     perm_ssh = get_permission(session, "ssh")

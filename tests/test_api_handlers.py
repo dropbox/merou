@@ -11,10 +11,9 @@ from fixtures import api_app as app  # noqa
 from fixtures import standard_graph, graph, users, groups, service_accounts, session, permissions  # noqa
 from grouper.constants import USER_METADATA_SHELL_KEY
 from grouper.models.counter import Counter
-from grouper.models.permission import Permission
 from grouper.models.service_account import ServiceAccount
 from grouper.models.user_token import UserToken
-from grouper.permissions import grant_permission_to_service_account
+from grouper.permissions import get_permission, grant_permission_to_service_account
 from grouper.public_key import add_public_key
 from grouper.user_metadata import get_user_metadata_by_key, set_user_metadata
 from grouper.user_password import add_new_user_password, delete_user_password, user_passwords
@@ -125,7 +124,7 @@ def test_service_accounts(session, standard_graph, users, http_client, base_url)
 
     # Delegate a permission to the service account and check for it.
     service_account = ServiceAccount.get(session, name="service@a.co")
-    permission = Permission.get(session, name="team-sre")
+    permission = get_permission(session, "team-sre")
     grant_permission_to_service_account(session, service_account, permission, "*")
     graph.update_from_db(session)
     resp = yield http_client.fetch(api_url)

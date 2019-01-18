@@ -154,6 +154,9 @@ class Group(Model, CommentObjectMixin):
         )
 
     def my_permissions(self):
+        """
+        NOTE: Disabled permissions are not returned
+        """
 
         permissions = self.session.query(
             Permission.id,
@@ -162,6 +165,7 @@ class Group(Model, CommentObjectMixin):
             PermissionMap.argument,
             PermissionMap.granted_on,
         ).filter(
+            Permission.enabled == True,
             PermissionMap.permission_id == Permission.id,
             PermissionMap.group_id == self.id,
         ).all()

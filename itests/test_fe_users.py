@@ -11,8 +11,8 @@ from tests.util import add_member, grant_permission
 
 from fixtures import async_server, browser  # noqa: F401
 from grouper.constants import AUDIT_SECURITY
-from grouper.models.permission import Permission
 from grouper.models.public_key import PublicKey
+from grouper.permissions import get_or_create_permission
 
 
 def test_disable_last_owner(async_server, browser):  # noqa: F811
@@ -31,7 +31,7 @@ def test_disable_last_owner(async_server, browser):  # noqa: F811
 
 
 def test_list_public_keys(async_server, browser, session, users, groups):  # noqa: F811
-    permission = Permission.get_or_create(session, name=AUDIT_SECURITY, description="")[0]
+    permission = get_or_create_permission(session, AUDIT_SECURITY)[0]
     user = users["cbguder@a.co"]
     group = groups["group-admins"]
 

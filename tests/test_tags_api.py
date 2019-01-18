@@ -7,11 +7,10 @@ from fixtures import api_app as app  # noqa
 from fixtures import standard_graph, graph, users, groups, service_accounts, session, permissions  # noqa
 from grouper.constants import TAG_EDIT
 from grouper.models.group import Group
-from grouper.models.permission import Permission
 from grouper.models.public_key import PublicKey
 from grouper.models.public_key_tag import PublicKeyTag
 from grouper.models.user import User
-from grouper.permissions import grant_permission_to_tag
+from grouper.permissions import create_permission, get_permission, grant_permission_to_tag
 from grouper.public_key import add_public_key, add_tag_to_public_key, get_public_key_permissions
 from grouper.user_permissions import user_permissions
 from url_util import url
@@ -20,16 +19,14 @@ from util import grant_permission
 
 @pytest.mark.gen_test
 def test_tags(session, http_client, base_url, graph):
-    perm = Permission(name=TAG_EDIT, description="Why is this not nullable?")
-    perm.add(session)
+    perm = create_permission(session, TAG_EDIT)
     session.commit()
 
-    perm2 = Permission(name="it.literally.does.not.matter", description="Why is this not nullable?")
-    perm2.add(session)
+    perm2 = create_permission(session, "it.literally.does.not.matter")
     session.commit()
 
-    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(), session.query(Permission).filter_by(name=TAG_EDIT).scalar(), "*")
-    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(), session.query(Permission).filter_by(name="it.literally.does.not.matter").scalar(), "*")
+    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(), get_permission(session, TAG_EDIT), "*")
+    grant_permission(session.query(Group).filter_by(groupname="all-teams").scalar(), get_permission(session, "it.literally.does.not.matter"), "*")
 
     tag = PublicKeyTag(name="tyler_was_here")
     tag.add(session)

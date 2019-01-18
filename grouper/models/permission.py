@@ -1,7 +1,7 @@
 from collections import namedtuple
 from datetime import datetime
 
-from sqlalchemy import asc, Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 
 from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.base.model_base import Model
@@ -26,16 +26,13 @@ class Permission(Model):
     description = Column(Text, nullable=False)
     created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
     _audited = Column('audited', Boolean, default=False, nullable=False)
+    enabled = Column('enabled', Boolean, default=True, nullable=False)
 
     @staticmethod
     def get(session, name=None):
         if name is not None:
             return session.query(Permission).filter_by(name=name).scalar()
         return None
-
-    @staticmethod
-    def get_all(session):
-        return session.query(Permission).order_by(asc("name")).all()
 
     @property
     def audited(self):

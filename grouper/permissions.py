@@ -3,10 +3,16 @@ from datetime import datetime
 import re
 from typing import TYPE_CHECKING
 
+from sqlalchemy import asc
 from sqlalchemy.exc import IntegrityError
 
 from grouper.audit import assert_controllers_are_auditors
-from grouper.constants import ARGUMENT_VALIDATION, PERMISSION_ADMIN, PERMISSION_GRANT
+from grouper.constants import (
+    ARGUMENT_VALIDATION,
+    PERMISSION_ADMIN,
+    PERMISSION_GRANT,
+    SYSTEM_PERMISSIONS,
+)
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
 from grouper.fe.template_util import get_template_env
@@ -26,7 +32,7 @@ from grouper.user_group import get_groups_by_user
 from grouper.util import matches_glob
 
 if TYPE_CHECKING:
-    from typing import Dict, List, Set, TYPE_CHECKING  # noqa
+    from typing import Dict, List, Optional, Set, Tuple  # noqa
     from grouper.models.base.session import Session  # noqa
 
 # Singleton
@@ -48,6 +54,88 @@ class NoSuchPermission(Exception):
     def __init__(self, name):
         # type: (str) -> None
         self.name = name
+
+
+class CannotDisableASystemPermission(Exception):
+    """Cannot disable key system permissions."""
+
+    def __init__(self, name):
+        # type: (str) -> None
+        """
+        Arg(s):
+            name(str): name of the permission being disabled
+        """
+        self.name = name
+
+
+def create_permission(session, name, description=''):
+    # type: (Session, str, Optional[str]) -> Permission
+    """Create and add a new permission to database
+
+    Arg(s):
+        session(models.base.session.Session): database session
+        name(str): the name of the permission
+        description(str): the description of the permission
+
+    Returns:
+        The created permission that has been added to the session
+    """
+    permission = Permission(name=name, description=description or '')
+    permission.add(session)
+    return permission
+
+
+def get_all_permissions(session, include_disabled=False):
+    # type: (Session, Optional[bool]) -> List[Permission]
+    """Get permissions that exist in the database, either only enabled
+    permissions, or both enabled and disabled ones
+
+    Arg(s):
+        session(models.base.session.Session): database session
+        include_disabled(bool): True to also include disabled
+            permissions. Make sure you really want this.
+
+    Returns:
+        List of permissions
+    """
+    query = session.query(Permission)
+    if not include_disabled:
+        query = query.filter(Permission.enabled == True)
+    return query.order_by(asc(Permission.name)).all()
+
+
+def get_permission(session, name):
+    # type: (Session, str) -> Optional[Permission]
+    """Get a permission
+
+    Arg(s):
+        session(models.base.session.Session): database session
+        name(str): the name of the permission
+
+    Returns:
+        The permission if found, None otherwise
+    """
+    return Permission.get(session, name=name)
+
+
+def get_or_create_permission(session, name, description=''):
+    # type: (Session, str, Optional[str]) -> Tuple[Optional[Permission], bool]
+    """Get a permission or create it if it doesn't already exist
+
+    Arg(s):
+        session(models.base.session.Session): database session
+        name(str): the name of the permission
+        description(str): the description for the permission if it is created
+
+    Returns:
+        (permission, is_new) tuple
+    """
+    perm = get_permission(session, name)
+    is_new = False
+    if not perm:
+        is_new = True
+        perm = create_permission(session, name, description=description or '')
+    return perm, is_new
 
 
 def grant_permission(session, group_id, permission_id, argument=''):
@@ -134,6 +222,26 @@ def grant_permission_to_tag(session, tag_id, permission_id, argument=''):
     return True
 
 
+def disable_permission(session, permission_name, actor_user_id):
+    """Set a permission as disabled.
+
+    Args:
+        session(models.base.session.Session): database session
+        permission_name(str): name of permission in question
+        actor_user_id(int): id of user who is disabling the permission
+    """
+    if permission_name in (entry[0] for entry in SYSTEM_PERMISSIONS):
+        raise CannotDisableASystemPermission(permission_name)
+    permission = get_permission(session, permission_name)
+    if not permission:
+        raise NoSuchPermission(name=permission_name)
+    permission.enabled = False
+    AuditLog.log(session, actor_user_id, 'disable_permission', 'Disabled permission.',
+            on_permission_id=permission.id)
+    Counter.incr(session, "updates")
+    session.commit()
+
+
 def enable_permission_auditing(session, permission_name, actor_user_id):
     """Set a permission as audited.
 
@@ -142,7 +250,7 @@ def enable_permission_auditing(session, permission_name, actor_user_id):
         permission_name(str): name of permission in question
         actor_user_id(int): id of user who is enabling auditing
     """
-    permission = Permission.get(session, permission_name)
+    permission = get_permission(session, permission_name)
     if not permission:
         raise NoSuchPermission(name=permission_name)
 
@@ -164,7 +272,7 @@ def disable_permission_auditing(session, permission_name, actor_user_id):
         permission_name(str): name of permission in question
         actor_user_id(int): id of user who is disabling auditing
     """
-    permission = Permission.get(session, permission_name)
+    permission = get_permission(session, permission_name)
     if not permission:
         raise NoSuchPermission(name=permission_name)
 
@@ -179,16 +287,18 @@ def disable_permission_auditing(session, permission_name, actor_user_id):
 
 
 def get_groups_by_permission(session, permission):
-    """For a given permission, return the groups and associated arguments that
-    have that permission.
+    """For an enabled permission, return the groups and associated arguments that
+    have that permission. If the permission is disabled, return empty list.
 
     Args:
         session(models.base.session.Session): database session
-        permission_name(Permission): permission in question
+        permission(models.Permission): permission in question
 
     Returns:
         List of 2-tuple of the form (Group, argument).
     """
+    if not permission.enabled:
+        return []
     return session.query(
         Group.groupname,
         PermissionMap.argument,
@@ -212,8 +322,8 @@ def get_log_entries_by_permission(session, permission, limit=20):
 
 
 def filter_grantable_permissions(session, grants, all_permissions=None):
-    """For a given set of PERMISSION_GRANT permissions, return all permissions
-    that are grantable.
+    """For a given set of PERMISSION_GRANT permissions, return all enabled
+    permissions that are grantable.
 
     Args:
         session (sqlalchemy.orm.session.Session); database session
@@ -227,7 +337,7 @@ def filter_grantable_permissions(session, grants, all_permissions=None):
 
     if all_permissions is None:
         all_permissions = {permission.name: permission for permission in
-                Permission.get_all(session)}
+                get_all_permissions(session)}
 
     result = []
     for grant in grants:
@@ -260,7 +370,8 @@ def get_owners_by_grantable_permission(session, separate_global=False):
         {argument: [owner1, ...], }, } where 'owners' are models.Group objects.
         And 'argument' can be '*' which means 'anything'.
     """
-    all_permissions = {permission.name: permission for permission in Permission.get_all(session)}
+    all_permissions = {permission.name: permission
+                       for permission in get_all_permissions(session)}
     all_groups = session.query(Group).filter(Group.enabled == True).all()
 
     owners_by_arg_by_perm = defaultdict(lambda: defaultdict(list))
@@ -273,6 +384,7 @@ def get_owners_by_grantable_permission(session, separate_global=False):
     ).filter(
             PermissionMap.group_id == Group.id,
             Permission.id == PermissionMap.permission_id,
+            Permission.enabled == True,
     ).all()
 
     grants_by_group = defaultdict(list)
@@ -385,6 +497,15 @@ class NoOwnersAvailable(PermissionRequestException):
 
 class RequestAlreadyGranted(PermissionRequestException):
     """Group already has requested permission + argument pair."""
+
+
+# hmm maybe don't need this. people can do things to the permission,
+# e.g., grant it to groups, request grants for it, revoke it from
+# groups, etc. and we kind of don't care, as long as the permission's
+# disabled state prevents it from being used, which is the important
+# bit
+class PermissionIsDisabled(PermissionRequestException):
+    """Trying to operate on a permission that is disabled."""
 
 
 def create_request(session, user, group, permission, argument, reason):

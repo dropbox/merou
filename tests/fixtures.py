@@ -9,9 +9,8 @@ from grouper.graph import Graph
 from grouper.models.base.model_base import Model
 from grouper.models.base.session import Session, get_db_engine
 from grouper.models.group import Group
-from grouper.models.permission import Permission
 from grouper.models.user import User
-from grouper.permissions import enable_permission_auditing
+from grouper.permissions import create_permission, enable_permission_auditing, get_or_create_permission
 from grouper.service_account import create_service_account
 from path_util import db_url
 from util import add_member, grant_permission
@@ -202,8 +201,8 @@ def permissions(session, users):
                        PERMISSION_AUDITOR, "team-sre", USER_ADMIN, GROUP_ADMIN]
 
     permissions = {
-        permission: Permission.get_or_create(
-            session, name=permission, description="{} permission".format(permission)
+        permission: get_or_create_permission(
+            session, permission, "{} permission".format(permission)
         )[0]
         for permission in all_permissions
     }

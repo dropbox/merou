@@ -215,7 +215,8 @@ class GroupGraph(object):
     @staticmethod
     def _get_permission_metadata(session):
         '''
-        Returns a dict of groupname: { list of permissions }.
+        Returns a dict of groupname: { list of permissions }. Note
+        that disabled permissions are not included.
         '''
         out = defaultdict(list)  # groupid -> [ ... ]
 
@@ -223,6 +224,7 @@ class GroupGraph(object):
             Permission.id == PermissionMap.permission_id,
             PermissionMap.group_id == Group.id,
             Group.enabled == True,
+            Permission.enabled == True,
         )
 
         for (permission, permission_map) in permissions:
@@ -256,11 +258,10 @@ class GroupGraph(object):
         '''
         Returns a set of PermissionTuple instances.
         '''
+        # TODO: import here to avoid circular dependency
+        from grouper.permissions import get_all_permissions
         out = set()
-        permissions = (
-            session.query(Permission)
-            .order_by(Permission.name)
-        )
+        permissions = get_all_permissions(session)
         for permission in permissions:
             out.add(PermissionTuple(
                 id=permission.id,

@@ -180,6 +180,7 @@ def service_account_permissions(session, service_account):
         ServiceAccountPermissionMap.service_account_id == ServiceAccount.id,
         ServiceAccount.user_id == User.id,
         User.enabled == True,
+        Permission.enabled == True,
     )
     out = []
     for permission in permissions:
@@ -201,6 +202,7 @@ def all_service_account_permissions(session):
         ServiceAccountPermissionMap.service_account_id == ServiceAccount.id,
         ServiceAccount.user_id == User.id,
         User.enabled == True,
+        Permission.enabled == True,
     )
     for permission in permissions:
         out[permission[1].service_account.user.username].append(ServiceAccountPermission(

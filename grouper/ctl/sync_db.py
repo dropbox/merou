@@ -32,7 +32,7 @@ def sync_db_command(args):
         if test:
             continue
         try:
-            permission = create_permission(session, name, description)
+            create_permission(session, name, description)
             session.flush()
         except IntegrityError:
             session.rollback()

@@ -92,7 +92,7 @@ def get_all_permissions(session, include_disabled=False):
 
     Arg(s):
         session(models.base.session.Session): database session
-        include_disabled(bool): True to include also disabled
+        include_disabled(bool): True to also include disabled
             permissions. Make sure you really want this.
 
     Returns:

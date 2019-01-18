@@ -596,6 +596,8 @@ def test_exclude_inactive_permissions(
     grant_permission(groups["group-admins"], perm_admin)
     # this user has grouper.permission.grant with argument "ssh/*"
     grant_permission(groups["group-admins"], perm_grant, argument="ssh/*")
+    graph = standard_graph
+    graph.update_from_db(session)
 
     grant_perms = [x for x in user_permissions(session, users['cbguder@a.co'])
                    if x.name == PERMISSION_GRANT]
@@ -610,9 +612,14 @@ def test_exclude_inactive_permissions(
     assert 'ssh' in (x[0].name for x in user_grantable_permissions(session, users['cbguder@a.co']))
     assert user_has_permission(session, users['zay@a.co'], 'ssh')
     assert 'ssh' in (p.name for p in user_permissions(session, users['zay@a.co']))
+    assert 'ssh' in (p['permission'] for p in graph.get_group_details('team-sre')['permissions'])
+    assert 'ssh' in (pt.name for pt in graph.get_permissions())
+    assert 'team-sre' in graph.get_permission_details('ssh')['groups']
+    assert 'ssh' in (p['permission'] for p in graph.get_user_details('zay@a.co')['permissions'])
 
     # now disable the ssh permission
     disable_permission(session, "ssh", users['cbguder@a.co'].id)
+    graph.update_from_db(session)
 
     grant_perms = [x for x in user_permissions(session, users['cbguder@a.co'])
                    if x.name == PERMISSION_GRANT]
@@ -627,3 +634,7 @@ def test_exclude_inactive_permissions(
     assert not 'ssh' in (x[0].name for x in user_grantable_permissions(session, users['cbguder@a.co']))
     assert not user_has_permission(session, users['zay@a.co'], 'ssh')
     assert not 'ssh' in (p.name for p in user_permissions(session, users['zay@a.co']))
+    assert not 'ssh' in (p['permission'] for p in graph.get_group_details('team-sre')['permissions'])
+    assert not 'ssh' in (pt.name for pt in graph.get_permissions())
+    assert not graph.get_permission_details('ssh')['groups']
+    assert not 'ssh' in (p['permission'] for p in graph.get_user_details('zay@a.co')['permissions'])

@@ -7,7 +7,12 @@ from sqlalchemy import asc
 from sqlalchemy.exc import IntegrityError
 
 from grouper.audit import assert_controllers_are_auditors
-from grouper.constants import ARGUMENT_VALIDATION, PERMISSION_ADMIN, PERMISSION_GRANT
+from grouper.constants import (
+    ARGUMENT_VALIDATION,
+    PERMISSION_ADMIN,
+    PERMISSION_GRANT,
+    SYSTEM_PERMISSIONS,
+)
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
 from grouper.fe.template_util import get_template_env
@@ -48,6 +53,18 @@ class NoSuchPermission(Exception):
 
     def __init__(self, name):
         # type: (str) -> None
+        self.name = name
+
+
+class CannotDisableASystemPermission(Exception):
+    """Cannot disable key system permissions."""
+
+    def __init__(self, name):
+        # type: (str) -> None
+        """
+        Arg(s):
+            name(str): name of the permission being disabled
+        """
         self.name = name
 
 
@@ -224,6 +241,8 @@ def disable_permission(session, permission_name, actor_user_id):
         permission_name(str): name of permission in question
         actor_user_id(int): id of user who is disabling the permission
     """
+    if permission_name in (entry[0] for entry in SYSTEM_PERMISSIONS):
+        raise CannotDisableASystemPermission(permission_name)
     permission = get_permission(session, permission_name)
     if not permission:
         raise NoSuchPermission(name=permission_name)
@@ -314,8 +333,8 @@ def get_log_entries_by_permission(session, permission, limit=20):
 
 
 def filter_grantable_permissions(session, grants, all_permissions=None):
-    """For a given set of PERMISSION_GRANT permissions, return all permissions
-    that are grantable.
+    """For a given set of PERMISSION_GRANT permissions, return all enabled
+    permissions that are grantable.
 
     Args:
         session (sqlalchemy.orm.session.Session); database session

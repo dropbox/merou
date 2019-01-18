@@ -22,11 +22,3 @@ def test_permission_exclude_inactive_groups(session, standard_graph):
     assert "team-sre" in [g[0] for g in get_groups_by_permission(session, permission)]
     group.disable()
     assert "team-sre" not in [g[0] for g in get_groups_by_permission(session, permission)]
-
-
-def test_permission_exclude_inactive_permissions(session, standard_graph, users):
-    """Ensure disabled permissions are excluded from permission data."""
-    permission = get_permission(session, "ssh")
-    assert "team-sre" in [g[0] for g in get_groups_by_permission(session, permission)]
-    disable_permission(session, "ssh", users['cbguder@a.co'].id)
-    assert "team-sre" not in [g[0] for g in get_groups_by_permission(session, permission)]

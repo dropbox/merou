@@ -16,6 +16,7 @@ from grouper.constants import (
         PERMISSION_AUDITOR,
         PERMISSION_GRANT,
         PERMISSION_VALIDATION,
+        SYSTEM_PERMISSIONS,
         )
 from grouper.fe.forms import ValidateRegex
 import grouper.fe.util
@@ -25,17 +26,26 @@ from grouper.models.service_account import ServiceAccount
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
 from grouper.permissions import (
+        CannotDisableASystemPermission,
         create_permission,
         disable_permission,
+        filter_grantable_permissions,
         get_all_enabled_permissions,
+        get_all_permissions,
         get_grantable_permissions,
+        get_groups_by_permission,
+        get_or_create_permission,
         get_owner_arg_list,
         get_owners_by_grantable_permission,
         get_permission,
         get_requests,
         grant_permission_to_service_account,
         )
-from grouper.user_permissions import user_grantable_permissions, user_has_permission
+from grouper.user_permissions import (
+    user_grantable_permissions,
+    user_has_permission,
+    user_permissions,
+)
 from url_util import url
 from util import get_group_permissions, get_user_permissions, grant_permission
 
@@ -498,6 +508,10 @@ def test_grant_and_revoke(session, standard_graph, graph, groups, permissions,
 
 @pytest.mark.gen_test
 def test_disabling_permission(session, groups, standard_graph, http_client, base_url):
+    """
+    This tests disabling via the front-end route, including checking
+    that the user is authorized to disable permissions.
+    """
     perm_name = 'sudo'
     nonpriv_user_name = 'oliver@a.co' # user without PERMISSION_ADMIN
     nonpriv_headers = {'X-Grouper-User': nonpriv_user_name}
@@ -560,3 +574,55 @@ def test_disabling_permission(session, groups, standard_graph, http_client, base
     graph.update_from_db(session)
     assert not "ssh:*" in get_group_permissions(graph, "team-sre")
     assert not "ssh:shell" in get_group_permissions(graph, "tech-ops")
+
+@pytest.mark.parametrize('perm_name', (entry[0] for entry in SYSTEM_PERMISSIONS))
+def test_reject_disabling_system_permissions(perm_name, session, permissions):
+    get_or_create_permission(session, perm_name)
+    with pytest.raises(CannotDisableASystemPermission) as exc:
+        disable_permission(session, perm_name, 0)
+    assert exc.value.name == perm_name
+
+
+def test_exclude_inactive_permissions(
+        session, standard_graph, users, groups, permissions):
+    """
+    Ensure disabled permissions are excluded from various
+    functions/methods that return data from the models.
+    """
+    perm_ssh = get_permission(session, "ssh")
+    perm_admin = create_permission(session, PERMISSION_ADMIN)
+    perm_grant = create_permission(session, PERMISSION_GRANT)
+    session.commit()
+    # overload `group-admins` for also permission admin
+    grant_permission(groups["group-admins"], perm_admin)
+    # this user has grouper.permission.grant with argument "ssh/*"
+    grant_permission(groups["group-admins"], perm_grant, argument="ssh/*")
+
+    grant_perms = [x for x in user_permissions(session, users['cbguder@a.co'])
+                   if x.name == PERMISSION_GRANT]
+    assert 'ssh' == filter_grantable_permissions(session, grant_perms)[0][0].name
+    assert "ssh" in (p.name for p in get_all_enabled_permissions(session))
+    assert "ssh" in (p.name for p in get_all_permissions(session))
+    assert "ssh" in get_grantable_permissions(session, [])
+    assert "team-sre" in [g[0] for g in get_groups_by_permission(session, perm_ssh)]
+    assert get_owner_arg_list(session, perm_ssh, "*")
+    assert "ssh" in get_owners_by_grantable_permission(session)
+    assert 'ssh' in (x[0].name for x in user_grantable_permissions(session, users['cbguder@a.co']))
+    assert user_has_permission(session, users['zay@a.co'], 'ssh')
+    assert 'ssh' in (p.name for p in user_permissions(session, users['zay@a.co']))
+
+    # now disable the ssh permission
+    disable_permission(session, "ssh", users['cbguder@a.co'].id)
+
+    grant_perms = [x for x in user_permissions(session, users['cbguder@a.co'])
+                   if x.name == PERMISSION_GRANT]
+    assert not filter_grantable_permissions(session, grant_perms)
+    assert not "ssh" in (p.name for p in get_all_enabled_permissions(session))
+    assert "ssh" in (p.name for p in get_all_permissions(session))
+    assert not "ssh" in get_grantable_permissions(session, [])
+    assert not get_groups_by_permission(session, perm_ssh)
+    assert not get_owner_arg_list(session, perm_ssh, "*")
+    assert not "ssh" in get_owners_by_grantable_permission(session)
+    assert not 'ssh' in (x[0].name for x in user_grantable_permissions(session, users['cbguder@a.co']))
+    assert not user_has_permission(session, users['zay@a.co'], 'ssh')
+    assert not 'ssh' in (p.name for p in user_permissions(session, users['zay@a.co']))

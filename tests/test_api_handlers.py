@@ -15,6 +15,7 @@ from grouper.models.service_account import ServiceAccount
 from grouper.models.user_token import UserToken
 from grouper.permissions import get_permission, grant_permission_to_service_account
 from grouper.public_key import add_public_key
+from grouper.service_account import disable_service_account
 from grouper.user_metadata import get_user_metadata_by_key, set_user_metadata
 from grouper.user_password import add_new_user_password, delete_user_password, user_passwords
 from grouper.user_token import add_new_user_token, disable_user_token
@@ -96,16 +97,17 @@ def test_multi_users(users, http_client, base_url):
 
 
 @pytest.mark.gen_test
-def test_service_accounts(session, standard_graph, users, http_client, base_url):
+def test_service_accounts(session, standard_graph, users, service_accounts, http_client, base_url):
     graph = standard_graph
-    service_accounts = sorted([u.name for u in users.values() if u.role_user] + ["service@a.co"])
+    all_service_accounts = sorted(
+            [u.name for u in users.values() if u.role_user] + ["service@a.co"])
 
     api_url = url(base_url, "/service_accounts")
     resp = yield http_client.fetch(api_url)
     body = json.loads(resp.body)
     assert resp.code == 200
     assert body["status"] == "ok"
-    assert sorted(body["data"]["service_accounts"]) == service_accounts
+    assert sorted(body["data"]["service_accounts"]) == all_service_accounts
 
     # TODO: test cutoff
 
@@ -134,6 +136,19 @@ def test_service_accounts(session, standard_graph, users, http_client, base_url)
     permissions = body["data"]["permissions"]
     assert permissions[0]["permission"] == "team-sre"
     assert permissions[0]["argument"] == "*"
+
+    # disabled service accounts don't matter
+    all_service_accounts = sorted([u.name for u in users.values() if u.role_user])
+    disable_service_account(session, users["cbguder@a.co"], service_accounts["service@a.co"])
+    graph.update_from_db(session)
+
+    api_url = url(base_url, "/service_accounts")
+    resp = yield http_client.fetch(api_url)
+    body = json.loads(resp.body)
+    assert resp.code == 200
+    assert body["status"] == "ok"
+    assert body["data"]["service_accounts"] == all_service_accounts, \
+            "should not include disabled service account"
 
 
 @pytest.mark.gen_test

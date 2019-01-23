@@ -307,7 +307,7 @@ class ServiceAccounts(GraphHandler):
             return self.success({
                 "service_accounts": sorted([
                     k for k, v in self.graph.user_metadata.iteritems()
-                    if "service_account" in v or v["role_user"]
+                    if ("service_account" in v or v["role_user"]) and v["enabled"]
                 ]),
             })
 

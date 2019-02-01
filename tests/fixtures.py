@@ -2,7 +2,14 @@ import pytest
 
 from grouper.api.routes import HANDLERS as API_HANDLERS
 from grouper.app import Application
-from grouper.constants import AUDIT_MANAGER, AUDIT_VIEWER, GROUP_ADMIN, PERMISSION_AUDITOR, USER_ADMIN
+from grouper.constants import (
+    AUDIT_MANAGER,
+    AUDIT_VIEWER,
+    GROUP_ADMIN,
+    PERMISSION_ADMIN,
+    PERMISSION_AUDITOR,
+    USER_ADMIN,
+)
 from grouper.fe.routes import HANDLERS as FE_HANDLERS
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
@@ -10,7 +17,11 @@ from grouper.models.base.model_base import Model
 from grouper.models.base.session import Session, get_db_engine
 from grouper.models.group import Group
 from grouper.models.user import User
-from grouper.permissions import create_permission, enable_permission_auditing, get_or_create_permission
+from grouper.permissions import (
+    create_permission,
+    enable_permission_auditing,
+    get_or_create_permission,
+)
 from grouper.service_account import create_service_account
 from path_util import db_url
 from util import add_member, grant_permission
@@ -76,6 +87,12 @@ def standard_graph(session, graph, users, groups, service_accounts, permissions)
     |    * cbguder (o)      |
     |                       |
     +-----------------------+
+    +-----------------------+
+    |                       |
+    |  permission-admins    |
+    |    * gary (o)         |
+    |                       |
+    +-----------------------+
 
     Arrows denote member of the source in the destination group. (o) for
     owners, (np) for non-permissioned owners, (s) for service accounts.
@@ -126,6 +143,10 @@ def standard_graph(session, graph, users, groups, service_accounts, permissions)
     add_member(groups["group-admins"], users["cbguder@a.co"], role="owner")
     grant_permission(groups["group-admins"], permissions[GROUP_ADMIN])
 
+    add_member(groups["permission-admins"], users["gary@a.co"], role="owner")
+    add_member(groups["permission-admins"], users["cbguder@a.co"], role="member")
+    grant_permission(groups["permission-admins"], permissions[PERMISSION_ADMIN])
+
     session.commit()
     graph.update_from_db(session)
 
@@ -174,7 +195,7 @@ def groups(session):
         groupname: Group.get_or_create(session, groupname=groupname)[0]
         for groupname in ("team-sre", "tech-ops", "team-infra", "all-teams", "serving-team",
                           "security-team", "auditors", "sad-team", "audited-team", "user-admins",
-                          "group-admins")
+                          "group-admins", "permission-admins")
     }
     groups_with_emails = ("team-sre", "serving-team", "security-team")
     for group in groups_with_emails:
@@ -198,7 +219,7 @@ def service_accounts(session, users, groups):
 @pytest.fixture
 def permissions(session, users):
     all_permissions = ["owner", "ssh", "sudo", "audited", AUDIT_MANAGER, AUDIT_VIEWER,
-                       PERMISSION_AUDITOR, "team-sre", USER_ADMIN, GROUP_ADMIN]
+                       PERMISSION_AUDITOR, PERMISSION_ADMIN, "team-sre", USER_ADMIN, GROUP_ADMIN]
 
     permissions = {
         permission: get_or_create_permission(

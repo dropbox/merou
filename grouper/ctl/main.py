@@ -4,6 +4,8 @@ import sys
 
 from grouper import __version__
 from grouper.ctl import dump_sql, group, oneoff, service_account, shell, sync_db, user, user_proxy
+from grouper.ctl.permission import PermissionCommand
+from grouper.ctl.util import make_session
 from grouper.plugin import initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
 from grouper.settings import default_settings_path, settings
@@ -12,7 +14,7 @@ from grouper.util import get_loglevel
 sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
 
-def main(sys_argv=sys.argv, start_config_thread=True):
+def main(sys_argv=sys.argv, start_config_thread=True, session=None):
     description_msg = "Grouper Control"
     parser = argparse.ArgumentParser(description=description_msg)
 
@@ -40,11 +42,22 @@ def main(sys_argv=sys.argv, start_config_thread=True):
             ]:
         subcommand_module.add_parser(subparsers)
 
+    subcommands = []
+    for subcommand_class in [PermissionCommand]:
+        cls = subcommand_class()
+        cls.add_parser(subparsers)
+        subcommands.append(cls)
+
     args = parser.parse_args(sys_argv[1:])
 
     if start_config_thread:
         settings.update_from_config(args.config)
         settings.start_config_thread(args.config)
+
+    for subcommand in subcommands:
+        if not session:
+            session = make_session()
+        subcommand.set_session(session)
 
     log_level = get_loglevel(args, base=logging.INFO)
     logging.basicConfig(level=log_level, format=settings.log_format)

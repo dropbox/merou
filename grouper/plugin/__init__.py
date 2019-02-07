@@ -1,7 +1,7 @@
-from importlib import import_module
 import inspect
 import os
-from typing import Callable, List, Type, TypeVar  # noqa: F401
+from importlib import import_module
+from typing import Callable, List, Type, TypeVar
 
 from annex import Annex
 
@@ -9,7 +9,7 @@ from grouper.plugin.base import BasePlugin
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
 from grouper.plugin.proxy import PluginProxy
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 _plugin_proxy = PluginProxy([])
 
@@ -39,7 +39,7 @@ def load_plugins(base_plugin, plugin_dirs, plugin_module_paths, service_name):
         base_plugin=base_plugin,
         plugin_dirs=plugin_dirs,
         raise_exceptions=True,
-        additional_plugin_callback=_load_plugin_modules(base_plugin, plugin_module_paths)
+        additional_plugin_callback=_load_plugin_modules(base_plugin, plugin_module_paths),
     )
 
     for plugin in plugins:

@@ -3,8 +3,6 @@ from urllib import urlencode
 import pytest
 from tornado.httpclient import HTTPError
 
-from fixtures import fe_app as app  # noqa: F401
-from fixtures import graph, groups, service_accounts, permissions, session, standard_graph, users  # noqa: F401
 from grouper.group_service_account import get_service_accounts
 from grouper.models.service_account import ServiceAccount
 from grouper.permissions import grant_permission_to_service_account
@@ -20,12 +18,22 @@ from grouper.service_account import (
     is_service_account,
     service_account_permissions,
 )
-from url_util import url
+from tests.fixtures import (  # noqa: F401
+    fe_app as app,
+    graph,
+    groups,
+    permissions,
+    service_accounts,
+    session,
+    standard_graph,
+    users,
+)
+from tests.url_util import url
 
 
-def test_service_accounts(session, standard_graph, users, groups, permissions):
-    graph = standard_graph
-
+def test_service_accounts(
+    session, standard_graph, graph, users, groups, permissions  # noqa: F811
+):
     # Create a service account.
     service_account = ServiceAccount.get(session, name="service@a.co")
     assert service_account.description == "some service account"
@@ -33,15 +41,16 @@ def test_service_accounts(session, standard_graph, users, groups, permissions):
     assert service_account.user.name == "service@a.co"
     assert service_account.user.enabled == True
     assert service_account.user.is_service_account == True
-    service_accounts = get_service_accounts(session, groups["team-sre"])
-    assert len(service_accounts) == 1
-    assert service_accounts[0].user.name == "service@a.co"
+    accounts = get_service_accounts(session, groups["team-sre"])
+    assert len(accounts) == 1
+    assert accounts[0].user.name == "service@a.co"
     assert is_service_account(session, service_account.user)
 
     # Duplicates should raise an exception.
     with pytest.raises(DuplicateServiceAccount):
         create_service_account(
-            session, users["zay@a.co"], "service@a.co", "dup", "dup", groups["team-sre"])
+            session, users["zay@a.co"], "service@a.co", "dup", "dup", groups["team-sre"]
+        )
 
     # zorkian should be able to manage the account, as should gary, but oliver (not a member of the
     # group) should not.
@@ -86,9 +95,9 @@ def test_service_accounts(session, standard_graph, users, groups, permissions):
     enable_service_account(session, users["zorkian@a.co"], service_account, new_group)
     assert service_account.user.enabled == True
     assert get_service_accounts(session, groups["team-sre"]) == []
-    service_accounts = get_service_accounts(session, new_group)
-    assert len(service_accounts) == 1
-    assert service_accounts[0].user.name == "service@a.co"
+    accounts = get_service_accounts(session, new_group)
+    assert len(accounts) == 1
+    assert accounts[0].user.name == "service@a.co"
 
     # Check that this is reflected in the graph and the user has no permissions.
     graph.update_from_db(session)
@@ -101,8 +110,9 @@ def test_service_accounts(session, standard_graph, users, groups, permissions):
 
 
 @pytest.mark.gen_test
-def test_service_account_fe_disable(session, standard_graph, http_client, base_url):
-    graph = standard_graph
+def test_service_account_fe_disable(
+    session, standard_graph, graph, http_client, base_url  # noqa: F811
+):
     admin = "tyleromeara@a.co"
     owner = "gary@a.co"
     plebe = "oliver@a.co"
@@ -110,12 +120,14 @@ def test_service_account_fe_disable(session, standard_graph, http_client, base_u
     # Unrelated people cannot disable the service account.
     fe_url = url(base_url, "/groups/security-team/service/service@a.co/disable")
     with pytest.raises(HTTPError):
-        yield http_client.fetch(fe_url, method="POST",
-                headers={"X-Grouper-User": plebe}, body=urlencode({}))
+        yield http_client.fetch(
+            fe_url, method="POST", headers={"X-Grouper-User": plebe}, body=urlencode({})
+        )
 
     # Group members can disable the service account.
-    resp = yield http_client.fetch(fe_url, method="POST",
-            headers={"X-Grouper-User": owner}, body=urlencode({}))
+    resp = yield http_client.fetch(
+        fe_url, method="POST", headers={"X-Grouper-User": owner}, body=urlencode({})
+    )
     assert resp.code == 200
     graph.update_from_db(session)
     metadata = graph.user_metadata["service@a.co"]
@@ -126,12 +138,20 @@ def test_service_account_fe_disable(session, standard_graph, http_client, base_u
     # The group owner cannot enable the account, since the group ownership has been lost
     fe_url = url(base_url, "/service/service@a.co/enable")
     with pytest.raises(HTTPError):
-        yield http_client.fetch(fe_url, method="POST",
-                headers={"X-Grouper-User": owner}, body=urlencode({"owner": "team-sre"}))
+        yield http_client.fetch(
+            fe_url,
+            method="POST",
+            headers={"X-Grouper-User": owner},
+            body=urlencode({"owner": "team-sre"}),
+        )
 
     # A global admin can enable the account.
-    resp = yield http_client.fetch(fe_url, method="POST",
-            headers={"X-Grouper-User": admin}, body=urlencode({"owner": "team-sre"}))
+    resp = yield http_client.fetch(
+        fe_url,
+        method="POST",
+        headers={"X-Grouper-User": admin},
+        body=urlencode({"owner": "team-sre"}),
+    )
     assert resp.code == 200
     graph.update_from_db(session)
     metadata = graph.user_metadata["service@a.co"]
@@ -142,8 +162,9 @@ def test_service_account_fe_disable(session, standard_graph, http_client, base_u
 
     # And can also disable the account even though they're not a member of the group.
     fe_url = url(base_url, "/groups/security-team/service/service@a.co/disable")
-    resp = yield http_client.fetch(fe_url, method="POST",
-            headers={"X-Grouper-User": admin}, body=urlencode({}))
+    resp = yield http_client.fetch(
+        fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode({})
+    )
     assert resp.code == 200
     graph.update_from_db(session)
     metadata = graph.user_metadata["service@a.co"]
@@ -151,24 +172,24 @@ def test_service_account_fe_disable(session, standard_graph, http_client, base_u
 
 
 @pytest.mark.gen_test
-def test_service_account_fe_edit(session, standard_graph, http_client, base_url):
-    graph = standard_graph
+def test_service_account_fe_edit(
+    session, standard_graph, graph, http_client, base_url  # noqa: F811
+):
     owner = "gary@a.co"
     plebe = "oliver@a.co"
 
     # Unrelated people cannot edit the service account.
     fe_url = url(base_url, "/groups/security-team/service/service@a.co/edit")
-    update = {
-        "description": "desc",
-        "machine_set": "machines",
-    }
+    update = {"description": "desc", "machine_set": "machines"}
     with pytest.raises(HTTPError):
-        yield http_client.fetch(fe_url, method="POST",
-                headers={"X-Grouper-User": plebe}, body=urlencode(update))
+        yield http_client.fetch(
+            fe_url, method="POST", headers={"X-Grouper-User": plebe}, body=urlencode(update)
+        )
 
     # A group member can.
-    resp = yield http_client.fetch(fe_url, method="POST",
-                headers={"X-Grouper-User": owner}, body=urlencode(update))
+    resp = yield http_client.fetch(
+        fe_url, method="POST", headers={"X-Grouper-User": owner}, body=urlencode(update)
+    )
     assert resp.code == 200
     graph.update_from_db(session)
     metadata = graph.user_metadata["service@a.co"]
@@ -177,8 +198,9 @@ def test_service_account_fe_edit(session, standard_graph, http_client, base_url)
 
     # A user admin also can.
     update["description"] = "done by admin"
-    resp = yield http_client.fetch(fe_url, method="POST",
-                headers={"X-Grouper-User": owner}, body=urlencode(update))
+    resp = yield http_client.fetch(
+        fe_url, method="POST", headers={"X-Grouper-User": owner}, body=urlencode(update)
+    )
     assert resp.code == 200
     graph.update_from_db(session)
     metadata = graph.user_metadata["service@a.co"]
@@ -186,8 +208,9 @@ def test_service_account_fe_edit(session, standard_graph, http_client, base_url)
 
 
 @pytest.mark.gen_test
-def test_service_account_fe_perms(session, standard_graph, http_client, base_url):
-    graph = standard_graph
+def test_service_account_fe_perms(
+    session, standard_graph, graph, http_client, base_url  # noqa: F811
+):
     admin = "tyleromeara@a.co"
     owner = "zay@a.co"
     plebe = "oliver@a.co"
@@ -195,71 +218,103 @@ def test_service_account_fe_perms(session, standard_graph, http_client, base_url
     # Unrelated people cannot create a service account
     fe_url = url(base_url, "/groups/team-sre/service/create")
     with pytest.raises(HTTPError):
-        yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": plebe},
-                body=urlencode({
-                    "name": "service_account", "description": "*", "machine_set": "*"}))
+        yield http_client.fetch(
+            fe_url,
+            method="POST",
+            headers={"X-Grouper-User": plebe},
+            body=urlencode({"name": "service_account", "description": "*", "machine_set": "*"}),
+        )
     # But group members can create service accounts
-    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": owner},
-            body=urlencode({"name": "service_account", "description": "*", "machine_set": "*"})) 
+    resp = yield http_client.fetch(
+        fe_url,
+        method="POST",
+        headers={"X-Grouper-User": owner},
+        body=urlencode({"name": "service_account", "description": "*", "machine_set": "*"}),
+    )
     assert resp.code == 200
 
     # Unrelated people cannot grant a permission.
     fe_url = url(base_url, "/groups/team-sre/service/service@a.co/grant")
     with pytest.raises(HTTPError):
-        yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": plebe},
-                body=urlencode({"permission": "team-sre", "argument": "*"}))
+        yield http_client.fetch(
+            fe_url,
+            method="POST",
+            headers={"X-Grouper-User": plebe},
+            body=urlencode({"permission": "team-sre", "argument": "*"}),
+        )
 
     # Even group owners cannot grant an unrelated permission.
-    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": owner},
-            body=urlencode({"permission": "other-perm", "argument": "*"}))
+    resp = yield http_client.fetch(
+        fe_url,
+        method="POST",
+        headers={"X-Grouper-User": owner},
+        body=urlencode({"permission": "other-perm", "argument": "*"}),
+    )
     assert resp.code == 200
     graph.update_from_db(session)
     metadata = graph.get_user_details("service@a.co")
     assert metadata["permissions"] == []
 
     # Group owners can delegate a team permission.
-    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": owner},
-            body=urlencode({"permission": "team-sre", "argument": "*"}))
+    resp = yield http_client.fetch(
+        fe_url,
+        method="POST",
+        headers={"X-Grouper-User": owner},
+        body=urlencode({"permission": "team-sre", "argument": "*"}),
+    )
     assert resp.code == 200
 
     # Global user admins still cannot grant an unrelated permission.
-    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": admin},
-            body=urlencode({"permission": "other-perm", "argument": "*"}))
+    resp = yield http_client.fetch(
+        fe_url,
+        method="POST",
+        headers={"X-Grouper-User": admin},
+        body=urlencode({"permission": "other-perm", "argument": "*"}),
+    )
     assert resp.code == 200
     graph.update_from_db(session)
     metadata = graph.get_user_details("service@a.co")
     assert len(metadata["permissions"]) == 1
 
     # But can delegate a team permission.
-    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": admin},
-            body=urlencode({"permission": "ssh", "argument": "*"}))
+    resp = yield http_client.fetch(
+        fe_url,
+        method="POST",
+        headers={"X-Grouper-User": admin},
+        body=urlencode({"permission": "ssh", "argument": "*"}),
+    )
     assert resp.code == 200
 
     # Check that the permissions are reflected in the graph.
     graph.update_from_db(session)
     metadata = graph.get_user_details("service@a.co")
-    permissions = [(p["permission"], p["argument"]) for p in metadata["permissions"]]
-    assert sorted(permissions) == [("ssh", "*"), ("team-sre", "*")]
+    perms = [(p["permission"], p["argument"]) for p in metadata["permissions"]]
+    assert sorted(perms) == [("ssh", "*"), ("team-sre", "*")]
 
     # Find the mapping IDs of the two permissions.
     service_account = ServiceAccount.get(session, name="service@a.co")
-    permissions = service_account_permissions(session, service_account)
+    perms = service_account_permissions(session, service_account)
 
     # Unrelated people cannot revoke a permission.
-    fe_url = url(base_url, "/groups/team-sre/service/service@a.co/revoke/{}".format(
-        permissions[0].mapping_id))
+    fe_url = url(
+        base_url, "/groups/team-sre/service/service@a.co/revoke/{}".format(perms[0].mapping_id)
+    )
     with pytest.raises(HTTPError):
-        yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": plebe},
-                body=urlencode({}))
+        yield http_client.fetch(
+            fe_url, method="POST", headers={"X-Grouper-User": plebe}, body=urlencode({})
+        )
 
     # But the group owner and a global admin can.
-    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": admin},
-            body=urlencode({}))
+    resp = yield http_client.fetch(
+        fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode({})
+    )
     assert resp.code == 200
-    fe_url = url(base_url, "/groups/team-sre/service/service@a.co/revoke/{}".format(
-        permissions[1].mapping_id))
-    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": owner},
-            body=urlencode({}))
+    fe_url = url(
+        base_url, "/groups/team-sre/service/service@a.co/revoke/{}".format(perms[1].mapping_id)
+    )
+    resp = yield http_client.fetch(
+        fe_url, method="POST", headers={"X-Grouper-User": owner}, body=urlencode({})
+    )
     assert resp.code == 200
 
     # This should have removed all the permissions.
@@ -278,24 +333,21 @@ class MachineSetPlugin(BasePlugin):
 
 
 @pytest.mark.gen_test
-def test_machine_set_plugin(mocker, session, standard_graph, http_client, base_url):
+def test_machine_set_plugin(
+    mocker, session, standard_graph, graph, http_client, base_url  # noqa: F811
+):
     mocker.patch(
-        'grouper.service_account.get_plugin_proxy',
-        return_value=PluginProxy([MachineSetPlugin()]),
+        "grouper.service_account.get_plugin_proxy", return_value=PluginProxy([MachineSetPlugin()])
     )
-
-    graph = standard_graph
     admin = "zorkian@a.co"
 
     # Edit the metadata of an existing service account.  This should fail (although return 200)
     # including the appropriate error.
-    update = {
-        "description": "some service account",
-        "machine_set": "not valid",
-    }
+    update = {"description": "some service account", "machine_set": "not valid"}
     fe_url = url(base_url, "/groups/team-sre/service/service@a.co/edit")
-    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": admin},
-            body=urlencode(update))
+    resp = yield http_client.fetch(
+        fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode(update)
+    )
     assert resp.code == 200
     assert "service@a.co has invalid machine set" in resp.body
     graph.update_from_db(session)
@@ -304,8 +356,9 @@ def test_machine_set_plugin(mocker, session, standard_graph, http_client, base_u
 
     # Use a valid machine set, and then this should go through.
     update["machine_set"] = "is okay"
-    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": admin},
-            body=urlencode(update))
+    resp = yield http_client.fetch(
+        fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode(update)
+    )
     assert resp.code == 200
     graph.update_from_db(session)
     metadata = graph.user_metadata["service@a.co"]
@@ -318,8 +371,9 @@ def test_machine_set_plugin(mocker, session, standard_graph, http_client, base_u
         "machine_set": "not valid",
     }
     fe_url = url(base_url, "/groups/team-sre/service/create")
-    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": admin},
-            body=urlencode(data))
+    resp = yield http_client.fetch(
+        fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode(data)
+    )
     assert resp.code == 200
     assert "other@svc.localhost has invalid machine set" in resp.body
     graph.update_from_db(session)
@@ -327,8 +381,9 @@ def test_machine_set_plugin(mocker, session, standard_graph, http_client, base_u
 
     # But this should go through with a valid machine set.
     data["machine_set"] = "is okay"
-    resp = yield http_client.fetch(fe_url, method="POST", headers={"X-Grouper-User": admin},
-            body=urlencode(data))
+    resp = yield http_client.fetch(
+        fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode(data)
+    )
     assert resp.code == 200
     graph.update_from_db(session)
     metadata = graph.user_metadata["other@svc.localhost"]

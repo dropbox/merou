@@ -5,16 +5,11 @@ from grouper.models.user_token import UserToken
 
 
 class UsersUserTokens(GrouperHandler):
-    @ensure_audit_security(u'user_tokens')
+    @ensure_audit_security(u"user_tokens")
     def get(self):
         form = UsersUserTokenForm(self.request.arguments)
 
-        user_token_list = self.session.query(
-            UserToken,
-            User,
-        ).filter(
-            User.id == UserToken.user_id,
-        )
+        user_token_list = self.session.query(UserToken, User).filter(User.id == UserToken.user_id)
 
         if not form.validate():
             total = user_token_list.count()
@@ -40,8 +35,5 @@ class UsersUserTokens(GrouperHandler):
         user_token_list = user_token_list.offset(form.offset.data).limit(form.limit.data)
 
         self.render(
-            "users-usertokens.html",
-            user_token_list=user_token_list,
-            total=total,
-            form=form,
+            "users-usertokens.html", user_token_list=user_token_list, total=total, form=form
         )

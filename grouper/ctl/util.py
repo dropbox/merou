@@ -1,10 +1,10 @@
+import logging
+import re
 from argparse import ArgumentTypeError
 from contextlib import contextmanager
 from datetime import date  # noqa
 from datetime import datetime
 from functools import wraps
-import logging
-import re
 from sys import stdout
 
 from typing import Generator  # noqa
@@ -15,7 +15,7 @@ from grouper.settings import settings
 from grouper.util import get_database_url
 
 
-DATE_FORMAT = '%Y-%m-%d'
+DATE_FORMAT = "%Y-%m-%d"
 
 
 def ensure_valid_username(f):
@@ -52,7 +52,7 @@ def ensure_valid_service_account_name(f):
     @wraps(f)
     def wrapper(args):
         if not re.match("^{}$".format(SERVICE_ACCOUNT_VALIDATION), args.name):
-            logging.error("Invalid service account name \"{}\"".format(args.name))
+            logging.error('Invalid service account name "{}"'.format(args.name))
             return
 
         return f(args)
@@ -80,7 +80,7 @@ def open_file(fn, mode):
     # type: (str, str) -> Generator
     """mimic standard library `open` function to support stdout if None is
     specified as the filename."""
-    if fn and fn != '--':
+    if fn and fn != "--":
         fh = open(fn, mode)
     else:
         fh = stdout  # type: ignore

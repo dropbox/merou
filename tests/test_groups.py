@@ -4,14 +4,22 @@ from urllib import urlencode
 import pytest
 from tornado.httpclient import HTTPError
 
-from fixtures import fe_app as app
-from fixtures import standard_graph, users, graph, groups, service_accounts, session, permissions  # noqa
 from grouper.models.group import Group
-from url_util import url
-from util import add_member, get_groups, get_users
+from tests.fixtures import (  # noqa: F401
+    fe_app as app,
+    graph,
+    groups,
+    permissions,
+    service_accounts,
+    session,
+    standard_graph,
+    users,
+)
+from tests.url_util import url
+from tests.util import add_member, get_groups, get_users
 
 
-def setup_desc_to_ances(session, users, groups):  # noqa
+def setup_desc_to_ances(session, users, groups):  # noqa: F811
     add_member(groups["team-sre"], users["gary@a.co"], role="owner")
     add_member(groups["team-sre"], users["zay@a.co"])
 
@@ -26,7 +34,7 @@ def setup_desc_to_ances(session, users, groups):  # noqa
     add_member(groups["all-teams"], groups["team-infra"])
 
 
-def test_graph_desc_to_ances(session, graph, users, groups):  # noqa
+def test_graph_desc_to_ances(session, graph, users, groups):  # noqa: F811
     """ Test adding members where all descendants already exist."""
 
     setup_desc_to_ances(session, users, groups)
@@ -42,18 +50,21 @@ def test_graph_desc_to_ances(session, graph, users, groups):  # noqa
     assert get_users(graph, "all-teams") == set(["gary@a.co", "zay@a.co", "testuser@a.co"])
     assert get_users(graph, "all-teams", cutoff=1) == set(["testuser@a.co"])
 
-    assert get_groups(graph, "gary@a.co") == set(["team-sre", "all-teams", "tech-ops",
-            "team-infra"])
+    assert get_groups(graph, "gary@a.co") == set(
+        ["team-sre", "all-teams", "tech-ops", "team-infra"]
+    )
     assert get_groups(graph, "gary@a.co", cutoff=1) == set(["team-sre", "tech-ops", "team-infra"])
 
-    assert get_groups(graph, "zay@a.co") == set(["team-sre", "all-teams", "tech-ops", "team-infra"])
+    assert get_groups(graph, "zay@a.co") == set(
+        ["team-sre", "all-teams", "tech-ops", "team-infra"]
+    )
     assert get_groups(graph, "zay@a.co", cutoff=1) == set(["team-sre", "tech-ops"])
 
     assert get_groups(graph, "testuser@a.co") == set(["all-teams"])
     assert get_groups(graph, "testuser@a.co", cutoff=1) == set(["all-teams"])
 
 
-def test_graph_add_member_existing(session, graph, users, groups):  # noqa
+def test_graph_add_member_existing(session, graph, users, groups):  # noqa: F811
     """ Test adding members to an existing relationship."""
 
     add_member(groups["team-sre"], users["gary@a.co"], role="owner")
@@ -81,18 +92,21 @@ def test_graph_add_member_existing(session, graph, users, groups):  # noqa
     assert get_users(graph, "all-teams") == set(["gary@a.co", "zay@a.co", "testuser@a.co"])
     assert get_users(graph, "all-teams", cutoff=1) == set(["testuser@a.co"])
 
-    assert get_groups(graph, "gary@a.co") == set(["team-sre", "all-teams", "tech-ops",
-            "team-infra"])
+    assert get_groups(graph, "gary@a.co") == set(
+        ["team-sre", "all-teams", "tech-ops", "team-infra"]
+    )
     assert get_groups(graph, "gary@a.co", cutoff=1) == set(["team-sre", "tech-ops", "team-infra"])
 
-    assert get_groups(graph, "zay@a.co") == set(["team-sre", "all-teams", "tech-ops", "team-infra"])
+    assert get_groups(graph, "zay@a.co") == set(
+        ["team-sre", "all-teams", "tech-ops", "team-infra"]
+    )
     assert get_groups(graph, "zay@a.co", cutoff=1) == set(["team-sre", "tech-ops"])
 
     assert get_groups(graph, "testuser@a.co") == set(["all-teams"])
     assert get_groups(graph, "testuser@a.co", cutoff=1) == set(["all-teams"])
 
 
-def test_graph_with_removes(session, graph, users, groups):  # noqa
+def test_graph_with_removes(session, graph, users, groups):  # noqa: F811
     """ Test adding members where all descendants already exist."""
 
     setup_desc_to_ances(session, users, groups)
@@ -109,11 +123,14 @@ def test_graph_with_removes(session, graph, users, groups):  # noqa
     assert get_users(graph, "all-teams") == set(["gary@a.co", "zay@a.co", "testuser@a.co"])
     assert get_users(graph, "all-teams", cutoff=1) == set(["testuser@a.co"])
 
-    assert get_groups(graph, "gary@a.co") == set(["team-sre", "all-teams", "tech-ops",
-        "team-infra"])
+    assert get_groups(graph, "gary@a.co") == set(
+        ["team-sre", "all-teams", "tech-ops", "team-infra"]
+    )
     assert get_groups(graph, "gary@a.co", cutoff=1) == set(["team-sre", "tech-ops"])
 
-    assert get_groups(graph, "zay@a.co") == set(["team-sre", "all-teams", "tech-ops", "team-infra"])
+    assert get_groups(graph, "zay@a.co") == set(
+        ["team-sre", "all-teams", "tech-ops", "team-infra"]
+    )
     assert get_groups(graph, "zay@a.co", cutoff=1) == set(["team-sre", "tech-ops"])
 
     assert get_groups(graph, "testuser@a.co") == set(["all-teams"])
@@ -162,7 +179,7 @@ def test_graph_with_removes(session, graph, users, groups):  # noqa
     assert get_groups(graph, "testuser@a.co", cutoff=1) == set(["all-teams"])
 
 
-def test_graph_cycle_direct(session, graph, users, groups):  # noqa
+def test_graph_cycle_direct(session, graph, users, groups):  # noqa: F811
     """ Test adding members where all descendants already exist."""
 
     add_member(groups["team-sre"], users["gary@a.co"])
@@ -186,7 +203,7 @@ def test_graph_cycle_direct(session, graph, users, groups):  # noqa
     assert get_groups(graph, "zay@a.co", cutoff=1) == set(["tech-ops"])
 
 
-def test_graph_cycle_indirect(session, graph, users, groups):  # noqa
+def test_graph_cycle_indirect(session, graph, users, groups):  # noqa: F811
     """ Test adding a member that will create a cycle.
 
         gary         zay            testuser
@@ -236,9 +253,9 @@ def test_graph_cycle_indirect(session, graph, users, groups):  # noqa
 
 
 @pytest.mark.gen_test
-def test_graph_disable(session, graph, groups, http_client, base_url):  # noqa
+def test_graph_disable(session, graph, groups, http_client, base_url):  # noqa: F811
     """ Test that disabled groups work with the graph as expected."""
-    groupname = u'serving-team'
+    groupname = u"serving-team"
 
     graph.update_from_db(session)
     old_groups = graph.groups
@@ -246,25 +263,32 @@ def test_graph_disable(session, graph, groups, http_client, base_url):  # noqa
     assert groupname in graph.permission_metadata
 
     # disable a group
-    fe_url = url(base_url, '/groups/{}/disable'.format(groupname))
-    resp = yield http_client.fetch(fe_url, method="POST",
-            headers={"X-Grouper-User": "zorkian@a.co"}, body=urlencode({"name": groupname}))
+    fe_url = url(base_url, "/groups/{}/disable".format(groupname))
+    resp = yield http_client.fetch(
+        fe_url,
+        method="POST",
+        headers={"X-Grouper-User": "zorkian@a.co"},
+        body=urlencode({"name": groupname}),
+    )
     assert resp.code == 200
 
     graph.update_from_db(session)
-    assert len(graph.groups) == (len(old_groups) - 1), 'disabled group removed from graph'
+    assert len(graph.groups) == (len(old_groups) - 1), "disabled group removed from graph"
     assert groupname not in graph.groups
     assert groupname not in graph.permission_metadata
 
 
 @pytest.mark.gen_test
-def test_group_disable(session, groups, http_client, base_url):
+def test_group_disable(session, groups, http_client, base_url):  # noqa: F811
     # create global audit
-    fe_url = url(base_url, '/audits/create')
+    fe_url = url(base_url, "/audits/create")
     ends_at = date.today() + timedelta(days=7)
-    resp = yield http_client.fetch(fe_url, method="POST",
-            headers={"X-Grouper-User": "zorkian@a.co"},
-            body=urlencode({"ends_at": ends_at.strftime("%m/%d/%Y")}))
+    resp = yield http_client.fetch(
+        fe_url,
+        method="POST",
+        headers={"X-Grouper-User": "zorkian@a.co"},
+        body=urlencode({"ends_at": ends_at.strftime("%m/%d/%Y")}),
+    )
     assert resp.code == 200
 
     serving_team, just_created = Group.get_or_create(session, groupname="serving-team")
@@ -273,15 +297,23 @@ def test_group_disable(session, groups, http_client, base_url):
     assert not serving_team.audit.complete
 
     # disable with insufficient permissions
-    fe_url = url(base_url, '/groups/serving-team/disable')
+    fe_url = url(base_url, "/groups/serving-team/disable")
     with pytest.raises(HTTPError):
-        resp = yield http_client.fetch(fe_url, method="POST",
-                headers={"X-Grouper-User": "gary@a.co"}, body=urlencode({"name": "serving-team"}))
+        resp = yield http_client.fetch(
+            fe_url,
+            method="POST",
+            headers={"X-Grouper-User": "gary@a.co"},
+            body=urlencode({"name": "serving-team"}),
+        )
 
     # disable
-    fe_url = url(base_url, '/groups/serving-team/disable')
-    resp = yield http_client.fetch(fe_url, method="POST",
-            headers={"X-Grouper-User": "zorkian@a.co"}, body=urlencode({"name": "serving-team"}))
+    fe_url = url(base_url, "/groups/serving-team/disable")
+    resp = yield http_client.fetch(
+        fe_url,
+        method="POST",
+        headers={"X-Grouper-User": "zorkian@a.co"},
+        body=urlencode({"name": "serving-team"}),
+    )
     assert resp.code == 200
 
     serving_team, just_created = Group.get_or_create(session, groupname="serving-team")
@@ -291,15 +323,16 @@ def test_group_disable(session, groups, http_client, base_url):
 
 
 @pytest.mark.gen_test
-def test_graph_edit_role(session, graph, standard_graph, groups, users):
+def test_graph_edit_role(session, graph, standard_graph, groups, users):  # noqa: F811
     """Test that membership role changes are refected in the graph."""
     username = "figurehead@a.co"
 
     user_role = graph.get_group_details("tech-ops")["users"][username]["rolename"]
     assert user_role == "np-owner"
 
-    groups["tech-ops"].edit_member(users["zorkian@a.co"], users[username], "a reason",
-            role="owner")
+    groups["tech-ops"].edit_member(
+        users["zorkian@a.co"], users[username], "a reason", role="owner"
+    )
 
     graph.update_from_db(session)
     user_role = graph.get_group_details("tech-ops")["users"][username]["rolename"]

@@ -1,8 +1,6 @@
-from mock import patch
 import pytest
+from mock import patch
 
-from constants import SSH_KEY_1, SSH_KEY_BAD
-from fixtures import session, users  # noqa: F401
 from grouper.plugin.base import BasePlugin
 from grouper.plugin.exceptions import PluginRejectedPublicKey
 from grouper.plugin.proxy import PluginProxy
@@ -13,6 +11,8 @@ from grouper.public_key import (
     get_public_keys_of_user,
     PublicKeyParseError,
 )
+from tests.constants import SSH_KEY_1, SSH_KEY_BAD
+from tests.fixtures import session, users  # noqa: F401
 
 
 class PublicKeyPlugin(BasePlugin):
@@ -20,7 +20,7 @@ class PublicKeyPlugin(BasePlugin):
         raise PluginRejectedPublicKey()
 
 
-def test_duplicate_key(session, users):
+def test_duplicate_key(session, users):  # noqa: F811
     user = users["cbguder@a.co"]
 
     add_public_key(session, user, SSH_KEY_1)
@@ -32,7 +32,7 @@ def test_duplicate_key(session, users):
     assert len(get_public_keys_of_user(session, user.id)) == 1
 
 
-def test_bad_key(session, users):
+def test_bad_key(session, users):  # noqa: F811
     user = users["cbguder@a.co"]
 
     with pytest.raises(PublicKeyParseError):
@@ -42,7 +42,7 @@ def test_bad_key(session, users):
 
 
 @patch("grouper.public_key.get_plugin_proxy")
-def test_rejected_key(get_plugin_proxy, session, users):
+def test_rejected_key(get_plugin_proxy, session, users):  # noqa: F811
     get_plugin_proxy.return_value = PluginProxy([PublicKeyPlugin()])
 
     user = users["cbguder@a.co"]

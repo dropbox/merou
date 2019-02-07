@@ -1,9 +1,7 @@
 from grouper.plugin.base import BasePlugin
 from grouper.plugin.exceptions import PluginRejectedPublicKey
 
-MIN_KEY_SIZES = {
-    "ssh-rsa": 2048,
-}
+MIN_KEY_SIZES = {"ssh-rsa": 2048}
 
 
 class SshKeyPolicyPlugin(BasePlugin):
@@ -14,8 +12,7 @@ class SshKeyPolicyPlugin(BasePlugin):
             if key.bits < min_key_size:
                 raise PluginRejectedPublicKey(
                     "Unsupported key size for {}, minimum key size is {} bits".format(
-                        key.key_type,
-                        min_key_size
+                        key.key_type, min_key_size
                     )
                 )
         else:

@@ -1,18 +1,24 @@
-from pages.exceptions import NoSuchElementException
-from pages.users import PublicKeysPage, UserViewPage
-from plugins import group_ownership_policy
-
 import pytest
 
-from tests.fixtures import graph, groups, service_accounts, permissions, session, standard_graph, users  # noqa: F401
-from tests.fixtures import fe_app as app  # noqa: F401
-from tests.url_util import url
-from tests.util import add_member, grant_permission
-
-from fixtures import async_server, browser  # noqa: F401
 from grouper.constants import AUDIT_SECURITY
 from grouper.models.public_key import PublicKey
 from grouper.permissions import get_or_create_permission
+from itests.fixtures import async_server, browser  # noqa: F401
+from itests.pages.exceptions import NoSuchElementException
+from itests.pages.users import PublicKeysPage, UserViewPage
+from plugins import group_ownership_policy
+from tests.fixtures import (  # noqa: F401
+    fe_app as app,
+    graph,
+    groups,
+    permissions,
+    service_accounts,
+    session,
+    standard_graph,
+    users,
+)
+from tests.url_util import url
+from tests.util import add_member, grant_permission
 
 
 def test_disable_last_owner(async_server, browser):  # noqa: F811

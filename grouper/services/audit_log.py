@@ -7,9 +7,9 @@ from grouper.models.user import User
 from grouper.plugin import get_plugin_proxy
 
 if TYPE_CHECKING:
-    from grouper.models.base.session import Session  # noqa: F401
-    from grouper.models.permission import Permission  # noqa: F401
-    from grouper.usecases.authorization import Authorization  # noqa: F401
+    from grouper.models.base.session import Session
+    from grouper.models.permission import Permission
+    from grouper.usecases.authorization import Authorization
 
 
 class AuditLogAction(Enum):
@@ -18,6 +18,7 @@ class AuditLogAction(Enum):
     The logged action will be the lowercase form of the enum name, and the enum value will be used
     as the description.
     """
+
     DISABLE_PERMISSION = "Disabled permission"
 
 
@@ -33,11 +34,11 @@ class AuditLogService(object):
         self._log(authorization, AuditLogAction.DISABLE_PERMISSION, on_permission=permission)
 
     def _log(
-            self,
-            authorization,  # type: Authorization
-            action,  # type: AuditLogAction
-            on_permission,  # type: Permission
-            category=AuditLogCategory.general,  # type: AuditLogCategory
+        self,
+        authorization,  # type: Authorization
+        action,  # type: AuditLogAction
+        on_permission,  # type: Permission
+        category=AuditLogCategory.general,  # type: AuditLogCategory
     ):
         # type: (...) -> None
         """Internal method to log an action to the audit log.

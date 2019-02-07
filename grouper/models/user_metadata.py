@@ -9,9 +9,7 @@ from grouper.models.base.model_base import Model
 class UserMetadata(Model):
 
     __tablename__ = "user_metadata"
-    __table_args__ = (
-        UniqueConstraint('user_id', 'data_key', name='uidx1'),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "data_key", name="uidx1"),)
 
     id = Column(Integer, primary_key=True)
 

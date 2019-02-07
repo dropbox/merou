@@ -10,12 +10,13 @@ from grouper.service_account import can_manage_service_account
 
 
 class PublicKeyAdd(GrouperHandler):
-
     @staticmethod
     def check_access(session, actor, target):
-        return (actor.name == target.name or
-            (target.role_user and can_manage_role_user(session, actor, tuser=target)) or
-            (target.is_service_account and can_manage_service_account(session, target, actor)))
+        return (
+            actor.name == target.name
+            or (target.role_user and can_manage_role_user(session, actor, tuser=target))
+            or (target.is_service_account and can_manage_service_account(session, target, actor))
+        )
 
     def get(self, user_id=None, name=None):
         user = User.get(self.session, user_id, name)
@@ -38,7 +39,9 @@ class PublicKeyAdd(GrouperHandler):
         form = PublicKeyForm(self.request.arguments)
         if not form.validate():
             return self.render(
-                "public-key-add.html", form=form, user=user,
+                "public-key-add.html",
+                form=form,
+                user=user,
                 alerts=self.get_form_alerts(form.errors),
             )
 
@@ -53,20 +56,32 @@ class PublicKeyAdd(GrouperHandler):
 
         if form.public_key.errors:
             return self.render(
-                "public-key-add.html", form=form, user=user,
+                "public-key-add.html",
+                form=form,
+                user=user,
                 alerts=self.get_form_alerts(form.errors),
             )
 
-        AuditLog.log(self.session, self.current_user.id, 'add_public_key',
-                     'Added public key: {}'.format(pubkey.fingerprint_sha256),
-                     on_user_id=user.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "add_public_key",
+            "Added public key: {}".format(pubkey.fingerprint_sha256),
+            on_user_id=user.id,
+        )
 
         email_context = {
-                "actioner": self.current_user.name,
-                "changed_user": user.name,
-                "action": "added",
-                }
-        send_email(self.session, [user.name], 'Public SSH key added', 'ssh_keys_changed',
-                settings, email_context)
+            "actioner": self.current_user.name,
+            "changed_user": user.name,
+            "action": "added",
+        }
+        send_email(
+            self.session,
+            [user.name],
+            "Public SSH key added",
+            "ssh_keys_changed",
+            settings,
+            email_context,
+        )
 
         return self.redirect("/users/{}?refresh=yes".format(user.name))

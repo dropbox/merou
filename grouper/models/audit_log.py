@@ -59,9 +59,17 @@ class AuditLog(Model):
     category = Column(Integer, nullable=False, default=AuditLogCategory.general)
 
     @staticmethod
-    def log(session, actor_id, action, description,
-            on_user_id=None, on_group_id=None, on_permission_id=None, on_tag_id=None,
-            category=AuditLogCategory.general):
+    def log(
+        session,
+        actor_id,
+        action,
+        description,
+        on_user_id=None,
+        on_group_id=None,
+        on_permission_id=None,
+        on_tag_id=None,
+        category=AuditLogCategory.general,
+    ):
         """
         Log an event in the database.
 
@@ -97,9 +105,19 @@ class AuditLog(Model):
         get_plugin_proxy().log_auditlog_entry(entry)
 
     @staticmethod
-    def get_entries(session, actor_id=None, on_user_id=None, on_group_id=None,
-                    on_permission_id=None, on_tag_id=None, limit=None, offset=None,
-                    involve_user_id=None, category=None, action=None):
+    def get_entries(
+        session,
+        actor_id=None,
+        on_user_id=None,
+        on_group_id=None,
+        on_permission_id=None,
+        on_tag_id=None,
+        limit=None,
+        offset=None,
+        involve_user_id=None,
+        category=None,
+        action=None,
+    ):
         """
         Flexible method for getting log entries. By default it returns all entries
         starting at the newest. Most recent first.
@@ -120,10 +138,9 @@ class AuditLog(Model):
         if on_tag_id:
             results = results.filter(AuditLog.on_tag_id == on_tag_id)
         if involve_user_id:
-            results = results.filter(or_(
-                AuditLog.on_user_id == involve_user_id,
-                AuditLog.actor_id == involve_user_id
-            ))
+            results = results.filter(
+                or_(AuditLog.on_user_id == involve_user_id, AuditLog.actor_id == involve_user_id)
+            )
         if category:
             results = results.filter(AuditLog.category == int(category))
         if action:

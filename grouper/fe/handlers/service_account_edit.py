@@ -20,7 +20,7 @@ class ServiceAccountEdit(GrouperHandler):
         form = ServiceAccountEditForm(obj=service_account)
 
         self.render(
-            "service-account-edit.html", service_account=service_account, group=group, form=form,
+            "service-account-edit.html", service_account=service_account, group=group, form=form
         )
 
     def post(self, group_id=None, name=None, account_id=None, accountname=None):
@@ -37,19 +37,31 @@ class ServiceAccountEdit(GrouperHandler):
         form = ServiceAccountEditForm(self.request.arguments, obj=service_account)
         if not form.validate():
             return self.render(
-                "service-account-edit.html", service_account=service_account, group=group,
-                form=form, alerts=self.get_form_alerts(form.errors)
+                "service-account-edit.html",
+                service_account=service_account,
+                group=group,
+                form=form,
+                alerts=self.get_form_alerts(form.errors),
             )
 
         try:
-            edit_service_account(self.session, self.current_user, service_account,
-                                 form.data["description"], form.data["machine_set"])
+            edit_service_account(
+                self.session,
+                self.current_user,
+                service_account,
+                form.data["description"],
+                form.data["machine_set"],
+            )
         except BadMachineSet as e:
             form.machine_set.errors.append(str(e))
             return self.render(
-                "service-account-edit.html", service_account=service_account, group=group,
-                form=form, alerts=self.get_form_alerts(form.errors)
+                "service-account-edit.html",
+                service_account=service_account,
+                group=group,
+                form=form,
+                alerts=self.get_form_alerts(form.errors),
             )
 
-        return self.redirect("/groups/{}/service/{}".format(
-            group.name, service_account.user.username))
+        return self.redirect(
+            "/groups/{}/service/{}".format(group.name, service_account.user.username)
+        )

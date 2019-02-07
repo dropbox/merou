@@ -86,7 +86,7 @@ HANDLERS = [
     (r"/permissions/grant/{}".format(NAME_VALIDATION), PermissionsGrant),
     (
         r"/permissions/{}/revoke/(?P<mapping_id>[0-9]+)".format(PERMISSION_VALIDATION),
-        PermissionsRevoke
+        PermissionsRevoke,
     ),
     (r"/search", Search),
     (r"/users", UsersView),
@@ -97,85 +97,91 @@ HANDLERS = [
 ]
 
 for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
-    HANDLERS.extend([
-        (r"/users/{}".format(regex), UserView),
-        (r"/users/{}/disable".format(regex), UserDisable),
-        (r"/users/{}/enable".format(regex), UserEnable),
-        (r"/users/{}/shell".format(regex), UserShell),
-        (r"/users/{}/public-key/add".format(regex), PublicKeyAdd),
-        (
-            r"/users/{}/public-key/(?P<key_id>[0-9]+)/delete".format(regex),
-            PublicKeyDelete
-        ),
-        (
-            r"/users/{}/public-key/(?P<key_id>[0-9]+)/tag".format(regex),
-            PublicKeyAddTag
-        ),
-        (
-            r"/users/{}/public-key/(?P<key_id>[0-9]+)/delete_tag/(?P<tag_id>[0-9]+)".format(regex),
-            PublicKeyRemoveTag
-        ),
-        (r"/users/{}/tokens/add".format(regex), UserTokenAdd),
-        (r"/users/{}/tokens/(?P<token_id>[0-9]+)/disable".format(regex), UserTokenDisable),
-        (r"/users/{}/passwords/add".format(regex), UserPasswordAdd),
-        (r"/users/{}/passwords/(?P<pass_id>[0-9]+)/delete".format(regex), UserPasswordDelete),
-        (r"/service/{}".format(regex), RoleUserView),
-        (r"/service/{}/enable".format(regex), ServiceAccountEnable),
-    ])
+    HANDLERS.extend(
+        [
+            (r"/users/{}".format(regex), UserView),
+            (r"/users/{}/disable".format(regex), UserDisable),
+            (r"/users/{}/enable".format(regex), UserEnable),
+            (r"/users/{}/shell".format(regex), UserShell),
+            (r"/users/{}/public-key/add".format(regex), PublicKeyAdd),
+            (r"/users/{}/public-key/(?P<key_id>[0-9]+)/delete".format(regex), PublicKeyDelete),
+            (r"/users/{}/public-key/(?P<key_id>[0-9]+)/tag".format(regex), PublicKeyAddTag),
+            (
+                r"/users/{}/public-key/(?P<key_id>[0-9]+)/delete_tag/(?P<tag_id>[0-9]+)".format(
+                    regex
+                ),
+                PublicKeyRemoveTag,
+            ),
+            (r"/users/{}/tokens/add".format(regex), UserTokenAdd),
+            (r"/users/{}/tokens/(?P<token_id>[0-9]+)/disable".format(regex), UserTokenDisable),
+            (r"/users/{}/passwords/add".format(regex), UserPasswordAdd),
+            (r"/users/{}/passwords/(?P<pass_id>[0-9]+)/delete".format(regex), UserPasswordDelete),
+            (r"/service/{}".format(regex), RoleUserView),
+            (r"/service/{}/enable".format(regex), ServiceAccountEnable),
+        ]
+    )
 
 for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
-    HANDLERS.extend([
-        (r"/groups/{}".format(regex), GroupView),
-        (r"/groups/{}/edit".format(regex), GroupEdit),
-        (
-            r"/groups/{}/edit/(?P<member_type>user|group)/{}".format(regex, NAME2_VALIDATION),
-            GroupEditMember
-        ),
-        (r"/groups/{}/disable".format(regex), GroupDisable),
-        (r"/groups/{}/enable".format(regex), GroupEnable),
-        (r"/groups/{}/join".format(regex), GroupJoin),
-        (r"/groups/{}/add".format(regex), GroupAdd),
-        (r"/groups/{}/remove".format(regex), GroupRemove),
-        (r"/groups/{}/leave".format(regex), GroupLeave),
-        (r"/groups/{}/requests".format(regex), GroupRequests),
-        (r"/groups/{}/requests/(?P<request_id>[0-9]+)".format(regex), GroupRequestUpdate),
-        (r"/groups/{}/permission/request".format(regex), GroupPermissionRequest),
-        (r"/groups/{}/service/create".format(regex), ServiceAccountCreate),
-    ])
+    HANDLERS.extend(
+        [
+            (r"/groups/{}".format(regex), GroupView),
+            (r"/groups/{}/edit".format(regex), GroupEdit),
+            (
+                r"/groups/{}/edit/(?P<member_type>user|group)/{}".format(regex, NAME2_VALIDATION),
+                GroupEditMember,
+            ),
+            (r"/groups/{}/disable".format(regex), GroupDisable),
+            (r"/groups/{}/enable".format(regex), GroupEnable),
+            (r"/groups/{}/join".format(regex), GroupJoin),
+            (r"/groups/{}/add".format(regex), GroupAdd),
+            (r"/groups/{}/remove".format(regex), GroupRemove),
+            (r"/groups/{}/leave".format(regex), GroupLeave),
+            (r"/groups/{}/requests".format(regex), GroupRequests),
+            (r"/groups/{}/requests/(?P<request_id>[0-9]+)".format(regex), GroupRequestUpdate),
+            (r"/groups/{}/permission/request".format(regex), GroupPermissionRequest),
+            (r"/groups/{}/service/create".format(regex), ServiceAccountCreate),
+        ]
+    )
 
 for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
     for service_regex in (r"(?P<account_id>[0-9]+)", SERVICE_ACCOUNT_VALIDATION):
-        HANDLERS.extend([
-            (r"/groups/{}/service/{}".format(regex, service_regex), ServiceAccountView),
-            (r"/groups/{}/service/{}/disable".format(regex, service_regex), ServiceAccountDisable),
-            (r"/groups/{}/service/{}/edit".format(regex, service_regex), ServiceAccountEdit),
-            (
-                r"/groups/{}/service/{}/grant".format(regex, service_regex),
-                ServiceAccountPermissionGrant
-            ),
-            (
-                r"/groups/{}/service/{}/revoke/(?P<mapping_id>[0-9]+)".format(regex, service_regex),
-                ServiceAccountPermissionRevoke
-            ),
-        ])
+        HANDLERS.extend(
+            [
+                (r"/groups/{}/service/{}".format(regex, service_regex), ServiceAccountView),
+                (
+                    r"/groups/{}/service/{}/disable".format(regex, service_regex),
+                    ServiceAccountDisable,
+                ),
+                (r"/groups/{}/service/{}/edit".format(regex, service_regex), ServiceAccountEdit),
+                (
+                    r"/groups/{}/service/{}/grant".format(regex, service_regex),
+                    ServiceAccountPermissionGrant,
+                ),
+                (
+                    r"/groups/{}/service/{}/revoke/(?P<mapping_id>[0-9]+)".format(
+                        regex, service_regex
+                    ),
+                    ServiceAccountPermissionRevoke,
+                ),
+            ]
+        )
 
 for regex in (r"(?P<tag_id>[0-9]+)", NAME_VALIDATION):
-    HANDLERS.extend([
-        (r"/tags/{}".format(regex), TagView),
-        (r"/tags/{}/edit".format(regex), TagEdit),
-        (r"/permissions/grant_tag/{}".format(regex), PermissionsGrantTag),
-        (
-            r"/permissions/{}/revoke_tag/(?P<mapping_id>[0-9]+)".format(PERMISSION_VALIDATION),
-            PermissionsRevokeTag
-        ),
-
-    ])
+    HANDLERS.extend(
+        [
+            (r"/tags/{}".format(regex), TagView),
+            (r"/tags/{}/edit".format(regex), TagEdit),
+            (r"/permissions/grant_tag/{}".format(regex), PermissionsGrantTag),
+            (
+                r"/permissions/{}/revoke_tag/(?P<mapping_id>[0-9]+)".format(PERMISSION_VALIDATION),
+                PermissionsRevokeTag,
+            ),
+        ]
+    )
 
 HANDLERS += [
     (r"/help", Help),
-
     (r"/debug/health", HealthCheck),
     (r"/debug/profile/(?P<trace_uuid>[\-\w]+)", PerfProfile),
-
     (r"/.*", NotFound),
 ]

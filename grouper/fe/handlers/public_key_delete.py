@@ -10,12 +10,14 @@ from grouper.user_permissions import user_is_user_admin
 
 
 class PublicKeyDelete(GrouperHandler):
-
     @staticmethod
     def check_access(session, actor, target):
-        return (actor.name == target.name or user_is_user_admin(session, actor) or
-            (target.role_user and can_manage_role_user(session, actor, tuser=target)) or
-            (target.is_service_account and can_manage_service_account(session, target, actor)))
+        return (
+            actor.name == target.name
+            or user_is_user_admin(session, actor)
+            or (target.role_user and can_manage_role_user(session, actor, tuser=target))
+            or (target.is_service_account and can_manage_service_account(session, target, actor))
+        )
 
     def get(self, user_id=None, name=None, key_id=None):
         user = User.get(self.session, user_id, name)
@@ -46,16 +48,26 @@ class PublicKeyDelete(GrouperHandler):
         except KeyNotFound:
             return self.notfound()
 
-        AuditLog.log(self.session, self.current_user.id, 'delete_public_key',
-                     'Deleted public key: {}'.format(key.fingerprint_sha256),
-                     on_user_id=user.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "delete_public_key",
+            "Deleted public key: {}".format(key.fingerprint_sha256),
+            on_user_id=user.id,
+        )
 
         email_context = {
-                "actioner": self.current_user.name,
-                "changed_user": user.name,
-                "action": "removed",
-                }
-        send_email(self.session, [user.name], 'Public SSH key removed', 'ssh_keys_changed',
-                settings, email_context)
+            "actioner": self.current_user.name,
+            "changed_user": user.name,
+            "action": "removed",
+        }
+        send_email(
+            self.session,
+            [user.name],
+            "Public SSH key removed",
+            "ssh_keys_changed",
+            settings,
+            email_context,
+        )
 
         return self.redirect("/users/{}?refresh=yes".format(user.name))

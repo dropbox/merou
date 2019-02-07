@@ -46,7 +46,7 @@ def get_audited_groups(session):
             # excluded from in-memory cache.
             continue
 
-        if group_md.get('audited', False):
+        if group_md.get("audited", False):
             audited_groups.append(group)
 
     return audited_groups

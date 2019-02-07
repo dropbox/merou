@@ -90,24 +90,27 @@ class Settings(object):
 def default_settings_path():
     return os.environ.get("GROUPER_SETTINGS", "/etc/grouper.yaml")
 
-settings = Settings({
-    "auditors_group": None,
-    "database": None,
-    "database_source": None,
-    "expiration_notice_days": 7,
-    "nonauditor_expiration_days": 5,
-    "from_addr": "no-reply@grouper.local",
-    "log_format": "%(asctime)-15s\t%(levelname)s\t%(message)s",
-    "oneoff_dirs": [],
-    "oneoff_module_paths": [],
-    "plugin_dirs": [],
-    "plugin_module_paths": [],
-    "restricted_ownership_permissions": None,
-    "send_emails": True,
-    "sentry_dsn": None,
-    "smtp_password": "",
-    "smtp_server": "localhost",
-    "smtp_use_ssl": False,
-    "smtp_username": "",
-    "url": "http://127.0.0.1:8888",
-})
+
+settings = Settings(
+    {
+        "auditors_group": None,
+        "database": None,
+        "database_source": None,
+        "expiration_notice_days": 7,
+        "nonauditor_expiration_days": 5,
+        "from_addr": "no-reply@grouper.local",
+        "log_format": "%(asctime)-15s\t%(levelname)s\t%(message)s",
+        "oneoff_dirs": [],
+        "oneoff_module_paths": [],
+        "plugin_dirs": [],
+        "plugin_module_paths": [],
+        "restricted_ownership_permissions": None,
+        "send_emails": True,
+        "sentry_dsn": None,
+        "smtp_password": "",
+        "smtp_server": "localhost",
+        "smtp_use_ssl": False,
+        "smtp_username": "",
+        "url": "http://127.0.0.1:8888",
+    }
+)

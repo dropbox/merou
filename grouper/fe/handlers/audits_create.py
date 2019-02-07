@@ -21,16 +21,13 @@ class AuditsCreate(GrouperHandler):
         if not user_has_permission(self.session, user, AUDIT_MANAGER):
             return self.forbidden()
 
-        self.render(
-            "audit-create.html", form=AuditCreateForm(),
-        )
+        self.render("audit-create.html", form=AuditCreateForm())
 
     def post(self):
         form = AuditCreateForm(self.request.arguments)
         if not form.validate():
             return self.render(
-                "audit-create.html", form=form,
-                alerts=self.get_form_alerts(form.errors)
+                "audit-create.html", form=form, alerts=self.get_form_alerts(form.errors)
             )
 
         user = self.get_current_user()
@@ -38,8 +35,7 @@ class AuditsCreate(GrouperHandler):
             return self.forbidden()
 
         # Step 1, detect if there are non-completed audits and fail if so.
-        open_audits = self.session.query(Audit).filter(
-            Audit.complete == False).all()
+        open_audits = self.session.query(Audit).filter(Audit.complete == False).all()
         if open_audits:
             raise Exception("Sorry, there are audits in progress.")
         ends_at = datetime.strptime(form.data["ends_at"], "%m/%d/%Y")
@@ -50,10 +46,7 @@ class AuditsCreate(GrouperHandler):
             if not self.graph.get_group_details(groupname)["audited"]:
                 continue
             group = Group.get(self.session, name=groupname)
-            audit = Audit(
-                group_id=group.id,
-                ends_at=ends_at,
-            )
+            audit = Audit(group_id=group.id, ends_at=ends_at)
             try:
                 audit.add(self.session)
                 self.session.flush()
@@ -67,9 +60,7 @@ class AuditsCreate(GrouperHandler):
 
             # Step 3, now get all members of this group and set up audit rows for those edges.
             for member in group.my_members().values():
-                auditmember = AuditMember(
-                    audit_id=audit.id, edge_id=member.edge_id
-                )
+                auditmember = AuditMember(audit_id=audit.id, edge_id=member.edge_id)
                 try:
                     auditmember.add(self.session)
                 except IntegrityError:
@@ -78,8 +69,13 @@ class AuditsCreate(GrouperHandler):
 
         self.session.commit()
 
-        AuditLog.log(self.session, self.current_user.id, 'start_audit',
-                     'Started global audit.', category=AuditLogCategory.audit)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "start_audit",
+            "Started global audit.",
+            category=AuditLogCategory.audit,
+        )
 
         # Calculate schedule of emails, basically we send emails at various periods in advance
         # of the end of the audit period.
@@ -98,26 +94,28 @@ class AuditsCreate(GrouperHandler):
             mail_to = [
                 member.name
                 for member in group.my_users()
-                if GROUP_EDGE_ROLES[member.role] in ('owner', 'np-owner')
+                if GROUP_EDGE_ROLES[member.role] in ("owner", "np-owner")
             ]
 
-            send_email(self.session, mail_to, 'Group Audit: {}'.format(group.name), 'audit_notice',
-                    settings, {"group": group.name, "ends_at": ends_at})
+            send_email(
+                self.session,
+                mail_to,
+                "Group Audit: {}".format(group.name),
+                "audit_notice",
+                settings,
+                {"group": group.name, "ends_at": ends_at},
+            )
 
             for days_prior, email_time in schedule_times:
                 send_async_email(
                     self.session,
                     mail_to,
-                    'Group Audit: {} - {} day(s) left'.format(group.name, days_prior),
-                    'audit_notice_reminder',
+                    "Group Audit: {} - {} day(s) left".format(group.name, days_prior),
+                    "audit_notice_reminder",
                     settings,
-                    {
-                        "group": group.name,
-                        "ends_at": ends_at,
-                        "days_left": days_prior,
-                    },
+                    {"group": group.name, "ends_at": ends_at, "days_left": days_prior},
                     email_time,
-                    async_key='audit-{}'.format(group.id),
+                    async_key="audit-{}".format(group.id),
                 )
 
         return self.redirect("/audits")

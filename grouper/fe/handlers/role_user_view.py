@@ -5,7 +5,6 @@ from grouper.models.user import User
 
 
 class RoleUserView(GrouperHandler):
-
     def get(self, user_id=None, name=None):
         self.handle_refresh()
         user = User.get(self.session, user_id, name)
@@ -17,8 +16,9 @@ class RoleUserView(GrouperHandler):
         actor = self.current_user
         graph = self.graph
         session = self.session
-        self.render("service.html",
-                    user=user,
-                    group=group,
-                    **get_role_user_view_template_vars(session, actor, user, group, graph)
-                    )
+        self.render(
+            "service.html",
+            user=user,
+            group=group,
+            **get_role_user_view_template_vars(session, actor, user, group, graph)
+        )

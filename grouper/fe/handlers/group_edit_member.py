@@ -49,9 +49,7 @@ class GroupEditMember(GrouperHandler):
         form.role.data = edge.role
         form.expiration.data = edge.expiration.strftime("%m/%d/%Y") if edge.expiration else None
 
-        self.render(
-            "group-edit-member.html", group=group, member=member, edge=edge, form=form,
-        )
+        self.render("group-edit-member.html", group=group, member=member, edge=edge, form=form)
 
     def post(self, group_id=None, name=None, name2=None, member_type=None):
         group = Group.get(self.session, group_id, name)
@@ -95,11 +93,15 @@ class GroupEditMember(GrouperHandler):
 
         if not form.validate():
             return self.render(
-                "group-edit-member.html", group=group, member=member, edge=edge, form=form,
+                "group-edit-member.html",
+                group=group,
+                member=member,
+                edge=edge,
+                form=form,
                 alerts=self.get_form_alerts(form.errors),
             )
 
-        fail_message = 'This join is denied with this role at this time.'
+        fail_message = "This join is denied with this role at this time."
         try:
             user_can_join = assert_can_join(group, user_or_group, role=form.data["role"])
         except UserNotAuditor as e:
@@ -107,10 +109,12 @@ class GroupEditMember(GrouperHandler):
             fail_message = e
         if not user_can_join:
             return self.render(
-                "group-edit-member.html", form=form, group=group, member=member, edge=edge,
-                alerts=[
-                    Alert('danger', fail_message, 'Audit Policy Enforcement')
-                ]
+                "group-edit-member.html",
+                form=form,
+                group=group,
+                member=member,
+                edge=edge,
+                alerts=[Alert("danger", fail_message, "Audit Policy Enforcement")],
             )
 
         expiration = None
@@ -118,12 +122,21 @@ class GroupEditMember(GrouperHandler):
             expiration = datetime.strptime(form.data["expiration"], "%m/%d/%Y")
 
         try:
-            group.edit_member(self.current_user, user_or_group, form.data["reason"],
-                              role=form.data["role"], expiration=expiration)
+            group.edit_member(
+                self.current_user,
+                user_or_group,
+                form.data["reason"],
+                role=form.data["role"],
+                expiration=expiration,
+            )
         except (InvalidRoleForMember, PluginRejectedGroupMembershipUpdate) as e:
             return self.render(
-                "group-edit-member.html", form=form, group=group, member=member, edge=edge,
-                alerts=[Alert('danger', e.message)]
+                "group-edit-member.html",
+                form=form,
+                group=group,
+                member=member,
+                edge=edge,
+                alerts=[Alert("danger", e.message)],
             )
 
         return self.redirect("/groups/{}?refresh=yes".format(group.name))

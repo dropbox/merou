@@ -6,7 +6,4 @@ class PermissionAliasesPlugin(BasePlugin):
         if permission != "owner":
             return []
 
-        return [
-            ("ssh", "owner={}".format(argument)),
-            ("sudo", argument),
-        ]
+        return [("ssh", "owner={}".format(argument)), ("sudo", argument)]

@@ -17,9 +17,7 @@ class PermissionMap(Model):
     """
 
     __tablename__ = "permissions_map"
-    __table_args__ = (
-        UniqueConstraint('permission_id', 'group_id', 'argument', name='uidx1'),
-    )
+    __table_args__ = (UniqueConstraint("permission_id", "group_id", "argument", name="uidx1"),)
 
     id = Column(Integer, primary_key=True)
 

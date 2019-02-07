@@ -25,7 +25,12 @@ class GroupEnable(GrouperHandler):
 
         self.session.commit()
 
-        AuditLog.log(self.session, self.current_user.id, 'enable_group',
-                     'Enabled group.', on_group_id=group.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "enable_group",
+            "Enabled group.",
+            on_group_id=group.id,
+        )
 
         return self.redirect("/groups/{}?refresh=yes".format(group.name))

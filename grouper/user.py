@@ -9,8 +9,12 @@ from grouper.models.audit_log import AuditLog
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
 from grouper.models.group import Group
-from grouper.models.group_edge import (APPROVER_ROLE_INDICES, GROUP_EDGE_ROLES, GroupEdge,
-    OWNER_ROLE_INDICES)
+from grouper.models.group_edge import (
+    APPROVER_ROLE_INDICES,
+    GROUP_EDGE_ROLES,
+    GroupEdge,
+    OWNER_ROLE_INDICES,
+)
 from grouper.models.request import Request
 from grouper.models.request_status_change import RequestStatusChange
 from grouper.models.user import User
@@ -39,10 +43,10 @@ def get_user_or_group(session, name, user_or_group=None):
         User or Group object.
     """
     if user_or_group is not None:
-        assert (user_or_group in ["user", "group"]), ("%s not in ['user', 'group']" % user_or_group)
-        is_user = (user_or_group == "user")
+        assert user_or_group in ["user", "group"], "%s not in ['user', 'group']" % user_or_group
+        is_user = user_or_group == "user"
     else:
-        is_user = '@' in name
+        is_user = "@" in name
 
     if is_user:
         return session.query(User).filter_by(username=name).scalar()
@@ -93,9 +97,7 @@ def enable_user(session, user, requester, preserve_membership):
     """
     if not preserve_membership:
         for group, group_edge in get_groups_by_user(session, user):
-            group_obj = session.query(Group).filter_by(
-                groupname=group.name
-            ).scalar()
+            group_obj = session.query(Group).filter_by(groupname=group.name).scalar()
             if group_obj:
                 group_obj.revoke_member(
                     requester, user, "group membership stripped as part of re-enabling account."
@@ -134,32 +136,32 @@ def user_role(user, members):
 def user_requests_aggregate(session, user):
     """Returns all pending requests for this user to approve across groups."""
 
-    members = session.query(
-        label("type", literal(1)),
-        label("id", Group.id),
-        label("name", Group.groupname),
-    ).union(session.query(
-        label("type", literal(0)),
-        label("id", User.id),
-        label("name", User.username),
-    )).subquery()
+    members = (
+        session.query(
+            label("type", literal(1)), label("id", Group.id), label("name", Group.groupname)
+        )
+        .union(
+            session.query(
+                label("type", literal(0)), label("id", User.id), label("name", User.username)
+            )
+        )
+        .subquery()
+    )
 
     now = datetime.utcnow()
-    groups = session.query(
-        label("id", Group.id),
-        label("name", Group.groupname),
-    ).filter(
-        GroupEdge.group_id == Group.id,
-        GroupEdge.member_pk == user.id,
-        GroupEdge.active == True,
-        GroupEdge._role.in_(APPROVER_ROLE_INDICES),
-        user.enabled == True,
-        Group.enabled == True,
-        or_(
-            GroupEdge.expiration > now,
-            GroupEdge.expiration == None,
+    groups = (
+        session.query(label("id", Group.id), label("name", Group.groupname))
+        .filter(
+            GroupEdge.group_id == Group.id,
+            GroupEdge.member_pk == user.id,
+            GroupEdge.active == True,
+            GroupEdge._role.in_(APPROVER_ROLE_INDICES),
+            user.enabled == True,
+            Group.enabled == True,
+            or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
         )
-    ).subquery()
+        .subquery()
+    )
 
     requests = session.query(
         Request.id,
@@ -191,25 +193,26 @@ def user_requests_aggregate(session, user):
 def user_open_audits(session, user):
     session.query(Audit).filter(Audit.complete == False)
     now = datetime.utcnow()
-    return session.query(
-        label("groupname", Group.groupname),
-        label("started_at", Audit.started_at),
-        label("ends_at", Audit.ends_at),
-    ).filter(
-        Audit.group_id == Group.id,
-        Audit.complete == False,
-        GroupEdge.group_id == Group.id,
-        GroupEdge.member_pk == user.id,
-        GroupEdge.member_type == 0,
-        GroupEdge.active == True,
-        GroupEdge._role.in_(OWNER_ROLE_INDICES),
-        user.enabled == True,
-        Group.enabled == True,
-        or_(
-            GroupEdge.expiration > now,
-            GroupEdge.expiration == None,
+    return (
+        session.query(
+            label("groupname", Group.groupname),
+            label("started_at", Audit.started_at),
+            label("ends_at", Audit.ends_at),
         )
-    ).all()
+        .filter(
+            Audit.group_id == Group.id,
+            Audit.complete == False,
+            GroupEdge.group_id == Group.id,
+            GroupEdge.member_pk == user.id,
+            GroupEdge.member_type == 0,
+            GroupEdge.active == True,
+            GroupEdge._role.in_(OWNER_ROLE_INDICES),
+            user.enabled == True,
+            Group.enabled == True,
+            or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
+        )
+        .all()
+    )
 
 
 def get_log_entries_by_user(session, user, limit=20):

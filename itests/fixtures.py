@@ -1,19 +1,19 @@
-from contextlib import closing
 import errno
 import socket
 import subprocess
 import time
+from contextlib import closing
 
-from groupy.client import Groupy
 import pytest
 import selenium
+from groupy.client import Groupy
 
 from tests.path_util import bin_env, db_url, src_path
 
 
 def _get_unused_port():
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(('', 0))
+        s.bind(("", 0))
         return s.getsockname()[1]
 
 
@@ -32,7 +32,7 @@ def async_server(standard_graph, tmpdir):
             str(fe_port),
             "-p",
             str(proxy_port),
-            "cbguder@a.co"
+            "cbguder@a.co",
         ],
         [
             src_path("bin", "grouper-fe"),
@@ -42,7 +42,7 @@ def async_server(standard_graph, tmpdir):
             str(fe_port),
             "-d",
             db_url(tmpdir),
-        ]
+        ],
     ]
 
     subprocesses = []

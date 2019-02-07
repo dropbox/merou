@@ -5,12 +5,13 @@ from grouper.usecases.authorization import Authorization
 from grouper.usecases.interfaces import PermissionNotFoundException
 
 if TYPE_CHECKING:
-    from grouper.models.base.session import Session  # noqa: F401
-    from grouper.usecases.interfaces import PermissionInterface  # noqa: F401
+    from grouper.models.base.session import Session
+    from grouper.usecases.interfaces import PermissionInterface
 
 
 class DisablePermissionUI(object):
     """Abstract base class for UI for DisablePermission."""
+
     __metaclass__ = ABCMeta
 
     @abstractmethod

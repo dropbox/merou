@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, SmallInteger
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -10,27 +9,21 @@ from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.base.model_base import Model
 from grouper.models.user import User
 
-if TYPE_CHECKING:
-    from typing import Any, Dict  # noqa: F401
-
 # Note: the order of the GROUP_EDGE_ROLES tuple matters! New roles must be
 # appended!  When adding a new role, be sure to update the regression test.
 GROUP_EDGE_ROLES = (
-    "member",    # Belongs to the group. Nothing more.
-    "manager",   # Make changes to the group / Approve requests.
-    "owner",     # Same as manager plus enable/disable group and make Users owner.
+    "member",  # Belongs to the group. Nothing more.
+    "manager",  # Make changes to the group / Approve requests.
+    "owner",  # Same as manager plus enable/disable group and make Users owner.
     "np-owner",  # Same as owner but don't inherit permissions.
 )
 
-OWNER_ROLE_INDICES = {
-    GROUP_EDGE_ROLES.index("owner"),
-    GROUP_EDGE_ROLES.index("np-owner")
-}
+OWNER_ROLE_INDICES = {GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.index("np-owner")}
 
 APPROVER_ROLE_INDICES = {
     GROUP_EDGE_ROLES.index("owner"),
     GROUP_EDGE_ROLES.index("np-owner"),
-    GROUP_EDGE_ROLES.index("manager")
+    GROUP_EDGE_ROLES.index("manager"),
 }
 
 
@@ -40,15 +33,8 @@ class GroupEdge(Model):
 
     __tablename__ = "group_edges"
     __table_args__ = (
-        Index(
-            "group_member_idx",
-            "group_id", "member_type", "member_pk",
-            unique=True
-        ),
-        Index(
-            "group_edges_member_pk_type",
-            "member_pk", "member_type"
-        )
+        Index("group_member_idx", "group_id", "member_type", "member_pk", unique=True),
+        Index("group_edges_member_pk_type", "member_pk", "member_type"),
     )
 
     id = Column(Integer, primary_key=True)
@@ -88,27 +74,31 @@ class GroupEdge(Model):
             # We're creating a new owner, who should find out when this group
             # they now own loses its membership in larger groups.
             for supergroup_name, expiration in expiring_supergroups:
-                add_expiration(self.session,
-                               expiration,
-                               group_name=supergroup_name,
-                               member_name=member_name,
-                               recipients=[recipient],
-                               member_is_user=False)
+                add_expiration(
+                    self.session,
+                    expiration,
+                    group_name=supergroup_name,
+                    member_name=member_name,
+                    recipients=[recipient],
+                    member_is_user=False,
+                )
         else:
             # We're removing an owner, who should no longer find out when this
             # group they no longer own loses its membership in larger groups.
             for supergroup_name, _ in expiring_supergroups:
-                cancel_expiration(self.session,
-                                  group_name=supergroup_name,
-                                  member_name=member_name,
-                                  recipients=[recipient])
+                cancel_expiration(
+                    self.session,
+                    group_name=supergroup_name,
+                    member_name=member_name,
+                    recipients=[recipient],
+                )
 
     def apply_changes(self, changes):
         # TODO(cbguder): get around circular dependencies
         from grouper.models.group import Group
 
         for key, value in changes.items():
-            if key == 'expiration':
+            if key == "expiration":
                 group_name = self.group.name
                 if OBJ_TYPES_IDX[self.member_type] == "User":
                     # If affected member is a user, plan to notify that user.
@@ -124,20 +114,20 @@ class GroupEdge(Model):
                     member_is_user = False
                 if getattr(self, key, None) is not None:
                     # Check for and remove pending expiration notification.
-                    cancel_expiration(self.session,
-                                      group_name,
-                                      member_name)
+                    cancel_expiration(self.session, group_name, member_name)
                 if value:
                     expiration = datetime.strptime(value, "%m/%d/%Y")
                     setattr(self, key, expiration)
                     # Avoid sending notifications for expired edges.
                     if expiration > datetime.utcnow():
-                        add_expiration(self.session,
-                                       expiration,
-                                       group_name,
-                                       member_name,
-                                       recipients=recipients,
-                                       member_is_user=member_is_user)
+                        add_expiration(
+                            self.session,
+                            expiration,
+                            group_name,
+                            member_name,
+                            recipients=recipients,
+                            member_is_user=member_is_user,
+                        )
                 else:
                     setattr(self, key, None)
             else:
@@ -145,6 +135,8 @@ class GroupEdge(Model):
 
     def __repr__(self):
         return "%s(group_id=%s, member_type=%s, member_pk=%s)" % (
-            type(self).__name__, self.group_id,
-            OBJ_TYPES_IDX[self.member_type], self.member_pk
+            type(self).__name__,
+            self.group_id,
+            OBJ_TYPES_IDX[self.member_type],
+            self.member_pk,
         )

@@ -132,3 +132,11 @@ requirements:
 
 You may want to create a separate virtual environment for Python 3,
 designating python3 as the Python interpreter for that environment.
+
+All Merou code is formatted with black, which is installed by the
+requirements3.txt requirements file described for mypy.  After
+installation, you can reformat all source code with:
+
+.. code:: bash
+
+    tools/black

@@ -10,12 +10,14 @@ from grouper.user_permissions import user_is_user_admin
 
 
 class PublicKeyAddTag(GrouperHandler):
-
     @staticmethod
     def check_access(session, actor, target):
-        return (actor.name == target.name or user_is_user_admin(session, actor) or
-            (target.role_user and can_manage_role_user(session, actor, tuser=target)) or
-            (target.is_service_account and can_manage_service_account(session, target, actor)))
+        return (
+            actor.name == target.name
+            or user_is_user_admin(session, actor)
+            or (target.role_user and can_manage_role_user(session, actor, tuser=target))
+            or (target.is_service_account and can_manage_service_account(session, target, actor))
+        )
 
     def get(self, user_id=None, name=None, key_id=None):
         user = User.get(self.session, user_id, name)
@@ -57,8 +59,11 @@ class PublicKeyAddTag(GrouperHandler):
 
         if not form.validate():
             return self.render(
-                "public-key-add-tag.html", form=form, user=user, key=key,
-                alerts=self.get_form_alerts(form.errors)
+                "public-key-add-tag.html",
+                form=form,
+                user=user,
+                key=key,
+                alerts=self.get_form_alerts(form.errors),
             )
 
         tag = PublicKeyTag.get(self.session, name=form.data["tagname"])
@@ -66,20 +71,31 @@ class PublicKeyAddTag(GrouperHandler):
         if not tag:
             form.tagname.errors.append("Unknown tag name {}".format(form.data["tagname"]))
             return self.render(
-                "public-key-add-tag.html", form=form, user=user, key=key,
-                alerts=self.get_form_alerts(form.errors)
+                "public-key-add-tag.html",
+                form=form,
+                user=user,
+                key=key,
+                alerts=self.get_form_alerts(form.errors),
             )
 
         try:
             add_tag_to_public_key(self.session, key, tag)
         except DuplicateTag:
             return self.render(
-                "public-key-add-tag.html", form=form, user=user, key=key,
-                alerts=["This key already has that tag!"]
+                "public-key-add-tag.html",
+                form=form,
+                user=user,
+                key=key,
+                alerts=["This key already has that tag!"],
             )
 
-        AuditLog.log(self.session, self.current_user.id, 'tag_public_key',
-                     'Tagged public key: {}'.format(key.fingerprint_sha256),
-                     on_tag_id=tag.id, on_user_id=user.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "tag_public_key",
+            "Tagged public key: {}".format(key.fingerprint_sha256),
+            on_tag_id=tag.id,
+            on_user_id=user.id,
+        )
 
         return self.redirect("/users/{}?refresh=yes".format(user.name))

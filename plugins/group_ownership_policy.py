@@ -14,16 +14,14 @@ EXCEPTION_MESSAGE = "You can't remove the last permanent owner of a group"
 
 
 def _is_last_permanent_owner(session, group, member):
-    perm_owners = session.query(
-        label("name", User.username)
-    ).filter(
+    perm_owners = session.query(label("name", User.username)).filter(
         GroupEdge.group_id == group.id,
         GroupEdge.member_pk == User.id,
         GroupEdge.member_type == OBJ_TYPES["User"],
         GroupEdge._role.in_(OWNER_ROLE_INDICES),
         GroupEdge.active == True,
         User.enabled == True,
-        GroupEdge.expiration == None
+        GroupEdge.expiration == None,
     )
 
     perm_owner_usernames = [user[0] for user in perm_owners]
@@ -32,9 +30,7 @@ def _is_last_permanent_owner(session, group, member):
 
 
 def _get_permanently_owned_groups_by_user(session, user):
-    return session.query(
-        Group
-    ).filter(
+    return session.query(Group).filter(
         GroupEdge.member_pk == user.id,
         GroupEdge.member_type == OBJ_TYPES["User"],
         GroupEdge._role.in_(OWNER_ROLE_INDICES),

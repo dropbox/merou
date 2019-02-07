@@ -1,7 +1,7 @@
-from contextlib import contextmanager
 import logging
 import sys
 import types
+from contextlib import contextmanager
 
 from grouper.ctl.util import make_session
 from grouper.oneoff import BaseOneOff
@@ -47,8 +47,7 @@ def wrapped_session(session, make_read_only):
 def key_value_arg_type(arg):
     """Simple validate/transform function to use in argparse as a 'type' for an
     argument where the argument is of the form 'key=value'."""
-    print 'arg={}'.format(arg)
-    k, v = arg.split('=', 1)
+    k, v = arg.split("=", 1)
     return (k, v)
 
 
@@ -56,10 +55,7 @@ def oneoff_command(args):
     session = make_session()
 
     oneoffs = load_plugins(
-        BaseOneOff,
-        settings.oneoff_dirs,
-        settings.oneoff_module_paths,
-        "grouper-ctl",
+        BaseOneOff, settings.oneoff_dirs, settings.oneoff_module_paths, "grouper-ctl"
     )
 
     if args.subcommand == "run":
@@ -74,7 +70,7 @@ def oneoff_command(args):
             for oneoff in oneoffs:
                 if oneoff.__class__.__name__ == args.classname:
                     params = args.oneoff_arguments or []
-                    params += [('dry_run', args.dry_run)]
+                    params += [("dry_run", args.dry_run)]
                     oneoff.run(the_session, **dict(params))
 
     elif args.subcommand == "list":
@@ -91,8 +87,12 @@ def add_parser(subparsers):
 
     oneoff_run_parser = oneoff_subparser.add_parser("run", help="run specific one-off")
     oneoff_run_parser.add_argument("classname", help="class name of the one-off to run")
-    oneoff_run_parser.add_argument("oneoff_arguments", type=key_value_arg_type, nargs="*",
-            help="arguments to pass to one-off, 'key=value' pairs")
+    oneoff_run_parser.add_argument(
+        "oneoff_arguments",
+        type=key_value_arg_type,
+        nargs="*",
+        help="arguments to pass to one-off, 'key=value' pairs",
+    )
 
     dry_run_parser = oneoff_run_parser.add_mutually_exclusive_group(required=False)
     dry_run_parser.add_argument("--dry_run", dest="dry_run", action="store_true")

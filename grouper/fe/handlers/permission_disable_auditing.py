@@ -6,8 +6,10 @@ from grouper.user_permissions import user_has_permission, user_is_permission_adm
 
 class PermissionDisableAuditing(GrouperHandler):
     def post(self, user_id=None, name=None):
-        if not (user_is_permission_admin(self.session, self.current_user) or
-                user_has_permission(self.session, self.current_user, AUDIT_MANAGER)):
+        if not (
+            user_is_permission_admin(self.session, self.current_user)
+            or user_has_permission(self.session, self.current_user, AUDIT_MANAGER)
+        ):
             return self.forbidden()
 
         try:

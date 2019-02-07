@@ -1,12 +1,12 @@
-from cStringIO import StringIO
 import csv
-from datetime import datetime
 import re
 import sys
 import traceback
+from cStringIO import StringIO
+from datetime import datetime
+from typing import Any, Dict, Optional
 
 from tornado.web import HTTPError, RequestHandler
-from typing import Any, Dict, Optional  # noqa: F401
 
 from grouper import stats
 from grouper.constants import TOKEN_FORMAT
@@ -23,8 +23,10 @@ try:
 except ImportError:
     pass
 else:
+
     class SentryHandler(SentryMixin, RequestHandler):
         pass
+
     RequestHandler = SentryHandler  # type: ignore # no support for conditional declarations #1152
 
 
@@ -89,29 +91,31 @@ class GraphHandler(RequestHandler):
         stats.log_rate("response_status_{}_{}".format(self.__class__.__name__, response_status), 1)
 
     def error(self, errors):
-        errors = [
-            {"code": code, "message": message} for code, message in errors
-        ]
+        errors = [{"code": code, "message": message} for code, message in errors]
         with self.graph.lock:
             checkpoint = self.graph.checkpoint
             checkpoint_time = self.graph.checkpoint_time
-            self.write({
-                "status": "error",
-                "errors": errors,
-                "checkpoint": checkpoint,
-                "checkpoint_time": checkpoint_time,
-            })
+            self.write(
+                {
+                    "status": "error",
+                    "errors": errors,
+                    "checkpoint": checkpoint,
+                    "checkpoint_time": checkpoint_time,
+                }
+            )
 
     def success(self, data):
         with self.graph.lock:
             checkpoint = self.graph.checkpoint
             checkpoint_time = self.graph.checkpoint_time
-            self.write({
-                "status": "ok",
-                "data": data,
-                "checkpoint": checkpoint,
-                "checkpoint_time": checkpoint_time,
-            })
+            self.write(
+                {
+                    "status": "ok",
+                    "data": data,
+                    "checkpoint": checkpoint,
+                    "checkpoint_time": checkpoint_time,
+                }
+            )
 
     def raise_and_log_exception(self, exc):
         try:
@@ -151,12 +155,20 @@ class Users(GraphHandler):
                 return self.notfound("User ({}) not found.".format(name))
 
         with self.graph.lock:
-            return self.success({
-                "users": sorted([
-                    k for k, v in self.graph.user_metadata.iteritems()
-                    if (include_service_accounts or not ("service_account" in v or v["role_user"]))
-                ]),
-            })
+            return self.success(
+                {
+                    "users": sorted(
+                        [
+                            k
+                            for k, v in self.graph.user_metadata.iteritems()
+                            if (
+                                include_service_accounts
+                                or not ("service_account" in v or v["role_user"])
+                            )
+                        ]
+                    )
+                }
+            )
 
 
 class MultiUsers(GraphHandler):
@@ -165,6 +177,7 @@ class MultiUsers(GraphHandler):
     This returns the same information as the Users and ServiceAccounts endpoints, but supports
     multiple returning the data of multiple users to save on API call overhead.
     """
+
     def get(self):
         usernames = self.get_arguments("username")
         if not usernames:
@@ -190,27 +203,31 @@ class UsersPublicKeys(GraphHandler):
         w_csv = csv.writer(fh, lineterminator="\n")
 
         # header
-        w_csv.writerow([
-            'username',
-            'created_at',
-            'type',
-            'size',
-            'fingerprint',
-            'fingerprint_sha256',
-            'comment',
-        ])
+        w_csv.writerow(
+            [
+                "username",
+                "created_at",
+                "type",
+                "size",
+                "fingerprint",
+                "fingerprint_sha256",
+                "comment",
+            ]
+        )
 
         user_key_list = Session().query(PublicKey, User).filter(User.id == PublicKey.user_id)
         for key, user in user_key_list:
-            w_csv.writerow([
-                user.name,
-                key.created_on.isoformat(),
-                key.key_type,
-                key.key_size,
-                key.fingerprint,
-                key.fingerprint_sha256,
-                key.comment,
-            ])
+            w_csv.writerow(
+                [
+                    user.name,
+                    key.created_on.isoformat(),
+                    key.key_type,
+                    key.key_size,
+                    key.fingerprint,
+                    key.fingerprint_sha256,
+                    key.comment,
+                ]
+            )
 
         self.set_header("Content-Type", "text/csv")
         self.write(fh.getvalue())
@@ -222,12 +239,7 @@ class Groups(GraphHandler):
 
         with self.graph.lock:
             if not name:
-                return self.success({
-                    "groups": [
-                        group
-                        for group in self.graph.groups
-                    ],
-                })
+                return self.success({"groups": [group for group in self.graph.groups]})
 
             if name not in self.graph.groups:
                 return self.notfound("Group (%s) not found." % name)
@@ -244,12 +256,9 @@ class Permissions(GraphHandler):
     def get(self, name=None):
         with self.graph.lock:
             if not name:
-                return self.success({
-                    "permissions": [
-                        permission
-                        for permission in self.graph.permissions
-                    ],
-                })
+                return self.success(
+                    {"permissions": [permission for permission in self.graph.permissions]}
+                )
 
             if name not in self.graph.permissions:
                 return self.notfound("Permission (%s) not found." % name)
@@ -284,12 +293,9 @@ class TokenValidate(GraphHandler):
         if not token.check_secret(token_secret):
             return self.error(((4, "Token secret mismatch"),))
 
-        return self.success({
-            "owner": username,
-            "identity": str(token),
-            "act_as_owner": True,
-            "valid": True,
-        })
+        return self.success(
+            {"owner": username, "identity": str(token), "act_as_owner": True, "valid": True}
+        )
 
 
 class ServiceAccounts(GraphHandler):
@@ -304,12 +310,17 @@ class ServiceAccounts(GraphHandler):
                 return self.notfound("User ({}) not found.".format(name))
 
         with self.graph.lock:
-            return self.success({
-                "service_accounts": sorted([
-                    k for k, v in self.graph.user_metadata.iteritems()
-                    if "service_account" in v or v["role_user"]
-                ]),
-            })
+            return self.success(
+                {
+                    "service_accounts": sorted(
+                        [
+                            k
+                            for k, v in self.graph.user_metadata.iteritems()
+                            if "service_account" in v or v["role_user"]
+                        ]
+                    )
+                }
+            )
 
 
 class NotFound(GraphHandler):

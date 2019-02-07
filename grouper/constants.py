@@ -20,9 +20,7 @@ SERVICE_ACCOUNT_VALIDATION = r"(?P<accountname>[\w-]+@\w+[\.\w]+)"
 TOKEN_SECRET_VALIDATION = r"(?P<token_secret>[a-f0-9]{40})"
 TOKEN_NAME_VALIDATION = r"(?P<token_name>[A-Za-z0-9]+)"
 TOKEN_FORMAT = r"^{}/{}:{}$".format(
-    USERNAME_VALIDATION,
-    TOKEN_NAME_VALIDATION,
-    TOKEN_SECRET_VALIDATION,
+    USERNAME_VALIDATION, TOKEN_NAME_VALIDATION, TOKEN_SECRET_VALIDATION
 )
 
 # Regexes for validating permission/argument names
@@ -61,7 +59,7 @@ SYSTEM_PERMISSIONS = [
 ]
 
 # Used to construct name tuples in notification engine.
-ILLEGAL_NAME_CHARACTER = '|'
+ILLEGAL_NAME_CHARACTER = "|"
 
 # A list of regular expressions that are reserved anywhere names are created. I.e., if a regex
 # in this list is matched, a permission cannot be created in the UI. Same with group names.

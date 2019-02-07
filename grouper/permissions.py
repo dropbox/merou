@@ -1,6 +1,6 @@
+import re
 from collections import defaultdict, namedtuple
 from datetime import datetime
-import re
 from typing import TYPE_CHECKING
 
 from sqlalchemy import asc
@@ -39,13 +39,14 @@ if TYPE_CHECKING:
 GLOBAL_OWNERS = object()
 
 # represents all information we care about for a list of permission requests
-Requests = namedtuple('Requests', ['requests', 'status_change_by_request_id',
-        'comment_by_status_change_id'])
+Requests = namedtuple(
+    "Requests", ["requests", "status_change_by_request_id", "comment_by_status_change_id"]
+)
 
 
 # represents a permission grant, essentially what come back from User.my_permissions()
 # TODO: consider replacing that output with this namedtuple
-Grant = namedtuple('Grant', 'name, argument')
+Grant = namedtuple("Grant", "name, argument")
 
 
 class NoSuchPermission(Exception):
@@ -68,7 +69,7 @@ class CannotDisableASystemPermission(Exception):
         self.name = name
 
 
-def create_permission(session, name, description=''):
+def create_permission(session, name, description=""):
     # type: (Session, str, Optional[str]) -> Permission
     """Create and add a new permission to database
 
@@ -80,7 +81,7 @@ def create_permission(session, name, description=''):
     Returns:
         The created permission that has been added to the session
     """
-    permission = Permission(name=name, description=description or '')
+    permission = Permission(name=name, description=description or "")
     permission.add(session)
     return permission
 
@@ -118,7 +119,7 @@ def get_permission(session, name):
     return Permission.get(session, name=name)
 
 
-def get_or_create_permission(session, name, description=''):
+def get_or_create_permission(session, name, description=""):
     # type: (Session, str, Optional[str]) -> Tuple[Optional[Permission], bool]
     """Get a permission or create it if it doesn't already exist
 
@@ -134,11 +135,11 @@ def get_or_create_permission(session, name, description=''):
     is_new = False
     if not perm:
         is_new = True
-        perm = create_permission(session, name, description=description or '')
+        perm = create_permission(session, name, description=description or "")
     return perm, is_new
 
 
-def grant_permission(session, group_id, permission_id, argument=''):
+def grant_permission(session, group_id, permission_id, argument=""):
     """
     Grant a permission to this group. This will fail if the (permission, argument) has already
     been granted to this group.
@@ -151,8 +152,9 @@ def grant_permission(session, group_id, permission_id, argument=''):
     Throws:
         AssertError if argument does not match ARGUMENT_VALIDATION regex
     """
-    assert re.match(ARGUMENT_VALIDATION + r"$", argument), \
-        'Permission argument does not match regex.'
+    assert re.match(
+        ARGUMENT_VALIDATION + r"$", argument
+    ), "Permission argument does not match regex."
 
     mapping = PermissionMap(permission_id=permission_id, group_id=group_id, argument=argument)
     mapping.add(session)
@@ -162,7 +164,7 @@ def grant_permission(session, group_id, permission_id, argument=''):
     session.commit()
 
 
-def grant_permission_to_service_account(session, account, permission, argument=''):
+def grant_permission_to_service_account(session, account, permission, argument=""):
     """
     Grant a permission to this service account. This will fail if the (permission, argument) has
     already been granted to this group.
@@ -176,11 +178,13 @@ def grant_permission_to_service_account(session, account, permission, argument='
     Throws:
         AssertError if argument does not match ARGUMENT_VALIDATION regex
     """
-    assert re.match(ARGUMENT_VALIDATION + r"$", argument), \
-        'Permission argument does not match regex.'
+    assert re.match(
+        ARGUMENT_VALIDATION + r"$", argument
+    ), "Permission argument does not match regex."
 
     mapping = ServiceAccountPermissionMap(
-        permission_id=permission.id, service_account_id=account.id, argument=argument)
+        permission_id=permission.id, service_account_id=account.id, argument=argument
+    )
     mapping.add(session)
 
     Counter.incr(session, "updates")
@@ -188,7 +192,7 @@ def grant_permission_to_service_account(session, account, permission, argument='
     session.commit()
 
 
-def grant_permission_to_tag(session, tag_id, permission_id, argument=''):
+def grant_permission_to_tag(session, tag_id, permission_id, argument=""):
     # type: (Session, int, int, str) -> bool
     """
     Grant a permission to this tag. This will fail if the (permission, argument) has already
@@ -206,8 +210,9 @@ def grant_permission_to_tag(session, tag_id, permission_id, argument=''):
     Returns:
         bool indicating whether the function succeeded or not
     """
-    assert re.match(ARGUMENT_VALIDATION + r"$", argument), \
-        'Permission argument does not match regex.'
+    assert re.match(
+        ARGUMENT_VALIDATION + r"$", argument
+    ), "Permission argument does not match regex."
 
     try:
         mapping = TagPermissionMap(permission_id=permission_id, tag_id=tag_id, argument=argument)
@@ -236,8 +241,13 @@ def disable_permission(session, permission_name, actor_user_id):
     if not permission:
         raise NoSuchPermission(name=permission_name)
     permission.enabled = False
-    AuditLog.log(session, actor_user_id, 'disable_permission', 'Disabled permission.',
-            on_permission_id=permission.id)
+    AuditLog.log(
+        session,
+        actor_user_id,
+        "disable_permission",
+        "Disabled permission.",
+        on_permission_id=permission.id,
+    )
     Counter.incr(session, "updates")
     session.commit()
 
@@ -256,8 +266,13 @@ def enable_permission_auditing(session, permission_name, actor_user_id):
 
     permission._audited = True
 
-    AuditLog.log(session, actor_user_id, 'enable_auditing', 'Enabled auditing.',
-            on_permission_id=permission.id)
+    AuditLog.log(
+        session,
+        actor_user_id,
+        "enable_auditing",
+        "Enabled auditing.",
+        on_permission_id=permission.id,
+    )
 
     Counter.incr(session, "updates")
 
@@ -278,8 +293,13 @@ def disable_permission_auditing(session, permission_name, actor_user_id):
 
     permission._audited = False
 
-    AuditLog.log(session, actor_user_id, 'disable_auditing', 'Disabled auditing.',
-            on_permission_id=permission.id)
+    AuditLog.log(
+        session,
+        actor_user_id,
+        "disable_auditing",
+        "Disabled auditing.",
+        on_permission_id=permission.id,
+    )
 
     Counter.incr(session, "updates")
 
@@ -299,15 +319,15 @@ def get_groups_by_permission(session, permission):
     """
     if not permission.enabled:
         return []
-    return session.query(
-        Group.groupname,
-        PermissionMap.argument,
-        PermissionMap.granted_on,
-    ).filter(
-        Group.id == PermissionMap.group_id,
-        PermissionMap.permission_id == permission.id,
-        Group.enabled == True,
-    ).all()
+    return (
+        session.query(Group.groupname, PermissionMap.argument, PermissionMap.granted_on)
+        .filter(
+            Group.id == PermissionMap.group_id,
+            PermissionMap.permission_id == permission.id,
+            Group.enabled == True,
+        )
+        .all()
+    )
 
 
 def get_log_entries_by_permission(session, permission, limit=20):
@@ -336,20 +356,20 @@ def filter_grantable_permissions(session, grants, all_permissions=None):
     """
 
     if all_permissions is None:
-        all_permissions = {permission.name: permission for permission in
-                get_all_permissions(session)}
+        all_permissions = {
+            permission.name: permission for permission in get_all_permissions(session)
+        }
 
     result = []
     for grant in grants:
         assert grant.name == PERMISSION_GRANT
 
-        grantable = grant.argument.split('/', 1)
+        grantable = grant.argument.split("/", 1)
         if not grantable:
             continue
         for name, permission_obj in all_permissions.iteritems():
             if matches_glob(grantable[0], name):
-                result.append((permission_obj,
-                               grantable[1] if len(grantable) > 1 else '*', ))
+                result.append((permission_obj, grantable[1] if len(grantable) > 1 else "*"))
 
     return sorted(result, key=lambda x: x[0].name + x[1])
 
@@ -370,22 +390,20 @@ def get_owners_by_grantable_permission(session, separate_global=False):
         {argument: [owner1, ...], }, } where 'owners' are models.Group objects.
         And 'argument' can be '*' which means 'anything'.
     """
-    all_permissions = {permission.name: permission
-                       for permission in get_all_permissions(session)}
+    all_permissions = {permission.name: permission for permission in get_all_permissions(session)}
     all_groups = session.query(Group).filter(Group.enabled == True).all()
 
     owners_by_arg_by_perm = defaultdict(lambda: defaultdict(list))
 
-    all_group_permissions = session.query(
-            Permission.name,
-            PermissionMap.argument,
-            PermissionMap.granted_on,
-            Group,
-    ).filter(
+    all_group_permissions = (
+        session.query(Permission.name, PermissionMap.argument, PermissionMap.granted_on, Group)
+        .filter(
             PermissionMap.group_id == Group.id,
             Permission.id == PermissionMap.permission_id,
             Permission.enabled == True,
-    ).all()
+        )
+        .all()
+    )
 
     grants_by_group = defaultdict(list)
 
@@ -404,8 +422,9 @@ def get_owners_by_grantable_permission(session, separate_global=False):
 
         grants = [gp for gp in group_permissions if gp.name == PERMISSION_GRANT]
 
-        for perm, arg in filter_grantable_permissions(session, grants,
-                all_permissions=all_permissions):
+        for perm, arg in filter_grantable_permissions(
+            session, grants, all_permissions=all_permissions
+        ):
             owners_by_arg_by_perm[perm.name][arg].append(group)
 
     # merge in plugin results
@@ -440,8 +459,11 @@ def get_grantable_permissions(session, restricted_ownership_permissions):
 
     def _reduce_args(perm_name, args):
         non_wildcard_args = map(lambda a: a != "*", args)
-        if (restricted_ownership_permissions and perm_name in restricted_ownership_permissions and
-                any(non_wildcard_args)):
+        if (
+            restricted_ownership_permissions
+            and perm_name in restricted_ownership_permissions
+            and any(non_wildcard_args)
+        ):
             # at least one none wildcard arg so we only return those and we care
             return sorted({a for a in args if a != "*"})
         elif all(non_wildcard_args):
@@ -449,6 +471,7 @@ def get_grantable_permissions(session, restricted_ownership_permissions):
         else:
             # it's all wildcard so return that one
             return ["*"]
+
     return {p: _reduce_args(p, a) for p, a in args_by_perm.items()}
 
 
@@ -531,12 +554,16 @@ def create_request(session, user, group, permission, argument, reason):
             raise RequestAlreadyGranted()
 
     # check if request already pending for this perm + arg pair
-    existing_count = session.query(PermissionRequest).filter(
+    existing_count = (
+        session.query(PermissionRequest)
+        .filter(
             PermissionRequest.group_id == group.id,
             PermissionRequest.permission_id == permission.id,
             PermissionRequest.argument == argument,
             PermissionRequest.status == "pending",
-            ).count()
+        )
+        .count()
+    )
 
     if existing_count > 0:
         raise RequestAlreadyExists()
@@ -544,10 +571,7 @@ def create_request(session, user, group, permission, argument, reason):
     # determine owner(s)
     owners_by_arg_by_perm = get_owners_by_grantable_permission(session, separate_global=True)
     owner_arg_list = get_owner_arg_list(
-        session,
-        permission,
-        argument,
-        owners_by_arg_by_perm=owners_by_arg_by_perm,
+        session, permission, argument, owners_by_arg_by_perm=owners_by_arg_by_perm
     )
 
     if not owner_arg_list:
@@ -562,48 +586,45 @@ def create_request(session, user, group, permission, argument, reason):
 
     # multiple steps to create the request
     request = PermissionRequest(
-            requester_id=user.id,
-            group_id=group.id,
-            permission_id=permission.id,
-            argument=argument,
-            status=pending_status,
-            requested_at=now,
-            ).add(session)
+        requester_id=user.id,
+        group_id=group.id,
+        permission_id=permission.id,
+        argument=argument,
+        status=pending_status,
+        requested_at=now,
+    ).add(session)
     session.flush()
 
     request_status_change = PermissionRequestStatusChange(
-            request=request,
-            user=user,
-            to_status=pending_status,
-            change_at=now,
-            ).add(session)
+        request=request, user=user, to_status=pending_status, change_at=now
+    ).add(session)
     session.flush()
 
     Comment(
-            obj_type=OBJ_TYPES_IDX.index("PermissionRequestStatusChange"),
-            obj_pk=request_status_change.id,
-            user_id=user.id,
-            comment=reason,
-            created_on=now,
-            ).add(session)
+        obj_type=OBJ_TYPES_IDX.index("PermissionRequestStatusChange"),
+        obj_pk=request_status_change.id,
+        user_id=user.id,
+        comment=reason,
+        created_on=now,
+    ).add(session)
 
     # send notification
     email_context = {
-            "user_name": user.name,
-            "group_name": group.name,
-            "permission_name": permission.name,
-            "argument": argument,
-            "reason": reason,
-            "request_id": request.id,
-            "references_header": request.reference_id,
-            }
+        "user_name": user.name,
+        "group_name": group.name,
+        "permission_name": permission.name,
+        "argument": argument,
+        "reason": reason,
+        "request_id": request.id,
+        "references_header": request.reference_id,
+    }
 
     # TODO: would be nicer if it told you which group you're an approver of
     # that's causing this notification
 
     mail_to = []
     global_owners = owners_by_arg_by_perm[GLOBAL_OWNERS]["*"]
-    non_wildcard_owners = filter(lambda grant: grant[1] != '*', owner_arg_list)
+    non_wildcard_owners = filter(lambda grant: grant[1] != "*", owner_arg_list)
     non_global_owners = filter(lambda grant: grant[0] not in global_owners, owner_arg_list)
     if any(non_wildcard_owners):
         # non-wildcard owners should get all the notifications
@@ -618,13 +639,14 @@ def create_request(session, user, group, permission, argument, reason):
         if owner.email_address:
             mail_to.append(owner.email_address)
         else:
-            mail_to.extend([u for t, u in owner.my_members() if t == 'User'])
+            mail_to.extend([u for t, u in owner.my_members() if t == "User"])
 
-    subj = get_template_env().get_template('email/pending_permission_request_subj.tmpl').render(
-        permission=permission.name, group=group.name
+    subj = (
+        get_template_env()
+        .get_template("email/pending_permission_request_subj.tmpl")
+        .render(permission=permission.name, group=group.name)
     )
-    send_email(session, set(mail_to), subj,
-            "pending_permission_request", settings, email_context)
+    send_email(session, set(mail_to), subj, "pending_permission_request", settings, email_context)
 
     return request
 
@@ -640,23 +662,26 @@ def get_pending_request_by_group(session, group):
         list of models.PermissionRequest correspodning to open/pending requests
         for this group.
     """
-    return session.query(PermissionRequest).filter(
-            PermissionRequest.status == "pending",
-            PermissionRequest.group_id == group.id,
-            ).all()
+    return (
+        session.query(PermissionRequest)
+        .filter(PermissionRequest.status == "pending", PermissionRequest.group_id == group.id)
+        .all()
+    )
 
 
 def can_approve_request(session, request, owner, group_ids=None, owners_by_arg_by_perm=None):
-    owner_arg_list = get_owner_arg_list(session, request.permission, request.argument,
-            owners_by_arg_by_perm)
+    owner_arg_list = get_owner_arg_list(
+        session, request.permission, request.argument, owners_by_arg_by_perm
+    )
     if group_ids is None:
         group_ids = {g.id for g, _ in get_groups_by_user(session, owner)}
 
     return group_ids.intersection([o.id for o, arg in owner_arg_list])
 
 
-def get_requests(session, status, limit, offset,
-                 owner=None, requester=None, owners_by_arg_by_perm=None):
+def get_requests(
+    session, status, limit, offset, owner=None, requester=None, owners_by_arg_by_perm=None
+):
     """Load requests using the given filters.
 
     Args:
@@ -693,9 +718,17 @@ def get_requests(session, status, limit, offset,
 
     if owner:
         group_ids = {g.id for g, _ in get_groups_by_user(session, owner)}
-        requests = [request for request in all_requests if
-                    can_approve_request(session, request, owner, group_ids=group_ids,
-                                        owners_by_arg_by_perm=owners_by_arg_by_perm)]
+        requests = [
+            request
+            for request in all_requests
+            if can_approve_request(
+                session,
+                request,
+                owner,
+                group_ids=group_ids,
+                owners_by_arg_by_perm=owners_by_arg_by_perm,
+            )
+        ]
     else:
         requests = all_requests
 
@@ -706,19 +739,25 @@ def get_requests(session, status, limit, offset,
     if not requests:
         comment_by_status_change_id = {}
     else:
-        status_changes = session.query(PermissionRequestStatusChange).filter(
-                    PermissionRequestStatusChange.request_id.in_([r.id for r in requests]),
-                    ).all()
+        status_changes = (
+            session.query(PermissionRequestStatusChange)
+            .filter(PermissionRequestStatusChange.request_id.in_([r.id for r in requests]))
+            .all()
+        )
         for sc in status_changes:
             status_change_by_request_id[sc.request_id].append(sc)
 
-        comments = session.query(Comment).filter(
+        comments = (
+            session.query(Comment)
+            .filter(
                 Comment.obj_type == OBJ_TYPES_IDX.index("PermissionRequestStatusChange"),
                 Comment.obj_pk.in_([s.id for s in status_changes]),
-                ).all()
+            )
+            .all()
+        )
         comment_by_status_change_id = {c.obj_pk: c for c in comments}
 
-    return Requests(requests, status_change_by_request_id, comment_by_status_change_id), total
+    return (Requests(requests, status_change_by_request_id, comment_by_status_change_id), total)
 
 
 def get_request_by_id(session, request_id):
@@ -735,19 +774,23 @@ def get_request_by_id(session, request_id):
 
 
 def get_changes_by_request_id(session, request_id):
-        status_changes = session.query(PermissionRequestStatusChange).filter(
-            PermissionRequestStatusChange.request_id == request_id,
-        ).all()
+    status_changes = (
+        session.query(PermissionRequestStatusChange)
+        .filter(PermissionRequestStatusChange.request_id == request_id)
+        .all()
+    )
 
-        comments = session.query(Comment).filter(
+    comments = (
+        session.query(Comment)
+        .filter(
             Comment.obj_type == OBJ_TYPES_IDX.index("PermissionRequestStatusChange"),
             Comment.obj_pk.in_([s.id for s in status_changes]),
-        ).all()
-        comment_by_status_change_id = {c.obj_pk: c for c in comments}
+        )
+        .all()
+    )
+    comment_by_status_change_id = {c.obj_pk: c for c in comments}
 
-        return [
-            (sc, comment_by_status_change_id[sc.id]) for sc in status_changes
-        ]
+    return [(sc, comment_by_status_change_id[sc.id]) for sc in status_changes]
 
 
 def update_request(session, request, user, new_status, comment):
@@ -779,22 +822,22 @@ def update_request(session, request, user, new_status, comment):
 
     # new status change row
     permission_status_change = PermissionRequestStatusChange(
-            request=request,
-            user_id=user.id,
-            from_status=request.status,
-            to_status=new_status,
-            change_at=now,
-            ).add(session)
+        request=request,
+        user_id=user.id,
+        from_status=request.status,
+        to_status=new_status,
+        change_at=now,
+    ).add(session)
     session.flush()
 
     # new comment
     Comment(
-            obj_type=OBJ_TYPES_IDX.index("PermissionRequestStatusChange"),
-            obj_pk=permission_status_change.id,
-            user_id=user.id,
-            comment=comment,
-            created_on=now,
-            ).add(session)
+        obj_type=OBJ_TYPES_IDX.index("PermissionRequestStatusChange"),
+        obj_pk=permission_status_change.id,
+        user_id=user.id,
+        comment=comment,
+        created_on=now,
+    ).add(session)
 
     # update permissionRequest status
     request.status = new_status
@@ -809,9 +852,12 @@ def update_request(session, request, user, new_status, comment):
 
     # audit log
     AuditLog.log(
-        session, user.id, "update_perm_request",
+        session,
+        user.id,
+        "update_perm_request",
         "updated permission request to status: {}".format(new_status),
-        on_group_id=request.group_id, on_user_id=request.requester_id,
+        on_group_id=request.group_id,
+        on_user_id=request.requester_id,
         on_permission_id=request.permission.id,
     )
 
@@ -819,7 +865,7 @@ def update_request(session, request, user, new_status, comment):
 
     # send notification
 
-    subj_template = 'email/pending_permission_request_subj.tmpl'
+    subj_template = "email/pending_permission_request_subj.tmpl"
     subject = "Re: " + get_template_env().get_template(subj_template).render(
         permission=request.permission.name, group=request.group.name
     )
@@ -830,15 +876,14 @@ def update_request(session, request, user, new_status, comment):
         email_template = "permission_request_cancelled"
 
     email_context = {
-            'group_name': request.group.name,
-            'action_taken_by': user.name,
-            'reason': comment,
-            'permission_name': request.permission.name,
-            'argument': request.argument,
-            }
+        "group_name": request.group.name,
+        "action_taken_by": user.name,
+        "reason": comment,
+        "permission_name": request.permission.name,
+        "argument": request.argument,
+    }
 
-    send_email(session, [request.requester.name], subject, email_template,
-            settings, email_context)
+    send_email(session, [request.requester.name], subject, email_template, settings, email_context)
 
 
 def permission_list_to_dict(perms):

@@ -6,17 +6,20 @@ from types import FrameType  # noqa
 
 try:
     from raven.contrib.tornado import AsyncSentryClient
+
     raven_installed = True
 except ImportError:
     raven_installed = False
 
 
-signame_by_signum = {v: k for k, v in signal.__dict__.items() if k.startswith('SIG') and not
-        k.startswith('SIG_')}
+signame_by_signum = {
+    v: k for k, v in signal.__dict__.items() if k.startswith("SIG") and not k.startswith("SIG_")
+}
 
 
 class SentryProxy(object):
     """Simple proxy for sentry client that logs to stderr even if no sentry client exists."""
+
     def __init__(self, sentry_client):
         self.sentry_client = sentry_client
 

@@ -102,6 +102,7 @@ def singleton(f):
                     value[0] = f()
                     initialized[0] = True
         return value[0]
+
     return wrapped
 
 
@@ -109,13 +110,13 @@ def reference_id(settings, request_type, request):
     # type: (Settings, str, Any) -> str
     """Generates the 'References' for a request"""
     try:
-        domain = settings['service_account_email_domain']
+        domain = settings["service_account_email_domain"]
     except KeyError:
         domain = "grouper.local"
     return "<{type}.{id}.{ts}@{prefix}.{domain}>".format(
         type=request_type,
         id=request.id,
-        ts=request.requested_at.strftime('%Y%m%d%H%M%S'),
+        ts=request.requested_at.strftime("%Y%m%d%H%M%S"),
         prefix="grouper-internal",
         domain=domain,
     )

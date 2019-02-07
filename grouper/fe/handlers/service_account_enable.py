@@ -57,18 +57,23 @@ class ServiceAccountEnable(GrouperHandler):
         form = self.get_form()
         if not form.validate():
             return self.render(
-                "service-account-enable.html", form=form, user=service_account.user,
-                alerts=self.get_form_alerts(form.errors)
+                "service-account-enable.html",
+                form=form,
+                user=service_account.user,
+                alerts=self.get_form_alerts(form.errors),
             )
 
         owner = Group.get(self.session, name=form.data["owner"])
         if owner is None:
             form.owner.errors.append("Group not found.")
             return self.render(
-                "service-account-enable.html", form=form, user=service_account.user,
-                alerts=self.get_form_alerts(form.errors)
+                "service-account-enable.html",
+                form=form,
+                user=service_account.user,
+                alerts=self.get_form_alerts(form.errors),
             )
 
         enable_service_account(self.session, self.current_user, service_account, owner)
-        return self.redirect("/groups/{}/service/{}?refresh=yes".format(
-            owner.name, service_account.user.username))
+        return self.redirect(
+            "/groups/{}/service/{}?refresh=yes".format(owner.name, service_account.user.username)
+        )

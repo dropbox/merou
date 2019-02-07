@@ -1,7 +1,7 @@
 import crypt
-from datetime import datetime
 import hmac
 import os
+from datetime import datetime
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
@@ -31,9 +31,7 @@ class UserPassword(Model):
 
     user = relationship("User")
 
-    __table_args__ = (
-        UniqueConstraint("user_id", "name"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "name"),)
 
     @staticmethod
     def get(session, user, name=None, id=None):
@@ -78,8 +76,7 @@ class UserPassword(Model):
 
     def check_hash(self, hash_to_check):
         return self.enabled and hmac.compare_digest(
-                hash_to_check,
-                self.password_hash.encode('utf-8'),
+            hash_to_check, self.password_hash.encode("utf-8")
         )
 
     @property
@@ -87,7 +84,9 @@ class UserPassword(Model):
         return self.disabled_at is None and self.user.enabled
 
     def __str__(self):
-        return "/".join((
+        return "/".join(
+            (
                 self.user.username if self.user is not None else "unspecified",
                 self.name if self.name is not None else "unspecified",
-        ))
+            )
+        )

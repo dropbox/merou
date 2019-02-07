@@ -5,16 +5,11 @@ from grouper.models.user import User
 
 
 class UsersPublicKey(GrouperHandler):
-    @ensure_audit_security(u'public_keys')
+    @ensure_audit_security(u"public_keys")
     def get(self):
         form = UsersPublicKeyForm(self.request.arguments)
 
-        user_key_list = self.session.query(
-            PublicKey,
-            User,
-        ).filter(
-            User.id == PublicKey.user_id,
-        )
+        user_key_list = self.session.query(PublicKey, User).filter(User.id == PublicKey.user_id)
 
         if not form.validate():
             user_key_list = user_key_list.filter(User.enabled == bool(form.enabled.default))
@@ -22,8 +17,13 @@ class UsersPublicKey(GrouperHandler):
             total = user_key_list.count()
             user_key_list = user_key_list.offset(form.offset.default).limit(form.limit.default)
 
-            return self.render("users-publickey.html", user_key_list=user_key_list, total=total,
-                    form=form, alerts=self.get_form_alerts(form.errors))
+            return self.render(
+                "users-publickey.html",
+                user_key_list=user_key_list,
+                total=total,
+                form=form,
+                alerts=self.get_form_alerts(form.errors),
+            )
 
         user_key_list = user_key_list.filter(User.enabled == bool(form.enabled.data))
 

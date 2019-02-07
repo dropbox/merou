@@ -44,7 +44,7 @@ def set_user_metadata(session, user_id, data_key, data_value):
     Returns:
         the UserMetadata object or None if entry was deleted
     """
-    assert re.match(PERMISSION_VALIDATION, data_key), 'proposed metadata key is valid'
+    assert re.match(PERMISSION_VALIDATION, data_key), "proposed metadata key is valid"
 
     user_md = get_user_metadata_by_key(session, user_id, data_key)
 

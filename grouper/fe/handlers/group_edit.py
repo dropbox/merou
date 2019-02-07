@@ -33,16 +33,13 @@ class GroupEdit(GrouperHandler):
         form = GroupEditForm(self.request.arguments, obj=group)
         if not form.validate():
             return self.render(
-                "group-edit.html", group=group, form=form,
-                alerts=self.get_form_alerts(form.errors)
+                "group-edit.html", group=group, form=form, alerts=self.get_form_alerts(form.errors)
             )
 
-        if (group.groupname != form.data["groupname"] and
-                is_role_user(self.session, group=group)):
+        if group.groupname != form.data["groupname"] and is_role_user(self.session, group=group):
             form.groupname.errors.append("You cannot change the name of service account groups")
             return self.render(
-                "group-edit.html", group=group, form=form,
-                alerts=self.get_form_alerts(form.errors)
+                "group-edit.html", group=group, form=form, alerts=self.get_form_alerts(form.errors)
             )
 
         group.groupname = form.data["groupname"]
@@ -57,15 +54,13 @@ class GroupEdit(GrouperHandler):
             self.session.commit()
         except IntegrityError:
             self.session.rollback()
-            form.groupname.errors.append(
-                "{} already exists".format(form.data["groupname"])
-            )
+            form.groupname.errors.append("{} already exists".format(form.data["groupname"]))
             return self.render(
-                "group-edit.html", group=group, form=form,
-                alerts=self.get_form_alerts(form.errors)
+                "group-edit.html", group=group, form=form, alerts=self.get_form_alerts(form.errors)
             )
 
-        AuditLog.log(self.session, self.current_user.id, 'edit_group',
-                     'Edited group.', on_group_id=group.id)
+        AuditLog.log(
+            self.session, self.current_user.id, "edit_group", "Edited group.", on_group_id=group.id
+        )
 
         return self.redirect("/groups/{}".format(group.name))

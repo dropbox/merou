@@ -7,8 +7,7 @@ from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.base.model_base import Model
 
 MappedPermission = namedtuple(
-    'MappedPermission',
-    ['permission', 'audited', 'argument', 'groupname', 'granted_on', 'alias'],
+    "MappedPermission", ["permission", "audited", "argument", "groupname", "granted_on", "alias"]
 )
 
 
@@ -25,8 +24,8 @@ class Permission(Model):
     name = Column(String(length=MAX_NAME_LENGTH), unique=True, nullable=False)
     description = Column(Text, nullable=False)
     created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
-    _audited = Column('audited', Boolean, default=False, nullable=False)
-    enabled = Column('enabled', Boolean, default=True, nullable=False)
+    _audited = Column("audited", Boolean, default=False, nullable=False)
+    enabled = Column("enabled", Boolean, default=True, nullable=False)
 
     @staticmethod
     def get(session, name=None):

@@ -1,8 +1,10 @@
+import logging
+import smtplib
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import logging
-import smtplib
+
+from six import string_types
 
 from grouper.fe.template_util import get_template_env
 from grouper.models.async_notification import AsyncNotification
@@ -13,11 +15,13 @@ from grouper.models.user import User
 
 def send_email(session, recipients, subject, template, settings, context):
     return send_async_email(
-        session, recipients, subject, template, settings, context, send_after=datetime.utcnow())
+        session, recipients, subject, template, settings, context, send_after=datetime.utcnow()
+    )
 
 
 def send_async_email(
-        session, recipients, subject, template, settings, context, send_after, async_key=None):
+    session, recipients, subject, template, settings, context, send_after, async_key=None
+):
     """Construct a message object from a template and schedule it
 
     This is the main email sending method to send out a templated email. This is used to
@@ -38,18 +42,14 @@ def send_async_email(
     Returns:
         Nothing.
     """
-    if isinstance(recipients, basestring):
+    if isinstance(recipients, string_types):
         recipients = recipients.split(",")
 
     msg = get_email_from_template(recipients, subject, template, settings, context)
 
     for rcpt in recipients:
         notif = AsyncNotification(
-            key=async_key,
-            email=rcpt,
-            subject=subject,
-            body=msg.as_string(),
-            send_after=send_after,
+            key=async_key, email=rcpt, subject=subject, body=msg.as_string(), send_after=send_after
         )
         notif.add(session)
     session.commit()
@@ -65,8 +65,7 @@ def cancel_async_emails(session, async_key):
         async_key (str): The async_key previously provided for your emails.
     """
     session.query(AsyncNotification).filter(
-        AsyncNotification.key == async_key,
-        AsyncNotification.sent == False
+        AsyncNotification.key == async_key, AsyncNotification.sent == False
     ).update({"sent": True})
 
 
@@ -86,18 +85,20 @@ def process_async_emails(settings, session, now_ts, dry_run=False):
     Returns:
         int: Number of emails that were sent.
     """
-    emails = session.query(AsyncNotification).filter(
-        AsyncNotification.sent == False,
-        AsyncNotification.send_after < now_ts,
-    ).all()
+    emails = (
+        session.query(AsyncNotification)
+        .filter(AsyncNotification.sent == False, AsyncNotification.send_after < now_ts)
+        .all()
+    )
     sent_ct = 0
     for email in emails:
         # For atomicity, attempt to set the sent flag on this email to true if
         # and only if it's still false.
-        update_ct = session.query(AsyncNotification).filter(
-            AsyncNotification.id == email.id,
-            AsyncNotification.sent == False
-        ).update({"sent": True})
+        update_ct = (
+            session.query(AsyncNotification)
+            .filter(AsyncNotification.id == email.id, AsyncNotification.sent == False)
+            .update({"sent": True})
+        )
 
         # If it's 0, someone else won the race. Bail.
         if update_ct == 0:
@@ -139,12 +140,12 @@ def get_email_from_template(recipient_list, subject, template, settings, context
 
     context["url"] = settings["url"]
 
-    text_template = template_env.get_template(
-        "email/{}_text.tmpl".format(template)
-    ).render(**context)
-    html_template = template_env.get_template(
-        "email/{}_html.tmpl".format(template)
-    ).render(**context)
+    text_template = template_env.get_template("email/{}_text.tmpl".format(template)).render(
+        **context
+    )
+    html_template = template_env.get_template("email/{}_html.tmpl".format(template)).render(
+        **context
+    )
 
     text = MIMEText(text_template, "plain", "utf-8")
     html = MIMEText(html_template, "html", "utf-8")
@@ -211,8 +212,8 @@ def notify_edge_expiration(settings, session, edge):
     from grouper.models.group import Group
 
     # TODO(rra): Arbitrarily use the first listed owner of the group from which membership expired
-    # as the actor, since we have to provide an actor and we didn't record who set the expiration on
-    # the edge originally.
+    # as the actor, since we have to provide an actor and we didn't record who set the expiration
+    # on the edge originally.
     actor_id = next(edge.group.my_owners().itervalues()).id
 
     # Pull data about the edge and the affected user or group.
@@ -238,8 +239,8 @@ def notify_edge_expiration(settings, session, edge):
     if member_is_user:
         AuditLog.log(session, on_user_id=user.id, on_group_id=edge.group_id, **audit_data)
     else:
-        # Make an audit log entry for both the subgroup and the parent group so that it will show up
-        # in the FE view for both groups.
+        # Make an audit log entry for both the subgroup and the parent group so that it will show
+        # up in the FE view for both groups.
         AuditLog.log(session, on_group_id=edge.group_id, **audit_data)
         AuditLog.log(session, on_group_id=subgroup.id, **audit_data)
 
@@ -284,10 +285,7 @@ def notify_nonauditor_flagged(settings, session, edge):
     }
     AuditLog.log(session, on_user_id=user.id, on_group_id=edge.group_id, **audit_data)
 
-    email_context = {
-        "group_name": group_name,
-        "member_name": member_name,
-    }
+    email_context = {"group_name": group_name, "member_name": member_name}
     send_email(
         session=session,
         recipients=recipients,
@@ -322,14 +320,11 @@ def notify_nonauditor_promoted(settings, session, user, auditors_group, group_na
     }
     AuditLog.log(session, on_user_id=user.id, on_group_id=auditors_group.id, **audit_data)
 
-    email_context = {
-        "auditors_group_name": auditors_group_name,
-        "member_name": member_name,
-    }
+    email_context = {"auditors_group_name": auditors_group_name, "member_name": member_name}
     send_email(
         session=session,
         recipients=recipients,
-        subject="Added as member to group \"{}\"".format(auditors_group_name),
+        subject='Added as member to group "{}"'.format(auditors_group_name),
         template="nonauditor_promoted",
         settings=settings,
         context=email_context,

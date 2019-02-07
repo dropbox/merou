@@ -1,9 +1,12 @@
-from mock import call, MagicMock
 from typing import TYPE_CHECKING
 
-from grouper.constants import PERMISSION_CREATE
+from mock import call, MagicMock
 
-from fixtures import (  # noqa: F401
+from grouper.constants import PERMISSION_CREATE
+from grouper.services.audit_log import AuditLogService
+from grouper.services.permission import PermissionService
+from grouper.usecases.disable_permission import DisablePermission
+from tests.fixtures import (  # noqa: F401
     graph,
     groups,
     permissions,
@@ -12,13 +15,10 @@ from fixtures import (  # noqa: F401
     standard_graph,
     users,
 )
-from grouper.services.audit_log import AuditLogService
-from grouper.services.permission import PermissionService
-from grouper.usecases.disable_permission import DisablePermission
 
 if TYPE_CHECKING:
-    from dropbox.models.base.session import Session  # noqa: F401
-    from dropbox.graph import GroupGraph  # noqa: F401
+    from dropbox.models.base.session import Session
+    from dropbox.graph import GroupGraph
 
 
 def test_permission_disable(session, standard_graph):  # noqa: F811
@@ -39,7 +39,7 @@ def test_permission_disable_denied(session, standard_graph):  # noqa: F811
     usecase = DisablePermission(session, "zorkian@a.co", mock_ui, service)
     usecase.disable_permission("audited")
     assert mock_ui.mock_calls == [
-        call.disable_permission_failed_because_permission_denied("audited"),
+        call.disable_permission_failed_because_permission_denied("audited")
     ]
 
 
@@ -51,7 +51,7 @@ def test_permission_disable_system(session, standard_graph):  # noqa: F811
     usecase = DisablePermission(session, "gary@a.co", mock_ui, service)
     usecase.disable_permission(PERMISSION_CREATE)
     assert mock_ui.mock_calls == [
-        call.disable_permission_failed_because_system_permission(PERMISSION_CREATE),
+        call.disable_permission_failed_because_system_permission(PERMISSION_CREATE)
     ]
 
 

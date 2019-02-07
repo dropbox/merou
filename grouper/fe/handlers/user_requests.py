@@ -5,6 +5,7 @@ from grouper.user import user_requests_aggregate
 
 class UserRequests(GrouperHandler):
     """Handle list all pending requests for a single user."""
+
     def get(self):
         offset = int(self.get_argument("offset", 0))
         limit = int(self.get_argument("limit", 100))
@@ -18,5 +19,6 @@ class UserRequests(GrouperHandler):
         total = requests.count()
         requests = requests.offset(offset).limit(limit)
 
-        self.render("user-requests.html", requests=requests, offset=offset, limit=limit,
-                total=total)
+        self.render(
+            "user-requests.html", requests=requests, offset=offset, limit=limit, total=total
+        )

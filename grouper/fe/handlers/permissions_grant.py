@@ -26,9 +26,7 @@ class PermissionsGrant(GrouperHandler):
             grantable = "{} ({})".format(perm[0].name, perm[1])
             form.permission.choices.append([perm[0].name, grantable])
 
-        return self.render(
-            "permission-grant.html", form=form, group=group,
-        )
+        return self.render("permission-grant.html", form=form, group=group)
 
     def post(self, name=None):
         grantable = user_grantable_permissions(self.session, self.current_user)
@@ -47,8 +45,10 @@ class PermissionsGrant(GrouperHandler):
 
         if not form.validate():
             return self.render(
-                "permission-grant.html", form=form, group=group,
-                alerts=self.get_form_alerts(form.errors)
+                "permission-grant.html",
+                form=form,
+                group=group,
+                alerts=self.get_form_alerts(form.errors),
             )
 
         permission = get_permission(self.session, form.data["permission"])
@@ -66,14 +66,18 @@ class PermissionsGrant(GrouperHandler):
                 "You do not have grant authority over that permission/argument combination."
             )
             return self.render(
-                "permission-grant.html", form=form, group=group,
+                "permission-grant.html",
+                form=form,
+                group=group,
                 alerts=self.get_form_alerts(form.errors),
             )
 
         # If the permission is audited, then see if the subtree meets auditing requirements.
         if permission.audited:
-            fail_message = ("Permission is audited and this group (or a subgroup) contains " +
-                            "owners, np-owners, or managers who have not received audit training.")
+            fail_message = (
+                "Permission is audited and this group (or a subgroup) contains "
+                + "owners, np-owners, or managers who have not received audit training."
+            )
             try:
                 permission_ok = assert_controllers_are_auditors(group)
             except UserNotAuditor as e:
@@ -82,7 +86,9 @@ class PermissionsGrant(GrouperHandler):
             if not permission_ok:
                 form.permission.errors.append(fail_message)
                 return self.render(
-                    "permission-grant.html", form=form, group=group,
+                    "permission-grant.html",
+                    form=form,
+                    group=group,
                     alerts=self.get_form_alerts(form.errors),
                 )
 
@@ -90,18 +96,23 @@ class PermissionsGrant(GrouperHandler):
             grant_permission(self.session, group.id, permission.id, argument=form.data["argument"])
         except IntegrityError:
             self.session.rollback()
-            form.argument.errors.append(
-                "Permission and Argument already mapped to this group."
-            )
+            form.argument.errors.append("Permission and Argument already mapped to this group.")
             return self.render(
-                "permission-grant.html", form=form, group=group,
+                "permission-grant.html",
+                form=form,
+                group=group,
                 alerts=self.get_form_alerts(form.errors),
             )
 
         self.session.commit()
 
-        AuditLog.log(self.session, self.current_user.id, 'grant_permission',
-                     'Granted permission with argument: {}'.format(form.data["argument"]),
-                     on_permission_id=permission.id, on_group_id=group.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "grant_permission",
+            "Granted permission with argument: {}".format(form.data["argument"]),
+            on_permission_id=permission.id,
+            on_group_id=group.id,
+        )
 
         return self.redirect("/groups/{}?refresh=yes".format(group.name))

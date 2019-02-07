@@ -11,15 +11,14 @@ from grouper.util import reference_id
 
 class PermissionRequest(Model):
     """Represent request for a permission/argument to be granted to a particular group."""
+
     __tablename__ = "permission_requests"
 
     id = Column(Integer, primary_key=True)
 
     # The User that made the request.
     requester_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    requester = relationship(
-        "User", backref="permission_requests", foreign_keys=[requester_id]
-    )
+    requester = relationship("User", backref="permission_requests", foreign_keys=[requester_id])
 
     permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=False)
     permission = relationship("Permission", foreign_keys=[permission_id])

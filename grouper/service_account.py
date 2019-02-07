@@ -27,22 +27,25 @@ from grouper.plugin.exceptions import PluginRejectedMachineSet
 from grouper.user import disable_user, enable_user
 
 if TYPE_CHECKING:
-    from typing import Dict, List, Union  # noqa: F401
-    from grouper.models.base.session import Session  # noqa: F401
-    from grouper.models.group import Group  # noqa: F401
+    from grouper.models.base.session import Session
+    from grouper.models.group import Group
+    from typing import Dict, List, Union
 
 # A single service account permission.
-ServiceAccountPermission = namedtuple("ServiceAccountPermission",
-    ["permission", "argument", "granted_on", "mapping_id"])
+ServiceAccountPermission = namedtuple(
+    "ServiceAccountPermission", ["permission", "argument", "granted_on", "mapping_id"]
+)
 
 
 class BadMachineSet(Exception):
     """The service account machine set was rejected."""
+
     pass
 
 
 class DuplicateServiceAccount(Exception):
     """Creating a service account failed because it duplicates an existing user."""
+
     pass
 
 
@@ -91,8 +94,14 @@ def create_service_account(session, actor, name, description, machine_set, owner
     # or commit for the account creation.
     add_service_account(session, owner, service_account)
 
-    AuditLog.log(session, actor.id, "create_service_account", "Created new service account.",
-                 on_group_id=owner.id, on_user_id=service_account.user_id)
+    AuditLog.log(
+        session,
+        actor.id,
+        "create_service_account",
+        "Created new service account.",
+        on_group_id=owner.id,
+        on_user_id=service_account.user_id,
+    )
 
     return service_account
 
@@ -113,8 +122,13 @@ def edit_service_account(session, actor, service_account, description, machine_s
 
     session.commit()
 
-    AuditLog.log(session, actor.id, "edit_service_account", "Edited service account.",
-                 on_user_id=service_account.user.id)
+    AuditLog.log(
+        session,
+        actor.id,
+        "edit_service_account",
+        "Edited service account.",
+        on_user_id=service_account.user.id,
+    )
 
 
 def is_service_account(session, user):
@@ -147,12 +161,19 @@ def disable_service_account(session, actor, service_account):
     owner_id = service_account.owner.group.id
     service_account.owner.delete(session)
     permissions = session.query(ServiceAccountPermissionMap).filter_by(
-        service_account_id=service_account.id)
+        service_account_id=service_account.id
+    )
     for permission in permissions:
         permission.delete(session)
 
-    AuditLog.log(session, actor.id, "disable_service_account", "Disabled service account.",
-                 on_group_id=owner_id, on_user_id=service_account.user_id)
+    AuditLog.log(
+        session,
+        actor.id,
+        "disable_service_account",
+        "Disabled service account.",
+        on_group_id=owner_id,
+        on_user_id=service_account.user_id,
+    )
 
     Counter.incr(session, "updates")
     session.commit()
@@ -164,8 +185,14 @@ def enable_service_account(session, actor, service_account, owner):
     enable_user(session, service_account.user, actor, preserve_membership=False)
     add_service_account(session, owner, service_account)
 
-    AuditLog.log(session, actor.id, "enable_service_account", "Enabled service account.",
-                 on_group_id=owner.id, on_user_id=service_account.user_id)
+    AuditLog.log(
+        session,
+        actor.id,
+        "enable_service_account",
+        "Enabled service account.",
+        on_group_id=owner.id,
+        on_user_id=service_account.user_id,
+    )
 
     Counter.incr(session, "updates")
     session.commit()
@@ -184,12 +211,14 @@ def service_account_permissions(session, service_account):
     )
     out = []
     for permission in permissions:
-        out.append(ServiceAccountPermission(
-            permission=permission[0].name,
-            argument=permission[1].argument,
-            granted_on=permission[1].granted_on,
-            mapping_id=permission[1].id
-        ))
+        out.append(
+            ServiceAccountPermission(
+                permission=permission[0].name,
+                argument=permission[1].argument,
+                granted_on=permission[1].granted_on,
+                mapping_id=permission[1].id,
+            )
+        )
     return out
 
 
@@ -205,10 +234,12 @@ def all_service_account_permissions(session):
         Permission.enabled == True,
     )
     for permission in permissions:
-        out[permission[1].service_account.user.username].append(ServiceAccountPermission(
-            permission=permission[0].name,
-            argument=permission[1].argument,
-            granted_on=permission[1].granted_on,
-            mapping_id=permission[1].id,
-        ))
+        out[permission[1].service_account.user.username].append(
+            ServiceAccountPermission(
+                permission=permission[0].name,
+                argument=permission[1].argument,
+                granted_on=permission[1].granted_on,
+                mapping_id=permission[1].id,
+            )
+        )
     return out

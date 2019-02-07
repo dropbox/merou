@@ -1,20 +1,27 @@
+from datetime import datetime
+
 import pytest
+from mock import patch
 
-from datetime import datetime, timedelta
-from mock import call, patch
-
-from fixtures import graph, users, groups, service_accounts, session, permissions, standard_graph  # noqa
-from grouper.constants import PERMISSION_AUDITOR
 from grouper.background.background_processor import BackgroundProcessor
 from grouper.models.async_notification import AsyncNotification
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
 from grouper.settings import settings
-from util import add_member, get_users, revoke_member
+from tests.fixtures import (  # noqa: F401
+    graph,
+    groups,
+    permissions,
+    service_accounts,
+    session,
+    standard_graph,
+    users,
+)
+from tests.util import add_member, get_users, revoke_member
 
 
-def _get_unsent_emails_and_send(session):
+def _get_unsent_emails_and_send(session):  # noqa: F811
     """Helper to count unsent emails and then mark them as sent."""
     emails = session.query(AsyncNotification).filter_by(sent=False).all()
 
@@ -26,7 +33,7 @@ def _get_unsent_emails_and_send(session):
 
 
 @pytest.fixture
-def expired_graph(session, graph, groups, users):
+def expired_graph(session, graph, groups, users):  # noqa: F811
     now = datetime.utcnow()
 
     # expired user membership
@@ -45,7 +52,7 @@ def expired_graph(session, graph, groups, users):
     return graph
 
 
-def test_expire_edges(expired_graph, session):  # noqa
+def test_expire_edges(expired_graph, session):  # noqa: F811
     """ Test expiration auditing and notification. """
     email = session.query(AsyncNotification).all()
     assert email == []
@@ -57,11 +64,13 @@ def test_expire_edges(expired_graph, session):  # noqa
     background.expire_edges(session)
 
     # Check that the edges are now marked as inactive.
-    edges = session.query(GroupEdge).filter(
-            GroupEdge.group_id == Group.id,
-            Group.enabled == True,
-            GroupEdge.expiration != None
-            ).all()
+    edges = (
+        session.query(GroupEdge)
+        .filter(
+            GroupEdge.group_id == Group.id, Group.enabled == True, GroupEdge.expiration != None
+        )
+        .all()
+    )
     for edge in edges:
         assert edge.active == False
 
@@ -77,13 +86,15 @@ def test_expire_edges(expired_graph, session):  # noqa
     assert len(audits) == 3
 
 
-@patch('grouper.audit.get_auditors_group_name', return_value='auditors')
-def test_promote_nonauditors(mock_gagn, standard_graph, users, groups, session, permissions):
+@patch("grouper.audit.get_auditors_group_name", return_value="auditors")
+def test_promote_nonauditors(
+    mock_gagn, standard_graph, users, groups, session, permissions  # noqa: F811
+):
     """ Test expiration auditing and notification. """
 
     graph = standard_graph  # noqa
 
-    assert graph.get_group_details("audited-team")['audited']
+    assert graph.get_group_details("audited-team")["audited"]
 
     #
     # Ensure auditors promotion for all approvers
@@ -106,9 +117,27 @@ def test_promote_nonauditors(mock_gagn, standard_graph, users, groups, session, 
         graph.update_from_db(session)
         assert affected_users.intersection(get_users(graph, "auditors")) == affected_users
         unsent_emails = _get_unsent_emails_and_send(session)
-        assert any(["Subject: Added as member to group \"auditors\"" in email.body and "To: testuser@a.co" in email.body for email in unsent_emails])
-        assert any(["Subject: Added as member to group \"auditors\"" in email.body and "To: gary@a.co" in email.body for email in unsent_emails])
-        assert any(["Subject: Added as member to group \"auditors\"" in email.body and "To: zay@a.co" in email.body for email in unsent_emails])
+        assert any(
+            [
+                'Subject: Added as member to group "auditors"' in email.body
+                and "To: testuser@a.co" in email.body
+                for email in unsent_emails
+            ]
+        )
+        assert any(
+            [
+                'Subject: Added as member to group "auditors"' in email.body
+                and "To: gary@a.co" in email.body
+                for email in unsent_emails
+            ]
+        )
+        assert any(
+            [
+                'Subject: Added as member to group "auditors"' in email.body
+                and "To: zay@a.co" in email.body
+                for email in unsent_emails
+            ]
+        )
 
         audits = AuditLog.get_entries(session, action="nonauditor_promoted")
         assert len(audits) == len(affected_users) * (idx + 1)
@@ -143,7 +172,13 @@ def test_promote_nonauditors(mock_gagn, standard_graph, users, groups, session, 
         graph.update_from_db(session)
         assert "testuser@a.co" not in get_users(graph, "auditors")
 
-        assert not any(["Subject: Added as member to group \"auditors\"" in email.body and "To: testuser@a.co" in email.body for email in _get_unsent_emails_and_send(session)])
+        assert not any(
+            [
+                'Subject: Added as member to group "auditors"' in email.body
+                and "To: testuser@a.co" in email.body
+                for email in _get_unsent_emails_and_send(session)
+            ]
+        )
 
         audits = AuditLog.get_entries(session, action="nonauditor_promoted")
         assert len(audits) == prev_audit_log_count

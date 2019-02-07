@@ -1,13 +1,20 @@
-from pages.groups import GroupViewPage
-from pages.service_accounts import (
+from itests.fixtures import async_server, browser  # noqa: F401
+from itests.pages.groups import GroupViewPage
+from itests.pages.service_accounts import (
     ServiceAccountCreatePage,
     ServiceAccountEnablePage,
     ServiceAccountViewPage,
 )
-from pages.users import UsersViewPage
-
-from fixtures import async_server, browser  # noqa: F401
-from tests.fixtures import graph, groups, service_accounts, permissions, session, standard_graph, users  # noqa: F401
+from itests.pages.users import UsersViewPage
+from tests.fixtures import (  # noqa: F401
+    graph,
+    groups,
+    permissions,
+    service_accounts,
+    session,
+    standard_graph,
+    users,
+)
 from tests.url_util import url
 
 

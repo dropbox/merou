@@ -1,5 +1,13 @@
-from fixtures import *  # noqa: F401
-from tests.fixtures import *  # noqa: F401
+from itests.fixtures import api_client, async_api_server  # noqa: F401
+from tests.fixtures import (  # noqa: F401
+    graph,
+    groups,
+    permissions,
+    service_accounts,
+    session,
+    standard_graph,
+    users,
+)
 
 
 def test_get_service_accounts(api_client, users, service_accounts):  # noqa: F811
@@ -21,7 +29,7 @@ def test_get_service_account(api_client):  # noqa: F811
     assert service_account.service_account == {
         "description": "some service account",
         "machine_set": "some machines",
-        "owner": "team-sre"
+        "owner": "team-sre",
     }
     assert service_account.permissions == []
     assert service_account.metadata == {}

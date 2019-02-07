@@ -16,7 +16,7 @@ from grouper.user_group import user_can_manage_group
 from grouper.user_permissions import user_has_permission
 
 if TYPE_CHECKING:
-    from grouper.models.base.session import Session  # noqa: F401
+    from grouper.models.base.session import Session
 
 
 class RoleUserNotFound(Exception):
@@ -52,8 +52,14 @@ def create_role_user(session, actor, name, description, canjoin):
     group.add_member(actor, user, "Service Account", "actioned", None, "member")
     session.commit()
 
-    AuditLog.log(session, actor.id, 'create_role_user', 'Created new service account.',
-                 on_group_id=group.id, on_user_id=user.id)
+    AuditLog.log(
+        session,
+        actor.id,
+        "create_role_user",
+        "Created new service account.",
+        on_group_id=group.id,
+        on_user_id=user.id,
+    )
 
 
 def is_role_user(session, user=None, group=None):

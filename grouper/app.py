@@ -1,5 +1,5 @@
-from tornado.log import access_log
 import tornado.web
+from tornado.log import access_log
 
 
 class Application(tornado.web.Application):
@@ -17,16 +17,19 @@ class Application(tornado.web.Application):
             log_method = access_log.error
 
         # we want to reduce priority of health check request
-        if handler.request.uri == '/debug/stats':
+        if handler.request.uri == "/debug/stats":
             log_method = access_log.debug
 
         user = handler.get_current_user()
         if user:
             username = user.username
         else:
-            username = '-'
+            username = "-"
 
         request_time = 1000.0 * handler.request.request_time()
 
-        log_method("{} {} {} {:.2f}ms".format(username, handler.get_status(),
-                handler._request_summary(), request_time))
+        log_method(
+            "{} {} {} {:.2f}ms".format(
+                username, handler.get_status(), handler._request_summary(), request_time
+            )
+        )

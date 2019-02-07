@@ -31,29 +31,30 @@ class GroupRemove(GrouperHandler):
 
         if self.current_user == removed_member:
             return self.send_error(
-                status_code=400,
-                reason="Can't remove yourself. Leave group instead."
+                status_code=400, reason="Can't remove yourself. Leave group instead."
             )
 
         role_user = is_role_user(self.session, group=group)
 
-        if (role_user and
-                get_role_user(self.session, group=group).user.name == removed_member.name):
+        if role_user and get_role_user(self.session, group=group).user.name == removed_member.name:
             return self.send_error(
                 status_code=400,
-                reason="Can't remove a service account user from the service account group."
+                reason="Can't remove a service account user from the service account group.",
             )
 
         try:
             group.revoke_member(
-                self.current_user,
-                removed_member,
-                "Removed by owner/np-owner/manager"
+                self.current_user, removed_member, "Removed by owner/np-owner/manager"
             )
 
-            AuditLog.log(self.session, self.current_user.id, 'remove_from_group',
-                         '{} was removed from the group.'.format(removed_member.name),
-                         on_group_id=group.id, on_user_id=removed_member.id)
+            AuditLog.log(
+                self.session,
+                self.current_user.id,
+                "remove_from_group",
+                "{} was removed from the group.".format(removed_member.name),
+                on_group_id=group.id,
+                on_user_id=removed_member.id,
+            )
         except PluginRejectedGroupMembershipUpdate as e:
             alert = Alert("danger", str(e))
 

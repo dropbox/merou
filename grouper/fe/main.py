@@ -1,17 +1,19 @@
-from contextlib import closing
+from __future__ import print_function
+
 import logging
 import os
 import sys
+from contextlib import closing
 from typing import TYPE_CHECKING
 
 import tornado.httpserver
 import tornado.ioloop
 
+import grouper.fe
 from grouper import stats
 from grouper.app import Application
 from grouper.database import DbRefreshThread
 from grouper.error_reporting import get_sentry_client, setup_signal_handlers
-import grouper.fe
 from grouper.fe.routes import HANDLERS
 from grouper.fe.settings import settings
 from grouper.fe.template_util import get_template_env
@@ -23,10 +25,10 @@ from grouper.setup import build_arg_parser, setup_logging
 from grouper.util import get_database_url
 
 if TYPE_CHECKING:
-    import argparse  # noqa: F401
-    from typing import List  # noqa: F401
-    from grouper.error_reporting import SentryProxy  # noqa: F401
-    from grouper.fe.settings import Settings  # noqa: F401
+    import argparse
+    from typing import List
+    from grouper.error_reporting import SentryProxy
+    from grouper.fe.settings import Settings
 
 
 def get_application(settings, sentry_client, deployment_name):
@@ -43,10 +45,7 @@ def get_application(settings, sentry_client, deployment_name):
     }
 
     application = Application(
-        HANDLERS,
-        my_settings=my_settings,
-        sentry_client=sentry_client,
-        **tornado_settings
+        HANDLERS, my_settings=my_settings, sentry_client=sentry_client, **tornado_settings
     )
 
     return application
@@ -58,8 +57,9 @@ def start_server(args, sentry_client):
     log_level = logging.getLevelName(logging.getLogger().level)
     logging.info("begin. log_level={}".format(log_level))
 
-    assert not (settings.debug and settings.num_processes > 1), \
-        "debug mode does not support multiple processes"
+    assert not (
+        settings.debug and settings.num_processes > 1
+    ), "debug mode does not support multiple processes"
 
     try:
         initialize_plugins(settings.plugin_dirs, settings.plugin_module_paths, "grouper_fe")
@@ -80,13 +80,9 @@ def start_server(args, sentry_client):
     ssl_context = get_plugin_proxy().get_ssl_context()
 
     logging.info(
-        "Starting application server with %d processes on port %d",
-        settings.num_processes, port
+        "Starting application server with %d processes on port %d", settings.num_processes, port
     )
-    server = tornado.httpserver.HTTPServer(
-            application,
-            ssl_options=ssl_context
-    )
+    server = tornado.httpserver.HTTPServer(application, ssl_options=ssl_context)
     server.bind(port, address=address)
     # When using multiple processes, the forking happens here
     server.start(settings.num_processes)
@@ -111,7 +107,7 @@ def start_server(args, sentry_client):
     except KeyboardInterrupt:
         tornado.ioloop.IOLoop.instance().stop()
     finally:
-        print "Bye"
+        print("Bye")
 
 
 def main(sys_argv=sys.argv):
@@ -131,8 +127,8 @@ def main(sys_argv=sys.argv):
 
         # setup sentry
         sentry_client = get_sentry_client(settings.sentry_dsn)
-    except:
-        logging.exception('uncaught exception in startup')
+    except Exception:
+        logging.exception("uncaught exception in startup")
         sys.exit(1)
 
     try:

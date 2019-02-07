@@ -12,12 +12,14 @@ from grouper.plugin import get_plugin_proxy
 class InvalidRoleForMember(Exception):
     """This exception is raised when trying to set the role for a member of a group, but that
     member is not permitted to hold that role in the group"""
+
     pass
 
 
 class MemberNotFound(Exception):
     """This exception is raised when trying to perform a group operation on an account that is
        not a member of the group."""
+
     pass
 
 
@@ -42,19 +44,13 @@ def _validate_role(member_type, role):
 
 def _get_edge(session, group, member):
     return GroupEdge.get(
-        session,
-        group_id=group.id,
-        member_type=member.member_type,
-        member_pk=member.id
+        session, group_id=group.id, member_type=member.member_type, member_pk=member.id
     )
 
 
 def _create_edge(session, group, member, role):
     edge, new = GroupEdge.get_or_create(
-        session,
-        group_id=group.id,
-        member_type=member.member_type,
-        member_pk=member.id
+        session, group_id=group.id, member_type=member.member_type, member_pk=member.id
     )
 
     if new:
@@ -68,8 +64,9 @@ def _create_edge(session, group, member, role):
     return edge
 
 
-def persist_group_member_changes(session, group, requester, member, status, reason,
-                                 create_edge=False, **updates):
+def persist_group_member_changes(
+    session, group, requester, member, status, reason, create_edge=False, **updates
+):
     requested_at = datetime.utcnow()
 
     if "role" in updates:
@@ -100,10 +97,7 @@ def persist_group_member_changes(session, group, requester, member, status, reas
     session.flush()
 
     request_status_change = RequestStatusChange(
-        request=request,
-        user_id=requester.id,
-        to_status=status,
-        change_at=requested_at,
+        request=request, user_id=requester.id, to_status=status, change_at=requested_at
     ).add(session)
     session.flush()
 

@@ -34,8 +34,9 @@ def record_trace(session, collector, trace_uuid):
     """
     flamegraph_input = FlamegraphFormatter().format(collector)
     plop_input = PlopFormatter().format(collector)
-    perf_trace = PerfProfile(uuid=trace_uuid, flamegraph_input=flamegraph_input,
-            plop_input=plop_input)
+    perf_trace = PerfProfile(
+        uuid=trace_uuid, flamegraph_input=flamegraph_input, plop_input=plop_input
+    )
     perf_trace.add(session)
     session.commit()
 

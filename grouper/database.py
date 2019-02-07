@@ -1,6 +1,6 @@
-from contextlib import closing
 import logging
 import os
+from contextlib import closing
 from threading import Thread
 from time import sleep
 
@@ -11,6 +11,7 @@ from grouper.util import get_database_url
 
 class DbRefreshThread(Thread):
     """Background thread for refreshing the in-memory cache of the graph."""
+
     def __init__(self, settings, graph, refresh_interval, sentry_client, *args, **kwargs):
         self.settings = settings
         self.graph = graph
@@ -38,7 +39,7 @@ class DbRefreshThread(Thread):
 
                 stats.log_gauge("successful-db-update", 1)
                 stats.log_gauge("failed-db-update", 0)
-            except:
+            except Exception:
                 stats.log_gauge("successful-db-update", 0)
                 stats.log_gauge("failed-db-update", 1)
                 self.capture_exception()

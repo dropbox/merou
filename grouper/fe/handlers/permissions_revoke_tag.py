@@ -33,8 +33,13 @@ class PermissionsRevokeTag(GrouperHandler):
         Counter.incr(self.session, "updates")
         self.session.commit()
 
-        AuditLog.log(self.session, self.current_user.id, 'revoke_tag_permission',
-                     'Revoked permission with argument: {}'.format(mapping.argument),
-                     on_tag_id=tag.id, on_permission_id=permission.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "revoke_tag_permission",
+            "Revoked permission with argument: {}".format(mapping.argument),
+            on_tag_id=tag.id,
+            on_permission_id=permission.id,
+        )
 
-        return self.redirect('/tags/{}?refresh=yes'.format(tag.name))
+        return self.redirect("/tags/{}?refresh=yes".format(tag.name))

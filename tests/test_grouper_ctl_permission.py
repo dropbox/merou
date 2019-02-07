@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING
 
-from ctl_util import CtlTestRunner
-from fixtures import (  # noqa: F401
+from grouper.permissions import get_permission
+from tests.ctl_util import CtlTestRunner
+from tests.fixtures import (  # noqa: F401
     graph,
     groups,
     permissions,
@@ -10,11 +11,10 @@ from fixtures import (  # noqa: F401
     standard_graph,
     users,
 )
-from grouper.permissions import get_permission
 
 if TYPE_CHECKING:
-    from grouper.graph import GroupGraph  # noqa: F401
-    from grouper.models.base.session import Session  # noqa: F401
+    from grouper.graph import GroupGraph
+    from grouper.models.base.session import Session
 
 
 def test_permission_disable(session, standard_graph):  # noqa: F811

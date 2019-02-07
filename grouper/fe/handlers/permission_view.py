@@ -20,7 +20,10 @@ class PermissionView(GrouperHandler):
         log_entries = get_log_entries_by_permission(self.session, permission)
 
         self.render(
-            "permission.html", permission=permission, can_disable=can_disable,
-            mapped_groups=mapped_groups, log_entries=log_entries,
+            "permission.html",
+            permission=permission,
+            can_disable=can_disable,
+            mapped_groups=mapped_groups,
+            log_entries=log_entries,
             can_change_audit_status=can_change_audit_status,
         )

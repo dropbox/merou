@@ -1,7 +1,7 @@
+import logging
 from collections import OrderedDict
 from datetime import datetime
-import logging
-from typing import List  # noqa: F401
+from typing import List
 
 from sqlalchemy import Boolean, Column, desc, Enum, Integer, Interval, or_, String, Text, union_all
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -42,7 +42,7 @@ class Group(Model, CommentObjectMixin):
 
     id = Column(Integer, primary_key=True)
     groupname = Column(String(length=MAX_NAME_LENGTH), unique=True, nullable=False)
-    email_address = Column(String(length=MAX_NAME_LENGTH), unique=False, nullable=True,)
+    email_address = Column(String(length=MAX_NAME_LENGTH), unique=False, nullable=True)
     description = Column(Text)
     canjoin = Column(Enum(*GROUP_JOIN_CHOICES), default="canask")
     enabled = Column(Boolean, default=True, nullable=False)
@@ -53,8 +53,9 @@ class Group(Model, CommentObjectMixin):
     require_clickthru_tojoin = Column(Boolean, nullable=False, default=False)
 
     audit_id = Column(Integer, nullable=True)
-    audit = relationship("Audit", foreign_keys=[audit_id],
-                         primaryjoin=lambda: Audit.id == Group.audit_id)
+    audit = relationship(
+        "Audit", foreign_keys=[audit_id], primaryjoin=lambda: Audit.id == Group.audit_id
+    )
 
     @hybrid_property
     def name(self):
@@ -73,9 +74,7 @@ class Group(Model, CommentObjectMixin):
                 user_or_group: A User/Group object of the member
                 reason: A comment on why this member should exist
         """
-        logging.debug(
-            "Revoking member (%s) from %s", user_or_group.name, self.groupname
-        )
+        logging.debug("Revoking member (%s) from %s", user_or_group.name, self.groupname)
 
         persist_group_member_changes(
             session=self.session,
@@ -88,7 +87,7 @@ class Group(Model, CommentObjectMixin):
             create_edge=True,
             role="member",
             expiration=None,
-            active=False
+            active=False,
         )
 
     @flush_transaction
@@ -101,9 +100,7 @@ class Group(Model, CommentObjectMixin):
             Any option that is not passed is not updated, and instead, the existing value for this
             user is kept.
         """
-        logging.debug(
-            "Editing member (%s) in %s", user_or_group.name, self.groupname
-        )
+        logging.debug("Editing member (%s) in %s", user_or_group.name, self.groupname)
 
         persist_group_member_changes(
             session=self.session,
@@ -118,13 +115,14 @@ class Group(Model, CommentObjectMixin):
         member_type = user_or_group.member_type
 
         message = "Edit member {} {}: {}".format(
-            OBJ_TYPES_IDX[member_type].lower(), user_or_group.name, reason)
-        AuditLog.log(self.session, requester.id, 'edit_member',
-                     message, on_group_id=self.id)
+            OBJ_TYPES_IDX[member_type].lower(), user_or_group.name, reason
+        )
+        AuditLog.log(self.session, requester.id, "edit_member", message, on_group_id=self.id)
 
     @flush_transaction
-    def add_member(self, requester, user_or_group, reason, status="pending",
-                   expiration=None, role="member"):
+    def add_member(
+        self, requester, user_or_group, reason, status="pending", expiration=None, role="member"
+    ):
         """ Add a member (User or Group) to this group.
 
             Arguments:
@@ -136,9 +134,7 @@ class Group(Model, CommentObjectMixin):
                 expiration: datetime object when membership should expire.
                 role: member/manager/owner/np-owner of the Group.
         """
-        logging.debug(
-            "Adding member (%s) to %s", user_or_group.name, self.groupname
-        )
+        logging.debug("Adding member (%s) to %s", user_or_group.name, self.groupname)
 
         return persist_group_member_changes(
             session=self.session,
@@ -150,7 +146,7 @@ class Group(Model, CommentObjectMixin):
             create_edge=True,
             role=role,
             expiration=expiration,
-            active=True
+            active=True,
         )
 
     def my_permissions(self):
@@ -158,39 +154,41 @@ class Group(Model, CommentObjectMixin):
         NOTE: Disabled permissions are not returned
         """
 
-        permissions = self.session.query(
-            Permission.id,
-            Permission.name,
-            label("mapping_id", PermissionMap.id),
-            PermissionMap.argument,
-            PermissionMap.granted_on,
-        ).filter(
-            Permission.enabled == True,
-            PermissionMap.permission_id == Permission.id,
-            PermissionMap.group_id == self.id,
-        ).all()
+        permissions = (
+            self.session.query(
+                Permission.id,
+                Permission.name,
+                label("mapping_id", PermissionMap.id),
+                PermissionMap.argument,
+                PermissionMap.granted_on,
+            )
+            .filter(
+                Permission.enabled == True,
+                PermissionMap.permission_id == Permission.id,
+                PermissionMap.group_id == self.id,
+            )
+            .all()
+        )
 
         return permissions
 
     def my_users(self):
 
         now = datetime.utcnow()
-        users = self.session.query(
-            label("name", User.username),
-            label("role", GroupEdge._role)
-        ).filter(
-            GroupEdge.group_id == self.id,
-            GroupEdge.member_pk == User.id,
-            GroupEdge.member_type == 0,
-            GroupEdge.active == True,
-            self.enabled == True,
-            User.enabled == True,
-            User.is_service_account == False,
-            or_(
-                GroupEdge.expiration > now,
-                GroupEdge.expiration == None
+        users = (
+            self.session.query(label("name", User.username), label("role", GroupEdge._role))
+            .filter(
+                GroupEdge.group_id == self.id,
+                GroupEdge.member_pk == User.id,
+                GroupEdge.member_type == 0,
+                GroupEdge.active == True,
+                self.enabled == True,
+                User.enabled == True,
+                User.is_service_account == False,
+                or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
             )
-        ).all()
+            .all()
+        )
 
         return users
 
@@ -229,82 +227,79 @@ class Group(Model, CommentObjectMixin):
 
         now = datetime.utcnow()
 
-        users = self.session.query(
-            label("id", user_member.id),
-            label("type", literal("User")),
-            label("name", user_member.username),
-            label("role", GroupEdge._role),
-            label("edge_id", GroupEdge.id),
-            label("expiration", GroupEdge.expiration)
-        ).filter(
-            parent.id == self.id,
-            parent.id == GroupEdge.group_id,
-            user_member.id == GroupEdge.member_pk,
-            GroupEdge.active == True,
-            parent.enabled == True,
-            user_member.enabled == True,
-            or_(
-                GroupEdge.expiration > now,
-                GroupEdge.expiration == None
-            ),
-            GroupEdge.member_type == 0
-        ).group_by(
-            "type", "name"
-        ).subquery()
-
-        groups = self.session.query(
-            label("id", group_member.id),
-            label("type", literal("Group")),
-            label("name", group_member.groupname),
-            label("role", GroupEdge._role),
-            label("edge_id", GroupEdge.id),
-            label("expiration", GroupEdge.expiration)
-        ).filter(
-            parent.id == self.id,
-            parent.id == GroupEdge.group_id,
-            group_member.id == GroupEdge.member_pk,
-            GroupEdge.active == True,
-            parent.enabled == True,
-            group_member.enabled == True,
-            or_(
-                GroupEdge.expiration > now,
-                GroupEdge.expiration == None
-            ),
-            GroupEdge.member_type == 1
-        ).subquery()
-
-        query = self.session.query(
-            "id", "type", "name", "role", "edge_id", "expiration"
-        ).select_entity_from(
-            union_all(users.select(), groups.select())
-        ).order_by(
-            desc("role"), desc("type")
+        users = (
+            self.session.query(
+                label("id", user_member.id),
+                label("type", literal("User")),
+                label("name", user_member.username),
+                label("role", GroupEdge._role),
+                label("edge_id", GroupEdge.id),
+                label("expiration", GroupEdge.expiration),
+            )
+            .filter(
+                parent.id == self.id,
+                parent.id == GroupEdge.group_id,
+                user_member.id == GroupEdge.member_pk,
+                GroupEdge.active == True,
+                parent.enabled == True,
+                user_member.enabled == True,
+                or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
+                GroupEdge.member_type == 0,
+            )
+            .group_by("type", "name")
+            .subquery()
         )
 
-        return OrderedDict(
-            ((record.type, record.name), record)
-            for record in query.all()
+        groups = (
+            self.session.query(
+                label("id", group_member.id),
+                label("type", literal("Group")),
+                label("name", group_member.groupname),
+                label("role", GroupEdge._role),
+                label("edge_id", GroupEdge.id),
+                label("expiration", GroupEdge.expiration),
+            )
+            .filter(
+                parent.id == self.id,
+                parent.id == GroupEdge.group_id,
+                group_member.id == GroupEdge.member_pk,
+                GroupEdge.active == True,
+                parent.enabled == True,
+                group_member.enabled == True,
+                or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
+                GroupEdge.member_type == 1,
+            )
+            .subquery()
         )
+
+        query = (
+            self.session.query("id", "type", "name", "role", "edge_id", "expiration")
+            .select_entity_from(union_all(users.select(), groups.select()))
+            .order_by(desc("role"), desc("type"))
+        )
+
+        return OrderedDict(((record.type, record.name), record) for record in query.all())
 
     def my_groups(self):
         """Return the groups to which this group currently belongs."""
         now = datetime.utcnow()
-        groups = self.session.query(
-            label("name", Group.groupname),
-            label("type", literal("Group")),
-            label("role", GroupEdge._role)
-        ).filter(
-            GroupEdge.group_id == Group.id,
-            GroupEdge.member_pk == self.id,
-            GroupEdge.member_type == 1,
-            GroupEdge.active == True,
-            self.enabled == True,
-            Group.enabled == True,
-            or_(
-                GroupEdge.expiration > now,
-                GroupEdge.expiration == None
+        groups = (
+            self.session.query(
+                label("name", Group.groupname),
+                label("type", literal("Group")),
+                label("role", GroupEdge._role),
             )
-        ).all()
+            .filter(
+                GroupEdge.group_id == Group.id,
+                GroupEdge.member_pk == self.id,
+                GroupEdge.member_type == 1,
+                GroupEdge.active == True,
+                self.enabled == True,
+                Group.enabled == True,
+                or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
+            )
+            .all()
+        )
         return groups
 
     def my_expiring_groups(self):
@@ -312,18 +307,21 @@ class Group(Model, CommentObjectMixin):
         expiration date.
         """
         now = datetime.utcnow()
-        groups = self.session.query(
-            label("name", Group.groupname),
-            label("expiration", GroupEdge.expiration)
-        ).filter(
-            GroupEdge.group_id == Group.id,
-            GroupEdge.member_pk == self.id,
-            GroupEdge.member_type == 1,
-            GroupEdge.active == True,
-            self.enabled == True,
-            Group.enabled == True,
-            GroupEdge.expiration > now
-        ).all()
+        groups = (
+            self.session.query(
+                label("name", Group.groupname), label("expiration", GroupEdge.expiration)
+            )
+            .filter(
+                GroupEdge.group_id == Group.id,
+                GroupEdge.member_pk == self.id,
+                GroupEdge.member_type == 1,
+                GroupEdge.active == True,
+                self.enabled == True,
+                Group.enabled == True,
+                GroupEdge.expiration > now,
+            )
+            .all()
+        )
         return groups
 
     def enable(self):
@@ -348,5 +346,4 @@ class Group(Model, CommentObjectMixin):
         return self
 
     def __repr__(self):
-        return "<%s: id=%s groupname=%s>" % (
-            type(self).__name__, self.id, self.groupname)
+        return "<%s: id=%s groupname=%s>" % (type(self).__name__, self.id, self.groupname)

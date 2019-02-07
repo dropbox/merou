@@ -1,9 +1,9 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
+import sshpubkeys
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import label
-import sshpubkeys
 
 from grouper.models.counter import Counter
 from grouper.models.permission import Permission
@@ -193,7 +193,9 @@ def remove_tag_from_public_key(session, public_key, tag):
     Throws:
         TagNotOnKey if the tag was already assigned to the public key
     """
-    mapping = session.query(PublicKeyTagMap).filter_by(tag_id=tag.id, key_id=public_key.id).scalar()
+    mapping = (
+        session.query(PublicKeyTagMap).filter_by(tag_id=tag.id, key_id=public_key.id).scalar()
+    )
 
     if not mapping:
         raise TagNotOnKey()
@@ -241,10 +243,10 @@ def get_public_key_permissions(session, public_key):
     """
     # TODO: Fix circular dependency
     from grouper.permissions import permission_intersection
+
     my_perms = user_permissions(session, public_key.user)
     for tag in get_public_key_tags(session, public_key):
-        my_perms = permission_intersection(my_perms,
-            get_public_key_tag_permissions(session, tag))
+        my_perms = permission_intersection(my_perms, get_public_key_tag_permissions(session, tag))
 
     return list(my_perms)
 
@@ -256,16 +258,20 @@ def get_public_key_tag_permissions(session, tag):
         A list of namedtuple with the id, name, mapping_id, argument, and granted_on for each
         permission
     """
-    permissions = session.query(
-        Permission.id,
-        Permission.name,
-        label("mapping_id", TagPermissionMap.id),
-        TagPermissionMap.argument,
-        TagPermissionMap.granted_on,
-    ).filter(
-        TagPermissionMap.permission_id == Permission.id,
-        TagPermissionMap.tag_id == tag.id,
-        Permission.enabled == True,
-    ).all()
+    permissions = (
+        session.query(
+            Permission.id,
+            Permission.name,
+            label("mapping_id", TagPermissionMap.id),
+            TagPermissionMap.argument,
+            TagPermissionMap.granted_on,
+        )
+        .filter(
+            TagPermissionMap.permission_id == Permission.id,
+            TagPermissionMap.tag_id == tag.id,
+            Permission.enabled == True,
+        )
+        .all()
+    )
 
     return permissions

@@ -1,4 +1,3 @@
-
 class Error(Exception):
     """ Baseclass for Grouper Exceptions."""
 

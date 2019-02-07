@@ -68,8 +68,11 @@ class ServiceAccountPermissionGrant(GrouperHandler):
         form = self.get_form(grantable)
         if not form.validate():
             return self.render(
-                "service-account-permission-grant.html", form=form, user=user, group=group,
-                alerts=self.get_form_alerts(form.errors)
+                "service-account-permission-grant.html",
+                form=form,
+                user=user,
+                group=group,
+                alerts=self.get_form_alerts(form.errors),
             )
 
         permission = get_permission(self.session, form.data["permission"])
@@ -84,26 +87,39 @@ class ServiceAccountPermissionGrant(GrouperHandler):
                     break
         if not allowed:
             form.argument.errors.append(
-                "The group {} does not have that permission".format(group.name))
+                "The group {} does not have that permission".format(group.name)
+            )
             return self.render(
-                "service-account-permission-grant.html", form=form, user=user, group=group,
-                alerts=self.get_form_alerts(form.errors)
+                "service-account-permission-grant.html",
+                form=form,
+                user=user,
+                group=group,
+                alerts=self.get_form_alerts(form.errors),
             )
 
         try:
             grant_permission_to_service_account(
-                self.session, service_account, permission, form.data["argument"])
+                self.session, service_account, permission, form.data["argument"]
+            )
         except IntegrityError:
             self.session.rollback()
             return self.render(
-                "service-account-permission-grant.html", form=form, user=user,
-                alerts=self.get_form_alerts(form.errors)
+                "service-account-permission-grant.html",
+                form=form,
+                user=user,
+                alerts=self.get_form_alerts(form.errors),
             )
 
-        AuditLog.log(self.session, self.current_user.id, "grant_permission",
-                     "Granted permission with argument: {}".format(form.data["argument"]),
-                     on_permission_id=permission.id, on_group_id=group.id,
-                     on_user_id=service_account.user.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "grant_permission",
+            "Granted permission with argument: {}".format(form.data["argument"]),
+            on_permission_id=permission.id,
+            on_group_id=group.id,
+            on_user_id=service_account.user.id,
+        )
 
-        return self.redirect("/groups/{}/service/{}?refresh=yes".format(
-            group.name, service_account.user.username))
+        return self.redirect(
+            "/groups/{}/service/{}?refresh=yes".format(group.name, service_account.user.username)
+        )

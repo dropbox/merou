@@ -3,8 +3,6 @@ from urllib import urlencode
 import pytest
 from tornado.httpclient import HTTPError
 
-from fixtures import fe_app as app  # noqa: F401
-from fixtures import standard_graph, graph, users, groups, service_accounts, session, permissions  # noqa: F401
 from grouper.constants import USER_ADMIN, USER_ENABLE
 from grouper.models.user import User
 from grouper.models.user_token import UserToken
@@ -14,11 +12,21 @@ from grouper.plugin.proxy import PluginProxy
 from grouper.role_user import create_role_user
 from grouper.user_metadata import get_user_metadata, set_user_metadata
 from grouper.user_token import add_new_user_token, disable_user_token
-from url_util import url
-from util import get_groups, grant_permission
+from tests.fixtures import (  # noqa: F401
+    fe_app as app,
+    graph,
+    groups,
+    permissions,
+    service_accounts,
+    session,
+    standard_graph,
+    users,
+)
+from tests.url_util import url
+from tests.util import get_groups, grant_permission
 
 
-def test_basic_metadata(standard_graph, session, users, groups, permissions):  # noqa
+def test_basic_metadata(standard_graph, session, users, groups, permissions):  # noqa: F811
     """ Test basic metadata functionality. """
 
     user_id = users["zorkian@a.co"].id
@@ -34,8 +42,9 @@ def test_basic_metadata(standard_graph, session, users, groups, permissions):  #
     set_user_metadata(session, user_id, "bar", "test string")
     md = get_user_metadata(session, user_id)
     assert len(md) == 2, "Two metadata items"
-    assert [d.data_value for d in md if d.data_key == "bar"] == ["test string"], \
-        "bar is test string"
+    assert [d.data_value for d in md if d.data_key == "bar"] == [
+        "test string"
+    ], "bar is test string"
 
     set_user_metadata(session, user_id, "foo", "test2")
     md = get_user_metadata(session, user_id)
@@ -52,7 +61,7 @@ def test_basic_metadata(standard_graph, session, users, groups, permissions):  #
     assert len(md) == 1, "One metadata item"
 
 
-def test_usertokens(standard_graph, session, users, groups, permissions):  # noqa
+def test_usertokens(standard_graph, session, users, groups, permissions):  # noqa: F811
     user = users["zorkian@a.co"]
     assert len(user.tokens) == 0
     tok, secret = add_new_user_token(session, UserToken(user=user, name="Foo"))
@@ -70,52 +79,66 @@ def test_usertokens(standard_graph, session, users, groups, permissions):  # noq
 
 
 @pytest.fixture
-def user_admin_perm_to_auditors(session, groups):
+def user_admin_perm_to_auditors(session, groups):  # noqa: F811
     """Adds a USER_ADMIN permission to the "auditors" group"""
-    user_admin_perm, is_new = get_or_create_permission(session, USER_ADMIN,
-        description="grouper.admin.users permission")
+    user_admin_perm, is_new = get_or_create_permission(
+        session, USER_ADMIN, description="grouper.admin.users permission"
+    )
     session.commit()
 
     grant_permission(groups["auditors"], user_admin_perm)
 
 
 @pytest.fixture
-def user_enable_perm_to_sre(session, groups):
+def user_enable_perm_to_sre(session, groups):  # noqa: F811
     """Adds the (USER_ENABLE, *) permission to the group `team-sre` """
-    user_enable_perm, is_new = get_or_create_permission(session, USER_ENABLE,
-        description="grouper.user.enable perm")
+    user_enable_perm, is_new = get_or_create_permission(
+        session, USER_ENABLE, description="grouper.user.enable perm"
+    )
     session.commit()
 
     grant_permission(groups["team-sre"], user_enable_perm, argument="*")
 
 
 @pytest.mark.gen_test
-def test_user_tok_acls(session, graph, users, user_admin_perm_to_auditors, http_client, base_url):
+def test_user_tok_acls(
+    session, graph, users, user_admin_perm_to_auditors, http_client, base_url  # noqa: F811
+):
     role_user = "role@a.co"
     admin = "zorkian@a.co"
     pleb = "gary@a.co"
 
     # admin creating token for role user
     fe_url = url(base_url, "/users/{}/tokens/add".format(role_user))
-    resp = yield http_client.fetch(fe_url, method="POST",
-            headers={"X-Grouper-User": admin}, body=urlencode({"name": "foo"}))
+    resp = yield http_client.fetch(
+        fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode({"name": "foo"})
+    )
     assert resp.code == 200
 
     with pytest.raises(HTTPError):
         # non-admin creating token for role user
-        resp = yield http_client.fetch(fe_url, method="POST",
-                headers={"X-Grouper-User": pleb}, body=urlencode({"name": "foo2"}))
+        resp = yield http_client.fetch(
+            fe_url,
+            method="POST",
+            headers={"X-Grouper-User": pleb},
+            body=urlencode({"name": "foo2"}),
+        )
 
     fe_url = url(base_url, "/users/{}/tokens/add".format(pleb))
     with pytest.raises(HTTPError):
         # admin creating token for normal (non-role) user
-        resp = yield http_client.fetch(fe_url, method="POST",
-                headers={"X-Grouper-User": admin}, body=urlencode({"name": "foo3"}))
+        resp = yield http_client.fetch(
+            fe_url,
+            method="POST",
+            headers={"X-Grouper-User": admin},
+            body=urlencode({"name": "foo3"}),
+        )
 
 
 @pytest.mark.gen_test
-def test_graph_disable(session, graph, users, groups, user_admin_perm_to_auditors,
-        http_client, base_url):
+def test_graph_disable(
+    session, graph, users, groups, user_admin_perm_to_auditors, http_client, base_url  # noqa: F811
+):
     graph.update_from_db(session)
     old_users = graph.users
     assert sorted(old_users) == sorted(users.keys() + ["service@a.co"])
@@ -123,18 +146,26 @@ def test_graph_disable(session, graph, users, groups, user_admin_perm_to_auditor
     # disable a user
     username = u"oliver@a.co"
     fe_url = url(base_url, "/users/{}/disable".format(username))
-    resp = yield http_client.fetch(fe_url, method="POST",
-            headers={"X-Grouper-User": "zorkian@a.co"}, body=urlencode({}))
+    resp = yield http_client.fetch(
+        fe_url, method="POST", headers={"X-Grouper-User": "zorkian@a.co"}, body=urlencode({})
+    )
     assert resp.code == 200
 
     graph.update_from_db(session)
-    assert len(graph.users) == (len(old_users) - 1), 'disabled user removed from graph'
+    assert len(graph.users) == (len(old_users) - 1), "disabled user removed from graph"
     assert username not in graph.users
 
 
 @pytest.mark.gen_test
-def test_user_enable_disable(session, graph, users, user_admin_perm_to_auditors,
-                             user_enable_perm_to_sre, http_client, base_url):
+def test_user_enable_disable(
+    session,  # noqa: F811
+    graph,  # noqa: F811
+    users,  # noqa: F811
+    user_admin_perm_to_auditors,
+    user_enable_perm_to_sre,
+    http_client,
+    base_url,
+):
     username = u"oliver@a.co"
     old_groups = sorted(get_groups(graph, username))
     headers_admin = {"X-Grouper-User": "zorkian@a.co"}
@@ -144,40 +175,39 @@ def test_user_enable_disable(session, graph, users, user_admin_perm_to_auditors,
 
     # disable user
     fe_url = url(base_url, "/users/{}/disable".format(username))
-    resp = yield http_client.fetch(fe_url, method="POST",
-                                   headers=headers_admin, body=body_base)
+    resp = yield http_client.fetch(fe_url, method="POST", headers=headers_admin, body=body_base)
     assert resp.code == 200
 
     # Attempt to enable user, preserving groups, as user with `grouper.user.enable`.
     # Should fail due to lack of admin perm.
     fe_url = url(base_url, "/users/{}/enable".format(username))
     with pytest.raises(HTTPError):
-        resp = yield http_client.fetch(fe_url, method="POST",
-                                       headers=headers_enable, body=body_preserve)
-    
+        resp = yield http_client.fetch(
+            fe_url, method="POST", headers=headers_enable, body=body_preserve
+        )
+
     # enable user, PRESERVE groups, as a user with the correct admin permission
     fe_url = url(base_url, "/users/{}/enable".format(username))
-    resp = yield http_client.fetch(fe_url, method="POST",
-                                   headers=headers_admin, body=body_preserve)
+    resp = yield http_client.fetch(
+        fe_url, method="POST", headers=headers_admin, body=body_preserve
+    )
     assert resp.code == 200
     graph.update_from_db(session)
-    assert old_groups == sorted(get_groups(graph, username)), 'nothing should be removed'
+    assert old_groups == sorted(get_groups(graph, username)), "nothing should be removed"
 
     # disable user again
     fe_url = url(base_url, "/users/{}/disable".format(username))
-    resp = yield http_client.fetch(fe_url, method="POST",
-                                   headers=headers_admin, body=body_base)
+    resp = yield http_client.fetch(fe_url, method="POST", headers=headers_admin, body=body_base)
     assert resp.code == 200
 
     # Attempt to enable user, PURGE groups. Should now succeed even with
     # only the `grouper.user.enable` perm.
     fe_url = url(base_url, "/users/{}/enable".format(username))
-    resp = yield http_client.fetch(fe_url, method="POST",
-                                   headers=headers_enable, body=body_base)
+    resp = yield http_client.fetch(fe_url, method="POST", headers=headers_enable, body=body_base)
     assert resp.code == 200
 
     graph.update_from_db(session)
-    assert len(get_groups(graph, username)) == 0, 'all group membership should be removed'
+    assert len(get_groups(graph, username)) == 0, "all group membership should be removed"
 
 
 class UserCreatedPlugin(BasePlugin):
@@ -190,15 +220,14 @@ class UserCreatedPlugin(BasePlugin):
 
     def user_created(self, user, is_service_account=False):
         # type: (User, bool) -> None
-        print "Called for", user
         assert is_service_account == self.expected_service_account
         self.calls += 1
 
 
-def test_user_created_plugin(mocker, session, users, groups):
+def test_user_created_plugin(mocker, session, users, groups):  # noqa: F811
     """Test calls to the user_created plugin."""
     plugin = UserCreatedPlugin()
-    mocker.patch('grouper.models.user.get_plugin_proxy', return_value=PluginProxy([plugin]))
+    mocker.patch("grouper.models.user.get_plugin_proxy", return_value=PluginProxy([plugin]))
 
     # Create a regular user.  The service account flag should be false, and the plugin should be
     # called.

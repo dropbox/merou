@@ -1,6 +1,6 @@
 coverage==3.7.1
-flake8-import-order==0.8
-flake8==2.5.4
+flake8-import-order==0.18
+flake8==3.7.5
 groupy
 mock==2.0.0
 mrproxy==0.3.4

@@ -1,14 +1,14 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ssl import SSLContext  # noqa: F401
-    from typing import Any, Dict, List, Tuple, Union  # noqa: F401
-    from sqlalchemy.orm import Session  # noqa: F401
-    from sshpubkeys import SSHKey  # noqa: F401
-    from tornado.httpserver import HTTPRequest  # noqa: F401
-    from grouper.models.audit_log import AuditLog  # noqa: F401
-    from grouper.models.group import Group  # noqa: F401
-    from grouper.models.user import User  # noqa: F401
+    from grouper.models.audit_log import AuditLog
+    from grouper.models.group import Group
+    from grouper.models.user import User
+    from sshpubkeys import SSHKey
+    from ssl import SSLContext
+    from sqlalchemy.orm import Session
+    from tornado.httpserver import HTTPRequest
+    from typing import Any, Dict, List, Tuple, Union
 
 
 class BasePlugin(object):

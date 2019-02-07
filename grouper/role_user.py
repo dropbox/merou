@@ -79,11 +79,10 @@ def is_role_user(session, user=None, group=None):
     Returns:
         whether the User/Group is a component of a service account
     """
-    assert user is not None or group is not None
-
     if user is not None:
         return user.role_user
 
+    assert group is not None
     user = User.get(session, name=group.groupname)
     if not user:
         return False
@@ -113,7 +112,11 @@ def get_role_user(session, user=None, group=None):
     if not is_role_user(session, user, group):
         raise RoleUserNotFound()
 
-    name = user.name if user else group.name
+    if user:
+        name = user.name
+    else:
+        assert group is not None
+        name = group.name
     return RoleUser(User.get(session, name=name), Group.get(session, name=name))
 
 

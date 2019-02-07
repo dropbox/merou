@@ -22,4 +22,5 @@ def test_permission_disable(session, standard_graph):  # noqa: F811
     runner = CtlTestRunner(session)
     runner.run("permission", "-a", "gary@a.co", "disable", "audited")
     audited_permission = get_permission(session, "audited")
+    assert audited_permission
     assert not audited_permission.enabled

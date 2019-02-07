@@ -1,11 +1,15 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from grouper.models.base.model_base import Model
-from grouper.models.base.session import Session  # noqa
 from grouper.models.public_key_tag import PublicKeyTag
+
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from typing import Optional
 
 
 class PublicKeyTagMap(Model):
@@ -28,7 +32,7 @@ class PublicKeyTagMap(Model):
 
     @staticmethod
     def get(session, id=None):
-        # type: (Session, int) -> PublicKeyTagMap
+        # type: (Session, int) -> Optional[PublicKeyTagMap]
         if id is not None:
             return session.query(PublicKeyTagMap).filter_by(id=id).scalar()
         return None

@@ -36,6 +36,6 @@ class PermissionService(PermissionInterface):
         return name in (entry[0] for entry in SYSTEM_PERMISSIONS)
 
     def user_is_permission_admin(self, user_name):
-        # type: (str) -> None
+        # type: (str) -> bool
         user = User.get(self.session, name=user_name)
         return user_has_permission(self.session, user, PERMISSION_ADMIN)

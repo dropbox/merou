@@ -1,12 +1,15 @@
 from datetime import datetime
-from typing import Dict, List  # noqa
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.base.model_base import Model
-from grouper.models.base.session import Session  # noqa
+
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from typing import Optional
 
 
 class ServiceAccountPermissionMap(Model):
@@ -38,7 +41,7 @@ class ServiceAccountPermissionMap(Model):
 
     @staticmethod
     def get(session, id=None):
-        # type: (Session, int) -> ServiceAccountPermissionMap
+        # type: (Session, int) -> Optional[ServiceAccountPermissionMap]
         if id is not None:
             return session.query(ServiceAccountPermissionMap).filter_by(id=id).scalar()
         return None

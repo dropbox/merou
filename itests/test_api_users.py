@@ -1,5 +1,6 @@
 from fixtures import *  # noqa: F401
 from tests.fixtures import *  # noqa: F401
+from grouper.constants import GROUP_ADMIN, PERMISSION_ADMIN, USER_ADMIN
 
 
 def test_get_users(api_client, users):  # noqa: F811
@@ -12,13 +13,13 @@ def test_get_users(api_client, users):  # noqa: F811
 
 def test_get_user(api_client):  # noqa: F811
     user = api_client.users.get("cbguder@a.co")
-    assert sorted(user.groups) == ["group-admins", "user-admins"]
+    assert sorted(user.groups) == ["group-admins", "permission-admins", "user-admins"]
     assert user.passwords == []
     assert user.public_keys == []
     assert user.enabled
     assert user.service_account is None
 
     perms = [(p.permission, p.argument) for p in user.permissions]
-    assert sorted(perms) == [("grouper.admin.groups", ""), ("grouper.admin.users", "")]
+    assert sorted(perms) == [(GROUP_ADMIN, ""), (PERMISSION_ADMIN, ""), (USER_ADMIN, "")]
 
     assert user.metadata == {}

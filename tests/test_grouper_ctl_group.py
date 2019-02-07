@@ -21,14 +21,14 @@ def test_group_add_remove_member(make_session, session, users, groups):
 
     # add
     assert (u'User', username) not in groups[groupname].my_members()
-    call_main('group', 'add_member', '--member', groupname, username)
+    call_main(session, 'group', 'add_member', '--member', groupname, username)
     all_members = Group.get(session, name=groupname).my_members()
     assert (u'User', username) in all_members
     _, _, _, role, _, _ = all_members[(u'User', username)]
     assert GROUP_EDGE_ROLES[role] == "member"
 
     # remove
-    call_main('group', 'remove_member', groupname, username)
+    call_main(session, 'group', 'remove_member', groupname, username)
     assert (u'User', username) not in Group.get(session, name=groupname).my_members()
 
 
@@ -43,14 +43,14 @@ def test_group_add_remove_owner(make_session, get_plugin_proxy, session, users, 
 
     # add
     assert (u'User', username) not in groups[groupname].my_members()
-    call_main('group', 'add_member', '--owner', groupname, username)
+    call_main(session, 'group', 'add_member', '--owner', groupname, username)
     all_members = Group.get(session, name=groupname).my_members()
     assert (u'User', username) in all_members
     _, _, _, role, _, _ = all_members[(u'User', username)]
     assert GROUP_EDGE_ROLES[role] == "owner"
 
     # remove (fails)
-    call_main('group', 'remove_member', groupname, username)
+    call_main(session, 'group', 'remove_member', groupname, username)
     assert (u'User', username) in Group.get(session, name=groupname).my_members()
 
 
@@ -62,12 +62,12 @@ def test_group_bulk_add_remove(make_session, session, users, groups):
 
     # bulk add
     usernames = {'oliver@a.co', 'testuser@a.co', 'zebu@a.co'}
-    call_main('group', 'add_member', '--member', groupname, *usernames)
+    call_main(session, 'group', 'add_member', '--member', groupname, *usernames)
     members = {u for _, u in Group.get(session, name=groupname).my_members().keys()}
     assert usernames.issubset(members)
 
     # bulk remove
-    call_main('group', 'remove_member', groupname, *usernames)
+    call_main(session, 'group', 'remove_member', groupname, *usernames)
     members = {u for _, u in Group.get(session, name=groupname).my_members().keys()}
     assert not members.intersection(usernames)
 
@@ -80,11 +80,11 @@ def test_group_name_checks(make_session, session, users, groups):
     groupname = 'team-sre'
 
     # check user/group name
-    call_main('group', 'add_member', '--member', 'invalid group name', username)
+    call_main(session, 'group', 'add_member', '--member', 'invalid group name', username)
     assert (u'User', username) not in Group.get(session, name=groupname).my_members()
 
     bad_username = 'not_a_valid_username'
-    call_main('group', 'add_member', '--member', groupname, bad_username)
+    call_main(session, 'group', 'add_member', '--member', groupname, bad_username)
     assert (u'User', bad_username) not in Group.get(session, name=groupname).my_members()
 
 
@@ -98,7 +98,7 @@ def test_group_logdump(make_session, session, users, groups, tmpdir):
     yesterday = date.today() - timedelta(days=1)
     fn = tmpdir.join('out.csv').strpath
 
-    call_main('group', 'log_dump', groupname, yesterday.isoformat(), '--outfile', fn)
+    call_main(session, 'group', 'log_dump', groupname, yesterday.isoformat(), '--outfile', fn)
     with open(fn, 'r') as fh:
         out = fh.read()
 
@@ -108,7 +108,7 @@ def test_group_logdump(make_session, session, users, groups, tmpdir):
             on_group_id=group_id)
     session.commit()
 
-    call_main('group', 'log_dump', groupname, yesterday.isoformat(), '--outfile', fn)
+    call_main(session, 'group', 'log_dump', groupname, yesterday.isoformat(), '--outfile', fn)
     with open(fn, 'r') as fh:
         entries = [x for x in csv.reader(fh)]
 

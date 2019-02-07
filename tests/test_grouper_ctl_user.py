@@ -20,9 +20,9 @@ def test_group_disable_group_owner(user_make_session, group_make_session, get_pl
     groupname = 'team-sre'
 
     # add
-    call_main('group', 'add_member', '--owner', groupname, username)
+    call_main(session, 'group', 'add_member', '--owner', groupname, username)
     assert (u'User', username) in Group.get(session, name=groupname).my_members()
 
     # disable (fails)
-    call_main('user', 'disable', username)
+    call_main(session, 'user', 'disable', username)
     assert (u'User', username) in Group.get(session, name=groupname).my_members()

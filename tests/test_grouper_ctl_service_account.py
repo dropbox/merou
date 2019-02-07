@@ -21,20 +21,20 @@ def test_service_account_create(make_session, groups, service_accounts, session,
     assert ServiceAccount.get(session, name=good_service_account_name) is None
     assert get_service_accounts(session, security_team_group) == []
     # no-op if non-existing actor
-    call_main('service_account', '--actor', 'no-such-actor@a.co', 'create',
+    call_main(session, 'service_account', '--actor', 'no-such-actor@a.co', 'create',
               good_service_account_name, security_team_group.groupname, machine_set, description)
     # ... or if bad account name
-    call_main('service_account', '--actor', good_actor_username, 'create',
+    call_main(session, 'service_account', '--actor', good_actor_username, 'create',
               'bad-service-account-name', security_team_group.groupname, machine_set, description)
     # ... or non-existing owner group
-    call_main('service_account', '--actor', good_actor_username, 'create',
+    call_main(session, 'service_account', '--actor', good_actor_username, 'create',
               good_service_account_name, 'non-such-owner-group', machine_set, description)
     # make sure no change was made
     assert ServiceAccount.get(session, name=good_service_account_name) is None
     assert get_service_accounts(session, security_team_group) == []
 
     # now it works
-    call_main('service_account', '--actor', good_actor_username, 'create',
+    call_main(session, 'service_account', '--actor', good_actor_username, 'create',
               good_service_account_name, security_team_group.groupname, machine_set, description)
     service_account = ServiceAccount.get(session, name=good_service_account_name)
     assert service_account, 'non-existing account should be created'
@@ -44,7 +44,7 @@ def test_service_account_create(make_session, groups, service_accounts, session,
     assert get_service_accounts(session, security_team_group) == [service_account]
 
     # no-op if account name already exists
-    call_main('service_account', '--actor', good_actor_username, 'create',
+    call_main(session, 'service_account', '--actor', good_actor_username, 'create',
               good_service_account_name, security_team_group.groupname, machine_set, description)
     service_account = ServiceAccount.get(session, name=good_service_account_name)
     assert service_account, 'non-account should be created'
@@ -54,7 +54,7 @@ def test_service_account_create(make_session, groups, service_accounts, session,
     assert get_service_accounts(session, security_team_group) == [service_account]
 
     # actor can be a service account as well
-    call_main('service_account', '--actor', 'service@a.co', 'create',
+    call_main(session, 'service_account', '--actor', 'service@a.co', 'create',
               'service-2@a.co', security_team_group.groupname, machine_set + '2', description + '2')
     service_account_2 = ServiceAccount.get(session, name='service-2@a.co')
     assert service_account_2, 'non-existing account should be created'

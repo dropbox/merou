@@ -19,22 +19,22 @@ def test_user_create(make_session, session, users):
 
     # simple
     username = 'john@a.co'
-    call_main('user', 'create', username)
+    call_main(session, 'user', 'create', username)
     assert User.get(session, name=username), 'non-existent user should be created'
 
     # check username
     bad_username = 'not_a_valid_username'
-    call_main('user', 'create', bad_username)
+    call_main(session, 'user', 'create', bad_username)
     assert not User.get(session, name=bad_username), 'bad user should not be created'
 
     # bulk
     usernames = ['mary@a.co', 'sam@a.co', 'tina@a.co']
-    call_main('user', 'create', *usernames)
+    call_main(session, 'user', 'create', *usernames)
     users = [User.get(session, name=u) for u in usernames]
     assert all(users), 'all users created'
 
     usernames_with_one_bad = ['kelly@a.co', 'brad@a.co', 'not_valid_user']
-    call_main('user', 'create', *usernames_with_one_bad)
+    call_main(session, 'user', 'create', *usernames_with_one_bad)
     users = [User.get(session, name=u) for u in usernames_with_one_bad]
     assert not any(users), 'one bad seed means no users created'
 
@@ -49,28 +49,28 @@ def test_user_status_changes(make_user_session, make_group_session, session, use
     groupname = 'team-sre'
 
     # add user to a group
-    call_main('group', 'add_member', '--member', groupname, username)
+    call_main(session, 'group', 'add_member', '--member', groupname, username)
 
     # disable the account
-    call_main('user', 'disable', username)
+    call_main(session, 'user', 'disable', username)
     assert not User.get(session, name=username).enabled
 
     # double disabling is a no-op
-    call_main('user', 'disable', username)
+    call_main(session, 'user', 'disable', username)
     assert not User.get(session, name=username).enabled
 
     # re-enable the account, preserving memberships
-    call_main('user', 'enable', '--preserve-membership', username)
+    call_main(session, 'user', 'enable', '--preserve-membership', username)
     assert User.get(session, name=username).enabled
     assert (u'User', username) in groups[groupname].my_members()
 
     # enabling an active account is a no-op
-    call_main('user', 'enable', username)
+    call_main(session, 'user', 'enable', username)
     assert User.get(session, name=username).enabled
 
     # disable and re-enable without the --preserve-membership flag
-    call_main('user', 'disable', username)
-    call_main('user', 'enable', username)
+    call_main(session, 'user', 'disable', username)
+    call_main(session, 'user', 'enable', username)
     assert User.get(session, name=username).enabled
     assert (u'User', username) not in groups[groupname].my_members()
 
@@ -81,7 +81,7 @@ def test_user_public_key(make_session, session, users):
 
     # good key
     username = 'zorkian@a.co'
-    call_main('user', 'add_public_key', username, SSH_KEY_1)
+    call_main(session, 'user', 'add_public_key', username, SSH_KEY_1)
 
     user = User.get(session, name=username)
     keys = get_public_keys_of_user(session, user.id)
@@ -89,14 +89,14 @@ def test_user_public_key(make_session, session, users):
     assert keys[0].public_key == SSH_KEY_1
 
     # duplicate key
-    call_main('user', 'add_public_key', username, SSH_KEY_1)
+    call_main(session, 'user', 'add_public_key', username, SSH_KEY_1)
 
     keys = get_public_keys_of_user(session, user.id)
     assert len(keys) == 1
     assert keys[0].public_key == SSH_KEY_1
 
     # bad key
-    call_main('user', 'add_public_key', username, SSH_KEY_BAD)
+    call_main(session, 'user', 'add_public_key', username, SSH_KEY_BAD)
 
     keys = get_public_keys_of_user(session, user.id)
     assert len(keys) == 1
@@ -114,7 +114,7 @@ def test_sync_db_default_group(mock_get_auditors_group_name, make_session, sessi
     auditors_group = Group.get(session, name='my-auditors')
     assert not auditors_group, "Auditors group should not exist yet"
 
-    call_main('sync_db')
+    call_main(session, 'sync_db')
     admin_group = Group.get(session, name="grouper-administrators")
     assert admin_group, "Group should have been autocreated"
 
@@ -155,26 +155,26 @@ def test_oneoff(mock_make_session, mock_load_plugins, session):
     mock_load_plugins.return_value = [FakeOneOff()]
 
     # dry_run
-    call_main('oneoff', 'run', 'FakeOneOff')
+    call_main(session, 'oneoff', 'run', 'FakeOneOff')
     assert User.get(session, name=username) is None, 'default dry_run means no writes'
     assert User.get(session, name=other_username) is None, '"valuewith= not in arg'
     assert Group.get(session, name=groupname) is None, '"group" not in arg so no group created'
 
     # not dry_run, create a user
-    call_main('oneoff', 'run', '--no-dry_run', 'FakeOneOff')
+    call_main(session, 'oneoff', 'run', '--no-dry_run', 'FakeOneOff')
     assert User.get(session, name=username) is not None, 'dry_run off means writes'
     assert User.get(session, name=other_username) is None, '"valuewith= not in arg'
     assert Group.get(session, name=groupname) is None, '"group" not in arg so no group created'
 
     # not dry_run, use kwarg to create a group
-    call_main('oneoff', 'run', '--no-dry_run', 'FakeOneOff', 'group=1')
+    call_main(session, 'oneoff', 'run', '--no-dry_run', 'FakeOneOff', 'group=1')
     assert User.get(session, name=username) is not None, 'dry_run off means writes'
     assert User.get(session, name=other_username) is None, '"valuewith= not in arg'
     assert Group.get(session, name=groupname) is not None, '"group" in arg so group created'
 
     # invalid format for argument should result in premature system exit
     with pytest.raises(SystemExit):
-        call_main('oneoff', 'run', '--no-dry_run', 'FakeOneOff', 'bad_arg')
+        call_main(session, 'oneoff', 'run', '--no-dry_run', 'FakeOneOff', 'bad_arg')
 
-    call_main('oneoff', 'run', '--no-dry_run', 'FakeOneOff', 'key=valuewith=')
+    call_main(session, 'oneoff', 'run', '--no-dry_run', 'FakeOneOff', 'key=valuewith=')
     assert User.get(session, name=other_username) is not None, '"valuewith= in arg, create user2'

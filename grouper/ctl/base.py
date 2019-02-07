@@ -18,7 +18,7 @@ class CtlCommand(object):
 
     @abstractmethod
     def run(self, args):
-        # type: (Namespace) -> int
+        # type: (Namespace) -> None
         """Run a command and return the exit status."""
         pass
 

@@ -27,7 +27,7 @@ class PermissionService(PermissionInterface):
         if not permission:
             raise PermissionNotFoundException(name)
         permission.enabled = False
-        self.audit_log.log_disable_permission(name, authorization)
+        self.audit_log.log_disable_permission(permission, authorization)
         Counter.incr(self.session, "updates")
         self.session.commit()
 

@@ -44,9 +44,9 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None):
 
     subcommands = []
     for subcommand_class in [PermissionCommand]:
-        cls = subcommand_class()
-        cls.add_parser(subparsers)
-        subcommands.append(cls)
+        command = subcommand_class()
+        command.add_parser(subparsers)
+        subcommands.append(command)
 
     args = parser.parse_args(sys_argv[1:])
 
@@ -54,6 +54,8 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None):
         settings.update_from_config(args.config)
         settings.start_config_thread(args.config)
 
+    # TODO(rra): This is a hack that we can remove, along with the set_session() implementation,
+    # once we have proper factories.
     for subcommand in subcommands:
         if not session:
             session = make_session()

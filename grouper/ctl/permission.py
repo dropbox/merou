@@ -37,28 +37,23 @@ class PermissionCommand(CtlCommand, DisablePermissionUI):
     def disabled_permission(self, name):
         # type: (str) -> None
         logging.info("disabled permission %s", name)
-        self.exit_status = 0
 
     def disable_permission_failed_because_not_found(self, name):
         # type: (str) -> None
         logging.critical("permission %s not found", name)
-        self.exit_status = 1
 
     def disable_permission_failed_because_permission_denied(self, name):
         # type: (str) -> None
         logging.critical("not permitted to disable permission %s", name)
-        self.exit_status = 1
 
     def disable_permission_failed_because_system_permission(self, name):
         # type: (str) -> None
         logging.critical("cannot disable system permission %s", name)
-        self.exit_status = 1
 
     def run(self, args):
-        # type: (Namespace) -> int
+        # type: (Namespace) -> None
         """Run a permission command."""
         audit_log = AuditLogService(self.session)
         service = PermissionService(self.session, audit_log)
         usecase = DisablePermission(self.session, args.actor_name, self, service)
         usecase.disable_permission(args.name)
-        return self.exit_status

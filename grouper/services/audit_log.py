@@ -3,12 +3,12 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from grouper.models.audit_log import AuditLog, AuditLogCategory
-from grouper.models.permission import Permission
 from grouper.models.user import User
 from grouper.plugin import get_plugin_proxy
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session  # noqa: F401
+    from grouper.models.permission import Permission  # noqa: F401
     from grouper.usecases.authorization import Authorization  # noqa: F401
 
 
@@ -28,10 +28,9 @@ class AuditLogService(object):
         # type: (Session) -> None
         self.session = session
 
-    def log_disable_permission(self, name, authorization):
-        # type: (str, Authorization) -> None
-        on_permission = Permission.get(self.session, name=name)
-        self._log(authorization, AuditLogAction.DISABLE_PERMISSION, on_permission=on_permission)
+    def log_disable_permission(self, permission, authorization):
+        # type: (Permission, Authorization) -> None
+        self._log(authorization, AuditLogAction.DISABLE_PERMISSION, on_permission=permission)
 
     def _log(
             self,

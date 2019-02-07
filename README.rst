@@ -109,6 +109,7 @@ chromium-driver is installed, the tests can be run using pytest:
     pip install -r requirements-dev.txt
     py.test tests
     py.test itests
+    flake8 grouper itests plugins tests
 
 If you see test failures and suspect incompatible library versions (e.g.,
 an existing tornado install at a different major release than that in our
@@ -131,7 +132,9 @@ requirements:
     ./mypy.sh
 
 You may want to create a separate virtual environment for Python 3,
-designating python3 as the Python interpreter for that environment.
+designating python3 as the Python interpreter for that environment.  The
+Travis CI configuration for the project runs flake8 under Python 3, not
+Python 2, so you may want to also do that locally.
 
 All Merou code is formatted with black, which is installed by the
 requirements3.txt requirements file described for mypy.  After
@@ -139,4 +142,7 @@ installation, you can reformat all source code with:
 
 .. code:: bash
 
-    tools/black
+    black .
+
+All new code must be formatted with the version of black indicated in
+`requirements3.txt` in order to pass Travis CI tests.

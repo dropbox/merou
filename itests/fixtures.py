@@ -8,7 +8,7 @@ from groupy.client import Groupy
 import pytest
 import selenium
 
-from tests.path_util import db_url, src_path
+from tests.path_util import bin_env, db_url, src_path
 
 
 def _get_unused_port():
@@ -49,7 +49,7 @@ def async_server(standard_graph, tmpdir):
 
     for cmd in cmds:
         print("Starting command: " + " ".join(cmd))
-        p = subprocess.Popen(cmd)
+        p = subprocess.Popen(cmd, env=bin_env())
         subprocesses.append(p)
 
     print("Waiting on server to come online")
@@ -77,7 +77,7 @@ def async_api_server(standard_graph, tmpdir):
     ]
 
     print("Starting server with command: " + " ".join(cmd))
-    p = subprocess.Popen(cmd)
+    p = subprocess.Popen(cmd, env=bin_env())
 
     print("Waiting on server to come online")
     wait_until_accept(api_port)

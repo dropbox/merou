@@ -1,10 +1,15 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Column, ForeignKey, Integer, Text
 from sqlalchemy.orm import backref, relationship
 
 from grouper.models.base.model_base import Model
-from grouper.models.base.session import Session  # noqa
 from grouper.models.counter import Counter
 from grouper.models.user import User
+
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from typing import Optional
 
 
 class ServiceAccount(Model):
@@ -41,7 +46,7 @@ class ServiceAccount(Model):
 
     @staticmethod
     def get(session, pk=None, name=None):
-        # type: (Session, int, str) -> ServiceAccount
+        # type: (Session, int, str) -> Optional[ServiceAccount]
         if pk is not None:
             return session.query(ServiceAccount).filter_by(id=pk).scalar()
         if name is not None:

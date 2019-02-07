@@ -12,6 +12,12 @@ if TYPE_CHECKING:
     from grouper.usecases.authorization import Authorization
 
 
+class UnknownUserException(Exception):
+    """User involved in a logged action does not exist."""
+
+    pass
+
+
 class AuditLogAction(Enum):
     """Possible actions and descriptions for the audit log.
 
@@ -49,6 +55,8 @@ class AuditLogService(object):
         this service.
         """
         actor = User.get(self.session, name=authorization.actor)
+        if not actor:
+            raise UnknownUserException("unknown actor {}".format(authorization.actor))
         entry = AuditLog(
             actor_id=actor.id,
             log_time=datetime.utcnow(),

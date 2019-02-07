@@ -7,8 +7,8 @@ from grouper.models.audit_log import AuditLog
 from grouper.models.base.model_base import Model
 
 if TYPE_CHECKING:
-    from typing import List  # noqa
-    from grouper.models.base.session import Session  # noqa
+    from grouper.models.base.session import Session
+    from typing import List, Optional
 
 
 class PublicKeyTag(Model):
@@ -31,7 +31,7 @@ class PublicKeyTag(Model):
 
     @staticmethod
     def get(session, id=None, name=None):
-        # type: (Session, int, str) -> PublicKeyTag
+        # type: (Session, int, str) -> Optional[PublicKeyTag]
         if id:
             return session.query(PublicKeyTag).filter_by(id=id).scalar()
         if name:

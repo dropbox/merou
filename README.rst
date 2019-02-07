@@ -93,29 +93,26 @@ group.
 Running the tests
 -----------------
 
-Some tests require a recent (>= 2.31) version of chromedriver, which can be
-installed via apt or Homebrew:
+Some tests require a recent (>= 2.31) version of chromium-driver, which
+can be installed via apt or Homebrew:
 
 .. code:: bash
 
-    apt install chromium-chromedriver
+    apt install chromium-driver
 
-Once chromedriver is installed, the tests can be run using pytest:
+(This may be called chromium-chromedriver in older versions.)  Once
+chromium-driver is installed, the tests can be run using pytest:
 
 .. code:: bash
-
-    export PYTHONPATH=$(pwd)
-    export GROUPER_SETTINGS=$(pwd)/config/dev.yaml
 
     pip install -r requirements.txt
     pip install -r requirements-dev.txt
     py.test tests
     py.test itests
 
-If you see test failures and suspect incompatible library versions
-(e.g., an existing tornado install at a different major release than
-that in our `requirements.txt`), then you can try using a virtual
-environment.
+If you see test failures and suspect incompatible library versions (e.g.,
+an existing tornado install at a different major release than that in our
+`requirements.txt`), then you can try using a virtual environment.
 
 .. code:: bash
 
@@ -124,3 +121,14 @@ environment.
     ~/merou-venv/bin/pip install -r requirements-dev.txt
     ~/merou-venv/bin/py.test tests
     ~/merou-venv/bin/py.test itests
+
+To run mypy, you will need Python 3 and install a different set of
+requirements:
+
+.. code:: bash
+
+    pip3 install -r requirements3.txt
+    ./mypy.sh
+
+You may want to create a separate virtual environment for Python 3,
+designating python3 as the Python interpreter for that environment.

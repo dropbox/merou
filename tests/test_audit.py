@@ -45,7 +45,7 @@ def test_user_is_auditor(standard_graph):  # noqa
     assert not user_is_auditor("oliver@a.co")
 
 
-def test_assert_can_join(users, groups):  # noqa
+def test_assert_can_join(standard_graph, users, groups):  # noqa
     """ Test various audit constraints to ensure that users can/can't join as appropriate. """
 
     # Non-auditor can join non-audited group as owner.
@@ -76,7 +76,7 @@ def test_assert_can_join(users, groups):  # noqa
         assert not assert_can_join(groups["audited-team"], groups["serving-team"])
 
 
-def test_assert_controllers_are_auditors(groups):  # noqa
+def test_assert_controllers_are_auditors(standard_graph, groups):  # noqa
     """ Test the method that determines if a subtree is controlled by auditors. """
 
     # Group is safely controlled by auditors.

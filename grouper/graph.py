@@ -1,6 +1,6 @@
+import logging
 from collections import defaultdict, namedtuple
 from datetime import datetime
-import logging
 from threading import RLock
 
 from networkx import DiGraph, single_source_shortest_path
@@ -25,10 +25,7 @@ from grouper.role_user import is_role_user
 from grouper.service_account import all_service_account_permissions
 from grouper.util import singleton
 
-MEMBER_TYPE_MAP = {
-    "User": "users",
-    "Group": "subgroups",
-}
+MEMBER_TYPE_MAP = {"User": "users", "Group": "subgroups"}
 EPOCH = datetime(1970, 1, 1)
 
 
@@ -36,15 +33,17 @@ EPOCH = datetime(1970, 1, 1)
 def Graph():  # noqa
     return GroupGraph()
 
+
 # A GroupGraph caches users, permissions, and groups as objects which are intended
 # to behave like the corresponding models but without any connection to SQL
 # backend.
 PermissionTuple = namedtuple(
-    "PermissionTuple",
-    ["id", "name", "description", "created_on", "audited"])
+    "PermissionTuple", ["id", "name", "description", "created_on", "audited"]
+)
 GroupTuple = namedtuple(
     "GroupTuple",
-    ["id", "groupname", "name", "description", "canjoin", "enabled", "service_account", "type"])
+    ["id", "groupname", "name", "description", "canjoin", "enabled", "service_account", "type"],
+)
 
 
 # Raise these exceptions when asking about users or groups that are not cached.
@@ -131,9 +130,11 @@ class GroupGraph(object):
                 self.checkpoint_time = checkpoint_time
                 self.users = users
                 self.groups = groups
-                self.permissions = {perm.permission
-                                    for perm_list in permission_metadata.values()
-                                    for perm in perm_list}
+                self.permissions = {
+                    perm.permission
+                    for perm_list in permission_metadata.values()
+                    for perm in perm_list
+                }
                 self.user_metadata = user_metadata
                 self.group_metadata = group_metadata
                 self.group_service_accounts = group_service_accounts
@@ -152,9 +153,9 @@ class GroupGraph(object):
 
     @staticmethod
     def _get_user_metadata(session):
-        '''
+        """
         Returns a dict of username: { dict of metadata }.
-        '''
+        """
 
         def user_indexify(data):
             ret = defaultdict(list)
@@ -176,11 +177,12 @@ class GroupGraph(object):
                 "role_user": user.role_user,
                 "passwords": [
                     {
-                         "name": password.name,
-                         "hash": password.password_hash,
-                         "salt": password.salt,
-                         "func": "crypt(3)-$6$",
-                    } for password in passwords.get(user.id, [])
+                        "name": password.name,
+                        "hash": password.password_hash,
+                        "salt": password.salt,
+                        "func": "crypt(3)-$6$",
+                    }
+                    for password in passwords.get(user.id, [])
                 ],
                 "public_keys": [
                     {
@@ -190,14 +192,16 @@ class GroupGraph(object):
                         "created_on": str(key.created_on),
                         "tags": [tag.name for tag in public_key_tags.get(key.id, [])],
                         "id": key.id,
-                    } for key in public_keys.get(user.id, [])
+                    }
+                    for key in public_keys.get(user.id, [])
                 ],
                 "metadata": [
                     {
                         "data_key": row.data_key,
                         "data_value": row.data_value,
                         "last_modified": str(row.last_modified),
-                    } for row in user_metadata.get(user.id, [])
+                    }
+                    for row in user_metadata.get(user.id, [])
                 ],
             }
             if user.is_service_account:
@@ -214,10 +218,10 @@ class GroupGraph(object):
     # metadata for a permission.
     @staticmethod
     def _get_permission_metadata(session):
-        '''
+        """
         Returns a dict of groupname: { list of permissions }. Note
         that disabled permissions are not included.
-        '''
+        """
         out = defaultdict(list)  # groupid -> [ ... ]
 
         permissions = session.query(Permission, PermissionMap).filter(
@@ -228,80 +232,80 @@ class GroupGraph(object):
         )
 
         for (permission, permission_map) in permissions:
-            out[permission_map.group.name].append(MappedPermission(
-                permission=permission.name,
-                audited=permission.audited,
-                argument=permission_map.argument,
-                groupname=permission_map.group.name,
-                granted_on=permission_map.granted_on,
-                alias=False,
-            ))
+            out[permission_map.group.name].append(
+                MappedPermission(
+                    permission=permission.name,
+                    audited=permission.audited,
+                    argument=permission_map.argument,
+                    groupname=permission_map.group.name,
+                    granted_on=permission_map.granted_on,
+                    alias=False,
+                )
+            )
 
             aliases = get_plugin_proxy().get_aliases_for_mapped_permission(
                 session, permission.name, permission_map.argument
             )
 
             for (name, arg) in aliases:
-                out[permission_map.group.name].append(MappedPermission(
-                    permission=name,
-                    audited=permission.audited,
-                    argument=arg,
-                    groupname=permission_map.group.name,
-                    granted_on=permission_map.granted_on,
-                    alias=True,
-                ))
+                out[permission_map.group.name].append(
+                    MappedPermission(
+                        permission=name,
+                        audited=permission.audited,
+                        argument=arg,
+                        groupname=permission_map.group.name,
+                        granted_on=permission_map.granted_on,
+                        alias=True,
+                    )
+                )
 
         return out
 
     @staticmethod
     def _get_permission_tuples(session):
-        '''
+        """
         Returns a set of PermissionTuple instances.
-        '''
+        """
         # TODO: import here to avoid circular dependency
         from grouper.permissions import get_all_permissions
+
         out = set()
         permissions = get_all_permissions(session)
         for permission in permissions:
-            out.add(PermissionTuple(
-                id=permission.id,
-                name=permission.name,
-                description=permission.description,
-                created_on=permission.created_on,
-                audited=permission._audited,
-            ))
+            out.add(
+                PermissionTuple(
+                    id=permission.id,
+                    name=permission.name,
+                    description=permission.description,
+                    created_on=permission.created_on,
+                    audited=permission._audited,
+                )
+            )
         return out
 
     @staticmethod
     def _get_group_metadata(session, permission_metadata):
-        '''
+        """
         Returns a dict of groupname: { dict of metadata }.
-        '''
-        groups = session.query(Group).filter(
-            Group.enabled == True
-        )
+        """
+        groups = session.query(Group).filter(Group.enabled == True)
 
         out = {}
         for group in groups:
             out[group.groupname] = {
                 "permissions": [
-                    {
-                        "permission": permission.permission,
-                        "argument": permission.argument,
-                    } for permission in permission_metadata[group.id]
+                    {"permission": permission.permission, "argument": permission.argument}
+                    for permission in permission_metadata[group.id]
                 ],
-                "contacts": {
-                    "email": group.email_address,
-                },
-
+                "contacts": {"email": group.email_address},
             }
         return out
 
     @staticmethod
     def _get_group_service_accounts(session):
-        '''
+        """
         Returns a dict of groupname: { list of service account names }.
-        '''
+        """
         out = defaultdict(list)
         tuples = session.query(Group, ServiceAccount).filter(
             GroupServiceAccount.group_id == Group.id,
@@ -313,16 +317,11 @@ class GroupGraph(object):
 
     @staticmethod
     def _get_group_tuples(session, enabled=True):
-        '''
+        """
         Returns a dict of groupname: GroupTuple.
-        '''
+        """
         out = {}
-        groups = (
-            session.query(Group)
-            .order_by(Group.groupname)
-        ).filter(
-            Group.enabled == enabled
-        )
+        groups = (session.query(Group).order_by(Group.groupname)).filter(Group.enabled == enabled)
         for group in groups:
             out[group.groupname] = GroupTuple(
                 id=group.id,
@@ -332,23 +331,22 @@ class GroupGraph(object):
                 canjoin=group.canjoin,
                 enabled=group.enabled,
                 service_account=is_role_user(session, group=group),
-                type="Group"
+                type="Group",
             )
         return out
 
     @staticmethod
     def _get_nodes_from_db(session):
-        return session.query(
-            label("type", literal("User")),
-            label("name", User.username)
-        ).filter(
-            User.enabled == True
-        ).union(session.query(
-            label("type", literal("Group")),
-            label("name", Group.groupname)
-        ).filter(
-            Group.enabled == True
-        )).all()
+        return (
+            session.query(label("type", literal("User")), label("name", User.username))
+            .filter(User.enabled == True)
+            .union(
+                session.query(
+                    label("type", literal("Group")), label("name", Group.groupname)
+                ).filter(Group.enabled == True)
+            )
+            .all()
+        )
 
     @staticmethod
     def _get_edges_from_db(session):
@@ -360,46 +358,44 @@ class GroupGraph(object):
 
         now = datetime.utcnow()
 
-        query = session.query(
-            label("groupname", parent.groupname),
-            label("type", literal("Group")),
-            label("name", group_member.groupname),
-            label("role", GroupEdge._role)
-        ).filter(
-            parent.id == GroupEdge.group_id,
-            group_member.id == GroupEdge.member_pk,
-            GroupEdge.active == True,
-            parent.enabled == True,
-            group_member.enabled == True,
-            or_(
-                GroupEdge.expiration > now,
-                GroupEdge.expiration == None
-            ),
-            GroupEdge.member_type == 1
-        ).union(session.query(
-            label("groupname", parent.groupname),
-            label("type", literal("User")),
-            label("name", user_member.username),
-            label("role", GroupEdge._role)
-        ).filter(
-            parent.id == GroupEdge.group_id,
-            user_member.id == GroupEdge.member_pk,
-            GroupEdge.active == True,
-            parent.enabled == True,
-            user_member.enabled == True,
-            or_(
-                GroupEdge.expiration > now,
-                GroupEdge.expiration == None
-            ),
-            GroupEdge.member_type == 0
-        ))
+        query = (
+            session.query(
+                label("groupname", parent.groupname),
+                label("type", literal("Group")),
+                label("name", group_member.groupname),
+                label("role", GroupEdge._role),
+            )
+            .filter(
+                parent.id == GroupEdge.group_id,
+                group_member.id == GroupEdge.member_pk,
+                GroupEdge.active == True,
+                parent.enabled == True,
+                group_member.enabled == True,
+                or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
+                GroupEdge.member_type == 1,
+            )
+            .union(
+                session.query(
+                    label("groupname", parent.groupname),
+                    label("type", literal("User")),
+                    label("name", user_member.username),
+                    label("role", GroupEdge._role),
+                ).filter(
+                    parent.id == GroupEdge.group_id,
+                    user_member.id == GroupEdge.member_pk,
+                    GroupEdge.active == True,
+                    parent.enabled == True,
+                    user_member.enabled == True,
+                    or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
+                    GroupEdge.member_type == 0,
+                )
+            )
+        )
 
         for record in query.all():
-            edges.append((
-                ("Group", record.groupname),
-                (record.type, record.name),
-                {"role": record.role},
-            ))
+            edges.append(
+                (("Group", record.groupname), (record.type, record.name), {"role": record.role})
+            )
 
         return edges
 
@@ -415,10 +411,7 @@ class GroupGraph(object):
         """ Get a permission and what groups and service accounts it's assigned to. """
 
         with self.lock:
-            data = {
-                "groups": {},
-                "service_accounts": {},
-            }
+            data = {"groups": {}, "service_accounts": {}}
 
             # Get all mapped versions of the permission. This is only direct relationships.
             direct_groups = set()
@@ -426,7 +419,8 @@ class GroupGraph(object):
                 for permission in permissions:
                     if permission.permission == name:
                         data["groups"][groupname] = self.get_group_details(
-                            groupname, show_permission=name, expose_aliases=expose_aliases)
+                            groupname, show_permission=name, expose_aliases=expose_aliases
+                        )
                         direct_groups.add(groupname)
 
             # Now find all members of these groups going down the tree.
@@ -438,13 +432,14 @@ class GroupGraph(object):
                     if member == group:
                         continue
                     member_type, member_name = member
-                    if member_type != 'Group':
+                    if member_type != "Group":
                         continue
                     if member_name in checked_groups:
                         continue
                     checked_groups.add(member_name)
                     data["groups"][member_name] = self.get_group_details(
-                        member_name, show_permission=name, expose_aliases=expose_aliases)
+                        member_name, show_permission=name, expose_aliases=expose_aliases
+                    )
 
             # Finally, add all service accounts.
             for account, permissions in self.service_account_permissions.iteritems():
@@ -483,11 +478,13 @@ class GroupGraph(object):
         with self.lock:
             groups = sorted(self.group_tuples.values(), key=lambda g: g.groupname)
             if audited:
+
                 def is_directly_audited(group):
                     for mp in self.permission_metadata[group.groupname]:
                         if mp.audited:
                             return True
                     return False
+
                 directly_audited_groups = filter(is_directly_audited, groups)
                 if directly_audited:
                     return directly_audited_groups
@@ -498,10 +495,12 @@ class GroupGraph(object):
                     if g not in audited_group_nodes:
                         audited_group_nodes.add(g)
                         for nhbr in self._graph.neighbors(g):  # Members of g.
-                            if nhbr[0] == 'Group':
+                            if nhbr[0] == "Group":
                                 queue.append(nhbr)
-                groups = sorted([self.group_tuples[group[1]] for group in audited_group_nodes],
-                                key=lambda g: g.groupname)
+                groups = sorted(
+                    [self.group_tuples[group[1]] for group in audited_group_nodes],
+                    key=lambda g: g.groupname,
+                )
         return groups
 
     def get_group_details(self, groupname, cutoff=None, show_permission=None, expose_aliases=True):
@@ -600,10 +599,7 @@ class GroupGraph(object):
 
         groups = {}
         permissions = []
-        user_details = {
-            "groups": groups,
-            "permissions": permissions,
-        }
+        user_details = {"groups": groups, "permissions": permissions}
 
         with self.lock:
             if username not in self.user_metadata:
@@ -621,11 +617,13 @@ class GroupGraph(object):
             if "service_account" in self.user_metadata[username]:
                 if username in self.service_account_permissions:
                     for permission in self.service_account_permissions[username]:
-                        permissions.append({
-                            "permission": permission.permission,
-                            "argument": permission.argument,
-                            "granted_on": (permission.granted_on - EPOCH).total_seconds(),
-                        })
+                        permissions.append(
+                            {
+                                "permission": permission.permission,
+                                "argument": permission.argument,
+                                "granted_on": (permission.granted_on - EPOCH).total_seconds(),
+                            }
+                        )
                 return user_details
 
             # User permissions are inherited from all groups for which their

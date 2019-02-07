@@ -1,9 +1,8 @@
 from datetime import datetime, timedelta
 
-from mock import patch
 import pytest
+from mock import patch
 
-from fixtures import groups, session, users  # noqa: F401
 from grouper.plugin.exceptions import (
     PluginRejectedDisablingUser,
     PluginRejectedGroupMembershipUpdate,
@@ -11,11 +10,12 @@ from grouper.plugin.exceptions import (
 from grouper.plugin.proxy import PluginProxy
 from grouper.user import disable_user
 from plugins.group_ownership_policy import GroupOwnershipPolicyPlugin
-from util import add_member, revoke_member
+from tests.fixtures import groups, session, users  # noqa: F401
+from tests.util import add_member, revoke_member
 
 
 @patch("grouper.group_member.get_plugin_proxy")
-def test_cant_revoke_last_owner(get_plugin_proxy, session, groups, users):
+def test_cant_revoke_last_owner(get_plugin_proxy, session, groups, users):  # noqa: F811
     get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
@@ -40,7 +40,7 @@ def test_cant_revoke_last_owner(get_plugin_proxy, session, groups, users):
 
 
 @patch("grouper.group_member.get_plugin_proxy")
-def test_cant_revoke_last_npowner(get_plugin_proxy, session, groups, users):
+def test_cant_revoke_last_npowner(get_plugin_proxy, session, groups, users):  # noqa: F811
     get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
@@ -60,7 +60,7 @@ def test_cant_revoke_last_npowner(get_plugin_proxy, session, groups, users):
 
 
 @patch("grouper.group_member.get_plugin_proxy")
-def test_cant_revoke_last_permanent_owner(get_plugin_proxy, groups, users):
+def test_cant_revoke_last_permanent_owner(get_plugin_proxy, groups, users):  # noqa: F811
     get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
@@ -77,7 +77,7 @@ def test_cant_revoke_last_permanent_owner(get_plugin_proxy, groups, users):
 
 
 @patch("grouper.group_member.get_plugin_proxy")
-def test_cant_expire_last_owner(get_plugin_proxy, groups, users):
+def test_cant_expire_last_owner(get_plugin_proxy, groups, users):  # noqa: F811
     get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
@@ -92,7 +92,7 @@ def test_cant_expire_last_owner(get_plugin_proxy, groups, users):
 
 
 @patch("grouper.group_member.get_plugin_proxy")
-def test_cant_demote_last_owner(get_plugin_proxy, groups, users):
+def test_cant_demote_last_owner(get_plugin_proxy, groups, users):  # noqa: F811
     get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
@@ -105,7 +105,7 @@ def test_cant_demote_last_owner(get_plugin_proxy, groups, users):
 
 
 @patch("grouper.group_member.get_plugin_proxy")
-def test_can_always_revoke_members(get_plugin_proxy, groups, users):
+def test_can_always_revoke_members(get_plugin_proxy, groups, users):  # noqa: F811
     get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
@@ -121,7 +121,7 @@ def test_can_always_revoke_members(get_plugin_proxy, groups, users):
 
 
 @patch("grouper.group_member.get_plugin_proxy")
-def test_can_add_owner_twice(get_plugin_proxy, session, groups, users):
+def test_can_add_owner_twice(get_plugin_proxy, session, groups, users):  # noqa: F811
     get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
@@ -132,7 +132,7 @@ def test_can_add_owner_twice(get_plugin_proxy, session, groups, users):
 
 
 @patch("grouper.user.get_plugin_proxy")
-def test_cant_disable_last_owner(get_plugin_proxy, session, groups, users):
+def test_cant_disable_last_owner(get_plugin_proxy, session, groups, users):  # noqa: F811
     get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]
@@ -145,7 +145,7 @@ def test_cant_disable_last_owner(get_plugin_proxy, session, groups, users):
 
 
 @patch("grouper.user.get_plugin_proxy")
-def test_can_disable_member(get_plugin_proxy, session, groups, users):
+def test_can_disable_member(get_plugin_proxy, session, groups, users):  # noqa: F811
     get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     group = groups["team-infra"]

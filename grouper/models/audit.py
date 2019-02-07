@@ -44,9 +44,9 @@ class Audit(Model):
 
         # Get all members of the audit. Note that this list might change since people can
         # join or leave the group.
-        auditmembers = self.session.query(AuditMember).filter(
-            AuditMember.audit_id == self.id
-        ).all()
+        auditmembers = (
+            self.session.query(AuditMember).filter(AuditMember.audit_id == self.id).all()
+        )
 
         auditmember_by_edge_id = {am.edge_id: am for am in auditmembers}
 
@@ -56,7 +56,9 @@ class Audit(Model):
         auditmember_name_pairs = []
         for member in self.group.my_members().values():
             if member.edge_id in auditmember_by_edge_id:
-                auditmember_name_pairs.append((member.name, auditmember_by_edge_id[member.edge_id]))
+                auditmember_name_pairs.append(
+                    (member.name, auditmember_by_edge_id[member.edge_id])
+                )
 
         # Sort by name and return members
         return [auditmember for _, auditmember in sorted(auditmember_name_pairs)]

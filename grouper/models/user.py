@@ -38,8 +38,7 @@ class User(Model, CommentObjectMixin):
 
     def __repr__(self):
         # type: () -> str
-        return "<%s: id=%s username=%s>" % (
-            type(self).__name__, self.id, self.username)
+        return "<%s: id=%s username=%s>" % (type(self).__name__, self.id, self.username)
 
     @staticmethod
     def get(session, pk=None, name=None):

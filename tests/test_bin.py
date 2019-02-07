@@ -1,7 +1,4 @@
-import os
 import subprocess
-
-from typing import TYPE_CHECKING
 
 from path_util import bin_env, src_path
 

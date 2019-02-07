@@ -3,6 +3,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from jinja2 import Environment, PackageLoader
 from pytz import UTC
+from six import string_types
 
 from grouper.fe.settings import settings
 
@@ -14,7 +15,7 @@ def _make_date_obj(date_obj):
     if isinstance(date_obj, float):
         date_obj = datetime.fromtimestamp(date_obj, UTC)
 
-    if isinstance(date_obj, basestring):
+    if isinstance(date_obj, string_types):
         date_obj = datetime.strptime(date_obj, "%Y-%m-%d %H:%M:%S.%f")
         date_obj = date_obj.replace(tzinfo=UTC)
 
@@ -97,8 +98,9 @@ def highest_period_delta_str(delta):
     return None
 
 
-def get_template_env(package="grouper.fe", deployment_name="",
-                     extra_filters=None, extra_globals=None):
+def get_template_env(
+    package="grouper.fe", deployment_name="", extra_filters=None, extra_globals=None
+):
     # TODO(herb): get around circular depdendencies; long term remove call to
     # send_async_email() from grouper.models
     from grouper.models.base.constants import OBJ_TYPES_IDX

@@ -4,7 +4,7 @@ addons:
   chrome: stable
 python:
 - 2.7
-- 3.5
+- 3.6
 sudo: false
 cache:
   directories:

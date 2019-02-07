@@ -12,10 +12,9 @@ class PublicKeyTagMap(Model):
     """
     Maps a relationship between a Public Key and a Tag.
     """
+
     __tablename__ = "public_key_tag_map"
-    __table_args__ = (
-        UniqueConstraint('tag_id', 'key_id', name='uidx1'),
-    )
+    __table_args__ = (UniqueConstraint("tag_id", "key_id", name="uidx1"),)
 
     id = Column(Integer, primary_key=True)
 

@@ -1,6 +1,14 @@
-from fixtures import *  # noqa: F401
-from tests.fixtures import *  # noqa: F401
 from grouper.constants import GROUP_ADMIN, PERMISSION_ADMIN, USER_ADMIN
+from itests.fixtures import api_client, async_api_server  # noqa: F401
+from tests.fixtures import (  # noqa: F401
+    graph,
+    groups,
+    permissions,
+    service_accounts,
+    session,
+    standard_graph,
+    users,
+)
 
 
 def test_get_users(api_client, users):  # noqa: F811

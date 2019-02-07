@@ -7,9 +7,9 @@ from distutils.core import setup
 
 # this defines __version__ for use below without assuming grouper is in the
 # path or importable during build
-execfile('grouper/version.py')
+execfile("grouper/version.py")
 
-with open('requirements.txt') as requirements:
+with open("requirements.txt") as requirements:
     required = requirements.read().splitlines()
 
 package_data = {}
@@ -17,11 +17,12 @@ package_data = {}
 
 def get_package_data(package, base_dir):
     for dirpath, dirnames, filenames in os.walk(base_dir):
-        dirpath = dirpath[len(package) + 1:]  # Strip package dir
+        dirpath = dirpath[len(package) + 1 :]  # Strip package dir
         for filename in filenames:
             package_data.setdefault(package, []).append(os.path.join(dirpath, filename))
         for dirname in dirnames:
             get_package_data(package, dirname)
+
 
 get_package_data("grouper", "grouper/fe/static")
 get_package_data("grouper", "grouper/fe/templates")
@@ -48,7 +49,7 @@ kwargs = {
         "Topic :: Software Development",
         "Topic :: Software Development :: Libraries",
         "Topic :: Software Development :: Libraries :: Python Modules",
-    ]
+    ],
 }
 
 setup(**kwargs)

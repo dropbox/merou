@@ -21,10 +21,10 @@ class ServiceAccount(Model):
     Internally, a service account is represented by a ServiceAccount object pointing to a User
     object that has the service_account flag set to True.
 
-    This data model is a compromise to avoid a large data migration.  In an ideal world, there would
-    be an underlying Account object that holds the data in common between User and ServiceAccount,
-    and User and ServiceAccount would both have one-to-one mappings to an Account.  The Grouper API
-    is set up to behave as if this world existed.
+    This data model is a compromise to avoid a large data migration.  In an ideal world, there
+    would be an underlying Account object that holds the data in common between User and
+    ServiceAccount, and User and ServiceAccount would both have one-to-one mappings to an Account.
+    The Grouper API is set up to behave as if this world existed.
     """
 
     __tablename__ = "service_accounts"
@@ -37,8 +37,7 @@ class ServiceAccount(Model):
 
     def __repr__(self):
         # type: () -> str
-        return "<%s: id=%s user_id=%s>" % (
-            type(self).__name__, self.id, self.user_id)
+        return "<%s: id=%s user_id=%s>" % (type(self).__name__, self.id, self.user_id)
 
     @staticmethod
     def get(session, pk=None, name=None):
@@ -46,10 +45,11 @@ class ServiceAccount(Model):
         if pk is not None:
             return session.query(ServiceAccount).filter_by(id=pk).scalar()
         if name is not None:
-            return session.query(ServiceAccount).filter(
-                ServiceAccount.user_id == User.id,
-                User.username == name,
-            ).scalar()
+            return (
+                session.query(ServiceAccount)
+                .filter(ServiceAccount.user_id == User.id, User.username == name)
+                .scalar()
+            )
         return None
 
     def add(self, session):

@@ -13,12 +13,13 @@ from grouper.user_token import add_new_user_token
 
 
 class UserTokenAdd(GrouperHandler):
-
     @staticmethod
     def check_access(session, actor, target):
-        return (actor.name == target.name or
-            (target.role_user and can_manage_role_user(session, actor, tuser=target)) or
-            (target.is_service_account and can_manage_service_account(session, target, actor)))
+        return (
+            actor.name == target.name
+            or (target.role_user and can_manage_role_user(session, actor, tuser=target))
+            or (target.is_service_account and can_manage_service_account(session, target, actor))
+        )
 
     def get(self, user_id=None, name=None):
         user = User.get(self.session, user_id, name)
@@ -41,33 +42,46 @@ class UserTokenAdd(GrouperHandler):
         form = UserTokenForm(self.request.arguments)
         if not form.validate():
             return self.render(
-                "user-token-add.html", form=form, user=user,
+                "user-token-add.html",
+                form=form,
+                user=user,
                 alerts=self.get_form_alerts(form.errors),
             )
 
         try:
-            token, secret = add_new_user_token(self.session, UserToken(name=form.data["name"],
-                    user=user))
+            token, secret = add_new_user_token(
+                self.session, UserToken(name=form.data["name"], user=user)
+            )
             self.session.commit()
         except IntegrityError:
             self.session.rollback()
-            form.name.errors.append(
-                "Name already in use."
-            )
+            form.name.errors.append("Name already in use.")
             return self.render(
-                "user-token-add.html", form=form, user=user,
+                "user-token-add.html",
+                form=form,
+                user=user,
                 alerts=self.get_form_alerts(form.errors),
             )
 
-        AuditLog.log(self.session, self.current_user.id, 'add_token',
-                     'Added token: {}'.format(token.name),
-                     on_user_id=user.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "add_token",
+            "Added token: {}".format(token.name),
+            on_user_id=user.id,
+        )
 
         email_context = {
-                "actioner": self.current_user.name,
-                "changed_user": user.name,
-                "action": "added",
-                }
-        send_email(self.session, [user.name], 'User token created', 'user_tokens_changed',
-                settings, email_context)
+            "actioner": self.current_user.name,
+            "changed_user": user.name,
+            "action": "added",
+        }
+        send_email(
+            self.session,
+            [user.name],
+            "User token created",
+            "user_tokens_changed",
+            settings,
+            email_context,
+        )
         return self.render("user-token-created.html", token=token, secret=secret)

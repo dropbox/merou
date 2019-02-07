@@ -27,8 +27,8 @@ class AuditsComplete(GrouperHandler):
 
         edges = {}
         for argument in self.request.arguments:
-            if argument.startswith('audit_'):
-                edges[int(argument.split('_')[1])] = self.request.arguments[argument][0]
+            if argument.startswith("audit_"):
+                edges[int(argument.split("_")[1])] = self.request.arguments[argument][0]
 
         for member in audit.my_members():
             if member.id in edges:
@@ -44,36 +44,52 @@ class AuditsComplete(GrouperHandler):
         # Now if it's completable (no pendings) then mark it complete, else redirect them
         # to the group page.
         if not audit.completable:
-            return self.redirect('/groups/{}'.format(audit.group.name))
+            return self.redirect("/groups/{}".format(audit.group.name))
 
         # Complete audits have to be "enacted" now. This means anybody marked as remove has to
         # be removed from the group now.
         try:
             for member in audit.my_members():
                 if member.status == "remove":
-                    audit.group.revoke_member(self.current_user, member.member,
-                                              "Revoked as part of audit.")
-                    AuditLog.log(self.session, self.current_user.id, 'remove_member',
-                                 'Removed membership in audit: {}'.format(member.member.name),
-                                 on_group_id=audit.group.id, on_user_id=member.member.id,
-                                 category=AuditLogCategory.audit)
+                    audit.group.revoke_member(
+                        self.current_user, member.member, "Revoked as part of audit."
+                    )
+                    AuditLog.log(
+                        self.session,
+                        self.current_user.id,
+                        "remove_member",
+                        "Removed membership in audit: {}".format(member.member.name),
+                        on_group_id=audit.group.id,
+                        on_user_id=member.member.id,
+                        category=AuditLogCategory.audit,
+                    )
         except PluginRejectedGroupMembershipUpdate as e:
             alert = Alert("danger", str(e))
-            return self.redirect('/groups/{}'.format(audit.group.name), alerts=[alert])
+            return self.redirect("/groups/{}".format(audit.group.name), alerts=[alert])
 
         audit.complete = True
         self.session.commit()
 
         # Now cancel pending emails
-        cancel_async_emails(self.session, 'audit-{}'.format(audit.group.id))
+        cancel_async_emails(self.session, "audit-{}".format(audit.group.id))
 
-        AuditLog.log(self.session, self.current_user.id, 'complete_audit',
-                     'Completed group audit.', on_group_id=audit.group.id,
-                     category=AuditLogCategory.audit)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "complete_audit",
+            "Completed group audit.",
+            on_group_id=audit.group.id,
+            category=AuditLogCategory.audit,
+        )
 
         # check if all audits are complete
         if get_audits(self.session, only_open=True).count() == 0:
-            AuditLog.log(self.session, self.current_user.id, 'complete_global_audit',
-                    'last open audit have been completed', category=AuditLogCategory.audit)
+            AuditLog.log(
+                self.session,
+                self.current_user.id,
+                "complete_global_audit",
+                "last open audit have been completed",
+                category=AuditLogCategory.audit,
+            )
 
-        return self.redirect('/groups/{}'.format(audit.group.name))
+        return self.redirect("/groups/{}".format(audit.group.name))

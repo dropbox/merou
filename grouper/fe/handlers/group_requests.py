@@ -28,14 +28,21 @@ class GroupRequests(GrouperHandler):
         requests = requests.offset(offset).limit(limit)
 
         current_user_role = {
-            'is_owner': user_role_index(self.current_user, members) in OWNER_ROLE_INDICES,
-            'is_approver': user_role_index(self.current_user, members) in APPROVER_ROLE_INDICES,
-            'is_manager': user_role(self.current_user, members) == "manager",
-            'role': user_role(self.current_user, members),
-             }
+            "is_owner": user_role_index(self.current_user, members) in OWNER_ROLE_INDICES,
+            "is_approver": user_role_index(self.current_user, members) in APPROVER_ROLE_INDICES,
+            "is_manager": user_role(self.current_user, members) == "manager",
+            "role": user_role(self.current_user, members),
+        }
 
         self.render(
-            "group-requests.html", group=group, requests=requests,
-            members=members, status=status, statuses=REQUEST_STATUS_CHOICES,
-            offset=offset, limit=limit, total=total, current_user_role=current_user_role,
+            "group-requests.html",
+            group=group,
+            requests=requests,
+            members=members,
+            status=status,
+            statuses=REQUEST_STATUS_CHOICES,
+            offset=offset,
+            limit=limit,
+            total=total,
+            current_user_role=current_user_role,
         )

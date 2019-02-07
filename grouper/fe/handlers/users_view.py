@@ -15,23 +15,33 @@ class UsersView(GrouperHandler):
             limit = 9000
 
         if service:
-            users = self.session.query(User).filter(
-                User.enabled == enabled,
-                or_(
-                    User.role_user == True,
-                    User.is_service_account == True,
-                ),
-            ).order_by(User.username)
+            users = (
+                self.session.query(User)
+                .filter(
+                    User.enabled == enabled,
+                    or_(User.role_user == True, User.is_service_account == True),
+                )
+                .order_by(User.username)
+            )
         else:
-            users = self.session.query(User).filter(
-                User.enabled == enabled,
-                User.role_user == False,
-                User.is_service_account == False,
-            ).order_by(User.username)
+            users = (
+                self.session.query(User)
+                .filter(
+                    User.enabled == enabled,
+                    User.role_user == False,
+                    User.is_service_account == False,
+                )
+                .order_by(User.username)
+            )
         total = users.count()
         users = users.offset(offset).limit(limit).all()
 
         self.render(
-            "users.html", users=users, offset=offset, limit=limit, total=total,
-            enabled=enabled, service=service,
+            "users.html",
+            users=users,
+            offset=offset,
+            limit=limit,
+            total=total,
+            enabled=enabled,
+            service=service,
         )

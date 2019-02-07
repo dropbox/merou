@@ -2,12 +2,13 @@ from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from argparse import _SubParsersAction, Namespace  # noqa: F401
-    from grouper.models.base.session import Session  # noqa: F401
+    from argparse import _SubParsersAction, Namespace
+    from grouper.models.base.session import Session
 
 
 class CtlCommand(object):
     """Implements a subcommand of grouper-ctl."""
+
     __metaclass__ = ABCMeta
 
     @abstractmethod

@@ -15,7 +15,7 @@ from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from grouper.usecases.authorization import Authorization  # noqa: F401
+    from grouper.usecases.authorization import Authorization
 
 
 class PermissionNotFoundException(Exception):
@@ -29,6 +29,7 @@ class PermissionNotFoundException(Exception):
 
 class PermissionInterface(object):
     """Abstract base class for permission storage layer."""
+
     __metaclass__ = ABCMeta
 
     @abstractmethod

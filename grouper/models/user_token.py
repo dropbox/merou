@@ -1,7 +1,7 @@
-from datetime import datetime
 import hashlib
 import hmac
 import os
+from datetime import datetime
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
@@ -31,15 +31,16 @@ class UserToken(Model):
 
     user = relationship("User", back_populates="tokens")
 
-    __table_args__ = (
-        UniqueConstraint("user_id", "name"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "name"),)
 
     @staticmethod
     def get_by_value(session, username, name):
-        return session.query(UserToken).join(UserToken.user).filter(
-            User.username == username, UserToken.name == name
-        ).scalar()
+        return (
+            session.query(UserToken)
+            .join(UserToken.user)
+            .filter(User.username == username, UserToken.name == name)
+            .scalar()
+        )
 
     @staticmethod
     def get(session, user, name=None, id=None):
@@ -69,8 +70,7 @@ class UserToken(Model):
     def check_secret(self, secret):
         # The length of self.hashed_secret is not secret
         return self.enabled and hmac.compare_digest(
-                hashlib.sha256(secret).hexdigest(),
-                self.hashed_secret.encode('utf-8'),
+            hashlib.sha256(secret).hexdigest(), self.hashed_secret.encode("utf-8")
         )
 
     @property
@@ -78,7 +78,9 @@ class UserToken(Model):
         return self.disabled_at is None and self.user.enabled
 
     def __str__(self):
-        return "/".join((
+        return "/".join(
+            (
                 self.user.username if self.user is not None else "unspecified",
                 self.name if self.name is not None else "unspecified",
-        ))
+            )
+        )

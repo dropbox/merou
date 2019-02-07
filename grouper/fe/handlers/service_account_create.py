@@ -38,21 +38,34 @@ class ServiceAccountCreate(GrouperHandler):
         form = ServiceAccountCreateForm(self.request.arguments)
         if not form.validate():
             return self.render(
-                "service-account-create.html", form=form, group=group,
-                alerts=self.get_form_alerts(form.errors)
+                "service-account-create.html",
+                form=form,
+                group=group,
+                alerts=self.get_form_alerts(form.errors),
             )
 
         if form.data["name"].split("@")[-1] != settings.service_account_email_domain:
-            form.name.errors.append("All service accounts must have a username ending in {}"
-                .format(settings.service_account_email_domain))
+            form.name.errors.append(
+                "All service accounts must have a username ending in {}".format(
+                    settings.service_account_email_domain
+                )
+            )
             return self.render(
-                "service-account-create.html", form=form, group=group,
-                alerts=self.get_form_alerts(form.errors)
+                "service-account-create.html",
+                form=form,
+                group=group,
+                alerts=self.get_form_alerts(form.errors),
             )
 
         try:
-            create_service_account(self.session, self.current_user, form.data["name"],
-                form.data["description"], form.data["machine_set"], group)
+            create_service_account(
+                self.session,
+                self.current_user,
+                form.data["name"],
+                form.data["description"],
+                form.data["machine_set"],
+                group,
+            )
         except DuplicateServiceAccount:
             form.name.errors.append("A user with name {} already exists".format(form.data["name"]))
         except BadMachineSet as e:
@@ -60,8 +73,10 @@ class ServiceAccountCreate(GrouperHandler):
 
         if form.name.errors or form.machine_set.errors:
             return self.render(
-                "service-account-create.html", form=form, group=group,
-                alerts=self.get_form_alerts(form.errors)
+                "service-account-create.html",
+                form=form,
+                group=group,
+                alerts=self.get_form_alerts(form.errors),
             )
 
         url = "/groups/{}/service/{}?refresh=yes".format(group.name, form.data["name"])

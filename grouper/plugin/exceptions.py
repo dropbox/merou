@@ -16,6 +16,7 @@ class PluginRejectedDisablingUser(PluginException):
 
 class PluginRejectedMachineSet(PluginException):
     """A plugin rejected a machine set for a service account."""
+
     pass
 
 

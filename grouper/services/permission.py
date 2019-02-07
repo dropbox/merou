@@ -8,9 +8,9 @@ from grouper.usecases.interfaces import PermissionInterface, PermissionNotFoundE
 from grouper.user_permissions import user_has_permission
 
 if TYPE_CHECKING:
-    from grouper.models.base.session import Session  # noqa: F401
-    from grouper.services.audit_log import AuditLogService  # noqa: F401
-    from grouper.usecases.authorization import Authorization  # noqa: F401
+    from grouper.models.base.session import Session
+    from grouper.services.audit_log import AuditLogService
+    from grouper.usecases.authorization import Authorization
 
 
 class PermissionService(PermissionInterface):

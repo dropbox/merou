@@ -1,19 +1,18 @@
-from datetime import datetime
-from functools import wraps
 import json
 import logging
 import re
 import sys
-from typing import Dict, List  # noqa: F401
 import urllib
 import urlparse
+from datetime import datetime
+from functools import wraps
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from plop.collector import Collector
 import sqlalchemy.exc
 import tornado.web
+from plop.collector import Collector
 from tornado.web import RequestHandler
-from typing import Dict, List  # noqa: F401
 
 from grouper import perf_profile, stats
 from grouper.constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATION
@@ -23,6 +22,9 @@ from grouper.models.base.session import get_db_engine, Session
 from grouper.models.user import User
 from grouper.user_permissions import user_permissions
 from grouper.util import get_database_url
+
+if TYPE_CHECKING:
+    from typing import Dict, List
 
 
 class Alert(object):
@@ -49,8 +51,10 @@ try:
 except ImportError:
     pass
 else:
+
     class SentryHandler(SentryMixin, RequestHandler):
         pass
+
     RequestHandler = SentryHandler  # type: ignore # no support for conditional declarations #1152
 
 
@@ -79,13 +83,18 @@ class GrouperHandler(RequestHandler):
             self.write(template.render({"is_active": self.is_active}))
         else:
             template = self.application.my_settings["template_env"].get_template(
-                    "errors/generic.html")
-            self.write(template.render({
-                    "status_code": status_code,
-                    "message": self._reason,
-                    "is_active": self.is_active,
-                    "trace_uuid": self.perf_trace_uuid,
-                    }))
+                "errors/generic.html"
+            )
+            self.write(
+                template.render(
+                    {
+                        "status_code": status_code,
+                        "message": self._reason,
+                        "is_active": self.is_active,
+                        "trace_uuid": self.perf_trace_uuid,
+                    }
+                )
+            )
         self.finish()
 
     def is_refresh(self):
@@ -183,14 +192,16 @@ class GrouperHandler(RequestHandler):
 
     def get_template_namespace(self):
         namespace = super(GrouperHandler, self).get_template_namespace()
-        namespace.update({
-            "update_qs": self.update_qs,
-            "is_active": self.is_active,
-            "perf_trace_uuid": self.perf_trace_uuid,
-            "xsrf_form": self.xsrf_form_html,
-            "alerts": self.get_alerts(),
-            "static_url": self.static_url,
-        })
+        namespace.update(
+            {
+                "update_qs": self.update_qs,
+                "is_active": self.is_active,
+                "perf_trace_uuid": self.perf_trace_uuid,
+                "xsrf_form": self.xsrf_form_html,
+                "alerts": self.get_alerts(),
+                "static_url": self.static_url,
+            }
+        )
         return namespace
 
     def render_template(self, template_name, **kwargs):
@@ -263,9 +274,7 @@ class GrouperHandler(RequestHandler):
 
     def get_sentry_user_info(self):
         user = self.get_current_user()
-        return {
-                'username': user.username,
-                }
+        return {"username": user.username}
 
 
 def test_reserved_names(permission_name):
@@ -276,7 +285,7 @@ def test_reserved_names(permission_name):
     for reserved in RESERVED_NAMES:
         if re.match(reserved, permission_name):
             failure_messages.append(
-                "Permission names must not match the pattern: %s" % (reserved, )
+                "Permission names must not match the pattern: %s" % (reserved,)
             )
     return failure_messages
 
@@ -288,10 +297,15 @@ def ensure_audit_security(perm_arg):
     Args:
         perm_arg: the argument required for the audit permission. only 'public_keys' at this point.
     """
+
     def _wrapper(f):
         def _decorator(self, *args, **kwargs):
-            if not any([name == AUDIT_SECURITY and argument == perm_arg for name, argument, _, _
-                    in user_permissions(self.session, self.current_user)]):
+            if not any(
+                [
+                    name == AUDIT_SECURITY and argument == perm_arg
+                    for name, argument, _, _ in user_permissions(self.session, self.current_user)
+                ]
+            ):
                 return self.forbidden()
 
             return f(self, *args, **kwargs)
@@ -303,11 +317,7 @@ def ensure_audit_security(perm_arg):
 
 def _serialize_alert(alert):
     # type: (Alert) -> Dict[str, str]
-    return {
-        "severity": alert.severity,
-        "message": alert.message,
-        "heading": alert.heading
-    }
+    return {"severity": alert.severity, "message": alert.message, "heading": alert.heading}
 
 
 def _deserialize_alert(alert_dict):
@@ -315,7 +325,7 @@ def _deserialize_alert(alert_dict):
     return Alert(
         severity=alert_dict["severity"],
         message=alert_dict["message"],
-        heading=alert_dict["heading"]
+        heading=alert_dict["heading"],
     )
 
 

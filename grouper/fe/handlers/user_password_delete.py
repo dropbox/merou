@@ -9,12 +9,14 @@ from grouper.user_permissions import user_is_user_admin
 
 
 class UserPasswordDelete(GrouperHandler):
-
     @staticmethod
     def check_access(session, actor, target):
-        return (actor.name == target.name or user_is_user_admin(session, actor) or
-            (target.role_user and can_manage_role_user(session, actor, tuser=target)) or
-            (target.is_service_account and can_manage_service_account(session, target, actor)))
+        return (
+            actor.name == target.name
+            or user_is_user_admin(session, actor)
+            or (target.role_user and can_manage_role_user(session, actor, tuser=target))
+            or (target.is_service_account and can_manage_service_account(session, target, actor))
+        )
 
     def get(self, user_id=None, name=None, pass_id=None):
         user = User.get(self.session, user_id, name)
@@ -41,8 +43,12 @@ class UserPasswordDelete(GrouperHandler):
         except PasswordDoesNotExist:
             # if the password doesn't exist, we can pretend like it did and that we deleted it
             return self.redirect("/users/{}?refresh=yes".format(user.id))
-        AuditLog.log(self.session, self.current_user.id, 'delete_password',
-                     'Deleted password: {}'.format(password.name),
-                     on_user_id=user.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "delete_password",
+            "Deleted password: {}".format(password.name),
+            on_user_id=user.id,
+        )
         self.session.commit()
         return self.redirect("/users/{}?refresh=yes".format(user.id))

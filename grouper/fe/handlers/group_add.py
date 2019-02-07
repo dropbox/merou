@@ -1,5 +1,5 @@
-from datetime import datetime
 import operator
+from datetime import datetime
 
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.email_util import send_email
@@ -44,8 +44,7 @@ class GroupAdd(GrouperHandler):
         ]
 
         form.member.choices = [("", "")] + sorted(
-            group_choices + user_choices,
-            key=operator.itemgetter(1)
+            group_choices + user_choices, key=operator.itemgetter(1)
         )
         return form
 
@@ -59,9 +58,7 @@ class GroupAdd(GrouperHandler):
 
         members = group.my_members()
         my_role = user_role(self.current_user, members)
-        return self.render(
-            "group-add.html", form=self.get_form(role=my_role), group=group
-        )
+        return self.render("group-add.html", form=self.get_form(role=my_role), group=group)
 
     def post(self, group_id=None, name=None):
         group = Group.get(self.session, group_id, name)
@@ -76,8 +73,7 @@ class GroupAdd(GrouperHandler):
         form = self.get_form(role=my_role)
         if not form.validate():
             return self.render(
-                "group-add.html", form=form, group=group,
-                alerts=self.get_form_alerts(form.errors)
+                "group-add.html", form=form, group=group, alerts=self.get_form_alerts(form.errors)
             )
 
         member = get_user_or_group(self.session, form.data["member"])
@@ -92,7 +88,7 @@ class GroupAdd(GrouperHandler):
             form.member.errors.append("By definition, this group is a member of itself already.")
 
         # Ensure this doesn't violate auditing constraints
-        fail_message = 'This join is denied with this role at this time.'
+        fail_message = "This join is denied with this role at this time."
         try:
             user_can_join = assert_can_join(group, member, role=form.data["role"])
         except UserNotAuditor as e:
@@ -103,8 +99,7 @@ class GroupAdd(GrouperHandler):
 
         if form.member.errors:
             return self.render(
-                "group-add.html", form=form, group=group,
-                alerts=self.get_form_alerts(form.errors)
+                "group-add.html", form=form, group=group, alerts=self.get_form_alerts(form.errors)
             )
 
         expiration = None
@@ -116,40 +111,41 @@ class GroupAdd(GrouperHandler):
                 requester=self.current_user,
                 user_or_group=member,
                 reason=form.data["reason"],
-                status='actioned',
+                status="actioned",
                 expiration=expiration,
-                role=form.data["role"]
+                role=form.data["role"],
             )
         except InvalidRoleForMember as e:
             return self.render(
-                "group-add.html", form=form, group=group,
-                alerts=[
-                    Alert('danger', e.message)
-                ]
+                "group-add.html", form=form, group=group, alerts=[Alert("danger", e.message)]
             )
 
         self.session.commit()
 
         on_user_id = member.id if member.type == "User" else None
-        AuditLog.log(self.session, self.current_user.id, 'join_group',
-                     '{} added to group with role: {}'.format(
-                         member.name, form.data["role"]),
-                     on_group_id=group.id, on_user_id=on_user_id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "join_group",
+            "{} added to group with role: {}".format(member.name, form.data["role"]),
+            on_group_id=group.id,
+            on_user_id=on_user_id,
+        )
 
         if member.type == "User":
             send_email(
                 self.session,
                 [member.name],
-                'Added to group: {}'.format(group.name),
-                'request_actioned',
+                "Added to group: {}".format(group.name),
+                "request_actioned",
                 settings,
                 {
-                    'group_name': group.name,
-                    'actioned_by': self.current_user.name,
-                    'reason': form.data['reason'],
-                    'expiration': expiration,
-                    'role': form.data['role'],
-                }
+                    "group_name": group.name,
+                    "actioned_by": self.current_user.name,
+                    "reason": form.data["reason"],
+                    "expiration": expiration,
+                    "role": form.data["role"],
+                },
             )
 
         return self.redirect("/groups/{}?refresh=yes".format(group.name))

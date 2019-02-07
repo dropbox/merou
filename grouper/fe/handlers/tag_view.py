@@ -19,6 +19,10 @@ class TagView(GrouperHandler):
         can_grant = get_all_permissions(self.session) if is_owner else []
 
         self.render(
-            "tag.html", tag=tag, permissions=permissions, can_grant=can_grant,
-            log_entries=log_entries, is_owner=is_owner,
+            "tag.html",
+            tag=tag,
+            permissions=permissions,
+            can_grant=can_grant,
+            log_entries=log_entries,
+            is_owner=is_owner,
         )

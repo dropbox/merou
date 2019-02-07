@@ -14,17 +14,13 @@ from grouper.fe.routes import HANDLERS as FE_HANDLERS
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
 from grouper.models.base.model_base import Model
-from grouper.models.base.session import Session, get_db_engine
+from grouper.models.base.session import get_db_engine, Session
 from grouper.models.group import Group
 from grouper.models.user import User
-from grouper.permissions import (
-    create_permission,
-    enable_permission_auditing,
-    get_or_create_permission,
-)
+from grouper.permissions import enable_permission_auditing, get_or_create_permission
 from grouper.service_account import create_service_account
-from path_util import db_url
-from util import add_member, grant_permission
+from tests.path_util import db_url
+from tests.util import add_member, grant_permission
 
 
 @pytest.fixture
@@ -165,6 +161,7 @@ def session(request, tmpdir):
         session.close()
         # Useful if testing against MySQL
         # Model.metadata.drop_all(db_engine)
+
     request.addfinalizer(fin)
 
     return session
@@ -181,8 +178,17 @@ def graph(session):
 def users(session):
     users = {
         username: User.get_or_create(session, username=username)[0]
-        for username in ("gary@a.co", "zay@a.co", "zorkian@a.co", "oliver@a.co", "testuser@a.co",
-                "figurehead@a.co", "zebu@a.co", "tyleromeara@a.co", "cbguder@a.co")
+        for username in (
+            "gary@a.co",
+            "zay@a.co",
+            "zorkian@a.co",
+            "oliver@a.co",
+            "testuser@a.co",
+            "figurehead@a.co",
+            "zebu@a.co",
+            "tyleromeara@a.co",
+            "cbguder@a.co",
+        )
     }
     users["role@a.co"] = User.get_or_create(session, username="role@a.co", role_user=True)[0]
     session.commit()
@@ -193,9 +199,20 @@ def users(session):
 def groups(session):
     groups = {
         groupname: Group.get_or_create(session, groupname=groupname)[0]
-        for groupname in ("team-sre", "tech-ops", "team-infra", "all-teams", "serving-team",
-                          "security-team", "auditors", "sad-team", "audited-team", "user-admins",
-                          "group-admins", "permission-admins")
+        for groupname in (
+            "team-sre",
+            "tech-ops",
+            "team-infra",
+            "all-teams",
+            "serving-team",
+            "security-team",
+            "auditors",
+            "sad-team",
+            "audited-team",
+            "user-admins",
+            "group-admins",
+            "permission-admins",
+        )
     }
     groups_with_emails = ("team-sre", "serving-team", "security-team")
     for group in groups_with_emails:
@@ -208,9 +225,13 @@ def groups(session):
 def service_accounts(session, users, groups):
     service_accounts = {
         "service@a.co": create_service_account(
-            session, users["zay@a.co"], "service@a.co", "some service account", "some machines",
-            groups["team-sre"]
-        ),
+            session,
+            users["zay@a.co"],
+            "service@a.co",
+            "some service account",
+            "some machines",
+            groups["team-sre"],
+        )
     }
     session.commit()
     return service_accounts
@@ -218,8 +239,19 @@ def service_accounts(session, users, groups):
 
 @pytest.fixture
 def permissions(session, users):
-    all_permissions = ["owner", "ssh", "sudo", "audited", AUDIT_MANAGER, AUDIT_VIEWER,
-                       PERMISSION_AUDITOR, PERMISSION_ADMIN, "team-sre", USER_ADMIN, GROUP_ADMIN]
+    all_permissions = [
+        "owner",
+        "ssh",
+        "sudo",
+        "audited",
+        AUDIT_MANAGER,
+        AUDIT_VIEWER,
+        PERMISSION_AUDITOR,
+        PERMISSION_ADMIN,
+        "team-sre",
+        USER_ADMIN,
+        GROUP_ADMIN,
+    ]
 
     permissions = {
         permission: get_or_create_permission(
@@ -228,24 +260,18 @@ def permissions(session, users):
         for permission in all_permissions
     }
 
-    enable_permission_auditing(session, permissions["audited"].name, users['zorkian@a.co'].id)
+    enable_permission_auditing(session, permissions["audited"].name, users["zorkian@a.co"].id)
 
     return permissions
 
 
 @pytest.fixture
 def api_app(session, standard_graph):
-    my_settings = {
-            "graph": standard_graph,
-            "db_session": lambda: session,
-            }
+    my_settings = {"graph": standard_graph, "db_session": lambda: session}
     return Application(API_HANDLERS, my_settings=my_settings)
 
 
 @pytest.fixture
 def fe_app(session, standard_graph, tmpdir):
-    my_settings = {
-            "db_session": lambda: session,
-            "template_env": get_template_env(),
-            }
+    my_settings = {"db_session": lambda: session, "template_env": get_template_env()}
     return Application(FE_HANDLERS, my_settings=my_settings, static_path=str(tmpdir))

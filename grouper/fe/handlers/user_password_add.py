@@ -10,12 +10,13 @@ from grouper.user_password import add_new_user_password, PasswordAlreadyExists
 
 
 class UserPasswordAdd(GrouperHandler):
-
     @staticmethod
     def check_access(session, actor, target):
-        return (actor.name == target.name or
-            (target.role_user and can_manage_role_user(session, actor, tuser=target)) or
-            (target.is_service_account and can_manage_service_account(session, target, actor)))
+        return (
+            actor.name == target.name
+            or (target.role_user and can_manage_role_user(session, actor, tuser=target))
+            or (target.is_service_account and can_manage_service_account(session, target, actor))
+        )
 
     def get(self, user_id=None, name=None):
         user = User.get(self.session, user_id, name)
@@ -38,7 +39,9 @@ class UserPasswordAdd(GrouperHandler):
         form = UserPasswordForm(self.request.arguments)
         if not form.validate():
             return self.render(
-                "user-password-add.html", form=form, user=user,
+                "user-password-add.html",
+                form=form,
+                user=user,
                 alerts=self.get_form_alerts(form.errors),
             )
 
@@ -48,23 +51,33 @@ class UserPasswordAdd(GrouperHandler):
             add_new_user_password(self.session, pass_name, password, user.id)
         except PasswordAlreadyExists:
             self.session.rollback()
-            form.name.errors.append(
-                "Name already in use."
-            )
+            form.name.errors.append("Name already in use.")
             return self.render(
-                "user-password-add.html", form=form, user=user,
+                "user-password-add.html",
+                form=form,
+                user=user,
                 alerts=self.get_form_alerts(form.errors),
             )
 
-        AuditLog.log(self.session, self.current_user.id, 'add_password',
-                     'Added password: {}'.format(pass_name),
-                     on_user_id=user.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "add_password",
+            "Added password: {}".format(pass_name),
+            on_user_id=user.id,
+        )
 
         email_context = {
-                "actioner": self.current_user.name,
-                "changed_user": user.name,
-                "pass_name": pass_name,
-                }
-        send_email(self.session, [user.name], 'User password created', 'user_password_created',
-                settings, email_context)
+            "actioner": self.current_user.name,
+            "changed_user": user.name,
+            "pass_name": pass_name,
+        }
+        send_email(
+            self.session,
+            [user.name],
+            "User password created",
+            "user_password_created",
+            settings,
+            email_context,
+        )
         return self.redirect("/users/{}?refresh=yes".format(user.name))

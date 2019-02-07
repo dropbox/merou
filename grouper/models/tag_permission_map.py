@@ -16,10 +16,9 @@ class TagPermissionMap(Model):
     These include the optional arguments, which can either be a string, an asterisks ("*"), or
     Null to indicate no argument.
     """
+
     __tablename__ = "tag_permissions_map"
-    __table_args__ = (
-        UniqueConstraint('permission_id', 'tag_id', 'argument', name='uidx1'),
-    )
+    __table_args__ = (UniqueConstraint("permission_id", "tag_id", "argument", name="uidx1"),)
 
     id = Column(Integer, primary_key=True)
 

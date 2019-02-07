@@ -8,7 +8,6 @@ from grouper.util import matches_glob
 
 
 class PermissionsRevoke(GrouperHandler):
-
     @staticmethod
     def check_access(session, mapping, user):
         user_is_owner = user_is_owner_of_group(session, mapping.group, user)
@@ -52,8 +51,13 @@ class PermissionsRevoke(GrouperHandler):
         Counter.incr(self.session, "updates")
         self.session.commit()
 
-        AuditLog.log(self.session, self.current_user.id, 'revoke_permission',
-                     'Revoked permission with argument: {}'.format(mapping.argument),
-                     on_group_id=group.id, on_permission_id=permission.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "revoke_permission",
+            "Revoked permission with argument: {}".format(mapping.argument),
+            on_group_id=group.id,
+            on_permission_id=permission.id,
+        )
 
-        return self.redirect('/groups/{}?refresh=yes'.format(group.name))
+        return self.redirect("/groups/{}?refresh=yes".format(group.name))

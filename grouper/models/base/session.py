@@ -21,6 +21,7 @@ def flush_transaction(method):
                 self.session.rollback()
             raise
         return ret
+
     return wrapper
 
 

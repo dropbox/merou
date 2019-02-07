@@ -11,17 +11,16 @@ from grouper.user_permissions import user_has_permission
 class UserEnable(GrouperHandler):
     @staticmethod
     def check_access(session, actor, target):
-        return (
-            user_has_permission(session, actor, USER_ADMIN) or
-            (target.role_user and is_owner_of_role_user(session, actor, tuser=target))
+        return user_has_permission(session, actor, USER_ADMIN) or (
+            target.role_user and is_owner_of_role_user(session, actor, tuser=target)
         )
 
     @staticmethod
     def check_access_without_membership(session, actor, target):
         return (
-            user_has_permission(session, actor, USER_ADMIN) or
-            (target.role_user and is_owner_of_role_user(session, actor, tuser=target)) or
-            user_has_permission(session, actor, USER_ENABLE, argument=target.name)
+            user_has_permission(session, actor, USER_ADMIN)
+            or (target.role_user and is_owner_of_role_user(session, actor, tuser=target))
+            or user_has_permission(session, actor, USER_ENABLE, argument=target.name)
         )
 
     def post(self, user_id=None, name=None):
@@ -42,15 +41,24 @@ class UserEnable(GrouperHandler):
                 return self.forbidden()
 
         if user.role_user:
-            enable_role_user(self.session, actor=self.current_user,
-                preserve_membership=form.preserve_membership.data, user=user)
+            enable_role_user(
+                self.session,
+                actor=self.current_user,
+                preserve_membership=form.preserve_membership.data,
+                user=user,
+            )
         else:
-            enable_user(self.session, user, self.current_user,
-                preserve_membership=form.preserve_membership.data)
+            enable_user(
+                self.session,
+                user,
+                self.current_user,
+                preserve_membership=form.preserve_membership.data,
+            )
 
         self.session.commit()
 
-        AuditLog.log(self.session, self.current_user.id, 'enable_user',
-                     'Enabled user.', on_user_id=user.id)
+        AuditLog.log(
+            self.session, self.current_user.id, "enable_user", "Enabled user.", on_user_id=user.id
+        )
 
         return self.redirect("/users/{}?refresh=yes".format(user.name))

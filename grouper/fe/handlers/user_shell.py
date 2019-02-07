@@ -10,12 +10,13 @@ from grouper.user_metadata import set_user_metadata
 
 
 class UserShell(GrouperHandler):
-
     @staticmethod
     def check_access(session, actor, target):
-        return (actor.name == target.name or
-            (target.role_user and can_manage_role_user(session, actor, tuser=target)) or
-            (target.is_service_account and can_manage_service_account(session, target, actor)))
+        return (
+            actor.name == target.name
+            or (target.role_user and can_manage_role_user(session, actor, tuser=target))
+            or (target.is_service_account and can_manage_service_account(session, target, actor))
+        )
 
     def get(self, user_id=None, name=None):
         user = User.get(self.session, user_id, name)
@@ -42,14 +43,17 @@ class UserShell(GrouperHandler):
         form.shell.choices = settings.shell
         if not form.validate():
             return self.render(
-                "user-shell.html", form=form, user=user,
-                alerts=self.get_form_alerts(form.errors),
+                "user-shell.html", form=form, user=user, alerts=self.get_form_alerts(form.errors)
             )
 
         set_user_metadata(self.session, user.id, USER_METADATA_SHELL_KEY, form.data["shell"])
 
-        AuditLog.log(self.session, self.current_user.id, 'changed_shell',
-                     'Changed shell: {}'.format(form.data["shell"]),
-                     on_user_id=user.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "changed_shell",
+            "Changed shell: {}".format(form.data["shell"]),
+            on_user_id=user.id,
+        )
 
         return self.redirect("/users/{}?refresh=yes".format(user.name))

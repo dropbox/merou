@@ -21,29 +21,35 @@ class GroupsView(GrouperHandler):
             directly_audited_groups = None
         elif audited_only:
             groups = self.graph.get_groups(audited=True, directly_audited=False)
-            directly_audited_groups = set([g.groupname for g in self.graph.get_groups(
-                audited=True, directly_audited=True)])
+            directly_audited_groups = set(
+                [g.groupname for g in self.graph.get_groups(audited=True, directly_audited=True)]
+            )
         else:
             groups = self.graph.get_groups(audited=False)
             directly_audited_groups = set()
         groups = [group for group in groups if not group.service_account]
         total = len(groups)
-        groups = groups[offset:offset + limit]
+        groups = groups[offset : offset + limit]
 
         form = GroupCreateForm()
 
         self.render(
-            "groups.html", groups=groups, form=form,
-            offset=offset, limit=limit, total=total, audited_groups=audited_only,
-            directly_audited_groups=directly_audited_groups, enabled=enabled,
+            "groups.html",
+            groups=groups,
+            form=form,
+            offset=offset,
+            limit=limit,
+            total=total,
+            audited_groups=audited_only,
+            directly_audited_groups=directly_audited_groups,
+            enabled=enabled,
         )
 
     def post(self):
         form = GroupCreateForm(self.request.arguments)
         if not form.validate():
             return self.render(
-                "group-create.html", form=form,
-                alerts=self.get_form_alerts(form.errors)
+                "group-create.html", form=form, alerts=self.get_form_alerts(form.errors)
             )
 
         user = self.get_current_user()
@@ -59,18 +65,20 @@ class GroupsView(GrouperHandler):
             self.session.flush()
         except IntegrityError:
             self.session.rollback()
-            form.groupname.errors.append(
-                "{} already exists".format(form.data["groupname"])
-            )
+            form.groupname.errors.append("{} already exists".format(form.data["groupname"]))
             return self.render(
-                "group-create.html", form=form,
-                alerts=self.get_form_alerts(form.errors)
+                "group-create.html", form=form, alerts=self.get_form_alerts(form.errors)
             )
 
         group.add_member(user, user, "Group Creator", "actioned", None, form.data["creatorrole"])
         self.session.commit()
 
-        AuditLog.log(self.session, self.current_user.id, 'create_group',
-                     'Created new group.', on_group_id=group.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "create_group",
+            "Created new group.",
+            on_group_id=group.id,
+        )
 
         return self.redirect("/groups/{}?refresh=yes".format(group.name))

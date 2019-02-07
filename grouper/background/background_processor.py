@@ -1,8 +1,8 @@
+import logging
+import os
 from collections import defaultdict
 from contextlib import closing
 from datetime import datetime
-import logging
-import os
 from time import sleep
 from typing import TYPE_CHECKING
 
@@ -14,21 +14,20 @@ from grouper.constants import PERMISSION_AUDITOR
 from grouper.email_util import (
     notify_edge_expiration,
     notify_nonauditor_promoted,
-    process_async_emails
+    process_async_emails,
 )
 from grouper.graph import Graph
 from grouper.models.base.session import Session
 from grouper.models.group import Group
 from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge
 from grouper.models.user import User
-from grouper.models.user_token import UserToken  # noqa: F401
 from grouper.perf_profile import prune_old_traces
 from grouper.util import get_database_url
 
 if TYPE_CHECKING:
-    from grouper.settings import Settings  # noqa: F401
-    from grouper.error_reporting import SentryProxy  # noqa: F401
-    from typing import Dict, Set  # noqa: F401
+    from grouper.settings import Settings
+    from grouper.error_reporting import SentryProxy
+    from typing import Dict, Set
 
 
 class BackgroundProcessor(object):
@@ -65,15 +64,16 @@ class BackgroundProcessor(object):
         now = datetime.utcnow()
 
         # Pull the expired edges.
-        edges = session.query(GroupEdge).filter(
-            GroupEdge.group_id == Group.id,
-            Group.enabled == True,
-            GroupEdge.active == True,
-            and_(
-                GroupEdge.expiration <= now,
-                GroupEdge.expiration != None
+        edges = (
+            session.query(GroupEdge)
+            .filter(
+                GroupEdge.group_id == Group.id,
+                Group.enabled == True,
+                GroupEdge.active == True,
+                and_(GroupEdge.expiration <= now, GroupEdge.expiration != None),
             )
-        ).all()
+            .all()
+        )
 
         # Expire each one.
         for edge in edges:
@@ -99,27 +99,30 @@ class BackgroundProcessor(object):
         user_is_auditor = {}  # type: Dict[str, bool]
         for group_tuple in graph.get_groups(audited=True, directly_audited=False):
             group_md = graph.get_group_details(group_tuple.groupname, expose_aliases=False)
-            for username, user_md in group_md['users'].items():
+            for username, user_md in group_md["users"].items():
                 if username not in user_is_auditor:
-                    user_perms = graph.get_user_details(username)['permissions']
+                    user_perms = graph.get_user_details(username)["permissions"]
                     user_is_auditor[username] = any(
-                        [p['permission'] == PERMISSION_AUDITOR for p in user_perms])
+                        [p["permission"] == PERMISSION_AUDITOR for p in user_perms]
+                    )
                 if user_is_auditor[username]:
                     # user is already auditor so can skip
                     continue
-                if user_md['role'] in APPROVER_ROLE_INDICES:
+                if user_md["role"] in APPROVER_ROLE_INDICES:
                     # non-auditor approver. BAD!
                     nonauditor_approver_to_groups[username].add(group_tuple.groupname)
 
         if nonauditor_approver_to_groups:
             auditors_group = get_auditors_group(self.settings, session)
             for username, group_names in nonauditor_approver_to_groups.items():
-                reason = 'auto-added due to having approver role(s) in group(s): {}'.format(
-                    ', '.join(group_names))
+                reason = "auto-added due to having approver role(s) in group(s): {}".format(
+                    ", ".join(group_names)
+                )
                 user = User.get(session, name=username)
                 auditors_group.add_member(user, user, reason, status="actioned")
                 notify_nonauditor_promoted(
-                    self.settings, session, user, auditors_group, group_names)
+                    self.settings, session, user, auditors_group, group_names
+                )
 
         session.commit()
 
@@ -147,7 +150,7 @@ class BackgroundProcessor(object):
 
                 stats.log_gauge("successful-background-update", 1)
                 stats.log_gauge("failed-background-update", 0)
-            except:
+            except Exception:
                 stats.log_gauge("successful-background-update", 0)
                 stats.log_gauge("failed-background-update", 1)
                 self._capture_exception()

@@ -9,9 +9,7 @@ def set_defaults():
     if instance is None:
         instance = 0
 
-    default_tags = {
-        "instance": str(instance),
-    }
+    default_tags = {"instance": str(instance)}
 
     get_plugin_proxy().set_default_stats_tags(default_tags)
 

@@ -1,5 +1,8 @@
-from pages.exceptions import NoSuchElementException
-from pages.groups import (
+import pytest
+
+from itests.fixtures import async_server, browser  # noqa: F401
+from itests.pages.exceptions import NoSuchElementException
+from itests.pages.groups import (
     GroupEditMemberPage,
     GroupJoinPage,
     GroupRequestsPage,
@@ -7,14 +10,17 @@ from pages.groups import (
     GroupViewPage,
 )
 from plugins import group_ownership_policy
-
-import pytest
-
-from tests.fixtures import graph, groups, service_accounts, permissions, session, standard_graph, users  # noqa: F401
-from tests.fixtures import fe_app as app  # noqa: F401
+from tests.fixtures import (  # noqa: F401
+    fe_app as app,
+    graph,
+    groups,
+    permissions,
+    service_accounts,
+    session,
+    standard_graph,
+    users,
+)
 from tests.url_util import url
-
-from fixtures import async_server, browser  # noqa: F401
 
 
 def test_list_groups(async_server, browser, groups):  # noqa: F811

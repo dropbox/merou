@@ -18,28 +18,35 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None):
     description_msg = "Grouper Control"
     parser = argparse.ArgumentParser(description=description_msg)
 
-    parser.add_argument("-c", "--config", default=default_settings_path(),
-                        help="Path to config file.")
-    parser.add_argument("-v", "--verbose", action="count", default=0,
-                        help="Increase logging verbosity.")
-    parser.add_argument("-q", "--quiet", action="count", default=0,
-                        help="Decrease logging verbosity.")
-    parser.add_argument("-V", "--version", action="version",
-                        version="%%(prog)s %s" % __version__,
-                        help="Display version information.")
+    parser.add_argument(
+        "-c", "--config", default=default_settings_path(), help="Path to config file."
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="count", default=0, help="Increase logging verbosity."
+    )
+    parser.add_argument(
+        "-q", "--quiet", action="count", default=0, help="Decrease logging verbosity."
+    )
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version="%%(prog)s %s" % __version__,
+        help="Display version information.",
+    )
 
     subparsers = parser.add_subparsers(dest="command")
 
     for subcommand_module in [
-            dump_sql,
-            group,
-            oneoff,
-            service_account,
-            shell,
-            sync_db,
-            user,
-            user_proxy,
-            ]:
+        dump_sql,
+        group,
+        oneoff,
+        service_account,
+        shell,
+        sync_db,
+        user,
+        user_proxy,
+    ]:
         subcommand_module.add_parser(subparsers)
 
     subcommands = []

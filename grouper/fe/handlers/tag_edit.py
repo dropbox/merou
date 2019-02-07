@@ -33,8 +33,7 @@ class TagEdit(GrouperHandler):
         form = TagEditForm(self.request.arguments, obj=tag)
         if not form.validate():
             return self.render(
-                "tag-edit.html", tag=tag, form=form,
-                alerts=self.get_form_alerts(form.errors)
+                "tag-edit.html", tag=tag, form=form, alerts=self.get_form_alerts(form.errors)
             )
 
         tag.description = form.data["description"]
@@ -45,15 +44,13 @@ class TagEdit(GrouperHandler):
             self.session.commit()
         except IntegrityError:
             self.session.rollback()
-            form.tagname.errors.append(
-                "{} already exists".format(form.data["tagname"])
-            )
+            form.tagname.errors.append("{} already exists".format(form.data["tagname"]))
             return self.render(
-                "tag-edit.html", tag=tag, form=form,
-                alerts=self.get_form_alerts(form.errors)
+                "tag-edit.html", tag=tag, form=form, alerts=self.get_form_alerts(form.errors)
             )
 
-        AuditLog.log(self.session, self.current_user.id, 'edit_tag',
-                     'Edited tag.', on_tag_id=tag.id)
+        AuditLog.log(
+            self.session, self.current_user.id, "edit_tag", "Edited tag.", on_tag_id=tag.id
+        )
 
         return self.redirect("/tags/{}".format(tag.name))

@@ -6,12 +6,20 @@ from grouper.group_service_account import get_service_accounts
 from grouper.models.audit_member import AUDIT_STATUS_CHOICES
 from grouper.models.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.permissions import get_owner_arg_list, get_pending_request_by_group, get_requests
-from grouper.public_key import (get_public_key_permissions, get_public_key_tags,
-    get_public_keys_of_user)
+from grouper.public_key import (
+    get_public_key_permissions,
+    get_public_key_tags,
+    get_public_keys_of_user,
+)
 from grouper.role_user import can_manage_role_user
 from grouper.service_account import can_manage_service_account, service_account_permissions
-from grouper.user import (get_log_entries_by_user, user_open_audits, user_requests_aggregate,
-    user_role, user_role_index)
+from grouper.user import (
+    get_log_entries_by_user,
+    user_open_audits,
+    user_requests_aggregate,
+    user_role,
+    user_role_index,
+)
 from grouper.user_group import get_groups_by_user
 from grouper.user_metadata import get_user_metadata_by_key
 from grouper.user_password import user_passwords
@@ -32,7 +40,7 @@ def get_group_view_template_vars(session, actor, group, graph):
     ret["members"] = group.my_members()
     ret["groups"] = group.my_groups()
     ret["service_accounts"] = get_service_accounts(session, group)
-    ret["permissions"] = group_md.get('permissions', [])
+    ret["permissions"] = group_md.get("permissions", [])
 
     ret["permission_requests_pending"] = []
     for req in get_pending_request_by_group(session, group):
@@ -41,34 +49,36 @@ def get_group_view_template_vars(session, actor, group, graph):
             granters.append(owner.name)
         ret["permission_requests_pending"].append((req, granters))
 
-    ret["audited"] = group_md.get('audited', False)
+    ret["audited"] = group_md.get("audited", False)
     ret["log_entries"] = group.my_log_entries()
     ret["num_pending"] = count_requests_by_group(session, group, status="pending")
     ret["current_user_role"] = {
-        'is_owner': user_role_index(actor, ret["members"]) in OWNER_ROLE_INDICES,
-        'is_approver': user_role_index(actor, ret["members"]) in APPROVER_ROLE_INDICES,
-        'is_manager': user_role(actor, ret["members"]) == "manager",
-        'is_member': user_role(actor, ret["members"]) is not None,
-        'role': user_role(actor, ret["members"]),
-        }
-    ret["can_leave"] = (ret["current_user_role"]['is_member'] and not
-        ret["current_user_role"]['is_owner'])
+        "is_owner": user_role_index(actor, ret["members"]) in OWNER_ROLE_INDICES,
+        "is_approver": user_role_index(actor, ret["members"]) in APPROVER_ROLE_INDICES,
+        "is_manager": user_role(actor, ret["members"]) == "manager",
+        "is_member": user_role(actor, ret["members"]) is not None,
+        "role": user_role(actor, ret["members"]),
+    }
+    ret["can_leave"] = (
+        ret["current_user_role"]["is_member"] and not ret["current_user_role"]["is_owner"]
+    )
     ret["statuses"] = AUDIT_STATUS_CHOICES
 
     # Add mapping_id to permissions structure
     ret["my_permissions"] = group.my_permissions()
     for perm_up in ret["permissions"]:
         for perm_direct in ret["my_permissions"]:
-            if (perm_up['permission'] == perm_direct.name and
-                    perm_up['argument'] == perm_direct.argument):
-                perm_up['mapping_id'] = perm_direct.mapping_id
+            if (
+                perm_up["permission"] == perm_direct.name
+                and perm_up["argument"] == perm_direct.argument
+            ):
+                perm_up["mapping_id"] = perm_direct.mapping_id
                 break
 
     ret["alerts"] = []
     ret["self_pending"] = count_requests_by_group(session, group, status="pending", user=actor)
     if ret["self_pending"]:
-        ret["alerts"].append(Alert('info', 'You have a pending request to join this group.',
-            None))
+        ret["alerts"].append(Alert("info", "You have a pending request to join this group.", None))
 
     return ret
 
@@ -80,24 +90,24 @@ def get_user_view_template_vars(session, actor, user, graph):
 
     ret = {}
     if user.is_service_account:
-        ret["can_control"] = (
-            can_manage_service_account(session, user.service_account, actor) or
-            user_is_user_admin(session, actor)
-        )
+        ret["can_control"] = can_manage_service_account(
+            session, user.service_account, actor
+        ) or user_is_user_admin(session, actor)
         ret["can_disable"] = ret["can_control"]
         ret["can_enable"] = user_is_user_admin(session, actor)
         ret["can_enable_preserving_membership"] = user_is_user_admin(session, actor)
         ret["account"] = user.service_account
     else:
-        ret["can_control"] = (user.name == actor.name or user_is_user_admin(session, actor))
+        ret["can_control"] = user.name == actor.name or user_is_user_admin(session, actor)
         ret["can_disable"] = UserDisable.check_access(session, actor, user)
         ret["can_enable_preserving_membership"] = UserEnable.check_access(session, actor, user)
         ret["can_enable"] = UserEnable.check_access_without_membership(session, actor, user)
 
     if user.id == actor.id:
         ret["num_pending_group_requests"] = user_requests_aggregate(session, actor).count()
-        _, ret["num_pending_perm_requests"] = get_requests(session, status='pending',
-            limit=1, offset=0, owner=actor)
+        _, ret["num_pending_perm_requests"] = get_requests(
+            session, status="pending", limit=1, offset=0, owner=actor
+        )
     else:
         ret["num_pending_group_requests"] = None
         ret["num_pending_perm_requests"] = None
@@ -109,21 +119,25 @@ def get_user_view_template_vars(session, actor, user, graph):
         # they're disabled, so we've excluded them from the in-memory graph.
         user_md = {}
 
-    shell = (get_user_metadata_by_key(session, user.id, USER_METADATA_SHELL_KEY).data_value
+    shell = (
+        get_user_metadata_by_key(session, user.id, USER_METADATA_SHELL_KEY).data_value
         if get_user_metadata_by_key(session, user.id, USER_METADATA_SHELL_KEY)
-        else "No shell configured")
+        else "No shell configured"
+    )
     ret["shell"] = shell
     ret["open_audits"] = user_open_audits(session, user)
     group_edge_list = get_groups_by_user(session, user) if user.enabled else []
-    ret["groups"] = [{'name': g.name, 'type': 'Group', 'role': ge._role}
-        for g, ge in group_edge_list]
+    ret["groups"] = [
+        {"name": g.name, "type": "Group", "role": ge._role} for g, ge in group_edge_list
+    ]
     ret["passwords"] = user_passwords(session, user)
     ret["public_keys"] = get_public_keys_of_user(session, user.id)
     for key in ret["public_keys"]:
         key.tags = get_public_key_tags(session, key)
-        key.pretty_permissions = ["{} ({})".format(perm.name,
-            perm.argument if perm.argument else "unargumented")
-            for perm in get_public_key_permissions(session, key)]
+        key.pretty_permissions = [
+            "{} ({})".format(perm.name, perm.argument if perm.argument else "unargumented")
+            for perm in get_public_key_permissions(session, key)
+        ]
     ret["log_entries"] = get_log_entries_by_user(session, user)
     ret["user_tokens"] = user.tokens
 
@@ -131,7 +145,7 @@ def get_user_view_template_vars(session, actor, user, graph):
         service_account = user.service_account
         ret["permissions"] = service_account_permissions(session, service_account)
     else:
-        ret["permissions"] = user_md.get('permissions', [])
+        ret["permissions"] = user_md.get("permissions", [])
 
     return ret
 
@@ -140,6 +154,9 @@ def get_role_user_view_template_vars(session, actor, user, group, graph):
     ret = get_user_view_template_vars(session, actor, user, graph)
     ret.update(get_group_view_template_vars(session, actor, group, graph))
     ret["can_control"] = can_manage_role_user(session, user=actor, tuser=user)
-    ret["log_entries"] = sorted(set(get_log_entries_by_user(session, user) +
-        group.my_log_entries()), key=lambda x: x.log_time, reverse=True)
+    ret["log_entries"] = sorted(
+        set(get_log_entries_by_user(session, user) + group.my_log_entries()),
+        key=lambda x: x.log_time,
+        reverse=True,
+    )
     return ret

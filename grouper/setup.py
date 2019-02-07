@@ -1,8 +1,12 @@
-from argparse import ArgumentParser, Namespace  # noqa
 import logging
+from argparse import ArgumentParser
+from typing import TYPE_CHECKING
 
 from grouper import __version__
 from grouper.settings import default_settings_path
+
+if TYPE_CHECKING:
+    from argparse import Namespace
 
 
 def build_arg_parser(description):
@@ -11,22 +15,31 @@ def build_arg_parser(description):
     parser = ArgumentParser(description=description)
 
     parser.add_argument(
-            "-c", "--config", default=default_settings_path(), help="Path to config file.")
+        "-c", "--config", default=default_settings_path(), help="Path to config file."
+    )
     parser.add_argument(
-            "-v", "--verbose", action="count", default=0, help="Increase logging verbosity.")
+        "-v", "--verbose", action="count", default=0, help="Increase logging verbosity."
+    )
     parser.add_argument(
-            "-q", "--quiet", action="count", default=0, help="Decrease logging verbosity.")
+        "-q", "--quiet", action="count", default=0, help="Decrease logging verbosity."
+    )
     parser.add_argument(
-            "-V", "--version", action="version", version="%%(prog)s {}".format(__version__),
-            help="Display version information.")
+        "-V",
+        "--version",
+        action="version",
+        version="%%(prog)s {}".format(__version__),
+        help="Display version information.",
+    )
     parser.add_argument(
-            "-a", "--address", type=str, default=None, help="Override address in config.")
+        "-a", "--address", type=str, default=None, help="Override address in config."
+    )
+    parser.add_argument("-p", "--port", type=int, default=None, help="Override port in config.")
     parser.add_argument(
-            "-p", "--port", type=int, default=None, help="Override port in config.")
+        "-n", "--deployment-name", type=str, default="", help="Name of the deployment."
+    )
     parser.add_argument(
-            "-n", "--deployment-name", type=str, default="", help="Name of the deployment.")
-    parser.add_argument(
-            "-d", "--database-url", type=str, default=None, help="Override database URL in config.")
+        "-d", "--database-url", type=str, default=None, help="Override database URL in config."
+    )
 
     return parser
 

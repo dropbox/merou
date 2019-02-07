@@ -2,8 +2,13 @@ from datetime import datetime
 
 from sqlalchemy import asc, or_
 
-from grouper.constants import (GROUP_ADMIN, PERMISSION_ADMIN, PERMISSION_CREATE,
-    PERMISSION_GRANT, USER_ADMIN)
+from grouper.constants import (
+    GROUP_ADMIN,
+    PERMISSION_ADMIN,
+    PERMISSION_CREATE,
+    PERMISSION_GRANT,
+    USER_ADMIN,
+)
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
 from grouper.models.permission import Permission
@@ -29,7 +34,7 @@ def user_has_permission(session, user, permission, argument=None):
     for perm in user_permissions(session, user):
         if perm.name != permission:
             continue
-        if perm.argument == '*' or argument is None:
+        if perm.argument == "*" or argument is None:
             return True
         if perm.argument == argument:
             return True
@@ -41,34 +46,29 @@ def user_permissions(session, user):
 
     # TODO: Make this walk the tree, so we can get a user's entire set of permissions.
     now = datetime.utcnow()
-    permissions = session.query(
-        Permission.name,
-        PermissionMap.argument,
-        PermissionMap.granted_on,
-        Group,
-    ).filter(
-        PermissionMap.permission_id == Permission.id,
-        PermissionMap.group_id == Group.id,
-        GroupEdge.group_id == Group.id,
-        GroupEdge.member_pk == user.id,
-        GroupEdge.member_type == 0,
-        GroupEdge.active == True,
-        user.enabled == True,
-        Group.enabled == True,
-        Permission.enabled == True,
-        or_(
-            GroupEdge.expiration > now,
-            GroupEdge.expiration == None
+    permissions = (
+        session.query(Permission.name, PermissionMap.argument, PermissionMap.granted_on, Group)
+        .filter(
+            PermissionMap.permission_id == Permission.id,
+            PermissionMap.group_id == Group.id,
+            GroupEdge.group_id == Group.id,
+            GroupEdge.member_pk == user.id,
+            GroupEdge.member_type == 0,
+            GroupEdge.active == True,
+            user.enabled == True,
+            Group.enabled == True,
+            Permission.enabled == True,
+            or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
         )
-    ).order_by(
-        asc("name"), asc("argument"), asc("groupname")
-    ).all()
+        .order_by(asc("name"), asc("argument"), asc("groupname"))
+        .all()
+    )
 
     return permissions
 
 
 def user_grantable_permissions(session, user):
-    '''
+    """
     Returns a list of permissions this user is allowed to grant. Presently, this only counts
     permissions that a user has directly -- in other words, the 'grant' permissions are not
     counted as inheritable.
@@ -77,14 +77,13 @@ def user_grantable_permissions(session, user):
     is expensive.
 
     Returns a list of tuples (Permission, argument) that the user is allowed to grant.
-    '''
+    """
     # avoid circular dependency
     from grouper.permissions import filter_grantable_permissions, get_all_permissions
 
-    all_permissions = {permission.name: permission
-                       for permission in get_all_permissions(session)}
+    all_permissions = {permission.name: permission for permission in get_all_permissions(session)}
     if user_is_permission_admin(session, user):
-        result = [(perm, '*') for perm in all_permissions.values()]
+        result = [(perm, "*") for perm in all_permissions.values()]
         return sorted(result, key=lambda x: x[0].name + x[1])
 
     # Someone can grant a permission if they are a member of a group that has a permission
@@ -94,7 +93,7 @@ def user_grantable_permissions(session, user):
 
 
 def user_creatable_permissions(session, user):
-    '''
+    """
     Returns a list of permissions this user is allowed to create. Presently, this only counts
     permissions that a user has directly -- in other words, the 'create' permissions are not
     counted as inheritable.
@@ -104,9 +103,9 @@ def user_creatable_permissions(session, user):
 
     Returns a list of strings that are to be interpreted as glob strings. You should use the
     util function matches_glob.
-    '''
+    """
     if user_is_permission_admin(session, user):
-        return '*'
+        return "*"
 
     # Someone can create a permission if they are a member of a group that has a permission
     # of PERMISSION_CREATE with an argument that matches the name of a permission.

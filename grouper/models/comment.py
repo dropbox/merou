@@ -10,6 +10,7 @@ from grouper.models.base.model_base import Model
 
 class CommentObjectMixin(object):
     """Mixin used by models which show up as objects referenced by Comment entries."""
+
     @property
     def member_type(self):
         obj_name = type(self).__name__
@@ -21,13 +22,7 @@ class CommentObjectMixin(object):
 class Comment(Model):
 
     __tablename__ = "comments"
-    __table_args__ = (
-        Index(
-            "obj_idx",
-            "obj_type", "obj_pk",
-            unique=False
-        ),
-    )
+    __table_args__ = (Index("obj_idx", "obj_type", "obj_pk", unique=False),)
 
     id = Column(Integer, primary_key=True)
 
@@ -39,5 +34,6 @@ class Comment(Model):
 
     comment = Column(Text, nullable=False)
 
-    created_on = Column(DateTime, default=datetime.utcnow,
-                        onupdate=func.current_timestamp(), nullable=False)
+    created_on = Column(
+        DateTime, default=datetime.utcnow, onupdate=func.current_timestamp(), nullable=False
+    )

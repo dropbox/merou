@@ -27,15 +27,11 @@ class Request(Model, CommentObjectMixin):
 
     # The User that made the request.
     requester_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    requester = relationship(
-        "User", backref="requests", foreign_keys=[requester_id]
-    )
+    requester = relationship("User", backref="requests", foreign_keys=[requester_id])
 
     # The Group the requester is requesting access to.
     requesting_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
-    requesting = relationship(
-        "Group", backref="requests", foreign_keys=[requesting_id]
-    )
+    requesting = relationship("Group", backref="requests", foreign_keys=[requesting_id])
 
     # The User/Group which will become a member of the requested resource.
     on_behalf_obj_type = Column(Integer, nullable=False)
@@ -46,9 +42,7 @@ class Request(Model, CommentObjectMixin):
 
     requested_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    status = Column(
-        Enum(*REQUEST_STATUS_CHOICES), default="pending", nullable=False
-    )
+    status = Column(Enum(*REQUEST_STATUS_CHOICES), default="pending", nullable=False)
 
     changes = Column(JsonEncodedType, nullable=False)
 
@@ -64,13 +58,13 @@ class Request(Model, CommentObjectMixin):
             RequestStatusChange.from_status,
             RequestStatusChange.to_status,
             label("changed_by", User.username),
-            label("reason", Comment.comment)
+            label("reason", Comment.comment),
         ).filter(
             RequestStatusChange.user_id == User.id,
             Request.id == RequestStatusChange.request_id,
             Comment.obj_type == 3,
             Comment.obj_pk == RequestStatusChange.id,
-            Request.id == self.id
+            Request.id == self.id,
         )
 
         return requests
@@ -86,7 +80,7 @@ class Request(Model, CommentObjectMixin):
             user_id=requester.id,
             from_status=current_status,
             to_status=status,
-            change_at=now
+            change_at=now,
         ).add(self.session)
         self.session.flush()
 
@@ -95,13 +89,11 @@ class Request(Model, CommentObjectMixin):
             obj_pk=request_status_change.id,
             user_id=requester.id,
             comment=reason,
-            created_on=now
+            created_on=now,
         ).add(self.session)
 
         if status == "actioned":
-            edge = self.session.query(GroupEdge).filter_by(
-                id=self.edge_id
-            ).one()
+            edge = self.session.query(GroupEdge).filter_by(id=self.edge_id).one()
             edge.apply_changes(self.changes)
 
         Counter.incr(self.session, "updates")

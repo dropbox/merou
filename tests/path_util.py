@@ -1,10 +1,9 @@
 import os
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from py.path import LocalPath  # noqa: F401
-    from typing import Dict  # noqa: F401
+    from py.path import LocalPath
+    from typing import Dict
 
 
 # TODO(cbguder): Replace uses of this function with something that doesn't depend on code layout

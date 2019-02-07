@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy.schema import CreateIndex, CreateTable
@@ -15,9 +17,9 @@ def dump_sql_command(args):
     # type: (argparse.Namespace) -> None
     db_engine = get_db_engine(get_database_url(settings))
     for table in Model.metadata.sorted_tables:
-        print CreateTable(table).compile(db_engine)
+        print(CreateTable(table).compile(db_engine))
         for index in table.indexes:
-            print CreateIndex(index).compile(db_engine)
+            print(CreateIndex(index).compile(db_engine))
 
 
 def add_parser(subparsers):

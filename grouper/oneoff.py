@@ -13,4 +13,4 @@ class BaseOneOff(object):
         pass
 
     def run(self, session, *args):
-        raise NotImplemented
+        raise NotImplementedError

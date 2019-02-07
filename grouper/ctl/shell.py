@@ -13,16 +13,11 @@ def shell_command(args):
     try:
         from IPython import embed
     except ImportError:
-        code.interact(local={
-            "session": session,
-            "graph": graph,
-            "pp": pp,
-        })
+        code.interact(local={"session": session, "graph": graph, "pp": pp})
     else:
         embed()
 
 
 def add_parser(subparsers):
-    shell_parser = subparsers.add_parser(
-        "shell", help="Launch a shell.")
+    shell_parser = subparsers.add_parser("shell", help="Launch a shell.")
     shell_parser.set_defaults(func=shell_command)

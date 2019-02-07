@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import BaseHTTPServer
 import getpass
 import logging
@@ -35,9 +37,7 @@ def build_user_proxy_server(username, backend_port, listen_host, listen_port):
             self.backend_port = backend_port
             self.header = ["X-Grouper-User: %s" % username]
 
-    server = BaseHTTPServer.HTTPServer(
-        (listen_host, listen_port), ProxyHandler
-    )
+    server = BaseHTTPServer.HTTPServer((listen_host, listen_port), ProxyHandler)
     server.args = ServerArgs(backend_port, username)
 
     return server
@@ -50,29 +50,30 @@ def user_proxy_command(args):
         logging.debug("No username provided, using (%s)", username)
 
     server = build_user_proxy_server(
-        args.username,
-        args.backend_port,
-        args.listen_host,
-        args.listen_port
+        args.username, args.backend_port, args.listen_host, args.listen_port
     )
     try:
         logging.info(
             "Starting user_proxy on host (%s) and port (%s) with user (%s)",
-            args.listen_host, args.listen_port, username
+            args.listen_host,
+            args.listen_port,
+            username,
         )
         server.serve_forever()
     except KeyboardInterrupt:
-        print "Bye!"
+        print("Bye!")
 
 
 def add_parser(subparsers):
-    user_proxy_parser = subparsers.add_parser("user_proxy",
-                                              help="Start a development reverse proxy.")
+    user_proxy_parser = subparsers.add_parser(
+        "user_proxy", help="Start a development reverse proxy."
+    )
     user_proxy_parser.set_defaults(func=user_proxy_command)
-    user_proxy_parser.add_argument("--listen-host", default="localhost",
-                                   help="Host to listen on.")
-    user_proxy_parser.add_argument("-p", "--listen-port", default=8888, type=int,
-                                   help="Port to listen on.")
-    user_proxy_parser.add_argument("-P", "--backend-port", default=8989, type=int,
-                                   help="Port to proxy to.")
+    user_proxy_parser.add_argument("--listen-host", default="localhost", help="Host to listen on.")
+    user_proxy_parser.add_argument(
+        "-p", "--listen-port", default=8888, type=int, help="Port to listen on."
+    )
+    user_proxy_parser.add_argument(
+        "-P", "--backend-port", default=8989, type=int, help="Port to proxy to."
+    )
     user_proxy_parser.add_argument("username", nargs="?", default=None)

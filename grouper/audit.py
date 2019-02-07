@@ -66,7 +66,9 @@ def assert_controllers_are_auditors(group):
                     raise UserNotAuditor(
                         "User {} has role '{}' in the group {} but lacks the auditing "
                         "permission ('{}').".format(
-                            chk_user, info["rolename"], cur_group, PERMISSION_AUDITOR))
+                            chk_user, info["rolename"], cur_group, PERMISSION_AUDITOR
+                        )
+                    )
         # Now put subgroups into the queue to examine.
         for chk_group, info in details["subgroups"].iteritems():
             if info["distance"] == 1:
@@ -111,8 +113,8 @@ def assert_can_join(group, user_or_group, role="member"):
             return True
         raise UserNotAuditor(
             "User {} lacks the auditing permission ('{}') so may only have the "
-            "'member' role in this audited group.".format(
-                user_or_group.name, PERMISSION_AUDITOR))
+            "'member' role in this audited group.".format(user_or_group.name, PERMISSION_AUDITOR)
+        )
 
     # No, this is a group-joining-group case. In this situation we must walk the entire group
     # subtree and ensure that all owners/np-owners/managers are considered auditors. This data
@@ -159,10 +161,10 @@ def get_auditors_group(settings, session):
     # on graph.py
     group_name = get_auditors_group_name(settings)
     if not group_name:
-        raise NoSuchGroup('Please ask your admin to configure the `auditors_group` settings')
+        raise NoSuchGroup("Please ask your admin to configure the `auditors_group` settings")
     group = Group.get(session, name=group_name)
     if not group:
-        raise NoSuchGroup('Please ask your admin to configure the default group for auditors')
+        raise NoSuchGroup("Please ask your admin to configure the default group for auditors")
     if not any([p.name == PERMISSION_AUDITOR for p in group.my_permissions()]):
         raise GroupDoesNotHaveAuditPermission()
     return group

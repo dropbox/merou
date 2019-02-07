@@ -11,21 +11,23 @@ from grouper.models.request_status_change import RequestStatusChange
 from grouper.models.user import User
 
 if TYPE_CHECKING:
-    from typing import Optional  # noqa: F401
-    from sqlalchemy.orm import Query, Session  # noqa: F401
+    from typing import Optional
+    from sqlalchemy.orm import Query, Session
 
 
 def get_requests_by_group(session, group, status=None, user=None):
     # type: (Session, Group, Optional[str], Optional[User]) -> Query
-    members = session.query(
-        label("type", literal(1)),
-        label("id", Group.id),
-        label("name", Group.groupname)
-    ).union(session.query(
-        label("type", literal(0)),
-        label("id", User.id),
-        label("name", User.username)
-    )).subquery()
+    members = (
+        session.query(
+            label("type", literal(1)), label("id", Group.id), label("name", Group.groupname)
+        )
+        .union(
+            session.query(
+                label("type", literal(0)), label("id", User.id), label("name", User.username)
+            )
+        )
+        .subquery()
+    )
 
     requests = session.query(
         Request.id,
@@ -46,18 +48,15 @@ def get_requests_by_group(session, group, status=None, user=None):
         RequestStatusChange.from_status == None,
         GroupEdge.id == Request.edge_id,
         Comment.obj_type == 3,
-        Comment.obj_pk == RequestStatusChange.id
+        Comment.obj_pk == RequestStatusChange.id,
     )
 
     if status:
-        requests = requests.filter(
-            Request.status == status
-        )
+        requests = requests.filter(Request.status == status)
 
     if user:
         requests = requests.filter(
-            Request.on_behalf_obj_pk == user.id,
-            Request.on_behalf_obj_type == 0
+            Request.on_behalf_obj_pk == user.id, Request.on_behalf_obj_type == 0
         )
 
     return requests
@@ -65,19 +64,14 @@ def get_requests_by_group(session, group, status=None, user=None):
 
 def count_requests_by_group(session, group, status=None, user=None):
     # type: (Session, Group, Optional[str], Optional[User]) -> int
-    requests = session.query(Request).filter(
-        Request.requesting_id == group.id,
-    )
+    requests = session.query(Request).filter(Request.requesting_id == group.id)
 
     if status:
-        requests = requests.filter(
-            Request.status == status
-        )
+        requests = requests.filter(Request.status == status)
 
     if user:
         requests = requests.filter(
-            Request.on_behalf_obj_pk == user.id,
-            Request.on_behalf_obj_type == 0
+            Request.on_behalf_obj_pk == user.id, Request.on_behalf_obj_type == 0
         )
 
     return requests.count()

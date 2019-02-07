@@ -38,10 +38,16 @@ class ServiceAccountPermissionRevoke(GrouperHandler):
         Counter.incr(self.session, "updates")
         self.session.commit()
 
-        AuditLog.log(self.session, self.current_user.id, "revoke_permission",
-                     "Revoked permission with argument: {}".format(argument),
-                     on_permission_id=permission.id, on_group_id=group.id,
-                     on_user_id=service_account.user.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "revoke_permission",
+            "Revoked permission with argument: {}".format(argument),
+            on_permission_id=permission.id,
+            on_group_id=group.id,
+            on_user_id=service_account.user.id,
+        )
 
-        return self.redirect("/groups/{}/service/{}?refresh=yes".format(
-            group.name, service_account.user.username))
+        return self.redirect(
+            "/groups/{}/service/{}?refresh=yes".format(group.name, service_account.user.username)
+        )

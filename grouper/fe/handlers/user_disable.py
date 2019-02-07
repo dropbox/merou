@@ -12,9 +12,9 @@ class UserDisable(GrouperHandler):
     @staticmethod
     def check_access(session, actor, target):
         return (
-            user_has_permission(session, actor, USER_ADMIN) or
-            user_has_permission(session, actor, USER_DISABLE, argument=target.name) or
-            (target.role_user and is_owner_of_role_user(session, actor, tuser=target))
+            user_has_permission(session, actor, USER_ADMIN)
+            or user_has_permission(session, actor, USER_DISABLE, argument=target.name)
+            or (target.role_user and is_owner_of_role_user(session, actor, tuser=target))
         )
 
     def post(self, user_id=None, name=None):
@@ -37,7 +37,12 @@ class UserDisable(GrouperHandler):
 
         self.session.commit()
 
-        AuditLog.log(self.session, self.current_user.id, 'disable_user',
-                     'Disabled user.', on_user_id=user.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "disable_user",
+            "Disabled user.",
+            on_user_id=user.id,
+        )
 
         return self.redirect("/users/{}?refresh=yes".format(user.name))

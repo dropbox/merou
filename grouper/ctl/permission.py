@@ -1,5 +1,4 @@
 import logging
-
 from typing import TYPE_CHECKING
 
 from grouper.ctl.base import CtlCommand
@@ -8,8 +7,7 @@ from grouper.services.permission import PermissionService
 from grouper.usecases.disable_permission import DisablePermission, DisablePermissionUI
 
 if TYPE_CHECKING:
-    from argparse import _SubParsersAction, Namespace  # noqa: F401
-    from grouper.models.base.session import Session  # noqa: F401
+    from argparse import _SubParsersAction, Namespace
 
 
 class PermissionCommand(CtlCommand, DisablePermissionUI):
@@ -26,8 +24,10 @@ class PermissionCommand(CtlCommand, DisablePermissionUI):
             "--actor",
             required=True,
             dest="actor_name",
-            help=("Name of the entity performing this action."
-                  " Must be a valid Grouper human or service account.")
+            help=(
+                "Name of the entity performing this action."
+                " Must be a valid Grouper human or service account."
+            ),
         )
 
         subparser = parser.add_subparsers(dest="subcommand")

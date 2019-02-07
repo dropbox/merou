@@ -14,9 +14,7 @@ class GroupLeave(GrouperHandler):
         if not user_role(self.current_user, members):
             return self.forbidden()
 
-        return self.render(
-            "group-leave.html", group=group
-        )
+        return self.render("group-leave.html", group=group)
 
     def post(self, group_id=None, name=None):
         group = Group.get(self.session, group_id, name)
@@ -29,8 +27,12 @@ class GroupLeave(GrouperHandler):
 
         group.revoke_member(self.current_user, self.current_user, "User self-revoked.")
 
-        AuditLog.log(self.session, self.current_user.id, 'leave_group',
-                     '{} left the group.'.format(self.current_user.name),
-                     on_group_id=group.id)
+        AuditLog.log(
+            self.session,
+            self.current_user.id,
+            "leave_group",
+            "{} left the group.".format(self.current_user.name),
+            on_group_id=group.id,
+        )
 
         return self.redirect("/groups/{}?refresh=yes".format(group.name))

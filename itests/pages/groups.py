@@ -1,8 +1,8 @@
-from base import BaseElement, BaseModal, BasePage
-from exceptions import NoSuchElementException
-from permissions import PermissionRow
-
 from selenium.webdriver.support.select import Select
+
+from itests.pages.base import BaseElement, BaseModal, BasePage
+from itests.pages.exceptions import NoSuchElementException
+from itests.pages.permissions import PermissionRow
 
 
 class GroupEditMemberPage(BasePage):
@@ -95,7 +95,8 @@ class GroupRequestsPage(BasePage):
                 return request_row
 
         raise NoSuchElementException(
-            "Can't find request with requested member {}".format(requested))
+            "Can't find request with requested member {}".format(requested)
+        )
 
 
 class AuditModal(BaseModal):

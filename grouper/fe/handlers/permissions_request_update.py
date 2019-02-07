@@ -7,11 +7,9 @@ from grouper.models.base.constants import REQUEST_STATUS_CHOICES
 
 class PermissionsRequestUpdate(GrouperHandler):
     """Allow a user to action a permisison request they have."""
+
     def _get_choices(self, current_status):
-        return [["", ""]] + [
-            [status] * 2
-            for status in REQUEST_STATUS_CHOICES[current_status]
-        ]
+        return [["", ""]] + [[status] * 2 for status in REQUEST_STATUS_CHOICES[current_status]]
 
     def get(self, request_id):
         # check for request existence
@@ -36,7 +34,7 @@ class PermissionsRequestUpdate(GrouperHandler):
             )
             all_owners = {o.groupname for o, _ in owner_arg_list}
             global_owners = {
-                o.groupname for o in owners_by_arg_by_perm[permissions.GLOBAL_OWNERS]['*']
+                o.groupname for o in owners_by_arg_by_perm[permissions.GLOBAL_OWNERS]["*"]
             }
             non_global_owners = all_owners - global_owners
             approvers = non_global_owners if len(non_global_owners) else all_owners
@@ -44,9 +42,15 @@ class PermissionsRequestUpdate(GrouperHandler):
         form = PermissionRequestUpdateForm(self.request.arguments)
         form.status.choices = self._get_choices(request.status)
 
-        return self.render("permission-request-update.html", form=form, request=request,
-                change_comment_list=change_comment_list, statuses=REQUEST_STATUS_CHOICES,
-                can_approve_request=can_approve_request, approvers=approvers)
+        return self.render(
+            "permission-request-update.html",
+            form=form,
+            request=request,
+            change_comment_list=change_comment_list,
+            statuses=REQUEST_STATUS_CHOICES,
+            can_approve_request=can_approve_request,
+            approvers=approvers,
+        )
 
     def post(self, request_id):
         # check for request existence
@@ -55,8 +59,9 @@ class PermissionsRequestUpdate(GrouperHandler):
             return self.notfound()
 
         # check that this user should be actioning this request
-        user_requests, total = permissions.get_requests(self.session,
-                status="pending", limit=None, offset=0, owner=self.current_user)
+        user_requests, total = permissions.get_requests(
+            self.session, status="pending", limit=None, offset=0, owner=self.current_user
+        )
         user_request_ids = [ur.id for ur in user_requests.requests]
         if request.id not in user_request_ids:
             return self.forbidden()
@@ -64,24 +69,39 @@ class PermissionsRequestUpdate(GrouperHandler):
         form = PermissionRequestUpdateForm(self.request.arguments)
         form.status.choices = self._get_choices(request.status)
         if not form.validate():
-            change_comment_list = [(sc, user_requests.comment_by_status_change_id[sc.id]) for sc in
-                    user_requests.status_change_by_request_id[request.id]]
+            change_comment_list = [
+                (sc, user_requests.comment_by_status_change_id[sc.id])
+                for sc in user_requests.status_change_by_request_id[request.id]
+            ]
 
-            return self.render("permission-request-update.html", form=form, request=request,
-                    change_comment_list=change_comment_list, statuses=REQUEST_STATUS_CHOICES,
-                    alerts=self.get_form_alerts(form.errors))
+            return self.render(
+                "permission-request-update.html",
+                form=form,
+                request=request,
+                change_comment_list=change_comment_list,
+                statuses=REQUEST_STATUS_CHOICES,
+                alerts=self.get_form_alerts(form.errors),
+            )
 
         try:
-            permissions.update_request(self.session, request, self.current_user,
-                    form.status.data, form.reason.data)
+            permissions.update_request(
+                self.session, request, self.current_user, form.status.data, form.reason.data
+            )
         except UserNotAuditor as e:
             alerts = [Alert("danger", str(e))]
 
-            change_comment_list = [(sc, user_requests.comment_by_status_change_id[sc.id]) for sc in
-                    user_requests.status_change_by_request_id[request.id]]
+            change_comment_list = [
+                (sc, user_requests.comment_by_status_change_id[sc.id])
+                for sc in user_requests.status_change_by_request_id[request.id]
+            ]
 
-            return self.render("permission-request-update.html", form=form, request=request,
-                    change_comment_list=change_comment_list, statuses=REQUEST_STATUS_CHOICES,
-                    alerts=alerts)
+            return self.render(
+                "permission-request-update.html",
+                form=form,
+                request=request,
+                change_comment_list=change_comment_list,
+                statuses=REQUEST_STATUS_CHOICES,
+                alerts=alerts,
+            )
 
         return self.redirect("/permissions/requests?status=pending")

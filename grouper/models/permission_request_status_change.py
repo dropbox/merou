@@ -10,6 +10,7 @@ from grouper.models.comment import CommentObjectMixin
 
 class PermissionRequestStatusChange(Model, CommentObjectMixin):
     """Tracks changes to each permission grant request."""
+
     __tablename__ = "permission_request_status_changes"
 
     id = Column(Integer, primary_key=True)

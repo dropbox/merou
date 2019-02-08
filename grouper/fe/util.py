@@ -344,4 +344,4 @@ def _deserialize_alerts(quoted_alerts_json):
     except ValueError:
         alert_dicts = []
 
-    return map(_deserialize_alert, alert_dicts)
+    return list(map(_deserialize_alert, alert_dicts))

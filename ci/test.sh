@@ -8,7 +8,7 @@ if [[ "$TRAVIS_PYTHON_VERSION" == 2* ]]; then
 fi
 
 if [[ "$TRAVIS_PYTHON_VERSION" == 3* ]]; then
-    ./mypy.sh
+    mypy .
     black --check .
     flake8 --count
 fi

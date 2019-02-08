@@ -1,6 +1,6 @@
-from base import BaseElement, BaseModal, BasePage
-from exceptions import NoSuchElementException
-from permissions import PermissionRow
+from itests.pages.base import BaseElement, BaseModal, BasePage
+from itests.pages.exceptions import NoSuchElementException
+from itests.pages.permissions import PermissionRow
 
 
 class PublicKeysPage(BasePage):

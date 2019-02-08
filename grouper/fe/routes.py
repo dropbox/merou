@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from grouper.constants import (
     NAME2_VALIDATION,
     NAME_VALIDATION,
@@ -68,6 +70,10 @@ from grouper.fe.handlers.users_user_tokens import UsersUserTokens
 from grouper.fe.handlers.users_view import UsersView
 from grouper.handlers.health_check import HealthCheck
 
+if TYPE_CHECKING:
+    from tornado.web import RequestHandler
+    from typing import List, Tuple, Type
+
 HANDLERS = [
     (r"/", Index),
     (r"/audits", AuditsView),
@@ -94,7 +100,7 @@ HANDLERS = [
     (r"/users/public-keys", UsersPublicKey),
     (r"/users/tokens", UsersUserTokens),
     (r"/user/requests", UserRequests),
-]
+]  # type: List[Tuple[str, Type[RequestHandler]]]
 
 for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
     HANDLERS.extend(
@@ -179,9 +185,11 @@ for regex in (r"(?P<tag_id>[0-9]+)", NAME_VALIDATION):
         ]
     )
 
-HANDLERS += [
-    (r"/help", Help),
-    (r"/debug/health", HealthCheck),
-    (r"/debug/profile/(?P<trace_uuid>[\-\w]+)", PerfProfile),
-    (r"/.*", NotFound),
-]
+HANDLERS.extend(
+    [
+        (r"/help", Help),
+        (r"/debug/health", HealthCheck),
+        (r"/debug/profile/(?P<trace_uuid>[\-\w]+)", PerfProfile),
+        (r"/.*", NotFound),
+    ]
+)

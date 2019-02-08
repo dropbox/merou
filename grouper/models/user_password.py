@@ -57,15 +57,16 @@ class UserPassword(Model):
     def password(self):
         return self._hashed_secret
 
-    @property
-    def password_hash(self):
-        return self.password
-
     @password.setter
     def password(self, new_password):
+        # type: (str) -> None
         # Unix SHA512 passwords have a salt that starts with $6$ to indicate SHA512
         self.salt = "$6$" + _make_salt()
         self._hashed_secret = crypt.crypt(new_password, self.salt)
+
+    @property
+    def password_hash(self):
+        return self.password
 
     def set_password(self, new_password):
         self.password = new_password

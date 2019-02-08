@@ -29,12 +29,11 @@ def get_db_engine(url):
     return create_engine(url, pool_recycle=300)
 
 
-class Session(_Session):
-    """ Custom session meant to utilize add on the model.
+class SessionWithoutAdd(_Session):
+    """Custom session to block add and add_all.
 
-        This Session overrides the add/add_all methods to prevent them
-        from being used. This is to for using the add methods on the
-        models themselves where overriding is available.
+    This Session overrides the add/add_all methods to prevent them from being used. This is to
+    force using the add methods on the models themselves where overriding is available.
     """
 
     _add = _Session.add
@@ -51,4 +50,4 @@ class Session(_Session):
         raise NotImplementedError("Use delete method on models instead.")
 
 
-Session = sessionmaker(class_=Session)
+Session = sessionmaker(class_=SessionWithoutAdd)

@@ -1,8 +1,14 @@
 #!/usr/bin/env python2
 
 import os
+from collections import defaultdict
 
 from setuptools import setup
+
+try:
+    from typing import Dict, List
+except Exception:
+    pass
 
 # this defines __version__ for use below without assuming grouper is in the
 # path or importable during build
@@ -18,14 +24,14 @@ with open("requirements.txt") as requirements:
 with open("requirements-dev.txt") as requirements:
     test_required = requirements.read().splitlines()
 
-package_data = {}
+package_data = defaultdict(list)  # type: Dict[str, List]
 
 
 def get_package_data(package, base_dir):
     for dirpath, dirnames, filenames in os.walk(base_dir):
         dirpath = dirpath[len(package) + 1 :]  # Strip package dir
         for filename in filenames:
-            package_data.setdefault(package, []).append(os.path.join(dirpath, filename))
+            package_data[package].append(os.path.join(dirpath, filename))
         for dirname in dirnames:
             get_package_data(package, dirname)
 
@@ -35,7 +41,7 @@ get_package_data("grouper", "grouper/fe/templates")
 
 kwargs = {
     "name": "grouper",
-    "version": str(__version__),  # noqa
+    "version": str(__version__),  # type: ignore  # noqa: F821
     "packages": ["grouper", "grouper.fe", "grouper.api", "grouper.ctl"],
     "package_data": package_data,
     "scripts": ["bin/grouper-api", "bin/grouper-fe", "bin/grouper-ctl"],

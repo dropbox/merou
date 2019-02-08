@@ -1,16 +1,22 @@
 #!/usr/bin/env python2
 
 import os
-import setuptools  # noqa
 
-from distutils.core import setup
+from setuptools import setup
 
 # this defines __version__ for use below without assuming grouper is in the
 # path or importable during build
-execfile("grouper/version.py")
+with open("grouper/version.py", "r") as version:
+    code = compile(version.read(), "grouper/version.py", "exec")
+    exec(code)
 
+# Installation requirements.
 with open("requirements.txt") as requirements:
     required = requirements.read().splitlines()
+
+# Test suite requirements.
+with open("requirements-dev.txt") as requirements:
+    test_required = requirements.read().splitlines()
 
 package_data = {}
 
@@ -42,6 +48,8 @@ kwargs = {
     "maintainer_email": "gary@dropbox.com",
     "license": "Apache",
     "install_requires": required,
+    "setup_requires": ["pytest-runner"],
+    "tests_require": test_required,
     "url": "https://github.com/dropbox/grouper",
     "download_url": "https://github.com/dropbox/grouper/archive/master.tar.gz",
     "classifiers": [

@@ -107,9 +107,8 @@ chromium-driver is installed, the tests can be run using pytest:
 
     pip install -r requirements.txt
     pip install -r requirements-dev.txt
-    py.test tests
-    py.test itests
-    flake8 grouper itests plugins tests
+    py.test
+    flake8
 
 If you see test failures and suspect incompatible library versions (e.g.,
 an existing tornado install at a different major release than that in our
@@ -120,8 +119,7 @@ an existing tornado install at a different major release than that in our
     virtualenv ~/merou-venv
     ~/merou-venv/bin/pip install -r requirements.txt
     ~/merou-venv/bin/pip install -r requirements-dev.txt
-    ~/merou-venv/bin/py.test tests
-    ~/merou-venv/bin/py.test itests
+    ~/merou-venv/bin/py.test
 
 To run mypy, you will need Python 3 and install a different set of
 requirements:

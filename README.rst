@@ -1,11 +1,14 @@
-=======
+=====
 merou
-=======
+=====
 
 .. image:: https://travis-ci.org/dropbox/merou.png?branch=master
     :alt: Build Status
     :target: https://travis-ci.org/dropbox/merou
 
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :alt: Code Style: Black
+    :target: https://github.com/ambv/black
 
 Description
 -----------

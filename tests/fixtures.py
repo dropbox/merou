@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from grouper.api.routes import HANDLERS as API_HANDLERS
@@ -153,17 +155,19 @@ def standard_graph(session, graph, users, groups, service_accounts, permissions)
 def session(request, tmpdir):
     db_engine = get_db_engine(db_url(tmpdir))
 
+    # Create the database schema and the corresponding session.
     Model.metadata.create_all(db_engine)
     Session.configure(bind=db_engine)
     session = Session()
 
     def fin():
+        # type: () -> None
+        """Explicitly close the session and clean up if using a persistent database."""
         session.close()
-        # Useful if testing against MySQL
-        # Model.metadata.drop_all(db_engine)
+        if "MEROU_TEST_DATABASE" in os.environ:
+            Model.metadata.drop_all(db_engine)
 
     request.addfinalizer(fin)
-
     return session
 
 

@@ -2,6 +2,7 @@ import csv
 import re
 import sys
 import traceback
+from contextlib import closing
 from cStringIO import StringIO
 from datetime import datetime
 from typing import Any, Dict, Optional
@@ -215,19 +216,20 @@ class UsersPublicKeys(GraphHandler):
             ]
         )
 
-        user_key_list = Session().query(PublicKey, User).filter(User.id == PublicKey.user_id)
-        for key, user in user_key_list:
-            w_csv.writerow(
-                [
-                    user.name,
-                    key.created_on.isoformat(),
-                    key.key_type,
-                    key.key_size,
-                    key.fingerprint,
-                    key.fingerprint_sha256,
-                    key.comment,
-                ]
-            )
+        with closing(Session()) as session:
+            user_key_list = session.query(PublicKey, User).filter(User.id == PublicKey.user_id)
+            for key, user in user_key_list:
+                w_csv.writerow(
+                    [
+                        user.name,
+                        key.created_on.isoformat(),
+                        key.key_type,
+                        key.key_size,
+                        key.fingerprint,
+                        key.fingerprint_sha256,
+                        key.comment,
+                    ]
+                )
 
         self.set_header("Content-Type", "text/csv")
         self.write(fh.getvalue())
@@ -279,23 +281,21 @@ class TokenValidate(GraphHandler):
         if not match:
             return self.error(((1, "Token format not recognized"),))
 
-        sess = Session()
-
         token_name = match.group("token_name")
         token_secret = match.group("token_secret")
         username = match.group("name")
 
-        token = UserToken.get_by_value(sess, username, token_name)
-        if token is None:
-            return self.error(((2, "Token specified does not exist"),))
-        if not token.enabled:
-            return self.error(((3, "Token is disabled"),))
-        if not token.check_secret(token_secret):
-            return self.error(((4, "Token secret mismatch"),))
-
-        return self.success(
-            {"owner": username, "identity": str(token), "act_as_owner": True, "valid": True}
-        )
+        with closing(Session()) as session:
+            token = UserToken.get_by_value(session, username, token_name)
+            if token is None:
+                return self.error(((2, "Token specified does not exist"),))
+            if not token.enabled:
+                return self.error(((3, "Token is disabled"),))
+            if not token.check_secret(token_secret):
+                return self.error(((4, "Token secret mismatch"),))
+            return self.success(
+                {"owner": username, "identity": str(token), "act_as_owner": True, "valid": True}
+            )
 
 
 class ServiceAccounts(GraphHandler):

@@ -16,6 +16,8 @@ def src_path(*args):
 
 def db_url(tmpdir):
     # type: (LocalPath) -> str
+    if "MEROU_TEST_DATABASE" in os.environ:
+        return os.environ["MEROU_TEST_DATABASE"]
     db_path = tmpdir.join("grouper.sqlite")
     return "sqlite:///{}".format(db_path)
 

@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, SmallInteger
-from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from grouper.expiration import add_expiration, cancel_expiration
@@ -49,7 +48,7 @@ class GroupEdge(Model):
     active = Column(Boolean, default=False, nullable=False)
     _role = Column(SmallInteger, default=0, nullable=False)
 
-    @hybrid_property
+    @property
     def role(self):
         return GROUP_EDGE_ROLES[self._role]
 

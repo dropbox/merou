@@ -86,7 +86,7 @@ def mutate_group_command(session, group, args):
                 )
                 session.commit()
             except PluginRejectedGroupMembershipUpdate as e:
-                logging.error(e.message)
+                logging.error(str(e))
 
 
 def logdump_group_command(session, group, args):

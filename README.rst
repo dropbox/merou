@@ -127,7 +127,7 @@ requirements:
 .. code:: bash
 
     pip3 install -r requirements3.txt
-    ./mypy.sh
+    mypy .
 
 You may want to create a separate virtual environment for Python 3,
 designating python3 as the Python interpreter for that environment.  The

@@ -3,12 +3,12 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from grouper.models.audit_log import AuditLog, AuditLogCategory
+from grouper.models.permission import Permission
 from grouper.models.user import User
 from grouper.plugin import get_plugin_proxy
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
-    from grouper.models.permission import Permission
     from grouper.usecases.authorization import Authorization
 
 
@@ -36,8 +36,9 @@ class AuditLogService(object):
         self.session = session
 
     def log_disable_permission(self, permission, authorization):
-        # type: (Permission, Authorization) -> None
-        self._log(authorization, AuditLogAction.DISABLE_PERMISSION, on_permission=permission)
+        # type: (str, Authorization) -> None
+        permission_obj = Permission.get(self.session, name=permission)
+        self._log(authorization, AuditLogAction.DISABLE_PERMISSION, on_permission=permission_obj)
 
     def _log(
         self,

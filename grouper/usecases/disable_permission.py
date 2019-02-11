@@ -1,12 +1,11 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
+from grouper.entities.permission import PermissionNotFoundException
 from grouper.usecases.authorization import Authorization
-from grouper.usecases.interfaces import PermissionNotFoundException
 
 if TYPE_CHECKING:
-    from grouper.models.base.session import Session
-    from grouper.usecases.interfaces import PermissionInterface
+    from grouper.usecases.interfaces import PermissionInterface, TransactionInterface
 
 
 class DisablePermissionUI(object):
@@ -38,23 +37,25 @@ class DisablePermissionUI(object):
 class DisablePermission(object):
     """Disable a permission."""
 
-    def __init__(self, session, actor, ui, service):
-        # type: (Session, str, DisablePermissionUI, PermissionInterface) -> None
-        self.session = session
+    def __init__(self, actor, ui, permission_service, transaction_service):
+        # type: (str, DisablePermissionUI, PermissionInterface, TransactionInterface) -> None
         self.actor = actor
         self.ui = ui
-        self.service = service
+        self.permission_service = permission_service
+        self.transaction_service = transaction_service
 
     def disable_permission(self, name):
         # type: (str) -> None
-        if self.service.is_system_permission(name):
+        if self.permission_service.is_system_permission(name):
             self.ui.disable_permission_failed_because_system_permission(name)
-        elif not self.service.user_is_permission_admin(self.actor):
+        elif not self.permission_service.user_is_permission_admin(self.actor):
             self.ui.disable_permission_failed_because_permission_denied(name)
         else:
             authorization = Authorization(self.actor)
             try:
-                self.service.disable_permission(name, authorization)
+                self.transaction_service.start_transaction()
+                self.permission_service.disable_permission(name, authorization)
+                self.transaction_service.commit()
             except PermissionNotFoundException:
                 self.ui.disable_permission_failed_because_not_found(name)
             else:

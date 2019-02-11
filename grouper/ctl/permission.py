@@ -2,9 +2,10 @@ import logging
 from typing import TYPE_CHECKING
 
 from grouper.ctl.base import CtlCommand
-from grouper.services.audit_log import AuditLogService
-from grouper.services.permission import PermissionService
-from grouper.usecases.disable_permission import DisablePermission, DisablePermissionUI
+from grouper.repositories.factory import RepositoryFactory
+from grouper.services.factory import ServiceFactory
+from grouper.usecases.disable_permission import DisablePermissionUI
+from grouper.usecases.factory import UseCaseFactory
 
 if TYPE_CHECKING:
     from argparse import _SubParsersAction, Namespace
@@ -53,7 +54,8 @@ class PermissionCommand(CtlCommand, DisablePermissionUI):
     def run(self, args):
         # type: (Namespace) -> None
         """Run a permission command."""
-        audit_log = AuditLogService(self.session)
-        service = PermissionService(self.session, audit_log)
-        usecase = DisablePermission(self.session, args.actor_name, self, service)
+        repository_factory = RepositoryFactory(self.session)
+        service_factory = ServiceFactory(self.session, repository_factory)
+        usecase_factory = UseCaseFactory(service_factory)
+        usecase = usecase_factory.create_disable_permission_usecase(args.actor_name, self)
         usecase.disable_permission(args.name)

@@ -46,3 +46,7 @@ nosetests.xml
 
 # compiled python
 bin/grouper-apic
+
+# Emacs lock and autosave files
+\#*#
+.#*

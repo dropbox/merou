@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from grouper.entities.pagination import PaginatedList
 from grouper.entities.permission import Permission, PermissionNotFoundException
 from grouper.models.counter import Counter
 from grouper.models.permission import Permission as SQLPermission
@@ -7,7 +8,7 @@ from grouper.repositories.interfaces import PermissionRepository
 from grouper.usecases.list_permissions import ListPermissionsSortKey
 
 if TYPE_CHECKING:
-    from grouper.entities.pagination import PaginatedList, Pagination
+    from grouper.entities.pagination import Pagination
     from grouper.graph import GroupGraph
     from grouper.models.base.session import Session
     from typing import Optional
@@ -35,13 +36,25 @@ class GraphPermissionRepository(PermissionRepository):
 
     def list_permissions(self, pagination, audited_only):
         # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]
-        permissions = sorted(
-            self.graph.get_permissions(audited=audited_only),
-            key=lambda p: p.getattr(self.SORT_FIELD[pagination.sort_key]),
-            reverse=pagination.reverse_sort,
-        )
-        total = len(permissions)
-        permissions = permissions[pagination.offset : pagination.offset + pagination.limit]
+        perm_tuples = self.graph.get_permissions(audited=audited_only)
+
+        # Optionally sort.
+        if pagination.sort_key != ListPermissionsSortKey.NONE:
+            perm_tuples = sorted(
+                perm_tuples,
+                key=lambda p: getattr(p, self.SORT_FIELD[pagination.sort_key]),
+                reverse=pagination.reverse_sort,
+            )
+
+        # Find the total length and then optionally slice.
+        total = len(perm_tuples)
+        if pagination.limit:
+            perm_tuples = perm_tuples[pagination.offset : pagination.offset + pagination.limit]
+        elif pagination.offset > 0:
+            perm_tuples = perm_tuples[pagination.offset :]
+
+        # Convert to the correct data transfer object.
+        permissions = [Permission(name=p.name, created_on=p.created_on) for p in perm_tuples]
         return PaginatedList[Permission](values=permissions, total=total, offset=pagination.offset)
 
 

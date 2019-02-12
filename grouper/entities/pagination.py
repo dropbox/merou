@@ -9,7 +9,7 @@ PaginatedList is the corresponding generic type for the value returned by the re
 list of some other entity along with the total entity count and information about the pagination.
 """
 
-from typing import Generic, List, TypeVar
+from typing import Generic, List, Optional, TypeVar
 
 T = TypeVar("T")
 
@@ -25,7 +25,7 @@ class Pagination(Generic[T]):
     """
 
     def __init__(self, sort_key, reverse_sort, offset, limit):
-        # type: (T, bool, int, int) -> None
+        # type: (T, bool, int, Optional[int]) -> None
         self.sort_key = sort_key
         self.reverse_sort = reverse_sort
         self.offset = offset

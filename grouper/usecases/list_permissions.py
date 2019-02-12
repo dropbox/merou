@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 
 class ListPermissionsSortKey(Enum):
+    NONE = "none"
     NAME = "name"
     DATE = "date"
 
@@ -43,3 +44,12 @@ class ListPermissions(object):
         permissions = self.permission_service.list_permissions(pagination, audited_only)
         can_create = self.user_service.user_can_create_permissions(user)
         self.ui.listed_permissions(permissions, can_create)
+
+    def simple_list_permissions(self):
+        # type: () -> None
+        """List permissions with no selection, pagination, or current user."""
+        pagination = Pagination(
+            sort_key=ListPermissionsSortKey.NONE, reverse_sort=False, offset=0, limit=None
+        )
+        permissions = self.permission_service.list_permissions(pagination, False)
+        self.ui.listed_permissions(permissions, False)

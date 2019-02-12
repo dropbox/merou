@@ -18,15 +18,6 @@ if TYPE_CHECKING:
     from grouper.usecases.authorization import Authorization
 
 
-class PermissionNotFoundException(Exception):
-    """Attempt to operate on a permission not found in the storage layer."""
-
-    def __init__(self, name):
-        # type: (str) -> None
-        msg = "Permission {} not found".format(name)
-        super(PermissionNotFoundException, self).__init__(msg)
-
-
 class PermissionInterface(object):
     """Abstract base class for permission storage layer."""
 
@@ -45,4 +36,31 @@ class PermissionInterface(object):
     @abstractmethod
     def user_is_permission_admin(self, user_name):
         # type: (str) -> bool
+        pass
+
+
+class TransactionInterface(object):
+    """Abstract base class for starting and committing transactions."""
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def start_transaction(self):
+        # type: () -> None
+        pass
+
+    @abstractmethod
+    def commit(self):
+        # type: () -> None
+        pass
+
+
+class ServiceFactoryInterface(object):
+    """Abstract base class for creating services."""
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def create_permission_service(self):
+        # type: () -> PermissionInterface
         pass

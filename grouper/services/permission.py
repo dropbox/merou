@@ -1,14 +1,13 @@
 from typing import TYPE_CHECKING
 
 from grouper.constants import PERMISSION_ADMIN, SYSTEM_PERMISSIONS
-from grouper.models.counter import Counter
-from grouper.models.permission import Permission
 from grouper.models.user import User
-from grouper.usecases.interfaces import PermissionInterface, PermissionNotFoundException
+from grouper.usecases.interfaces import PermissionInterface
 from grouper.user_permissions import user_has_permission
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
+    from grouper.repositories.permission import PermissionRepository
     from grouper.services.audit_log import AuditLogService
     from grouper.usecases.authorization import Authorization
 
@@ -16,20 +15,16 @@ if TYPE_CHECKING:
 class PermissionService(PermissionInterface):
     """High-level logic to manipulate permissions."""
 
-    def __init__(self, session, audit_log):
-        # type: (Session, AuditLogService) -> None
+    def __init__(self, session, audit_log, permission_repository):
+        # type: (Session, AuditLogService, PermissionRepository) -> None
         self.session = session
         self.audit_log = audit_log
+        self.permission_repository = permission_repository
 
     def disable_permission(self, name, authorization):
         # type: (str, Authorization) -> None
-        permission = Permission.get(self.session, name=name)
-        if not permission:
-            raise PermissionNotFoundException(name)
-        permission.enabled = False
-        self.audit_log.log_disable_permission(permission, authorization)
-        Counter.incr(self.session, "updates")
-        self.session.commit()
+        self.permission_repository.disable_permission(name)
+        self.audit_log.log_disable_permission(name, authorization)
 
     def is_system_permission(self, name):
         # type: (str) -> bool

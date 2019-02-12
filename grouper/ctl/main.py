@@ -14,7 +14,7 @@ from grouper.util import get_loglevel
 sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
 
-def main(sys_argv=sys.argv, start_config_thread=True, session=None):
+def main(sys_argv=sys.argv, start_config_thread=True, session=None, graph=None):
     description_msg = "Grouper Control"
     parser = argparse.ArgumentParser(description=description_msg)
 
@@ -63,9 +63,9 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None):
 
     # TODO(rra): This is a hack that we can remove, along with the set_session() implementation,
     # once we have proper factories.
+    if not session:
+        session = make_session()
     for subcommand in subcommands:
-        if not session:
-            session = make_session()
         subcommand.set_session(session)
 
     log_level = get_loglevel(args, base=logging.INFO)

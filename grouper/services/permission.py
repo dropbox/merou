@@ -1,23 +1,22 @@
 from typing import TYPE_CHECKING
 
-from grouper.constants import PERMISSION_ADMIN, SYSTEM_PERMISSIONS
-from grouper.models.user import User
+from grouper.constants import SYSTEM_PERMISSIONS
 from grouper.usecases.interfaces import PermissionInterface
-from grouper.user_permissions import user_has_permission
 
 if TYPE_CHECKING:
-    from grouper.models.base.session import Session
+    from grouper.entities.pagination import PaginatedList, Pagination
+    from grouper.entities.permission import Permission
     from grouper.repositories.permission import PermissionRepository
     from grouper.services.audit_log import AuditLogService
     from grouper.usecases.authorization import Authorization
+    from grouper.usecases.list_permissions import ListPermissionsSortKey
 
 
 class PermissionService(PermissionInterface):
     """High-level logic to manipulate permissions."""
 
-    def __init__(self, session, audit_log, permission_repository):
-        # type: (Session, AuditLogService, PermissionRepository) -> None
-        self.session = session
+    def __init__(self, audit_log, permission_repository):
+        # type: (AuditLogService, PermissionRepository) -> None
         self.audit_log = audit_log
         self.permission_repository = permission_repository
 
@@ -26,11 +25,10 @@ class PermissionService(PermissionInterface):
         self.permission_repository.disable_permission(name)
         self.audit_log.log_disable_permission(name, authorization)
 
+    def list_permissions(self, pagination, audited_only):
+        # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]
+        return self.permission_repository.list_permissions(pagination, audited_only)
+
     def is_system_permission(self, name):
         # type: (str) -> bool
         return name in (entry[0] for entry in SYSTEM_PERMISSIONS)
-
-    def user_is_permission_admin(self, user_name):
-        # type: (str) -> bool
-        user = User.get(self.session, name=user_name)
-        return user_has_permission(self.session, user, PERMISSION_ADMIN)

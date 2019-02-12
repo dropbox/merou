@@ -25,7 +25,7 @@ class PermissionDisable(GrouperHandler, DisablePermissionUI):
         return self.forbidden()
 
     def post(self, user_id=None, name=None):
-        repository_factory = RepositoryFactory(self.session)
+        repository_factory = RepositoryFactory(self.session, self.graph)
         service_factory = ServiceFactory(self.session, repository_factory)
         usecase_factory = UseCaseFactory(service_factory)
         usecase = usecase_factory.create_disable_permission_usecase(

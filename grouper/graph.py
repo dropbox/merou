@@ -30,7 +30,8 @@ EPOCH = datetime(1970, 1, 1)
 
 
 @singleton
-def Graph():  # noqa
+def Graph():
+    # type: () -> GroupGraph
     return GroupGraph()
 
 

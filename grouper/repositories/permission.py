@@ -3,14 +3,50 @@ from typing import TYPE_CHECKING
 from grouper.entities.permission import Permission, PermissionNotFoundException
 from grouper.models.counter import Counter
 from grouper.models.permission import Permission as SQLPermission
+from grouper.repositories.interfaces import PermissionRepository
+from grouper.usecases.list_permissions import ListPermissionsSortKey
 
 if TYPE_CHECKING:
+    from grouper.entities.pagination import PaginatedList, Pagination
+    from grouper.graph import GroupGraph
     from grouper.models.base.session import Session
     from typing import Optional
 
 
-class PermissionRepository(object):
-    """Storage layer for permissions."""
+class GraphPermissionRepository(PermissionRepository):
+    """Graph-aware storage layer for permissions."""
+
+    # Mapping from ListPermissionsSortKey to the name of an attribute on the PermissionTuple
+    # returned by get_permissions() on the graph.
+    SORT_FIELD = {ListPermissionsSortKey.NAME: "name", ListPermissionsSortKey.DATE: "created_on"}
+
+    def __init__(self, graph, repository):
+        # type: (GroupGraph, PermissionRepository) -> None
+        self.graph = graph
+        self.repository = repository
+
+    def get_permission(self, name):
+        # type: (str) -> Optional[Permission]
+        return self.repository.get_permission(name)
+
+    def disable_permission(self, name):
+        # type: (str) -> None
+        self.repository.disable_permission(name)
+
+    def list_permissions(self, pagination, audited_only):
+        # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]
+        permissions = sorted(
+            self.graph.get_permissions(audited=audited_only),
+            key=lambda p: p.getattr(self.SORT_FIELD[pagination.sort_key]),
+            reverse=pagination.reverse_sort,
+        )
+        total = len(permissions)
+        permissions = permissions[pagination.offset : pagination.offset + pagination.limit]
+        return PaginatedList[Permission](values=permissions, total=total, offset=pagination.offset)
+
+
+class SQLPermissionRepository(PermissionRepository):
+    """SQL storage layer for permissions."""
 
     def __init__(self, session):
         # type: (Session) -> None
@@ -21,7 +57,7 @@ class PermissionRepository(object):
         permission = SQLPermission.get(self.session, name=name)
         if not permission:
             return None
-        return Permission(name=permission.name, enabled=permission.enabled)
+        return Permission(name=permission.name, created_on=permission.created_on)
 
     def disable_permission(self, name):
         # type: (str) -> None
@@ -30,3 +66,7 @@ class PermissionRepository(object):
             raise PermissionNotFoundException(name)
         permission.enabled = False
         Counter.incr(self.session, "updates")
+
+    def list_permissions(self, pagination, audited_only):
+        # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]
+        raise NotImplementedError()

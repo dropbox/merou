@@ -16,9 +16,6 @@ class ListPermissionsSortKey(Enum):
     DATE = "date"
 
 
-ListPermissionsPagination = Pagination[ListPermissionsSortKey]
-
-
 class ListPermissionsUI(object):
     """Abstract base class for UI for ListPermissions."""
 
@@ -40,7 +37,7 @@ class ListPermissions(object):
         self.user_service = user_service
 
     def list_permissions(self, user, pagination, audited_only):
-        # type: (str, ListPermissionsPagination, bool) -> None
+        # type: (str, Pagination[ListPermissionsSortKey], bool) -> None
         permissions = self.permission_service.list_permissions(pagination, audited_only)
         can_create = self.user_service.user_can_create_permissions(user)
         self.ui.listed_permissions(permissions, can_create)

@@ -4,7 +4,7 @@ import sys
 import traceback
 from cStringIO import StringIO
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING
 
 from tornado.web import HTTPError, RequestHandler
 
@@ -15,7 +15,16 @@ from grouper.models.base.session import Session
 from grouper.models.public_key import PublicKey
 from grouper.models.user import User
 from grouper.models.user_token import UserToken
+from grouper.repositories.factory import RepositoryFactory
+from grouper.services.factory import ServiceFactory
+from grouper.usecases.factory import UseCaseFactory
+from grouper.usecases.list_permissions import ListPermissionsUI
 from grouper.util import try_update
+
+if TYPE_CHECKING:
+    from grouper.entities.pagination import PaginatedList
+    from grouper.entities.permission import Permission
+    from typing import Any, Dict, Optional
 
 # if raven library around, pull in SentryMixin
 try:
@@ -252,14 +261,21 @@ class Groups(GraphHandler):
             return self.success(out)
 
 
-class Permissions(GraphHandler):
-    def get(self, name=None):
-        with self.graph.lock:
-            if not name:
-                return self.success(
-                    {"permissions": [permission for permission in self.graph.permissions]}
-                )
+class Permissions(GraphHandler, ListPermissionsUI):
+    def listed_permissions(self, permissions, can_create):
+        # type: (PaginatedList[Permission], bool) -> None
+        self.success({"permissions": [p.name for p in permissions.values]})
 
+    def get(self, name=None):
+        if not name:
+            repository_factory = RepositoryFactory(self.session, self.graph)
+            service_factory = ServiceFactory(self.session, repository_factory)
+            usecase_factory = UseCaseFactory(service_factory)
+            usecase = usecase_factory.create_list_permissions_usecase(self)
+            usecase.simple_list_permissions()
+            return
+
+        with self.graph.lock:
             if name not in self.graph.permissions:
                 return self.notfound("Permission (%s) not found." % name)
 
@@ -267,7 +283,7 @@ class Permissions(GraphHandler):
 
             out = {"permission": {"name": name}}
             try_update(out, details)
-            return self.success(out)
+            self.success(out)
 
 
 class TokenValidate(GraphHandler):

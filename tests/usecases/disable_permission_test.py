@@ -22,9 +22,9 @@ if TYPE_CHECKING:
     from grouper.usecases.disable_permission import DisablePermission
 
 
-def create_disable_permission_usecase(session, actor, ui):  # noqa: F811
-    # type: (Session, str, MagicMock) -> DisablePermission
-    repository_factory = RepositoryFactory(session)
+def create_disable_permission_usecase(session, graph, actor, ui):  # noqa: F811
+    # type: (Session, GroupGraph, str, MagicMock) -> DisablePermission
+    repository_factory = RepositoryFactory(session, graph)
     service_factory = ServiceFactory(session, repository_factory)
     usecase_factory = UseCaseFactory(service_factory)
     return usecase_factory.create_disable_permission_usecase(actor, ui)
@@ -33,7 +33,7 @@ def create_disable_permission_usecase(session, actor, ui):  # noqa: F811
 def test_permission_disable(session, standard_graph):  # noqa: F811
     # type: (Session, GroupGraph) -> None
     mock_ui = MagicMock()
-    usecase = create_disable_permission_usecase(session, "gary@a.co", mock_ui)
+    usecase = create_disable_permission_usecase(session, standard_graph, "gary@a.co", mock_ui)
     usecase.disable_permission("audited")
     assert mock_ui.mock_calls == [call.disabled_permission("audited")]
 
@@ -41,7 +41,7 @@ def test_permission_disable(session, standard_graph):  # noqa: F811
 def test_permission_disable_denied(session, standard_graph):  # noqa: F811
     # type: (Session, GroupGraph) -> None
     mock_ui = MagicMock()
-    usecase = create_disable_permission_usecase(session, "zorkian@a.co", mock_ui)
+    usecase = create_disable_permission_usecase(session, standard_graph, "zorkian@a.co", mock_ui)
     usecase.disable_permission("audited")
     assert mock_ui.mock_calls == [
         call.disable_permission_failed_because_permission_denied("audited")
@@ -51,7 +51,7 @@ def test_permission_disable_denied(session, standard_graph):  # noqa: F811
 def test_permission_disable_system(session, standard_graph):  # noqa: F811
     # type: (Session, GroupGraph) -> None
     mock_ui = MagicMock()
-    usecase = create_disable_permission_usecase(session, "gary@a.co", mock_ui)
+    usecase = create_disable_permission_usecase(session, standard_graph, "gary@a.co", mock_ui)
     usecase.disable_permission(PERMISSION_CREATE)
     assert mock_ui.mock_calls == [
         call.disable_permission_failed_because_system_permission(PERMISSION_CREATE)
@@ -61,6 +61,6 @@ def test_permission_disable_system(session, standard_graph):  # noqa: F811
 def test_permission_not_found(session, standard_graph):  # noqa: F811
     # type: (Session, GroupGraph) -> None
     mock_ui = MagicMock()
-    usecase = create_disable_permission_usecase(session, "gary@a.co", mock_ui)
+    usecase = create_disable_permission_usecase(session, standard_graph, "gary@a.co", mock_ui)
     usecase.disable_permission("nonexistent")
     assert mock_ui.mock_calls == [call.disable_permission_failed_because_not_found("nonexistent")]

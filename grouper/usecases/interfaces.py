@@ -15,11 +15,14 @@ from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from grouper.entities.pagination import PaginatedList, Pagination
+    from grouper.entities.permission import Permission
     from grouper.usecases.authorization import Authorization
+    from grouper.usecases.list_permissions import ListPermissionsSortKey
 
 
 class PermissionInterface(object):
-    """Abstract base class for permission storage layer."""
+    """Abstract base class for permission operations and queries."""
 
     __metaclass__ = ABCMeta
 
@@ -34,8 +37,8 @@ class PermissionInterface(object):
         pass
 
     @abstractmethod
-    def user_is_permission_admin(self, user_name):
-        # type: (str) -> bool
+    def list_permissions(self, pagination, audited_only):
+        # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]
         pass
 
 
@@ -63,4 +66,20 @@ class ServiceFactoryInterface(object):
     @abstractmethod
     def create_permission_service(self):
         # type: () -> PermissionInterface
+        pass
+
+
+class UserInterface(object):
+    """Abstract base class for user operations and queries."""
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def user_can_create_permissions(self, user):
+        # type: (str) -> bool
+        pass
+
+    @abstractmethod
+    def user_is_permission_admin(self, user):
+        # type: (str) -> bool
         pass

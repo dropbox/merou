@@ -1,6 +1,7 @@
 import argparse
 import logging
 import sys
+from typing import TYPE_CHECKING
 
 from grouper import __version__
 from grouper.ctl import dump_sql, group, oneoff, service_account, shell, sync_db, user, user_proxy
@@ -11,10 +12,15 @@ from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
 from grouper.settings import default_settings_path, settings
 from grouper.util import get_loglevel
 
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from typing import List, Optional
+
 sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
 
 def main(sys_argv=sys.argv, start_config_thread=True, session=None):
+    # type: (List[str], bool, Optional[Session]) -> None
     description_msg = "Grouper Control"
     parser = argparse.ArgumentParser(description=description_msg)
 
@@ -47,7 +53,7 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None):
         user,
         user_proxy,
     ]:
-        subcommand_module.add_parser(subparsers)
+        subcommand_module.add_parser(subparsers)  # type: ignore
 
     subcommands = []
     for subcommand_class in [PermissionCommand]:
@@ -63,9 +69,9 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None):
 
     # TODO(rra): This is a hack that we can remove, along with the set_session() implementation,
     # once we have proper factories.
+    if not session:
+        session = make_session()
     for subcommand in subcommands:
-        if not session:
-            session = make_session()
         subcommand.set_session(session)
 
     log_level = get_loglevel(args, base=logging.INFO)

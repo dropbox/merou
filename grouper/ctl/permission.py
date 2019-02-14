@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from grouper.ctl.base import CtlCommand
+from grouper.graph import Graph
 from grouper.repositories.factory import RepositoryFactory
 from grouper.services.factory import ServiceFactory
 from grouper.usecases.disable_permission import DisablePermissionUI
@@ -54,7 +55,7 @@ class PermissionCommand(CtlCommand, DisablePermissionUI):
     def run(self, args):
         # type: (Namespace) -> None
         """Run a permission command."""
-        repository_factory = RepositoryFactory(self.session)
+        repository_factory = RepositoryFactory(self.session, Graph())
         service_factory = ServiceFactory(self.session, repository_factory)
         usecase_factory = UseCaseFactory(service_factory)
         usecase = usecase_factory.create_disable_permission_usecase(args.actor_name, self)

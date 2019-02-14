@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict, namedtuple
 from datetime import datetime
 from threading import RLock
+from typing import TYPE_CHECKING
 
 from networkx import DiGraph, single_source_shortest_path
 from sqlalchemy import or_
@@ -25,12 +26,17 @@ from grouper.role_user import is_role_user
 from grouper.service_account import all_service_account_permissions
 from grouper.util import singleton
 
+if TYPE_CHECKING:
+    from grouper.service_account import ServiceAccountPermission
+    from typing import Any, Dict, List, Optional, Set
+
 MEMBER_TYPE_MAP = {"User": "users", "Group": "subgroups"}
 EPOCH = datetime(1970, 1, 1)
 
 
 @singleton
-def Graph():  # noqa
+def Graph():
+    # type: () -> GroupGraph
     return GroupGraph()
 
 
@@ -56,25 +62,46 @@ class NoSuchGroup(Exception):
 
 
 class GroupGraph(object):
+    """The cached permission graph.
+
+    Attributes:
+        lock: Read lock on the data
+        update_lock: Write lock on the data
+        users: Names of all enabled users
+        groups: Names of all enabled groups
+        permissions: Names of all enabled permissions
+        checkpoint: Revision of Grouper data
+        checkpoint_time: Last update time of Grouper data
+        user_metadata: Full information about each user
+        group_metadata: Full information about each group
+        group_service_accounts: Service accounts owned by groups
+        permission_metadata: Permission grant information for users
+        service_account_permissions: Permission grant information for service accounts
+        permission_tuples: Metadata for all enabled permissions
+        group_tuples: Metadata for all enabled groups
+        disabled_group_tuples: Metadata for all disabled groups
+    """
+
     def __init__(self):
+        # type: () -> None
         self.logger = logging.getLogger(__name__)
-        self._graph = None
-        self._rgraph = None
-        self.lock = RLock()  # Graph structure.
-        self.update_lock = RLock()  # Limit to 1 updating thread at a time.
-        self.users = set()  # Enabled user names.
-        self.groups = set()  # Group names.
-        self.permissions = set()  # Permission names.
+        self._graph = None  # type: Optional[DiGraph]
+        self._rgraph = None  # type: Optional[DiGraph]
+        self.lock = RLock()
+        self.update_lock = RLock()
+        self.users = set()  # type: Set[str]
+        self.groups = set()  # type: Set[str]
+        self.permissions = set()  # type: Set[str]
         self.checkpoint = 0
         self.checkpoint_time = 0
-        self.user_metadata = {}  # username -> {metadata:[{}] public_keys:[{}]}.
-        self.group_metadata = {}
-        self.group_service_accounts = {}
-        self.permission_metadata = {}  # TODO: rename.  This is about permission grants.
-        self.service_account_permissions = {}
-        self.permission_tuples = set()  # Mock Permission instances.
-        self.group_tuples = {}  # groupname -> Mock Group instance.
-        self.disabled_group_tuples = {}  # groupname -> Mock Group instance.
+        self.user_metadata = {}  # type: Dict[str, Dict[str, Any]]
+        self.group_metadata = {}  # type: Dict[str, Dict[str, Any]]
+        self.group_service_accounts = {}  # type: Dict[str, List[str]]
+        self.permission_metadata = {}  # type: Dict[str, List[MappedPermission]]
+        self.service_account_permissions = {}  # type: Dict[str, List[ServiceAccountPermission]]
+        self.permission_tuples = set()  # type: Set[PermissionTuple]
+        self.group_tuples = {}  # type: Dict[str, GroupTuple]
+        self.disabled_group_tuples = {}  # type: Dict[str, GroupTuple]
 
     @property
     def nodes(self):
@@ -400,11 +427,13 @@ class GroupGraph(object):
         return edges
 
     def get_permissions(self, audited=False):
-        """ Get the list of permissions as PermissionTuple instances sorted by name. """
+        # type: (bool) -> List[PermissionTuple]
+        """Get the list of permissions as PermissionTuple instances."""
         with self.lock:
-            permissions = sorted(self.permission_tuples, key=lambda p: p.name)
-        if audited:
-            permissions = filter(lambda p: p.audited, permissions)
+            if audited:
+                permissions = [p for p in self.permission_tuples if p.audited]
+            else:
+                permissions = list(self.permission_tuples)
         return permissions
 
     def get_permission_details(self, name, expose_aliases=True):

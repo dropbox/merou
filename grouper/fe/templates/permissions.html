@@ -16,16 +16,16 @@
     {{ dropdown("limit", limit, [100, 250, 500]) }}
     {{ paginator(offset, limit, total) }}
     {% if audited_permissions %}
-    <a class="btn btn-warning" href="{{update_qs(audited='0', offset='0')}}">
+    <a class="btn btn-warning show-all" href="{{update_qs(audited='0', offset='0')}}">
         <i class="fa"></i> Show all permissions
     </a>
     {% else %}
     {% if can_create %}
-    <a class="btn btn-success" href="/permissions/create">
+    <a class="btn btn-success create-permission" href="/permissions/create">
         <i class="fa fa-plus"></i> Create
     </a>
     {% endif %}
-    <a class="btn btn-warning" href="{{update_qs(audited='1', offset='0')}}">
+    <a class="btn btn-warning show-audited" href="{{update_qs(audited='1', offset='0')}}">
         <i class="fa"></i> Show audited permissions only
     </a>
     {% endif %}
@@ -38,15 +38,15 @@
                 <tr>
                     <th class="col-sm-2"><a href="{{update_qs(sort_by='name', order='desc' if sort_key == 'name' and sort_dir == 'asc' else 'asc', offset='0')}}" class="white">Name</a></th>
                     <th class="col-sm-5">Description</th>
-                    <th class="col-sm-2"><a href="{{update_qs(sort_by='date', order='asc' if sort_key == 'date' and sort_dir == 'desc' else 'desc', offset='0')}}" class="white">Created On</a></th>
+                    <th class="col-sm-2 col-date"><a href="{{update_qs(sort_by='date', order='asc' if sort_key == 'date' and sort_dir == 'desc' else 'desc', offset='0')}}" class="white">Created On</a></th>
                 </tr>
             </thead>
             <tbody>
             {% for perm in permissions %}
-                <tr>
-                    <td>{{ permission(perm) }}</td>
-                    <td>{{ perm.description|default("", True) | escape }}</td>
-                    <td>{{ perm.created_on | print_date}}</td>
+                <tr class="permission-row">
+                    <td class="permission-name">{{ permission(perm) }}</td>
+                    <td class="permission-description">{{ perm.description|default("", True) | escape }}</td>
+                    <td class="permission-created-on">{{ perm.created_on | print_date}}</td>
                 </tr>
             {% endfor %}
             </tbody>

@@ -1,16 +1,13 @@
 language: python
-sudo: required
 addons:
   chrome: stable
+services:
+  - mysql
 python:
-- 2.7
-- 3.6
-sudo: false
+  - 2.7
+  - 3.6
 cache:
   directories:
     - $HOME/.cache/pip
 install: ci/setup.sh
 script: ci/test.sh
-notifications:
-  slack:
-    secure: glh+QNow84MLh3SXM+5l1C0Mxz7aYWLmE+iShUixbwQzv702rneznGutyjyN8oR42T5EEg5ilN5WR0Ni0xIFVc81ZtVDJkndjNHgXp6SgizWI0qpBQj9m1/3yrXMh5SAd168ZXtc3Y5sOOYWFs/8mrBcdYEFE3k+wkX1/GwGD3A=

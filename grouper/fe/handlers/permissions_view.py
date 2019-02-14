@@ -31,6 +31,7 @@ class PermissionsView(GrouperHandler, ListPermissionsUI):
         )
 
     def get(self, audited_only=False):
+        self.handle_refresh()
         offset = int(self.get_argument("offset", 0))
         limit = int(self.get_argument("limit", 100))
         audited_only = bool(int(self.get_argument("audited", 0)))

@@ -54,7 +54,10 @@ class GraphPermissionRepository(PermissionRepository):
             perm_tuples = perm_tuples[pagination.offset :]
 
         # Convert to the correct data transfer object.
-        permissions = [Permission(name=p.name, created_on=p.created_on) for p in perm_tuples]
+        permissions = [
+            Permission(name=p.name, description=p.description, created_on=p.created_on)
+            for p in perm_tuples
+        ]
         return PaginatedList[Permission](values=permissions, total=total, offset=pagination.offset)
 
 
@@ -70,7 +73,11 @@ class SQLPermissionRepository(PermissionRepository):
         permission = SQLPermission.get(self.session, name=name)
         if not permission:
             return None
-        return Permission(name=permission.name, created_on=permission.created_on)
+        return Permission(
+            name=permission.name,
+            description=permission.description,
+            created_on=permission.created_on,
+        )
 
     def disable_permission(self, name):
         # type: (str) -> None

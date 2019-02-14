@@ -105,7 +105,7 @@ fe:
     # All traps are stored in the database in UTC. This option chooses the
     # timezone for displaying datetime values.
     # Type: str
-    timezone: "America/Los_Angeles"
+    timezone: "UTC"
 
     # The format in which to display dates in the interface. More details here:
     # https://docs.python.org/2/library/datetime.html#strftime-and-strptime-behavior

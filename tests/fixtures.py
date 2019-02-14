@@ -87,6 +87,7 @@ def standard_graph(session, graph, users, groups, service_accounts, permissions)
     |                       |
     |  permission-admins    |
     |    * gary (o)         |
+    |    * cbguder          |
     |                       |
     +-----------------------+
 

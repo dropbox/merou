@@ -2,7 +2,7 @@ from selenium.webdriver.support.select import Select
 
 from itests.pages.base import BaseElement, BaseModal, BasePage
 from itests.pages.exceptions import NoSuchElementException
-from itests.pages.permissions import PermissionRow
+from itests.pages.permissions import PermissionGrantRow
 
 
 class GroupEditMemberPage(BasePage):
@@ -45,7 +45,7 @@ class GroupViewPage(BasePage):
 
     def find_permission_rows(self, name, argument=None):
         elements = self.find_elements_by_class_name("permission-row")
-        rows = [PermissionRow(el) for el in elements]
+        rows = [PermissionGrantRow(el) for el in elements]
 
         rows = [row for row in rows if row.name == name]
 

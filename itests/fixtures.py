@@ -3,12 +3,18 @@ import socket
 import subprocess
 import time
 from contextlib import closing
+from typing import TYPE_CHECKING
 
 import pytest
 import selenium
 from groupy.client import Groupy
 
 from tests.path_util import bin_env, db_url, src_path
+
+if TYPE_CHECKING:
+    from grouper.graph import GroupGraph
+    from py.local import LocalPath
+    from typing import Iterator
 
 
 def _get_unused_port():
@@ -19,6 +25,7 @@ def _get_unused_port():
 
 @pytest.yield_fixture
 def async_server(standard_graph, tmpdir):
+    # type: (GroupGraph, LocalPath) -> Iterator[str]
     proxy_port = _get_unused_port()
     fe_port = _get_unused_port()
 
@@ -90,6 +97,7 @@ def async_api_server(standard_graph, tmpdir):
 
 @pytest.yield_fixture
 def browser():
+    # type: () -> Iterator[selenium.webdriver.Chrome]
     options = selenium.webdriver.ChromeOptions()
     options.add_argument("headless")
     options.add_argument("no-sandbox")

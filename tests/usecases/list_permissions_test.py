@@ -1,4 +1,5 @@
 from datetime import datetime
+from time import time
 from typing import TYPE_CHECKING
 
 from grouper.constants import PERMISSION_CREATE
@@ -47,11 +48,17 @@ def assert_paginated_list_equal(left, right):
 
 def create_test_data(session):  # noqa: F811
     # type: (Session) -> List[Permission]
-    """Sets up a very basic test graph and returns the permission objects."""
+    """Sets up a very basic test graph and returns the permission objects.
+
+    Be careful not to include milliseconds in the creation timestamps since this causes different
+    behavior on SQLite (which preserves them) and MySQL (which drops them).
+    """
     early_date = datetime.utcfromtimestamp(1)
+    now_minus_one_second = datetime.utcfromtimestamp(int(time() - 1))
+    now = datetime.utcfromtimestamp(int(time()))
     permissions = [
-        Permission(name="first-permission", description="first", created_on=datetime.utcnow()),
-        Permission(name="audited-permission", description="", created_on=datetime.utcnow()),
+        Permission(name="first-permission", description="first", created_on=now_minus_one_second),
+        Permission(name="audited-permission", description="", created_on=now),
         Permission(name="early-permission", description="is early", created_on=early_date),
     ]
     for permission in permissions:

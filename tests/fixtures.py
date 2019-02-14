@@ -1,4 +1,7 @@
 import os
+from datetime import datetime
+from time import time
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -18,11 +21,15 @@ from grouper.graph import Graph
 from grouper.models.base.model_base import Model
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.group import Group
+from grouper.models.permission import Permission
 from grouper.models.user import User
-from grouper.permissions import enable_permission_auditing, get_or_create_permission
+from grouper.permissions import enable_permission_auditing
 from grouper.service_account import create_service_account
 from tests.path_util import db_url
 from tests.util import add_member, grant_permission
+
+if TYPE_CHECKING:
+    from typing import Dict
 
 
 @pytest.fixture
@@ -244,6 +251,16 @@ def service_accounts(session, users, groups):
 
 @pytest.fixture
 def permissions(session, users):
+    # type: (Session, Dict[str, User]) -> Dict[str, Permission]
+    """Create a standard set of test permissions.
+
+    Go to a bit of effort to use unique timestamps for the creation date of permissions, since it
+    makes it easier to test sorting.  Similarly, don't sort the list of permissions to create by
+    name so that the date sort and the name sort are different.
+
+    Do not use milliseconds in the creation timestamps, since the result will be different in
+    SQLite (where they are preserved) and MySQL (where they are stripped).
+    """
     all_permissions = [
         "owner",
         "ssh",
@@ -258,12 +275,17 @@ def permissions(session, users):
         GROUP_ADMIN,
     ]
 
-    permissions = {
-        permission: get_or_create_permission(
-            session, permission, "{} permission".format(permission)
-        )[0]
-        for permission in all_permissions
-    }
+    created_on_seconds = int(time() - 1000)
+    permissions = {}
+    for name in all_permissions:
+        permission = Permission.get(session, name=name)
+        if not permission:
+            created_on = datetime.utcfromtimestamp(created_on_seconds)
+            created_on_seconds += 1
+            description = "{} permission".format(name)
+            permission = Permission(name=name, description=description, created_on=created_on)
+            permission.add(session)
+        permissions[name] = permission
 
     enable_permission_auditing(session, permissions["audited"].name, users["zorkian@a.co"].id)
 

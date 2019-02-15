@@ -9,7 +9,7 @@ import time
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from settings import Settings
+    from grouper.settings import Settings
     from typing import Any, Dict, Pattern
 
 _TRUTHY = {"true", "yes", "1", ""}

@@ -1,6 +1,6 @@
 import subprocess
 
-from path_util import bin_env, src_path
+from tests.path_util import bin_env, src_path
 
 
 def test_api():

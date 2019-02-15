@@ -1,4 +1,4 @@
-from base import BasePage
+from itests.pages.base import BasePage
 
 
 class AuditsCreatePage(BasePage):

@@ -1,4 +1,4 @@
-from ..settings import Settings, settings as base_settings
+from grouper.settings import Settings, settings as base_settings
 
 
 settings = Settings.from_settings(

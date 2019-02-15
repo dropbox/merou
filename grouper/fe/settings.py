@@ -1,6 +1,6 @@
 import pytz
 
-from ..settings import Settings, settings as base_settings
+from grouper.settings import Settings, settings as base_settings
 
 
 class FeSettings(Settings):

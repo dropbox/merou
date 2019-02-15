@@ -134,11 +134,15 @@ def test_completed_inbound_requests(async_server, browser, do_action_requests): 
     request_perms = [row.requested for row in request_rows]
     assert sorted(expected_perms) == sorted(request_perms)
 
-    # Check the status change rows as well
-    sc_rows = page.status_change_rows
+    # Check the status change rows as well.  The timestamp part of the row is normally "(now)" but
+    # can be "(1 second ago)" on slow systems and "(in the future)" if MySQL rounds the timestamp
+    # up.  Allow for all of these.
     expected_whos = ([REQUESTING_USER] * 3) + ([GRANTING_USER] * 2)
-    expected_whos = ["{} (now)".format(user) for user in expected_whos]
-    request_whos = [row.who for row in sc_rows]
+    request_whos = []
+    for row in page.status_change_rows:
+        who, when = row.who.split(None, 1)
+        assert when in ("(now)", "(1 second ago)", "(in the future)")
+        request_whos.append(who)
     assert sorted(expected_whos) == sorted(request_whos)
 
     # and make sure the "no requests" row doesn't show up

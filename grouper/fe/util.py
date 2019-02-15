@@ -20,6 +20,9 @@ from grouper.fe.settings import settings
 from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.user import User
+from grouper.repositories.factory import RepositoryFactory
+from grouper.services.factory import ServiceFactory
+from grouper.usecases.factory import UseCaseFactory
 from grouper.user_permissions import user_permissions
 from grouper.util import get_database_url
 
@@ -62,6 +65,10 @@ class GrouperHandler(RequestHandler):
     def initialize(self):
         self.session = self.application.my_settings.get("db_session")()
         self.graph = Graph()
+
+        repository_factory = RepositoryFactory(self.session, self.graph)
+        service_factory = ServiceFactory(self.session, repository_factory)
+        self.usecase_factory = UseCaseFactory(service_factory)
 
         if self.get_argument("_profile", False):
             self.perf_collector = Collector()

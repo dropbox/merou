@@ -1,9 +1,6 @@
 from grouper.entities.pagination import PaginatedList, Pagination
 from grouper.entities.permission import Permission
 from grouper.fe.util import GrouperHandler
-from grouper.repositories.factory import RepositoryFactory
-from grouper.services.factory import ServiceFactory
-from grouper.usecases.factory import UseCaseFactory
 from grouper.usecases.list_permissions import ListPermissionsSortKey, ListPermissionsUI
 
 
@@ -42,8 +39,5 @@ class PermissionsView(GrouperHandler, ListPermissionsUI):
             sort_key=sort_key, reverse_sort=(sort_dir == "desc"), offset=offset, limit=limit
         )
 
-        repository_factory = RepositoryFactory(self.session, self.graph)
-        service_factory = ServiceFactory(self.session, repository_factory)
-        usecase_factory = UseCaseFactory(service_factory)
-        usecase = usecase_factory.create_list_permissions_usecase(self)
+        usecase = self.usecase_factory.create_list_permissions_usecase(self)
         usecase.list_permissions(self.current_user.name, pagination, audited_only)

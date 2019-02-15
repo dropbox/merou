@@ -81,6 +81,10 @@ class GraphHandler(RequestHandler):
         self.graph = self.application.my_settings.get("graph")
         self.session = self.application.my_settings.get("db_session")()
 
+        repository_factory = RepositoryFactory(self.session, self.graph)
+        service_factory = ServiceFactory(self.session, repository_factory)
+        self.usecase_factory = UseCaseFactory(service_factory)
+
         self._request_start_time = datetime.utcnow()
 
         stats.log_rate("requests", 1)
@@ -270,10 +274,7 @@ class Permissions(GraphHandler, ListPermissionsUI):
 
     def get(self, name=None):
         if not name:
-            repository_factory = RepositoryFactory(self.session, self.graph)
-            service_factory = ServiceFactory(self.session, repository_factory)
-            usecase_factory = UseCaseFactory(service_factory)
-            usecase = usecase_factory.create_list_permissions_usecase(self)
+            usecase = self.usecase_factory.create_list_permissions_usecase(self)
             usecase.simple_list_permissions()
             return
 

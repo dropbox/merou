@@ -33,7 +33,8 @@ class ServiceFactory(ServiceFactoryInterface):
 
     def create_transaction_service(self):
         # type: () -> TransactionInterface
-        return TransactionService(self.session)
+        checkpoint_repository = self.repository_factory.create_checkpoint_repository()
+        return TransactionService(self.session, checkpoint_repository)
 
     def create_user_service(self):
         # type: () -> UserInterface

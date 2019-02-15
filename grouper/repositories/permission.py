@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 
 from grouper.entities.pagination import PaginatedList
 from grouper.entities.permission import Permission, PermissionNotFoundException
-from grouper.models.counter import Counter
 from grouper.models.permission import Permission as SQLPermission
 from grouper.repositories.interfaces import PermissionRepository
 from grouper.usecases.list_permissions import ListPermissionsSortKey
@@ -85,7 +84,6 @@ class SQLPermissionRepository(PermissionRepository):
         if not permission:
             raise PermissionNotFoundException(name)
         permission.enabled = False
-        Counter.incr(self.session, "updates")
 
     def list_permissions(self, pagination, audited_only):
         # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]

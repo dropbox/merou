@@ -1,4 +1,4 @@
-from base import BaseElement, BasePage
+from itests.pages.base import BaseElement, BasePage
 
 
 class PermissionRequestsPage(BasePage):

@@ -57,6 +57,33 @@ def _wait_until_accept(port, timeout=3.0):
 
 
 @contextmanager
+def api_server(tmpdir):
+    # type: (LocalPath) -> Iterator[str]
+    api_port = _get_unused_port()
+
+    cmd = [
+        src_path("bin", "grouper-api"),
+        "-c",
+        src_path("config", "dev.yaml"),
+        "-p",
+        str(api_port),
+        "-d",
+        db_url(tmpdir),
+    ]
+
+    logging.info("Starting server with command: %s", " ".join(cmd))
+    p = subprocess.Popen(cmd, env=bin_env())
+
+    logging.info("Waiting on server to come online")
+    _wait_until_accept(api_port)
+    logging.info("Connection established")
+
+    yield "localhost:{}".format(api_port)
+
+    p.kill()
+
+
+@contextmanager
 def frontend_server(tmpdir, user):
     # type: (LocalPath, str) -> Iterator[str]
     proxy_port = _get_unused_port()

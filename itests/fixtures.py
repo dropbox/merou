@@ -6,7 +6,6 @@ from contextlib import closing
 from typing import TYPE_CHECKING
 
 import pytest
-import selenium
 from groupy.client import Groupy
 
 from tests.path_util import bin_env, db_url, src_path

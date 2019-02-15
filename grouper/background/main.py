@@ -15,8 +15,8 @@ from grouper.setup import setup_logging
 from grouper.util import get_database_url
 
 if TYPE_CHECKING:
-    from typing import List  # noqa
-    from grouper.error_reporting import SentryProxy  # noqa
+    from grouper.error_reporting import SentryProxy
+    from typing import List
 
 
 def build_arg_parser():

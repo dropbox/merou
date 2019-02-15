@@ -1,5 +1,3 @@
-from typing import Optional  # noqa
-
 from grouper.fe.forms import ServiceAccountCreateForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler

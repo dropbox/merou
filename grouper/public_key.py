@@ -15,9 +15,9 @@ from grouper.plugin.exceptions import PluginRejectedPublicKey
 from grouper.user_permissions import user_permissions
 
 if TYPE_CHECKING:
-    from typing import Dict, List  # noqa
-    from grouper.models.base.session import Session  # noqa
-    from grouper.models.public_key_tag import PublicKeyTag  # noqa
+    from grouper.models.base.session import Session
+    from grouper.models.public_key_tag import PublicKeyTag
+    from typing import Dict, List
 
 
 class DuplicateKey(Exception):

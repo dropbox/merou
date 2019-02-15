@@ -23,8 +23,8 @@ from grouper.user_group import get_groups_by_user
 from grouper.user_permissions import user_is_group_admin
 
 if TYPE_CHECKING:
-    from typing import List  # noqa
-    from grouper.models.base.session import Session  # noqa
+    from grouper.models.base.session import Session
+    from typing import List
 
 
 def get_user_or_group(session, name, user_or_group=None):

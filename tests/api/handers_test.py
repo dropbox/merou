@@ -16,7 +16,7 @@ from grouper.user_metadata import get_user_metadata_by_key, set_user_metadata
 from grouper.user_password import add_new_user_password, delete_user_password, user_passwords
 from grouper.user_token import add_new_user_token, disable_user_token
 from tests.constants import SSH_KEY_1
-from tests.fixtures import (  # noqa
+from tests.fixtures import (  # noqa: F401
     api_app as app,
     graph,
     groups,

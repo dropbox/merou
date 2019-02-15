@@ -88,11 +88,9 @@ def test_expire_edges(expired_graph, session):  # noqa: F811
 
 @patch("grouper.audit.get_auditors_group_name", return_value="auditors")
 def test_promote_nonauditors(
-    mock_gagn, standard_graph, users, groups, session, permissions  # noqa: F811
+    mock_gagn, standard_graph, graph, users, groups, session, permissions  # noqa: F811
 ):
     """ Test expiration auditing and notification. """
-
-    graph = standard_graph  # noqa
 
     assert graph.get_group_details("audited-team")["audited"]
 

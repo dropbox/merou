@@ -32,8 +32,8 @@ from grouper.user_group import get_groups_by_user
 from grouper.util import matches_glob
 
 if TYPE_CHECKING:
-    from typing import Dict, List, Optional, Set, Tuple  # noqa
-    from grouper.models.base.session import Session  # noqa
+    from grouper.models.base.session import Session
+    from typing import Dict, List, Optional, Set, Tuple
 
 # Singleton
 GLOBAL_OWNERS = object()

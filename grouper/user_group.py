@@ -7,9 +7,9 @@ from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge, OWNER_ROLE_INDICES
 
 if TYPE_CHECKING:
-    from typing import List, Tuple  # noqa
-    from sqlalchemy.orm import Session  # noqa
-    from grouper.models.user import User  # noqa
+    from grouper.models.user import User
+    from sqlalchemy.orm import Session
+    from typing import List, Tuple
 
 
 def get_groups_by_user(session, user):

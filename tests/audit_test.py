@@ -38,12 +38,9 @@ from tests.url_util import url
 from tests.util import add_member, get_users, grant_permission
 
 
-def test_group_audited(standard_graph, session, groups, permissions):  # noqa: F811
+def test_group_audited(standard_graph, graph, session, groups, permissions):  # noqa: F811
     """ Ensure that the audited flag gets set appropriate only groups and inherited down the
         graph. """
-
-    graph = standard_graph  # noqa
-
     assert not graph.get_group_details("security-team")["audited"]
     assert graph.get_group_details("serving-team")["audited"]
     assert graph.get_group_details("team-sre")["audited"]

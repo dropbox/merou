@@ -7,9 +7,9 @@ from grouper.models.service_account import ServiceAccount
 from grouper.models.user import User
 
 if TYPE_CHECKING:
-    from typing import List  # noqa
-    from grouper.models.group import Group  # noqa
-    from grouper.models.session import Session  # noqa
+    from grouper.models.group import Group
+    from grouper.models.session import Session
+    from typing import List
 
 
 def add_service_account(session, group, service_account):

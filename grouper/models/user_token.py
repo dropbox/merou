@@ -29,7 +29,7 @@ class UserToken(Model):
 
     hashed_secret = Column(String(length=64), unique=True, nullable=False)
 
-    user = relationship("User", back_populates="tokens")
+    user = relationship("User", backref="tokens")
 
     __table_args__ = (UniqueConstraint("user_id", "name"),)
 

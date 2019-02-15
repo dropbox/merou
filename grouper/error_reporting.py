@@ -2,7 +2,7 @@ import logging
 import signal
 import sys
 import traceback
-from types import FrameType  # noqa
+from typing import TYPE_CHECKING
 
 try:
     from raven.contrib.tornado import AsyncSentryClient
@@ -10,6 +10,9 @@ try:
     raven_installed = True
 except ImportError:
     raven_installed = False
+
+if TYPE_CHECKING:
+    from types import FrameType
 
 
 signame_by_signum = {

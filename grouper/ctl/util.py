@@ -2,17 +2,19 @@ import logging
 import re
 from argparse import ArgumentTypeError
 from contextlib import contextmanager
-from datetime import date  # noqa
 from datetime import datetime
 from functools import wraps
 from sys import stdout
-
-from typing import Generator  # noqa
+from typing import TYPE_CHECKING
 
 from grouper.constants import NAME_VALIDATION, SERVICE_ACCOUNT_VALIDATION, USERNAME_VALIDATION
 from grouper.models.base.session import get_db_engine, Session
 from grouper.settings import settings
 from grouper.util import get_database_url
+
+if TYPE_CHECKING:
+    from datetime import date
+    from typing import Generator
 
 
 DATE_FORMAT = "%Y-%m-%d"

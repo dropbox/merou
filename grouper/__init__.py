@@ -1,1 +1,1 @@
-from grouper.version import __version__  # noqa
+from grouper.version import __version__  # noqa: F401

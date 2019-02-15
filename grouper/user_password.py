@@ -6,9 +6,9 @@ from grouper.models.counter import Counter
 from grouper.models.user_password import UserPassword
 
 if TYPE_CHECKING:
-    from typing import List  # noqa
-    from grouper.models.user import User  # noqa
-    from grouper.models.base.session import Session  # noqa
+    from grouper.models.base.session import Session
+    from grouper.models.user import User
+    from typing import List
 
 
 class PasswordAlreadyExists(Exception):

@@ -10,8 +10,8 @@ from grouper.models.counter import Counter
 from grouper.plugin import get_plugin_proxy
 
 if TYPE_CHECKING:
-    from typing import Iterable, Optional, Tuple  # noqa
-    from grouper.models.base.session import Session  # noqa
+    from grouper.models.base.session import Session
+    from typing import Iterable, Optional, Tuple
 
 
 class User(Model, CommentObjectMixin):

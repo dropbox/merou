@@ -190,6 +190,7 @@ class PermissionTests(unittest.TestCase):
         self.assertIsNone(eval_argument("caret^"))
         self.assertIsNone(eval_argument("underscore_equals=plus+slash/dot.color:hyphen-ok"))
         self.assertIsNone(eval_argument("whitespace allowed"))
+        self.assertIsNone(eval_argument("foo@bar"))
         self.assertRaises(ValidationError, eval_argument, "question?mark")
         self.assertRaises(ValidationError, eval_argument, "exclaimation!point")
 

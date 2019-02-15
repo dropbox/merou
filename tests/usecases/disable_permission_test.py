@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 def test_permission_disable(setup):
     # type: (SetupTest) -> None
-    setup.grant_permission_to_group("admins", PERMISSION_ADMIN, "")
+    setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
     setup.add_user_to_group("gary@a.co", "admins")
     setup.create_permission("some-permission")
     setup.commit()
@@ -38,7 +38,7 @@ def test_permission_disable_denied(setup):
 
 def test_permission_disable_system(setup):
     # type: (SetupTest) -> None
-    setup.grant_permission_to_group("admins", PERMISSION_ADMIN, "")
+    setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
     setup.add_user_to_group("gary@a.co", "admins")
     setup.create_permission(PERMISSION_CREATE)
     setup.commit()
@@ -52,7 +52,7 @@ def test_permission_disable_system(setup):
 
 def test_permission_not_found(setup):
     # type: (SetupTest) -> None
-    setup.grant_permission_to_group("admins", PERMISSION_ADMIN, "")
+    setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
     setup.add_user_to_group("gary@a.co", "admins")
     setup.commit()
     mock_ui = MagicMock()

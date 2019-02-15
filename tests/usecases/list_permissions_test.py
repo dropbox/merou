@@ -135,7 +135,7 @@ def test_list_permissions_can_create(setup):
 
     # If the user is added to a group with the right permission, can_create should be true.
     setup.add_user_to_group("gary@a.co", "creators")
-    setup.grant_permission_to_group("creators", PERMISSION_CREATE, "*")
+    setup.grant_permission_to_group(PERMISSION_CREATE, "*", "creators")
     setup.commit()
     usecase.list_permissions("gary@a.co", pagination, audited_only=False)
     assert mock_ui.can_create

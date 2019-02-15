@@ -21,9 +21,9 @@ def test_get_permissions(tmpdir, setup):
 
 def test_get_permission(tmpdir, setup):
     # type: (LocalPath, SetupTest) -> None
-    setup.grant_permission_to_group("sad-team", "ssh", "foo")
-    setup.grant_permission_to_group("team-sre", "ssh", "bar")
-    setup.grant_permission_to_group("tech-ops", "ssh", "*")
+    setup.grant_permission_to_group("ssh", "foo", "sad-team")
+    setup.grant_permission_to_group("ssh", "bar", "team-sre")
+    setup.grant_permission_to_group("ssh", "*", "tech-ops")
     setup.commit()
     with api_server(tmpdir) as api_url:
         api_client = Groupy(api_url)

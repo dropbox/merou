@@ -135,7 +135,7 @@ class SetupTest(object):
         )
         edge.add(self.session)
 
-    def grant_permission_to_group(self, group, permission, argument):
+    def grant_permission_to_group(self, permission, argument, group):
         # type: (str, str, str) -> None
         self.create_group(group)
         self.create_permission(permission)

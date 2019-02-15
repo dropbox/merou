@@ -113,7 +113,7 @@ def test_create_button(tmpdir, setup, browser):
         logging.warning("%s", page.root.page_source)
         assert not page.has_create_permission_button
 
-        setup.grant_permission_to_group("admins", PERMISSION_CREATE, "*")
+        setup.grant_permission_to_group(PERMISSION_CREATE, "*", "admins")
         setup.add_user_to_group("gary@a.co", "admins")
         setup.commit()
         browser.get(url(frontend_url, "/permissions?refresh=yes"))

@@ -1,12 +1,9 @@
 import logging
+import sys
 from typing import TYPE_CHECKING
 
 from grouper.ctl.base import CtlCommand
-from grouper.graph import Graph
-from grouper.repositories.factory import RepositoryFactory
-from grouper.services.factory import ServiceFactory
 from grouper.usecases.disable_permission import DisablePermissionUI
-from grouper.usecases.factory import UseCaseFactory
 
 if TYPE_CHECKING:
     from argparse import _SubParsersAction, Namespace
@@ -15,11 +12,10 @@ if TYPE_CHECKING:
 class PermissionCommand(CtlCommand, DisablePermissionUI):
     """Commands to modify permissions."""
 
-    def add_parser(self, subparsers):
-        # type: (_SubParsersAction) -> None
-        """Add the command-line options."""
+    @staticmethod
+    def add_parser(subparsers):
+        # type: (_SubParsersAction) -> str
         parser = subparsers.add_parser("permission", help="Manipulate permissions")
-        parser.set_defaults(func=self.run)
 
         parser.add_argument(
             "-a",
@@ -36,6 +32,8 @@ class PermissionCommand(CtlCommand, DisablePermissionUI):
         disable_parser = subparser.add_parser("disable", help="Disable a permission")
         disable_parser.add_argument("name", help="Name of permission to disable")
 
+        return "permission"
+
     def disabled_permission(self, name):
         # type: (str) -> None
         logging.info("disabled permission %s", name)
@@ -43,20 +41,20 @@ class PermissionCommand(CtlCommand, DisablePermissionUI):
     def disable_permission_failed_because_not_found(self, name):
         # type: (str) -> None
         logging.critical("permission %s not found", name)
+        sys.exit(1)
 
     def disable_permission_failed_because_permission_denied(self, name):
         # type: (str) -> None
         logging.critical("not permitted to disable permission %s", name)
+        sys.exit(1)
 
     def disable_permission_failed_because_system_permission(self, name):
         # type: (str) -> None
         logging.critical("cannot disable system permission %s", name)
+        sys.exit(1)
 
     def run(self, args):
         # type: (Namespace) -> None
         """Run a permission command."""
-        repository_factory = RepositoryFactory(self.session, Graph())
-        service_factory = ServiceFactory(self.session, repository_factory)
-        usecase_factory = UseCaseFactory(service_factory)
-        usecase = usecase_factory.create_disable_permission_usecase(args.actor_name, self)
+        usecase = self.usecase_factory.create_disable_permission_usecase(args.actor_name, self)
         usecase.disable_permission(args.name)

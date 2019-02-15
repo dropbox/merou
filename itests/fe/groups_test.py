@@ -1,6 +1,6 @@
 import pytest
 
-from itests.fixtures import async_server, browser  # noqa: F401
+from itests.fixtures import async_server  # noqa: F401
 from itests.pages.exceptions import NoSuchElementException
 from itests.pages.groups import (
     GroupEditMemberPage,

@@ -3,7 +3,7 @@ import pytest
 from grouper.constants import PERMISSION_ADMIN, PERMISSION_GRANT
 from grouper.models.permission_request import PermissionRequest
 from grouper.permissions import create_request, get_or_create_permission, update_request
-from itests.fixtures import async_server, browser  # noqa: F401
+from itests.fixtures import async_server  # noqa: F401
 from itests.pages.permission_requests import PermissionRequestsPage
 from tests.fixtures import (  # noqa: F401
     graph,

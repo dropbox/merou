@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from itests.fixtures import async_server, browser  # noqa: F401
+from itests.fixtures import async_server  # noqa: F401
 from itests.pages.audits import AuditsCreatePage
 from itests.pages.groups import GroupViewPage
 from plugins import group_ownership_policy

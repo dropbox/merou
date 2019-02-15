@@ -1,106 +1,120 @@
+import logging
+from datetime import datetime
+from time import time
 from typing import TYPE_CHECKING
 
 from grouper.constants import PERMISSION_CREATE
-from grouper.fe.settings import settings
+from grouper.entities.permission import Permission
 from grouper.fe.template_util import print_date
-from grouper.permissions import create_permission, grant_permission
-from itests.fixtures import async_server, browser  # noqa: F401
 from itests.pages.permissions import PermissionsPage
-from tests.fixtures import (  # noqa: F401
-    graph,
-    groups,
-    permissions,
-    service_accounts,
-    session,
-    standard_graph,
-    users,
-)
+from itests.setup import frontend_server
 from tests.url_util import url
 
 if TYPE_CHECKING:
-    from grouper.models.base.session import Session
-    from grouper.models.group import Group
-    from grouper.models.permission import Permission as Permission
+    from py.path import LocalPath
     from selenium.webdriver import Chrome
-    from typing import Dict
+    from tests.setup import SetupTest
+    from typing import List
 
 
-def test_list(async_server, browser, permissions, session):  # noqa: F811
-    # type: (str, Chrome, Dict[str, Permission], Session) -> None
-    settings.override_timezone("UTC")
-    fe_url = url(async_server, "/permissions")
-    browser.get(fe_url)
+def create_test_data(setup):
+    # type: (SetupTest) -> List[Permission]
+    """Sets up a very basic test graph and returns the permission objects.
 
-    # Check the basic permission list.
-    page = PermissionsPage(browser)
-    seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
-    expected_permissions = [
-        (p.name, p.description, print_date(p.created_on)) for p in permissions.values()
+    Be careful not to include milliseconds in the creation timestamps since this causes different
+    behavior on SQLite (which preserves them) and MySQL (which drops them).
+    """
+    early_date = datetime.utcfromtimestamp(1)
+    now_minus_one_second = datetime.utcfromtimestamp(int(time() - 1))
+    now = datetime.utcfromtimestamp(int(time()))
+    permissions = [
+        Permission(name="first-permission", description="first", created_on=now_minus_one_second),
+        Permission(name="audited-permission", description="", created_on=now),
+        Permission(name="early-permission", description="is early", created_on=early_date),
     ]
-    assert seen_permissions == sorted(expected_permissions)
-    assert page.heading == "Permissions"
-    assert page.subheading == "{} permission(s)".format(len(permissions))
-
-    # Switch to only audited permissions.
-    page.click_show_audited_button()
-    seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
-    audited_permissions = [
-        (p.name, p.description, print_date(p.created_on))
-        for p in permissions.values()
-        if p._audited
-    ]
-    assert seen_permissions == sorted(audited_permissions)
-    assert page.heading == "Audited Permissions"
-    assert page.subheading == "{} permission(s)".format(len(audited_permissions))
-
-    # Switch back to all permissions and sort by date.
-    page.click_show_all_button()
-    page.click_sort_by_date()
-    seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
-    expected_permissions = [
-        (p.name, p.description, print_date(p.created_on))
-        for p in sorted(permissions.values(), key=lambda p: p.created_on, reverse=True)
-    ]
-    assert seen_permissions == expected_permissions
-
-    # Reverse the sort order.
-    page.click_sort_by_date()
-    seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
-    assert seen_permissions == list(reversed(expected_permissions))
+    for permission in permissions:
+        setup.create_permission(
+            name=permission.name,
+            description=permission.description,
+            created_on=permission.created_on,
+            audited=(permission.name == "audited-permission"),
+        )
+    setup.create_permission("disabled", enabled=False)
+    setup.create_user("gary@a.co")
+    setup.commit()
+    return permissions
 
 
-def test_list_pagination(async_server, browser, permissions, session):  # noqa: F811
-    # type: (str, Chrome, Dict[str, Permission], Session) -> None
+def test_list(tmpdir, setup, browser):
+    # type: (LocalPath, SetupTest, Chrome) -> None
+    permissions = create_test_data(setup)
+    expected_permissions = [(p.name, p.description, print_date(p.created_on)) for p in permissions]
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/permissions"))
+
+        # Check the basic permission list.
+        page = PermissionsPage(browser)
+        logging.warning("%s", page.root.page_source)
+        seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
+        assert seen_permissions == sorted(expected_permissions)
+        assert page.heading == "Permissions"
+        assert page.subheading == "{} permission(s)".format(len(expected_permissions))
+
+        # Switch to only audited permissions.
+        page.click_show_audited_button()
+        seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
+        audited = [p for p in expected_permissions if p[0] == "audited-permission"]
+        assert seen_permissions == sorted(audited)
+        assert page.heading == "Audited Permissions"
+        assert page.subheading == "{} permission(s)".format(len(audited))
+
+        # Switch back to all permissions and sort by date.
+        page.click_show_all_button()
+        page.click_sort_by_date()
+        seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
+        expected_permissions_sorted_by_time = [
+            (p.name, p.description, print_date(p.created_on))
+            for p in sorted(permissions, key=lambda p: p.created_on, reverse=True)
+        ]
+        assert seen_permissions == expected_permissions_sorted_by_time
+
+        # Reverse the sort order.
+        page.click_sort_by_date()
+        seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
+        assert seen_permissions == list(reversed(expected_permissions_sorted_by_time))
+
+
+def test_list_pagination(tmpdir, setup, browser):
+    # type: (LocalPath, SetupTest, Chrome) -> None
     """Test pagination.
 
     This forces the pagination to specific values, rather than using the page controls, since we
     don't create more than 100 permissions for testing.
     """
-    settings.override_timezone("UTC")
-    fe_url = url(async_server, "/permissions?limit=1&offset=1")
-    browser.get(fe_url)
-    page = PermissionsPage(browser)
-    seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
-    expected_permissions = [
-        (p.name, p.description, print_date(p.created_on)) for p in permissions.values()
-    ]
-    assert seen_permissions == sorted(expected_permissions)[1:2]
+    permissions = create_test_data(setup)
+    expected_permissions = [(p.name, p.description, print_date(p.created_on)) for p in permissions]
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/permissions?limit=1&offset=1"))
+        page = PermissionsPage(browser)
+        logging.warning("%s", page.root.page_source)
+        seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
+        assert seen_permissions == sorted(expected_permissions)[1:2]
 
 
-def test_create_button(async_server, browser, groups, session):  # noqa: F811
-    # type: (str, Chrome, Dict[str, Group], Session) -> None
-    fe_url = url(async_server, "/permissions")
-    browser.get(fe_url)
-    page = PermissionsPage(browser)
-    assert not page.has_create_permission_button
+def test_create_button(tmpdir, setup, browser):
+    # type: (LocalPath, SetupTest, Chrome) -> None
+    setup.create_user("gary@a.co")
+    setup.commit()
 
-    # Now grant the permission to manage permissions to a group the test user is a member of.
-    group = groups["permission-admins"]
-    permission = create_permission(session, PERMISSION_CREATE)
-    session.commit()
-    grant_permission(session, group.id, permission.id, argument="*")
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/permissions"))
+        page = PermissionsPage(browser)
+        logging.warning("%s", page.root.page_source)
+        assert not page.has_create_permission_button
 
-    # Request the list again with a graph refresh and check that the button exists.
-    fe_url = url(async_server, "/permissions?refresh=yes")
-    browser.get(fe_url)
-    assert page.has_create_permission_button
+        setup.grant_permission_to_group("admins", PERMISSION_CREATE, "*")
+        setup.add_user_to_group("gary@a.co", "admins")
+        setup.commit()
+        browser.get(url(frontend_url, "/permissions?refresh=yes"))
+        assert page.has_create_permission_button

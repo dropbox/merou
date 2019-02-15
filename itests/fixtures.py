@@ -95,21 +95,6 @@ def async_api_server(standard_graph, tmpdir):
     p.kill()
 
 
-@pytest.yield_fixture
-def browser():
-    # type: () -> Iterator[selenium.webdriver.Chrome]
-    options = selenium.webdriver.ChromeOptions()
-    options.add_argument("headless")
-    options.add_argument("no-sandbox")
-    options.add_argument("window-size=1920,1080")
-
-    driver = selenium.webdriver.Chrome(chrome_options=options)
-
-    yield driver
-
-    driver.quit()
-
-
 @pytest.fixture
 def api_client(async_api_server):
     return Groupy(async_api_server)

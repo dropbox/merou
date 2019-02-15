@@ -65,9 +65,8 @@ class DisablePermission(object):
         else:
             authorization = Authorization(self.actor)
             try:
-                self.transaction_service.start_transaction()
-                self.permission_service.disable_permission(name, authorization)
-                self.transaction_service.commit()
+                with self.transaction_service.transaction():
+                    self.permission_service.disable_permission(name, authorization)
             except PermissionNotFoundException:
                 self.ui.disable_permission_failed_because_not_found(name)
             else:

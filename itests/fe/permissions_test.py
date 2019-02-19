@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 from time import time
 from typing import TYPE_CHECKING
@@ -55,7 +54,6 @@ def test_list(tmpdir, setup, browser):
 
         # Check the basic permission list.
         page = PermissionsPage(browser)
-        logging.warning("%s", page.root.page_source)
         seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
         assert seen_permissions == sorted(expected_permissions)
         assert page.heading == "Permissions"
@@ -97,7 +95,6 @@ def test_list_pagination(tmpdir, setup, browser):
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
         browser.get(url(frontend_url, "/permissions?limit=1&offset=1"))
         page = PermissionsPage(browser)
-        logging.warning("%s", page.root.page_source)
         seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
         assert seen_permissions == sorted(expected_permissions)[1:2]
 
@@ -110,7 +107,6 @@ def test_create_button(tmpdir, setup, browser):
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
         browser.get(url(frontend_url, "/permissions"))
         page = PermissionsPage(browser)
-        logging.warning("%s", page.root.page_source)
         assert not page.has_create_permission_button
 
         setup.grant_permission_to_group(PERMISSION_CREATE, "*", "admins")

@@ -61,7 +61,7 @@ class SetupTest(object):
         # type: (LocalPath) -> Session
         db_engine = get_db_engine(db_url(tmpdir))
 
-        # If using a persistant database, clear the database first.
+        # If using a persistent database, clear the database first.
         if "MEROU_TEST_DATABASE" in os.environ:
             Model.metadata.drop_all(db_engine)
 

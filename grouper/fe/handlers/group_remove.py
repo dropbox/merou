@@ -25,7 +25,12 @@ class GroupRemove(GrouperHandler):
 
         members = group.my_members()
         if not members.get((member_type.capitalize(), member_name), None):
-            return self.notfound()
+            return self.send_error(
+                status_code=400,
+                reason="Invalid remove request: {} is not a member of {}.".format(
+                    member_name, group.name
+                ),
+            )
 
         removed_member = get_user_or_group(self.session, member_name, user_or_group=member_type)
 

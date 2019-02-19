@@ -1,20 +1,31 @@
-from itests.fixtures import api_client, async_api_server  # noqa: F401
-from tests.fixtures import (  # noqa: F401
-    graph,
-    groups,
-    permissions,
-    service_accounts,
-    session,
-    standard_graph,
-    users,
-)
+from typing import TYPE_CHECKING
+
+from groupy.client import Groupy
+
+from itests.setup import api_server
+
+if TYPE_CHECKING:
+    from py.path import LocalPath
+    from tests.setup import SetupTest
 
 
-def test_get_permissions(api_client, permissions):  # noqa: F811
-    api_permissions = list(api_client.permissions)
-    assert sorted(api_permissions) == sorted(permissions)
+def test_get_permissions(tmpdir, setup):
+    # type: (LocalPath, SetupTest) -> None
+    setup.create_permission("some-permission")
+    setup.create_permission("another-permission")
+    setup.commit()
+    with api_server(tmpdir) as api_url:
+        api_client = Groupy(api_url)
+        assert sorted(api_client.permissions) == ["another-permission", "some-permission"]
 
 
-def test_get_permission(api_client):  # noqa: F811
-    permission = api_client.permissions.get("ssh")
-    assert sorted(permission.groups) == ["sad-team", "team-sre", "tech-ops"]
+def test_get_permission(tmpdir, setup):
+    # type: (LocalPath, SetupTest) -> None
+    setup.grant_permission_to_group("ssh", "foo", "sad-team")
+    setup.grant_permission_to_group("ssh", "bar", "team-sre")
+    setup.grant_permission_to_group("ssh", "*", "tech-ops")
+    setup.commit()
+    with api_server(tmpdir) as api_url:
+        api_client = Groupy(api_url)
+        permission = api_client.permissions.get("ssh")
+        assert sorted(permission.groups) == ["sad-team", "team-sre", "tech-ops"]

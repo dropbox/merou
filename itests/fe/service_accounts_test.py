@@ -1,4 +1,4 @@
-from itests.fixtures import async_server, browser  # noqa: F401
+from itests.fixtures import async_server  # noqa: F401
 from itests.pages.groups import GroupViewPage
 from itests.pages.service_accounts import (
     ServiceAccountCreatePage,

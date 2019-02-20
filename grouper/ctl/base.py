@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 
 
 class CtlCommand(object):
-    """Implements a subcommand of grouper-ctl that needs a session and a graph."""
+    """Implements a subcommand of grouper-ctl."""
 
     __metaclass__ = ABCMeta
 
@@ -20,5 +20,5 @@ class CtlCommand(object):
     @abstractmethod
     def run(self, args):
         # type: (Namespace) -> None
-        """Run a command and return the exit status."""
+        """Run a command with some arguments."""
         pass

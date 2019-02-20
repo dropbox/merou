@@ -6,11 +6,13 @@ import re
 import subprocess
 import threading
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from grouper.settings import Settings
-    from typing import Any, Dict, Pattern
+    from typing import Any, Callable, Dict, List, Optional, Pattern
+
+T_Co = TypeVar("T_Co", covariant=True)
 
 _TRUTHY = {"true", "yes", "1", ""}
 
@@ -87,20 +89,25 @@ def matches_glob(glob, text):
 
 
 def singleton(f):
-    """Decorator which ensures that a function (with no arguments) is only
-       called once, and then all subsequent calls return the cached return value.
+    # type: (Callable[[], T_Co]) -> Callable[[], T_Co]
+    """Thread-safe global singleton.
+
+    Decorator which ensures that a function (with no arguments) is only called once, and then all
+    subsequent calls return the cached return value.
     """
     lock = threading.Lock()
     initialized = [False]
-    value = [None]
+    value = [None]  # type: List[Optional[T_Co]]
 
     @functools.wraps(f)
     def wrapped():
+        # type: () -> T_Co
         if not initialized[0]:
             with lock:
                 if not initialized[0]:
                     value[0] = f()
                     initialized[0] = True
+        assert value[0] is not None
         return value[0]
 
     return wrapped

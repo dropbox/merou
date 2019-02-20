@@ -40,14 +40,9 @@ class CtlCommandFactory(object):
     @property
     def graph(self):
         # type: () -> GroupGraph
-        if self._graph:
-            return self._graph
-
-        # This is written in an odd way to unconfuse mypy, which insists self._graph has type
-        # Optional[GroupGraph] and is incompatible with the return type.  Graph() is a singleton,
-        # so it shouldn't matter that we call it twice.
-        self._graph = Graph()
-        return Graph()
+        if not self._graph:
+            self._graph = Graph()
+        return self._graph
 
     @property
     def session(self):

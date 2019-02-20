@@ -165,13 +165,14 @@ that interface.  By convention, the single implementation is called
 
 Use cases should make all *decisions*, including authorization, policy,
 and enforcing invariants such as "you cannot disable a system permission."
-Services should do all *work*, such as changing rows in databases,
-gathering data and converting it to data transfer objects, and so forth.
-A call to a service should only fail if the action requested is impossible
-(retrieving a non-existent object, for instance).  All policy decisions
-are made by the use case.
+Services should do all *work*, such as changing stored data, gathering
+data and returning it as data transfer objects, and so forth.  (Some of
+this work is delegated to underlying repository objects as described
+later.)  A call to a service should only fail if the action requested is
+impossible (retrieving a non-existent object, for instance).  All policy
+decisions are made by the use case.
 
-If the use case involves changing data in a persistant store, the use case
+If the use case involves changing data in a persistent store, the use case
 is responsible for managing the transaction.  This is because the work of
 a use case may span multiple operations across multiple services, all of
 which should be included in a single database transaction.  This is done
@@ -277,7 +278,7 @@ layer.  Whenever adding a new use case, service, or repository, also add a
 method to the corresponding factory to create that object with all of its
 dependencies.
 
-The factories objects themselves also use dependency injection.  Each UI
+The factory objects themselves also use dependency injection.  Each UI
 provides a pre-constructed use case factory to its handlers, created as
 part of initialization of the UI.  For tests, repository, service, and use
 case factories are provided as attributes on the `SetupTest` object.

@@ -26,9 +26,10 @@ class ServiceFactory(ServiceFactoryInterface):
 
     def create_permission_service(self):
         # type: () -> PermissionInterface
-        audit_log = AuditLogService(self.session)
+        audit_log_repository = self.repository_factory.create_audit_log_repository()
+        audit_log_service = AuditLogService(audit_log_repository)
         permission_repository = self.repository_factory.create_permission_repository()
-        return PermissionService(audit_log, permission_repository)
+        return PermissionService(audit_log_service, permission_repository)
 
     def create_transaction_service(self):
         # type: () -> TransactionInterface

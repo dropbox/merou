@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from grouper.repositories.audit_log import AuditLogRepository
 from grouper.repositories.permission import GraphPermissionRepository, SQLPermissionRepository
 from grouper.repositories.permission_grant import GraphPermissionGrantRepository
 
@@ -16,6 +17,10 @@ class RepositoryFactory(object):
         # type: (Session, GroupGraph) -> None
         self.session = session
         self.graph = graph
+
+    def create_audit_log_repository(self):
+        # type: () -> AuditLogRepository
+        return AuditLogRepository(self.session)
 
     def create_permission_repository(self):
         # type: () -> PermissionRepository

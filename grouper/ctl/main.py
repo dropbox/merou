@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from grouper import __version__
 from grouper.ctl import dump_sql, group, oneoff, service_account, shell, sync_db, user, user_proxy
-from grouper.ctl.base import CtlCommand
+from grouper.ctl.factory import CtlCommandFactory
 from grouper.ctl.permission import PermissionCommand  # noqa: F401
 from grouper.plugin import initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
@@ -14,7 +14,7 @@ from grouper.util import get_loglevel
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
-    from typing import Dict, List, Optional, Type
+    from typing import List, Optional
 
 sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
@@ -41,8 +41,12 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None):
         help="Display version information.",
     )
 
-    subparsers = parser.add_subparsers(dest="command")
+    command_factory = CtlCommandFactory(session)
 
+    subparsers = parser.add_subparsers(dest="command")
+    command_factory.add_all_parsers(subparsers)
+
+    # Add parsers for legacy commands that have not been refactored.
     for subcommand_module in [
         dump_sql,
         group,
@@ -54,12 +58,6 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None):
         user_proxy,
     ]:
         subcommand_module.add_parser(subparsers)  # type: ignore
-
-    subcommand = {}  # type: Dict[str, Type[CtlCommand]]
-    for subcommand_class in CtlCommand.__subclasses__():
-        subcommand_name = subcommand_class.add_parser(subparsers)
-        # https://github.com/python/mypy/issues/4717
-        subcommand[subcommand_name] = subcommand_class  # type: ignore
 
     args = parser.parse_args(sys_argv[1:])
 
@@ -80,8 +78,9 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None):
         sa_log.setLevel(logging.INFO)
 
     # Old-style subcommands store a func in callable when setting up their arguments.  New-style
-    # subcommands initialized their arguments above and map a subcommand name to a class.
+    # subcommands are handled via a factory that constructs and calls the correct object.
     if getattr(args, "func", None):
         args.func(args)
     else:
-        subcommand[args.command](session).run(args)
+        command = command_factory.construct_command(args.command)
+        command.run(args)

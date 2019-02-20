@@ -6,17 +6,16 @@ from grouper.ctl.base import CtlCommand
 from grouper.usecases.disable_permission import DisablePermissionUI
 
 if TYPE_CHECKING:
-    from argparse import _SubParsersAction, Namespace
+    from argparse import ArgumentParser, Namespace
+    from grouper.usecases.factory import UseCaseFactory
 
 
 class PermissionCommand(CtlCommand, DisablePermissionUI):
     """Commands to modify permissions."""
 
     @staticmethod
-    def add_parser(subparsers):
-        # type: (_SubParsersAction) -> str
-        parser = subparsers.add_parser("permission", help="Manipulate permissions")
-
+    def add_arguments(parser):
+        # type: (ArgumentParser) -> None
         parser.add_argument(
             "-a",
             "--actor",
@@ -32,7 +31,9 @@ class PermissionCommand(CtlCommand, DisablePermissionUI):
         disable_parser = subparser.add_parser("disable", help="Disable a permission")
         disable_parser.add_argument("name", help="Name of permission to disable")
 
-        return "permission"
+    def __init__(self, usecase_factory):
+        # type: (UseCaseFactory) -> None
+        self.usecase_factory = usecase_factory
 
     def disabled_permission(self, name):
         # type: (str) -> None

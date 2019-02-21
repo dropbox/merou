@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING
 
 from grouper import __version__
 from grouper.ctl import dump_sql, group, oneoff, service_account, shell, sync_db, user, user_proxy
-from grouper.ctl.permission import PermissionCommand
-from grouper.ctl.util import make_session
+from grouper.ctl.factory import CtlCommandFactory
 from grouper.plugin import initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
 from grouper.settings import default_settings_path, settings
@@ -41,8 +40,12 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None):
         help="Display version information.",
     )
 
-    subparsers = parser.add_subparsers(dest="command")
+    command_factory = CtlCommandFactory(session)
 
+    subparsers = parser.add_subparsers(dest="command")
+    command_factory.add_all_parsers(subparsers)
+
+    # Add parsers for legacy commands that have not been refactored.
     for subcommand_module in [
         dump_sql,
         group,
@@ -55,24 +58,11 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None):
     ]:
         subcommand_module.add_parser(subparsers)  # type: ignore
 
-    subcommands = []
-    for subcommand_class in [PermissionCommand]:
-        command = subcommand_class()
-        command.add_parser(subparsers)
-        subcommands.append(command)
-
     args = parser.parse_args(sys_argv[1:])
 
     if start_config_thread:
         settings.update_from_config(args.config)
         settings.start_config_thread(args.config)
-
-    # TODO(rra): This is a hack that we can remove, along with the set_session() implementation,
-    # once we have proper factories.
-    if not session:
-        session = make_session()
-    for subcommand in subcommands:
-        subcommand.set_session(session)
 
     log_level = get_loglevel(args, base=logging.INFO)
     logging.basicConfig(level=log_level, format=settings.log_format)
@@ -86,4 +76,10 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None):
     if log_level < 0:
         sa_log.setLevel(logging.INFO)
 
-    args.func(args)
+    # Old-style subcommands store a func in callable when setting up their arguments.  New-style
+    # subcommands are handled via a factory that constructs and calls the correct object.
+    if getattr(args, "func", None):
+        args.func(args)
+    else:
+        command = command_factory.construct_command(args.command)
+        command.run(args)

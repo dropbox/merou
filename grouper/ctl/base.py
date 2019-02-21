@@ -2,8 +2,7 @@ from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from argparse import _SubParsersAction, Namespace
-    from grouper.models.base.session import Session
+    from argparse import ArgumentParser, Namespace
 
 
 class CtlCommand(object):
@@ -11,19 +10,15 @@ class CtlCommand(object):
 
     __metaclass__ = ABCMeta
 
+    @staticmethod
     @abstractmethod
-    def add_parser(self, subparsers):
-        # type: (_SubParsersAction) -> None
-        """Add the parser for this subcommand."""
+    def add_arguments(parser):
+        # type: (ArgumentParser) -> None
+        """Add the arguments for this command to the provided parser."""
         pass
 
     @abstractmethod
     def run(self, args):
         # type: (Namespace) -> None
-        """Run a command and return the exit status."""
+        """Run a command with some arguments."""
         pass
-
-    def set_session(self, session):
-        # type: (Session) -> None
-        """Set the database session for the command."""
-        self.session = session

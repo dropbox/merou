@@ -364,99 +364,101 @@ complexity, but provide a shorter process outline.
 New View Use Case
 -----------------
 
-1. If this is a new type of object, add a new data transfer object to
+#. If this is a new type of object, add a new data transfer object to
    `grouper.entities` that encapsulates the data that will be needed by
    the UI.
-1. Write a test for the new use case in `tests.usecases`.  Cover the
+#. Write a test for the new use case in `tests.usecases`.  Cover the
    success and failures that you anticipate.  View use cases often don't
    have failures (you don't need to handle or test infrastructure failures
    such as inability to contact the database), but may if data is private
    and requires special permissions to view.
-1. Write a new use case class in `grouper.usecases`.  This should define a
+#. Write a new use case class in `grouper.usecases`.  This should define a
    use case class that contains the business logic, and an abstract base
    class for the UI callbacks.  There should be a callback for the success
    case and zero or more callbacks for error cases.  Often the use case
    class will have only a constructor and one method, but sometimes
    multiple use cases that can use the same UI can be provided by the same
    class with multiple methods.
-1. If this use case returns a paginated list, define an enum for the sort
+#. If this use case returns a paginated list, define an enum for the sort
    keys and use the generic types in `grouper.entities.pagination`.
-1. Add a factory method for the new use case to
+#. Add a factory method for the new use case to
    `grouper.usecases.factory`.
-1. Add the additional service methods required to implement the use case
+#. Add the additional service methods required to implement the use case
    to appropriate service interfaces in `grouper.usecases.interfaces`.
-1. Implement those interfaces in the corresponding services.  This will
+#. Implement those interfaces in the corresponding services.  This will
    generally involve one or more calls to repositories that return data
    transfer objects.
-1. Add any new repository methods you need to the corresponding
+#. Add any new repository methods you need to the corresponding
    repositories.  If this use case involves data for which a repository
    has not already been written, write a new one, and consider whether
    there should be only a SQL repository or whether there should be both a
    graph repository and a SQL repository implementing the same interface.
    The graph repository, if needed, normally will embed a SQL repository
    and delegate write operations to it.
-1. If separate graph and SQL repositories made sense, add an interface for
+#. If separate graph and SQL repositories made sense, add an interface for
    the common API they implement to `grouper.repositories.interfaces`.
-1. Check that the use case tests now pass.
-1. Implement each UI and its corresponding test case.  Many use cases will
+#. Check that the use case tests now pass.
+#. Implement each UI and its corresponding test case.  Many use cases will
    only make sense in one or two of these UIs.
-   1. Frontend UI invovles a handler in `grouper.fe.handlers` and possibly
+
+   #. Frontend UI invovles a handler in `grouper.fe.handlers` and possibly
       a route and new templates, and an integration test in `itests.fe`
       (which may require defining new pages in `itests.pages`).
-   1. API UI involves a handler in `grouper.api.handlers` and an
+   #. API UI involves a handler in `grouper.api.handlers` and an
       integration test in `itests.api`.
-   1. `grouper-ctl` UI involves a new class in `grouper.ctl` and a test in
+   #. `grouper-ctl` UI involves a new class in `grouper.ctl` and a test in
       `tests.ctl`.
 
 New Modify Use Case
 -------------------
 
-1. If this is a new type of object, add a new data transfer object to
+#. If this is a new type of object, add a new data transfer object to
    `grouper.entities` that encapsulates the data passed from the UI into
    the use case.
-1. Write a test for the new use case in `tests.usecases`.  Cover the
+#. Write a test for the new use case in `tests.usecases`.  Cover the
    success and failures that you anticipate.  Common failures are due to
    authorization, missing objects, duplicate objects, and invariant
    enforcement (such as deleting system permissions).
-1. Write a new use case class in `grouper.usecases`.  This should define a
+#. Write a new use case class in `grouper.usecases`.  This should define a
    use case class that contains the business logic, and an abstract base
    class for the UI callbacks.  There should be a callback for the success
    case and zero or more callbacks for error cases.  Often the use case
    class will have only a constructor and one method, but sometimes
    multiple use cases that can use the same UI can be provided by the same
    class with multiple methods.
-1. Surround the code that makes the change with a transaction created via
+#. Surround the code that makes the change with a transaction created via
    the `transaction()` method on a transaction service.
-1. Create and pass an `Authorization` object into the service that is
+#. Create and pass an `Authorization` object into the service that is
    making the change.
-1. Add a factory method for the new use case to
+#. Add a factory method for the new use case to
    `grouper.usecases.factory`.
-1. Add the additional service methods required to implement the use case
+#. Add the additional service methods required to implement the use case
    to appropriate service interfaces in `grouper.usecases.interfaces`.
-1. Implement those interfaces in the corresponding services.  This will
+#. Implement those interfaces in the corresponding services.  This will
    generally involve one or more calls to repositories.  A service method
    that changes something should generally require an `Authorization`
    object as a parameter.
-1. Log the change to the audit log using an instance of
+#. Log the change to the audit log using an instance of
    `AuditLogService`.  You may have to define and implement new methods on
    that service for new actions.  You may need to log the same action
    multiple times with different affected `on_*` objects.
-1. Add any new repository methods you need to the corresponding
+#. Add any new repository methods you need to the corresponding
    repositories.  If this use case involves data for which a repository
    has not already been written, write a new one, and consider whether
    there should be only a SQL repository or whether there should be both a
    graph repository and a SQL repository implementing the same interface.
    The graph repository, if needed, normally will embed a SQL repository
    and delegate write operations to it.
-1. If separate graph and SQL repositories made sense, add an interface for
+#. If separate graph and SQL repositories made sense, add an interface for
    the common API they implement to `grouper.repositories.interfaces`.
-1. Check that the use case tests now pass.
-1. Implement each UI and its corresponding test case.  Strongly consider
+#. Check that the use case tests now pass.
+#. Implement each UI and its corresponding test case.  Strongly consider
    implementing all new write UIs in `grouper-ctl` as well as the
    frontend.  It's often faster to test and is convenient later for
    automation or operations.
-   1. Frontend UI invovles a handler in `grouper.fe.handlers` and possibly
+
+   #. Frontend UI invovles a handler in `grouper.fe.handlers` and possibly
       a route and new templates, and an integration test in `itests.fe`
       (which may require defining new pages in `itests.pages`).
-   1. `grouper-ctl` UI involves a new class in `grouper.ctl` and a test in
+   #. `grouper-ctl` UI involves a new class in `grouper.ctl` and a test in
       `tests.ctl`.

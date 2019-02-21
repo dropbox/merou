@@ -12,14 +12,15 @@ from grouper.settings import default_settings_path, settings
 from grouper.util import get_loglevel
 
 if TYPE_CHECKING:
+    from grouper.graph import GroupGraph
     from grouper.models.base.session import Session
     from typing import List, Optional
 
 sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
 
-def main(sys_argv=sys.argv, start_config_thread=True, session=None):
-    # type: (List[str], bool, Optional[Session]) -> None
+def main(sys_argv=sys.argv, start_config_thread=True, session=None, graph=None):
+    # type: (List[str], bool, Optional[Session], Optional[GroupGraph]) -> None
     description_msg = "Grouper Control"
     parser = argparse.ArgumentParser(description=description_msg)
 
@@ -40,7 +41,7 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None):
         help="Display version information.",
     )
 
-    command_factory = CtlCommandFactory(session)
+    command_factory = CtlCommandFactory(session, graph)
 
     subparsers = parser.add_subparsers(dest="command")
     command_factory.add_all_parsers(subparsers)

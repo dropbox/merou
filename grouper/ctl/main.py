@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from grouper import __version__
 from grouper.ctl import dump_sql, group, oneoff, service_account, shell, sync_db, user, user_proxy
 from grouper.ctl.factory import CtlCommandFactory
-from grouper.ctl.permission import PermissionCommand  # noqa: F401
 from grouper.plugin import initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
 from grouper.settings import default_settings_path, settings

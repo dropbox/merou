@@ -16,15 +16,14 @@ from grouper.models.base.session import Session
 from grouper.models.public_key import PublicKey
 from grouper.models.user import User
 from grouper.models.user_token import UserToken
-from grouper.repositories.factory import RepositoryFactory
-from grouper.services.factory import ServiceFactory
-from grouper.usecases.factory import UseCaseFactory
 from grouper.usecases.list_permissions import ListPermissionsUI
 from grouper.util import try_update
 
 if TYPE_CHECKING:
     from grouper.entities.pagination import PaginatedList
     from grouper.entities.permission import Permission
+    from grouper.graph import GroupGraph
+    from grouper.usecases.factory import UseCaseFactory
     from typing import Any, Dict, Optional
 
 # if raven library around, pull in SentryMixin
@@ -77,14 +76,10 @@ def get_individual_user_info(handler, name, cutoff, service_account):
 
 
 class GraphHandler(RequestHandler):
-    def initialize(self):
-        # type: () -> None
-        self.graph = self.application.my_settings.get("graph")
-        self.session = self.application.my_settings.get("db_session")()
-
-        repository_factory = RepositoryFactory(self.session, self.graph)
-        service_factory = ServiceFactory(repository_factory)
-        self.usecase_factory = UseCaseFactory(service_factory)
+    def initialize(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        self.graph = kwargs["graph"]  # type: GroupGraph
+        self.usecase_factory = kwargs["usecase_factory"]  # type: UseCaseFactory
 
         self._request_start_time = datetime.utcnow()
 

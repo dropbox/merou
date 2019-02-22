@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from grouper.api.routes import HANDLERS as API_HANDLERS
-from grouper.app import Application
+from grouper.api.main import create_api_application
+from grouper.app import GrouperApplication
 from grouper.constants import (
     AUDIT_MANAGER,
     AUDIT_VIEWER,
@@ -15,9 +15,9 @@ from grouper.constants import (
     PERMISSION_AUDITOR,
     USER_ADMIN,
 )
-from grouper.fe.routes import HANDLERS as FE_HANDLERS
-from grouper.fe.template_util import get_template_env
+from grouper.fe.main import create_fe_application
 from grouper.graph import Graph
+from grouper.initialization import create_usecase_factory
 from grouper.models.base.model_base import Model
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.group import Group
@@ -25,10 +25,13 @@ from grouper.models.permission import Permission
 from grouper.models.user import User
 from grouper.permissions import enable_permission_auditing
 from grouper.service_account import create_service_account
+from grouper.settings import Settings
 from tests.path_util import db_url
 from tests.util import add_member, grant_permission
 
 if TYPE_CHECKING:
+    from grouper.graph import GroupGraph
+    from py.local import LocalPath
     from typing import Dict
 
 
@@ -294,11 +297,17 @@ def permissions(session, users):
 
 @pytest.fixture
 def api_app(session, standard_graph):
-    my_settings = {"graph": standard_graph, "db_session": lambda: session}
-    return Application(API_HANDLERS, my_settings=my_settings)
+    # type: (Session, GroupGraph) -> GrouperApplication
+    settings = Settings({"debug": False})
+    usecase_factory = create_usecase_factory(settings, session, standard_graph)
+    return create_api_application(standard_graph, settings, usecase_factory)
 
 
 @pytest.fixture
 def fe_app(session, standard_graph, tmpdir):
-    my_settings = {"db_session": lambda: session, "template_env": get_template_env()}
-    return Application(FE_HANDLERS, my_settings=my_settings, static_path=str(tmpdir))
+    # type: (Session, GroupGraph, LocalPath) -> GrouperApplication
+    settings = Settings({"debug": False})
+    usecase_factory = create_usecase_factory(settings, session, standard_graph)
+    return create_fe_application(
+        settings, usecase_factory, "", xsrf_cookies=False, session=lambda: session
+    )

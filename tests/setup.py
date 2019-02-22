@@ -30,6 +30,7 @@ from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
 from grouper.repositories.factory import RepositoryFactory
 from grouper.services.factory import ServiceFactory
+from grouper.settings import Settings
 from grouper.usecases.factory import UseCaseFactory
 from tests.path_util import db_url
 
@@ -53,7 +54,8 @@ class SetupTest(object):
         # type: (LocalPath) -> None
         self.session = self.create_session(tmpdir)
         self.graph = GroupGraph()
-        self.repository_factory = RepositoryFactory(self.session, self.graph)
+        self.settings = Settings({"database": db_url(tmpdir)})
+        self.repository_factory = RepositoryFactory(self.settings, self.session, self.graph)
         self.service_factory = ServiceFactory(self.repository_factory)
         self.usecase_factory = UseCaseFactory(self.service_factory)
 

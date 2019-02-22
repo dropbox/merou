@@ -1,3 +1,10 @@
+"""Routes and handlers for the Grouper frontend.
+
+Provides the variable HANDLERS, which contains tuples of route regexes and handlers.  Do not
+provide additional handler arguments as a third argument of the tuple.  A standard set of
+additional arguments will be injected when the Tornado Application object is created.
+"""
+
 from typing import TYPE_CHECKING
 
 from grouper.constants import (

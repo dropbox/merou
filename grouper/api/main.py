@@ -11,10 +11,11 @@ import tornado.ioloop
 from grouper import stats
 from grouper.api.routes import HANDLERS
 from grouper.api.settings import settings
-from grouper.app import Application
+from grouper.app import GrouperApplication
 from grouper.database import DbRefreshThread
 from grouper.error_reporting import get_sentry_client, setup_signal_handlers
 from grouper.graph import Graph
+from grouper.initialization import create_usecase_factory
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
@@ -22,28 +23,24 @@ from grouper.setup import build_arg_parser, setup_logging
 from grouper.util import get_database_url
 
 if TYPE_CHECKING:
-    import argparse
-    from typing import List
+    from argparse import Namespace
     from grouper.error_reporting import SentryProxy
     from grouper.fe.settings import Settings
     from grouper.graph import GroupGraph
+    from grouper.usecases.factory import UseCaseFactory
+    from typing import List
 
 
-def get_application(graph, settings, sentry_client):
-    # type: (GroupGraph, Settings, SentryProxy) -> Application
-    my_settings = {"graph": graph, "db_session": Session}
-
+def create_api_application(graph, settings, usecase_factory):
+    # type: (GroupGraph, Settings, UseCaseFactory) -> GrouperApplication
     tornado_settings = {"debug": settings.debug}
-
-    application = Application(
-        HANDLERS, my_settings=my_settings, sentry_client=sentry_client, **tornado_settings
-    )
-
-    return application
+    handler_settings = {"graph": graph, "usecase_factory": usecase_factory}
+    handlers = [(route, handler_class, handler_settings) for (route, handler_class) in HANDLERS]
+    return GrouperApplication(handlers, **tornado_settings)
 
 
 def start_server(args, sentry_client):
-    # type: (argparse.Namespace, SentryProxy) -> None
+    # type: (Namespace, SentryProxy) -> None
 
     log_level = logging.getLevelName(logging.getLogger().level)
     logging.info("begin. log_level={}".format(log_level))
@@ -73,7 +70,8 @@ def start_server(args, sentry_client):
     refresher.daemon = True
     refresher.start()
 
-    application = get_application(graph, settings, sentry_client)
+    usecase_factory = create_usecase_factory(settings, graph=graph)
+    application = create_api_application(graph, settings, usecase_factory)
 
     address = args.address or settings.address
     port = args.port or settings.port

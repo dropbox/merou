@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from grouper import __version__
 from grouper.ctl import dump_sql, group, oneoff, service_account, shell, sync_db, user, user_proxy
 from grouper.ctl.factory import CtlCommandFactory
+from grouper.initialization import create_usecase_factory
 from grouper.plugin import initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
 from grouper.settings import default_settings_path, settings
@@ -41,10 +42,8 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None, graph=None):
         help="Display version information.",
     )
 
-    command_factory = CtlCommandFactory(session, graph)
-
     subparsers = parser.add_subparsers(dest="command")
-    command_factory.add_all_parsers(subparsers)
+    CtlCommandFactory.add_all_parsers(subparsers)
 
     # Add parsers for legacy commands that have not been refactored.
     for subcommand_module in [
@@ -76,6 +75,9 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None, graph=None):
 
     if log_level < 0:
         sa_log.setLevel(logging.INFO)
+
+    usecase_factory = create_usecase_factory(settings, session, graph)
+    command_factory = CtlCommandFactory(usecase_factory)
 
     # Old-style subcommands store a func in callable when setting up their arguments.  New-style
     # subcommands are handled via a factory that constructs and calls the correct object.

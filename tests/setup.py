@@ -54,7 +54,7 @@ class SetupTest(object):
         self.session = self.create_session(tmpdir)
         self.graph = GroupGraph()
         self.repository_factory = RepositoryFactory(self.session, self.graph)
-        self.service_factory = ServiceFactory(self.session, self.repository_factory)
+        self.service_factory = ServiceFactory(self.repository_factory)
         self.usecase_factory = UseCaseFactory(self.service_factory)
 
     def create_session(self, tmpdir):

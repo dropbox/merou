@@ -78,11 +78,12 @@ def get_individual_user_info(handler, name, cutoff, service_account):
 
 class GraphHandler(RequestHandler):
     def initialize(self):
+        # type: () -> None
         self.graph = self.application.my_settings.get("graph")
         self.session = self.application.my_settings.get("db_session")()
 
         repository_factory = RepositoryFactory(self.session, self.graph)
-        service_factory = ServiceFactory(self.session, repository_factory)
+        service_factory = ServiceFactory(repository_factory)
         self.usecase_factory = UseCaseFactory(service_factory)
 
         self._request_start_time = datetime.utcnow()

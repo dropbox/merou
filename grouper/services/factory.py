@@ -7,7 +7,6 @@ from grouper.services.user import UserService
 from grouper.usecases.interfaces import ServiceFactoryInterface
 
 if TYPE_CHECKING:
-    from grouper.models.base.session import Session
     from grouper.repositories.factory import RepositoryFactory
     from grouper.usecases.interfaces import (
         PermissionInterface,
@@ -19,9 +18,8 @@ if TYPE_CHECKING:
 class ServiceFactory(ServiceFactoryInterface):
     """Construct backend services."""
 
-    def __init__(self, session, repository_factory):
-        # type: (Session, RepositoryFactory) -> None
-        self.session = session
+    def __init__(self, repository_factory):
+        # type: (RepositoryFactory) -> None
         self.repository_factory = repository_factory
 
     def create_permission_service(self):
@@ -33,8 +31,9 @@ class ServiceFactory(ServiceFactoryInterface):
 
     def create_transaction_service(self):
         # type: () -> TransactionInterface
+        transaction_repository = self.repository_factory.create_transaction_repository()
         checkpoint_repository = self.repository_factory.create_checkpoint_repository()
-        return TransactionService(self.session, checkpoint_repository)
+        return TransactionService(transaction_repository, checkpoint_repository)
 
     def create_user_service(self):
         # type: () -> UserInterface

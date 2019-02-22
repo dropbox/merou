@@ -58,7 +58,7 @@ class CtlCommandFactory(object):
         # type: () -> UseCaseFactory
         if not self._usecase_factory:
             repository_factory = RepositoryFactory(self.session, self.graph)
-            service_factory = ServiceFactory(self.session, repository_factory)
+            service_factory = ServiceFactory(repository_factory)
             self._usecase_factory = UseCaseFactory(service_factory)
         return self._usecase_factory
 

@@ -18,7 +18,7 @@ from grouper.role_user import (
     get_role_user,
     is_role_user,
 )
-from tests.constants import SSH_KEY_1, SSH_KEY_BAD
+from tests.constants import SSH_KEY_1, SSH_KEY_BAD, SSH_KEY_ED25519
 from tests.fixtures import (  # noqa: F401
     fe_app as app,
     graph,
@@ -71,7 +71,7 @@ def test_public_key(session, users, http_client, base_url):  # noqa: F811
     resp = yield http_client.fetch(
         fe_url,
         method="POST",
-        body=urlencode({"public_key": SSH_KEY_1}),
+        body=urlencode({"public_key": SSH_KEY_ED25519}),
         headers={"X-Grouper-User": user.username},
     )
     assert resp.code == 200
@@ -79,10 +79,10 @@ def test_public_key(session, users, http_client, base_url):  # noqa: F811
     user = User.get(session, name=user.username)
     keys = get_public_keys_of_user(session, user.id)
     assert len(keys) == 1
-    assert keys[0].public_key == SSH_KEY_1
-    assert keys[0].fingerprint == "e9:ae:c5:8f:39:9b:3a:9c:6a:b8:33:6b:cb:6f:ba:35"
-    assert keys[0].fingerprint_sha256 == "MP9uWaujW96EWxbjDtPdPWheoMDu6BZ8FZj0+CBkVWU"
-    assert keys[0].comment == "some-comment"
+    assert keys[0].public_key == SSH_KEY_ED25519
+    assert keys[0].fingerprint == "fa:d9:ca:40:bd:f7:64:37:a7:99:3a:8e:50:8a:c5:94"
+    assert keys[0].fingerprint_sha256 == "ExrCZ0nqSJv+LqAEh8CWeKUxiAeZA+N0bKC18dK7Adg"
+    assert keys[0].comment == "comment"
 
     # delete it
     fe_url = url(base_url, "/users/{}/public-key/{}/delete".format(user.username, keys[0].id))

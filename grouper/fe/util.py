@@ -27,7 +27,7 @@ from grouper.user_permissions import user_permissions
 from grouper.util import get_database_url
 
 if TYPE_CHECKING:
-    from typing import Dict, List
+    from typing import Dict, List, Optional
 
 
 class Alert(object):
@@ -63,16 +63,17 @@ else:
 
 class GrouperHandler(RequestHandler):
     def initialize(self):
+        # type: () -> None
         self.session = self.application.my_settings.get("db_session")()
         self.graph = Graph()
 
         repository_factory = RepositoryFactory(self.session, self.graph)
-        service_factory = ServiceFactory(self.session, repository_factory)
+        service_factory = ServiceFactory(repository_factory)
         self.usecase_factory = UseCaseFactory(service_factory)
 
         if self.get_argument("_profile", False):
             self.perf_collector = Collector()
-            self.perf_trace_uuid = str(uuid4())
+            self.perf_trace_uuid = str(uuid4())  # type: Optional[str]
             self.perf_collector.start()
         else:
             self.perf_collector = None

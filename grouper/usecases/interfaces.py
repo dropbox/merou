@@ -19,8 +19,7 @@ if TYPE_CHECKING:
     from grouper.entities.permission import Permission
     from grouper.usecases.authorization import Authorization
     from grouper.usecases.list_permissions import ListPermissionsSortKey
-    from types import TracebackType
-    from typing import Optional
+    from typing import ContextManager
 
 
 class PermissionInterface(object):
@@ -44,22 +43,6 @@ class PermissionInterface(object):
         pass
 
 
-class Transaction(object):
-    """Abstract base class for transaction objects."""
-
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def __enter__(self):
-        # type: () -> None
-        pass
-
-    @abstractmethod
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        # type: (Optional[type], Optional[Exception], Optional[TracebackType]) -> bool
-        pass
-
-
 class TransactionInterface(object):
     """Abstract base class for starting and committing transactions."""
 
@@ -67,7 +50,7 @@ class TransactionInterface(object):
 
     @abstractmethod
     def transaction(self):
-        # type: () -> Transaction
+        # type: () -> ContextManager[None]
         pass
 
 

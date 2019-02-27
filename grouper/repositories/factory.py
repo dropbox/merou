@@ -4,6 +4,7 @@ from grouper.repositories.audit_log import AuditLogRepository
 from grouper.repositories.checkpoint import CheckpointRepository
 from grouper.repositories.permission import GraphPermissionRepository, SQLPermissionRepository
 from grouper.repositories.permission_grant import GraphPermissionGrantRepository
+from grouper.repositories.transaction import TransactionRepository
 
 if TYPE_CHECKING:
     from grouper.graph import GroupGraph
@@ -35,3 +36,7 @@ class RepositoryFactory(object):
     def create_permission_grant_repository(self):
         # type: () -> PermissionGrantRepository
         return GraphPermissionGrantRepository(self.graph)
+
+    def create_transaction_repository(self):
+        # type: () -> TransactionRepository
+        return TransactionRepository(self.session)

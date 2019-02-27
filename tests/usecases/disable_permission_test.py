@@ -11,10 +11,10 @@ if TYPE_CHECKING:
 
 def test_permission_disable(setup):
     # type: (SetupTest) -> None
-    setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
-    setup.add_user_to_group("gary@a.co", "admins")
-    setup.create_permission("some-permission")
-    setup.commit()
+    with setup.transaction():
+        setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
+        setup.add_user_to_group("gary@a.co", "admins")
+        setup.create_permission("some-permission")
     mock_ui = MagicMock()
     usecase = setup.usecase_factory.create_disable_permission_usecase("gary@a.co", mock_ui)
 
@@ -32,9 +32,9 @@ def test_permission_disable(setup):
 
 def test_permission_disable_denied(setup):
     # type: (SetupTest) -> None
-    setup.create_user("zorkian@a.co")
-    setup.create_permission("some-permission")
-    setup.commit()
+    with setup.transaction():
+        setup.create_user("zorkian@a.co")
+        setup.create_permission("some-permission")
     mock_ui = MagicMock()
     usecase = setup.usecase_factory.create_disable_permission_usecase("zorkian@a.co", mock_ui)
     usecase.disable_permission("some-permission")
@@ -46,10 +46,10 @@ def test_permission_disable_denied(setup):
 
 def test_permission_disable_system(setup):
     # type: (SetupTest) -> None
-    setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
-    setup.add_user_to_group("gary@a.co", "admins")
-    setup.create_permission(PERMISSION_CREATE)
-    setup.commit()
+    with setup.transaction():
+        setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
+        setup.add_user_to_group("gary@a.co", "admins")
+        setup.create_permission(PERMISSION_CREATE)
     mock_ui = MagicMock()
     usecase = setup.usecase_factory.create_disable_permission_usecase("gary@a.co", mock_ui)
     usecase.disable_permission(PERMISSION_CREATE)
@@ -60,9 +60,9 @@ def test_permission_disable_system(setup):
 
 def test_permission_not_found(setup):
     # type: (SetupTest) -> None
-    setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
-    setup.add_user_to_group("gary@a.co", "admins")
-    setup.commit()
+    with setup.transaction():
+        setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
+        setup.add_user_to_group("gary@a.co", "admins")
     mock_ui = MagicMock()
     usecase = setup.usecase_factory.create_disable_permission_usecase("gary@a.co", mock_ui)
     usecase.disable_permission("nonexistent")

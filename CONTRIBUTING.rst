@@ -298,9 +298,14 @@ The `setup` fixture provides a `SetupTest` object, which provides a test
 database session, methods to quickly assemble a test environment, and
 factories for various Merou objects.  With it, you can create users,
 groups, permissions, and assemble them.  Add more methods to that class if
-you have more common setup patterns to automate.  Call `setup.commit()`
-after building the test environment to commit those changes to the
-database.
+you have more common setup patterns to automate.  All test setup should be
+done inside a transaction using code like:
+
+.. code:: python
+
+    with setup.transaction():
+        setup.create_user("gary@a.co")
+        # ...
 
 The `itests` directory contains integration tests that start a full API or
 frontend server.  The frontend integration tests use Selenium to interact

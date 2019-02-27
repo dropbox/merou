@@ -12,10 +12,10 @@ if TYPE_CHECKING:
 
 def test_permission_disable(setup):
     # type: (SetupTest) -> None
-    setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
-    setup.add_user_to_group("gary@a.co", "admins")
-    setup.create_permission("some-permission")
-    setup.commit()
+    with setup.transaction():
+        setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
+        setup.add_user_to_group("gary@a.co", "admins")
+        setup.create_permission("some-permission")
 
     run_ctl(setup, "permission", "-a", "gary@a.co", "disable", "some-permission")
     permission = get_permission(setup.session, "some-permission")
@@ -25,7 +25,7 @@ def test_permission_disable(setup):
 
 def test_permission_disable_failed(setup):
     # type: (SetupTest) -> None
-    setup.create_user("gary@a.co")
-    setup.commit()
+    with setup.transaction():
+        setup.create_user("gary@a.co")
     with pytest.raises(SystemExit):
         run_ctl(setup, "permission", "-a", "gary@a.co", "disable", "some-permission")

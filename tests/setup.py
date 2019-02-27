@@ -5,7 +5,8 @@ individual tests, and provides methods to create objects in the test database.  
 to minimize the amount of code required to set up a test by creating new objects whenever needed.
 So, for instance, one can just call:
 
-    setup.add_user_to_group("user@a.co", "some-group")
+    with setup.transaction():
+        setup.add_user_to_group("user@a.co", "some-group")
 
 without creating the user and group first, and both will be created if not present.
 
@@ -14,6 +15,7 @@ tests should use this mechanism and not rely on standard_graph or other pytest f
 """
 
 import os
+from contextlib import contextmanager
 from datetime import datetime
 from time import time
 from typing import TYPE_CHECKING
@@ -22,7 +24,6 @@ from grouper.graph import GroupGraph
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.base.model_base import Model
 from grouper.models.base.session import get_db_engine, Session
-from grouper.models.counter import Counter
 from grouper.models.group import Group
 from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
 from grouper.models.permission import Permission
@@ -35,11 +36,15 @@ from tests.path_util import db_url
 
 if TYPE_CHECKING:
     from py.local import LocalPath
-    from typing import Optional
+    from typing import Iterator, Optional
 
 
 class SetupTest(object):
     """Set up the environment for a test.
+
+    Most actions should be done inside of a transaction, created via the transaction() method and
+    used as a context handler.  This will ensure that the test setup is committed to the database
+    before the test starts running.
 
     Attributes:
         graph: Underlying graph (not refreshed from the database automatically!)
@@ -56,6 +61,7 @@ class SetupTest(object):
         self.repository_factory = RepositoryFactory(self.session, self.graph)
         self.service_factory = ServiceFactory(self.repository_factory)
         self.usecase_factory = UseCaseFactory(self.service_factory)
+        self._transaction_service = self.service_factory.create_transaction_service()
 
     def create_session(self, tmpdir):
         # type: (LocalPath) -> Session
@@ -70,15 +76,16 @@ class SetupTest(object):
         Session.configure(bind=db_engine)
         return Session()
 
-    def commit(self):
-        # type: () -> None
-        Counter.incr(self.session, "updates")
-        self.session.commit()
-        self.graph.update_from_db(self.session)
-
     def close(self):
         # type: () -> None
         self.session.close()
+
+    @contextmanager
+    def transaction(self):
+        # type: () -> Iterator[None]
+        with self._transaction_service.transaction():
+            yield
+        self.graph.update_from_db(self.session)
 
     def create_group(self, name):
         # type: (str) -> None

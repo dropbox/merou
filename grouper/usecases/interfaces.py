@@ -33,6 +33,11 @@ class PermissionInterface(object):
         pass
 
     @abstractmethod
+    def permission_exists(self, name):
+        # type: (str) -> bool
+        pass
+
+    @abstractmethod
     def is_system_permission(self, name):
         # type: (str) -> bool
         pass

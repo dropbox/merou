@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from grouper.entities.pagination import PaginatedList
-from grouper.entities.permission import Permission, PermissionNotFoundException
+from grouper.entities.permission import Permission
 from grouper.models.permission import Permission as SQLPermission
 from grouper.repositories.interfaces import PermissionRepository
 from grouper.usecases.list_permissions import ListPermissionsSortKey
@@ -11,6 +11,15 @@ if TYPE_CHECKING:
     from grouper.graph import GroupGraph
     from grouper.models.base.session import Session
     from typing import Optional
+
+
+class PermissionNotFoundException(Exception):
+    """Attempt to operate on a permission not found in the storage layer."""
+
+    def __init__(self, name):
+        # type: (str) -> None
+        msg = "Permission {} not found".format(name)
+        super(PermissionNotFoundException, self).__init__(msg)
 
 
 class GraphPermissionRepository(PermissionRepository):

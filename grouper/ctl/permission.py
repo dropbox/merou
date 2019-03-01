@@ -39,17 +39,17 @@ class PermissionCommand(CtlCommand, DisablePermissionUI):
         # type: (str) -> None
         logging.info("disabled permission %s", name)
 
-    def disable_permission_failed_because_not_found(self, name):
+    def disable_permission_failed_not_found(self, name):
         # type: (str) -> None
         logging.critical("permission %s not found", name)
         sys.exit(1)
 
-    def disable_permission_failed_because_permission_denied(self, name):
+    def disable_permission_failed_permission_denied(self, name):
         # type: (str) -> None
         logging.critical("not permitted to disable permission %s", name)
         sys.exit(1)
 
-    def disable_permission_failed_because_system_permission(self, name):
+    def disable_permission_failed_system_permission(self, name):
         # type: (str) -> None
         logging.critical("cannot disable system permission %s", name)
         sys.exit(1)

@@ -48,16 +48,16 @@ def create_test_data(setup):
         Permission(name="audited-permission", description="", created_on=now),
         Permission(name="early-permission", description="is early", created_on=early_date),
     ]
-    for permission in permissions:
-        setup.create_permission(
-            name=permission.name,
-            description=permission.description,
-            created_on=permission.created_on,
-            audited=(permission.name == "audited-permission"),
-        )
-    setup.create_permission("disabled", enabled=False)
-    setup.create_user("gary@a.co")
-    setup.commit()
+    with setup.transaction():
+        for permission in permissions:
+            setup.create_permission(
+                name=permission.name,
+                description=permission.description,
+                created_on=permission.created_on,
+                audited=(permission.name == "audited-permission"),
+            )
+        setup.create_permission("disabled", enabled=False)
+        setup.create_user("gary@a.co")
     return permissions
 
 
@@ -134,8 +134,8 @@ def test_list_permissions_can_create(setup):
     assert not mock_ui.can_create
 
     # If the user is added to a group with the right permission, can_create should be true.
-    setup.add_user_to_group("gary@a.co", "creators")
-    setup.grant_permission_to_group(PERMISSION_CREATE, "*", "creators")
-    setup.commit()
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "creators")
+        setup.grant_permission_to_group(PERMISSION_CREATE, "*", "creators")
     usecase.list_permissions("gary@a.co", pagination, audited_only=False)
     assert mock_ui.can_create

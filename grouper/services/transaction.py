@@ -17,12 +17,6 @@ class TransactionService(TransactionInterface):
         self.transaction_repository = transaction_repository
         self.checkpoint_repository = checkpoint_repository
 
-    def commit(self):
-        # type: () -> None
-        """Provided for tests, do not use in use cases."""
-        self.checkpoint_repository.update_checkpoint()
-        self.transaction_repository.commit()
-
     @contextmanager
     def transaction(self):
         # type: () -> Iterator[None]

@@ -33,11 +33,6 @@ class TransactionRepository(object):
         # type: (Session) -> None
         self.session = session
 
-    def commit(self):
-        # type: () -> None
-        """Provided for tests, do not use in use cases."""
-        self.session.commit()
-
     def transaction(self):
         # type: () -> SQLTransaction
         return SQLTransaction(self.session)

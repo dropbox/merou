@@ -31,16 +31,16 @@ def create_test_data(setup):
         Permission(name="audited-permission", description="", created_on=now),
         Permission(name="early-permission", description="is early", created_on=early_date),
     ]
-    for permission in permissions:
-        setup.create_permission(
-            name=permission.name,
-            description=permission.description,
-            created_on=permission.created_on,
-            audited=(permission.name == "audited-permission"),
-        )
-    setup.create_permission("disabled", enabled=False)
-    setup.create_user("gary@a.co")
-    setup.commit()
+    with setup.transaction():
+        for permission in permissions:
+            setup.create_permission(
+                name=permission.name,
+                description=permission.description,
+                created_on=permission.created_on,
+                audited=(permission.name == "audited-permission"),
+            )
+        setup.create_permission("disabled", enabled=False)
+        setup.create_user("gary@a.co")
     return permissions
 
 
@@ -101,16 +101,16 @@ def test_list_pagination(tmpdir, setup, browser):
 
 def test_create_button(tmpdir, setup, browser):
     # type: (LocalPath, SetupTest, Chrome) -> None
-    setup.create_user("gary@a.co")
-    setup.commit()
+    with setup.transaction():
+        setup.create_user("gary@a.co")
 
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
         browser.get(url(frontend_url, "/permissions"))
         page = PermissionsPage(browser)
         assert not page.has_create_permission_button
 
-        setup.grant_permission_to_group(PERMISSION_CREATE, "*", "admins")
-        setup.add_user_to_group("gary@a.co", "admins")
-        setup.commit()
+        with setup.transaction():
+            setup.grant_permission_to_group(PERMISSION_CREATE, "*", "admins")
+            setup.add_user_to_group("gary@a.co", "admins")
         browser.get(url(frontend_url, "/permissions?refresh=yes"))
         assert page.has_create_permission_button

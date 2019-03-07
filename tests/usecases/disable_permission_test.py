@@ -39,7 +39,7 @@ def test_permission_disable_denied(setup):
     usecase = setup.usecase_factory.create_disable_permission_usecase("zorkian@a.co", mock_ui)
     usecase.disable_permission("some-permission")
     assert mock_ui.mock_calls == [
-        call.disable_permission_failed_because_permission_denied("some-permission")
+        call.disable_permission_failed_permission_denied("some-permission")
     ]
     assert Permission.get(setup.session, name="some-permission").enabled
 
@@ -54,7 +54,7 @@ def test_permission_disable_system(setup):
     usecase = setup.usecase_factory.create_disable_permission_usecase("gary@a.co", mock_ui)
     usecase.disable_permission(PERMISSION_CREATE)
     assert mock_ui.mock_calls == [
-        call.disable_permission_failed_because_system_permission(PERMISSION_CREATE)
+        call.disable_permission_failed_system_permission(PERMISSION_CREATE)
     ]
 
 
@@ -66,4 +66,4 @@ def test_permission_not_found(setup):
     mock_ui = MagicMock()
     usecase = setup.usecase_factory.create_disable_permission_usecase("gary@a.co", mock_ui)
     usecase.disable_permission("nonexistent")
-    assert mock_ui.mock_calls == [call.disable_permission_failed_because_not_found("nonexistent")]
+    assert mock_ui.mock_calls == [call.disable_permission_failed_not_found("nonexistent")]

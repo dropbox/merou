@@ -25,10 +25,14 @@ class PermissionService(PermissionInterface):
         self.permission_repository.disable_permission(name)
         self.audit_log.log_disable_permission(name, authorization)
 
+    def is_system_permission(self, name):
+        # type: (str) -> bool
+        return name in (entry[0] for entry in SYSTEM_PERMISSIONS)
+
     def list_permissions(self, pagination, audited_only):
         # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]
         return self.permission_repository.list_permissions(pagination, audited_only)
 
-    def is_system_permission(self, name):
+    def permission_exists(self, name):
         # type: (str) -> bool
-        return name in (entry[0] for entry in SYSTEM_PERMISSIONS)
+        return True if self.permission_repository.get_permission(name) else False

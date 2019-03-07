@@ -9,15 +9,15 @@ class PermissionDisable(GrouperHandler, DisablePermissionUI):
         # type: (str) -> None
         self.redirect("/permissions/{}".format(name))
 
-    def disable_permission_failed_because_not_found(self, name):
+    def disable_permission_failed_not_found(self, name):
         # type: (str) -> None
         return self.notfound()
 
-    def disable_permission_failed_because_permission_denied(self, name):
+    def disable_permission_failed_permission_denied(self, name):
         # type: (str) -> None
         return self.forbidden()
 
-    def disable_permission_failed_because_system_permission(self, name):
+    def disable_permission_failed_system_permission(self, name):
         # type: (str) -> None
         return self.forbidden()
 

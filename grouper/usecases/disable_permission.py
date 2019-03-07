@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
-from grouper.entities.permission import PermissionNotFoundException
 from grouper.usecases.authorization import Authorization
 
 if TYPE_CHECKING:
@@ -23,17 +22,17 @@ class DisablePermissionUI(object):
         pass
 
     @abstractmethod
-    def disable_permission_failed_because_not_found(self, name):
+    def disable_permission_failed_not_found(self, name):
         # type: (str) -> None
         pass
 
     @abstractmethod
-    def disable_permission_failed_because_permission_denied(self, name):
+    def disable_permission_failed_permission_denied(self, name):
         # type: (str) -> None
         pass
 
     @abstractmethod
-    def disable_permission_failed_because_system_permission(self, name):
+    def disable_permission_failed_system_permission(self, name):
         # type: (str) -> None
         pass
 
@@ -59,15 +58,13 @@ class DisablePermission(object):
     def disable_permission(self, name):
         # type: (str) -> None
         if self.permission_service.is_system_permission(name):
-            self.ui.disable_permission_failed_because_system_permission(name)
+            self.ui.disable_permission_failed_system_permission(name)
+        elif not self.permission_service.permission_exists(name):
+            self.ui.disable_permission_failed_not_found(name)
         elif not self.user_service.user_is_permission_admin(self.actor):
-            self.ui.disable_permission_failed_because_permission_denied(name)
+            self.ui.disable_permission_failed_permission_denied(name)
         else:
             authorization = Authorization(self.actor)
-            try:
-                with self.transaction_service.transaction():
-                    self.permission_service.disable_permission(name, authorization)
-            except PermissionNotFoundException:
-                self.ui.disable_permission_failed_because_not_found(name)
-            else:
-                self.ui.disabled_permission(name)
+            with self.transaction_service.transaction():
+                self.permission_service.disable_permission(name, authorization)
+            self.ui.disabled_permission(name)

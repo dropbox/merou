@@ -20,14 +20,13 @@ from grouper.fe.settings import settings
 from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.user import User
-from grouper.repositories.factory import RepositoryFactory
-from grouper.services.factory import ServiceFactory
-from grouper.usecases.factory import UseCaseFactory
 from grouper.user_permissions import user_permissions
 from grouper.util import get_database_url
 
 if TYPE_CHECKING:
-    from typing import Dict, List, Optional
+    from grouper.usecases.factory import UseCaseFactory
+    from jinja2 import Environment
+    from typing import Any, Dict, List, Optional
 
 
 class Alert(object):
@@ -62,14 +61,12 @@ else:
 
 
 class GrouperHandler(RequestHandler):
-    def initialize(self):
-        # type: () -> None
-        self.session = self.application.my_settings.get("db_session")()
+    def initialize(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
         self.graph = Graph()
-
-        repository_factory = RepositoryFactory(self.session, self.graph)
-        service_factory = ServiceFactory(repository_factory)
-        self.usecase_factory = UseCaseFactory(service_factory)
+        self.session = kwargs["session"]()  # type: Session
+        self.template_env = kwargs["template_env"]  # type: Environment
+        self.usecase_factory = kwargs["usecase_factory"]  # type: UseCaseFactory
 
         if self.get_argument("_profile", False):
             self.perf_collector = Collector()
@@ -87,12 +84,10 @@ class GrouperHandler(RequestHandler):
     def write_error(self, status_code, **kwargs):
         """Override for custom error page."""
         if status_code >= 500 and status_code < 600:
-            template = self.application.my_settings["template_env"].get_template("errors/5xx.html")
+            template = self.template_env.get_template("errors/5xx.html")
             self.write(template.render({"is_active": self.is_active}))
         else:
-            template = self.application.my_settings["template_env"].get_template(
-                "errors/generic.html"
-            )
+            template = self.template_env.get_template("errors/generic.html")
             self.write(
                 template.render(
                     {
@@ -100,6 +95,7 @@ class GrouperHandler(RequestHandler):
                         "message": self._reason,
                         "is_active": self.is_active,
                         "trace_uuid": self.perf_trace_uuid,
+                        "static_url": self.static_url,
                     }
                 )
             )
@@ -213,7 +209,7 @@ class GrouperHandler(RequestHandler):
         return namespace
 
     def render_template(self, template_name, **kwargs):
-        template = self.application.my_settings["template_env"].get_template(template_name)
+        template = self.template_env.get_template(template_name)
         content = template.render(kwargs)
         return content
 

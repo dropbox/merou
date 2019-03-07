@@ -11,13 +11,14 @@ import tornado.ioloop
 
 import grouper.fe
 from grouper import stats
-from grouper.app import Application
+from grouper.app import GrouperApplication
 from grouper.database import DbRefreshThread
 from grouper.error_reporting import get_sentry_client, setup_signal_handlers
 from grouper.fe.routes import HANDLERS
 from grouper.fe.settings import settings
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
+from grouper.initialization import create_usecase_factory
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import get_plugin_proxy, initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
@@ -25,34 +26,33 @@ from grouper.setup import build_arg_parser, setup_logging
 from grouper.util import get_database_url
 
 if TYPE_CHECKING:
-    import argparse
-    from typing import List
+    from argparse import Namespace
     from grouper.error_reporting import SentryProxy
     from grouper.fe.settings import Settings
+    from grouper.usecases.factory import UseCaseFactory
+    from typing import Callable, List
 
 
-def get_application(settings, sentry_client, deployment_name):
-    # type: (Settings, SentryProxy, str) -> Application
+def create_fe_application(
+    settings, usecase_factory, deployment_name, xsrf_cookies=True, session=None
+):
+    # type: (Settings, UseCaseFactory, str, bool, Callable[[], Session]) -> GrouperApplication
     tornado_settings = {
-        "static_path": os.path.join(os.path.dirname(grouper.fe.__file__), "static"),
         "debug": settings.debug,
-        "xsrf_cookies": True,
+        "static_path": os.path.join(os.path.dirname(grouper.fe.__file__), "static"),
+        "xsrf_cookies": xsrf_cookies,
     }
-
-    my_settings = {
-        "db_session": Session,
+    handler_settings = {
+        "session": session if session else Session,
         "template_env": get_template_env(deployment_name=deployment_name),
+        "usecase_factory": usecase_factory,
     }
-
-    application = Application(
-        HANDLERS, my_settings=my_settings, sentry_client=sentry_client, **tornado_settings
-    )
-
-    return application
+    handlers = [(route, handler_class, handler_settings) for (route, handler_class) in HANDLERS]
+    return GrouperApplication(handlers, **tornado_settings)
 
 
 def start_server(args, sentry_client):
-    # type: (argparse.Namespace, SentryProxy) -> None
+    # type: (Namespace, SentryProxy) -> None
 
     log_level = logging.getLevelName(logging.getLogger().level)
     logging.info("begin. log_level={}".format(log_level))
@@ -72,7 +72,8 @@ def start_server(args, sentry_client):
     database_url = args.database_url or get_database_url(settings)
     Session.configure(bind=get_db_engine(database_url))
 
-    application = get_application(settings, sentry_client, args.deployment_name)
+    usecase_factory = create_usecase_factory(settings, Session())
+    application = create_fe_application(settings, usecase_factory, args.deployment_name)
 
     address = args.address or settings.address
     port = args.port or settings.port

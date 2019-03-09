@@ -16,4 +16,4 @@ def call_main(session, *args):
 def run_ctl(setup, *args):
     # type: (SetupTest, *str) -> None
     argv = ["grouper-ctl"] + list(args)
-    main(sys_argv=argv, start_config_thread=False, session=setup.session, graph=setup.graph)
+    main(sys_argv=argv, start_config_thread=False, session=setup.session)

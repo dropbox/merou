@@ -4,8 +4,12 @@ from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.repositories.audit_log import AuditLogRepository
 from grouper.repositories.checkpoint import CheckpointRepository
+from grouper.repositories.interfaces import RepositoryFactory
 from grouper.repositories.permission import GraphPermissionRepository, SQLPermissionRepository
-from grouper.repositories.permission_grant import GraphPermissionGrantRepository
+from grouper.repositories.permission_grant import (
+    GraphPermissionGrantRepository,
+    SQLPermissionGrantRepository,
+)
 from grouper.repositories.transaction import TransactionRepository
 from grouper.util import get_database_url
 
@@ -16,12 +20,15 @@ if TYPE_CHECKING:
     from typing import Optional
 
 
-class RepositoryFactory(object):
+class GraphRepositoryFactory(RepositoryFactory):
     """Create repositories, which abstract storage away from the database layer.
 
+    This factory injects a database session and a graph and prefers the graph-aware versions of the
+    repositories.
+
     Dependency injection of the database session and graph is supported, primarily for testing, but
-    normally the RepositoryFactory is responsible for creating the global session and graph and
-    injecting them into all other repositories.
+    normally the GraphRepositoryFactory is responsible for creating the global session and graph
+    and injecting them into all other repositories.
 
     Some use cases do not want a Session or GroupGraph (and in some cases cannot have a meaningful
     Session before they run, such as the command to set up the database).  The property methods in
@@ -67,6 +74,55 @@ class RepositoryFactory(object):
     def create_permission_grant_repository(self):
         # type: () -> PermissionGrantRepository
         return GraphPermissionGrantRepository(self.graph)
+
+    def create_transaction_repository(self):
+        # type: () -> TransactionRepository
+        return TransactionRepository(self.session)
+
+
+class SQLRepositoryFactory(RepositoryFactory):
+    """Create repositories, which abstract storage away from the database layer.
+
+    This factory injects only a database session and does not use graph-aware repositories.
+    Dependency injection of the database session is supported, primarily for testing, but normally
+    the SQLRepositoryFactory is responsible for creating the global session injecting
+    it into all other repositories.
+
+    Some use cases do not want a Session (and in some cases cannot have a meaningful Session before
+    they run, such as the command to set up the database).  The property methods in this factory
+    lazily create those objects on demand so that the code doesn't run when those commands are
+    instantiated.
+    """
+
+    def __init__(self, settings, session=None):
+        # type: (Settings, Optional[Session]) -> None
+        self.settings = settings
+        self._session = session
+
+    @property
+    def session(self):
+        # type: () -> Session
+        if not self._session:
+            db_engine = get_db_engine(get_database_url(self.settings))
+            Session.configure(bind=db_engine)
+            self._session = Session()
+        return self._session
+
+    def create_audit_log_repository(self):
+        # type: () -> AuditLogRepository
+        return AuditLogRepository(self.session)
+
+    def create_checkpoint_repository(self):
+        # type: () -> CheckpointRepository
+        return CheckpointRepository(self.session)
+
+    def create_permission_repository(self):
+        # type: () -> PermissionRepository
+        return SQLPermissionRepository(self.session)
+
+    def create_permission_grant_repository(self):
+        # type: () -> PermissionGrantRepository
+        return SQLPermissionGrantRepository(self.session)
 
     def create_transaction_repository(self):
         # type: () -> TransactionRepository

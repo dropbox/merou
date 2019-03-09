@@ -7,7 +7,7 @@ from grouper.services.user import UserService
 from grouper.usecases.interfaces import ServiceFactoryInterface
 
 if TYPE_CHECKING:
-    from grouper.repositories.factory import RepositoryFactory
+    from grouper.repositories.interfaces import RepositoryFactory
     from grouper.usecases.interfaces import (
         PermissionInterface,
         TransactionInterface,

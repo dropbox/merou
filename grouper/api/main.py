@@ -15,7 +15,7 @@ from grouper.app import GrouperApplication
 from grouper.database import DbRefreshThread
 from grouper.error_reporting import get_sentry_client, setup_signal_handlers
 from grouper.graph import Graph
-from grouper.initialization import create_usecase_factory
+from grouper.initialization import create_graph_usecase_factory
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
@@ -70,7 +70,7 @@ def start_server(args, sentry_client):
     refresher.daemon = True
     refresher.start()
 
-    usecase_factory = create_usecase_factory(settings, graph=graph)
+    usecase_factory = create_graph_usecase_factory(settings, graph=graph)
     application = create_api_application(graph, settings, usecase_factory)
 
     address = args.address or settings.address

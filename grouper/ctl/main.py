@@ -6,22 +6,21 @@ from typing import TYPE_CHECKING
 from grouper import __version__
 from grouper.ctl import dump_sql, group, oneoff, service_account, shell, sync_db, user, user_proxy
 from grouper.ctl.factory import CtlCommandFactory
-from grouper.initialization import create_usecase_factory
+from grouper.initialization import create_sql_usecase_factory
 from grouper.plugin import initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
 from grouper.settings import default_settings_path, settings
 from grouper.util import get_loglevel
 
 if TYPE_CHECKING:
-    from grouper.graph import GroupGraph
     from grouper.models.base.session import Session
     from typing import List, Optional
 
 sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
 
-def main(sys_argv=sys.argv, start_config_thread=True, session=None, graph=None):
-    # type: (List[str], bool, Optional[Session], Optional[GroupGraph]) -> None
+def main(sys_argv=sys.argv, start_config_thread=True, session=None):
+    # type: (List[str], bool, Optional[Session]) -> None
     description_msg = "Grouper Control"
     parser = argparse.ArgumentParser(description=description_msg)
 
@@ -76,7 +75,7 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None, graph=None):
     if log_level < 0:
         sa_log.setLevel(logging.INFO)
 
-    usecase_factory = create_usecase_factory(settings, session, graph)
+    usecase_factory = create_sql_usecase_factory(settings, session)
     command_factory = CtlCommandFactory(usecase_factory)
 
     # Old-style subcommands store a func in callable when setting up their arguments.  New-style

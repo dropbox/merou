@@ -29,7 +29,7 @@ from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
-from grouper.repositories.factory import RepositoryFactory
+from grouper.repositories.factory import GraphRepositoryFactory
 from grouper.services.factory import ServiceFactory
 from grouper.settings import Settings
 from grouper.usecases.factory import UseCaseFactory
@@ -60,7 +60,7 @@ class SetupTest(object):
         self.session = self.create_session(tmpdir)
         self.graph = GroupGraph()
         self.settings = Settings({"database": db_url(tmpdir)})
-        self.repository_factory = RepositoryFactory(self.settings, self.session, self.graph)
+        self.repository_factory = GraphRepositoryFactory(self.settings, self.session, self.graph)
         self.service_factory = ServiceFactory(self.repository_factory)
         self.usecase_factory = UseCaseFactory(self.service_factory)
         self._transaction_service = self.service_factory.create_transaction_service()
@@ -126,6 +126,23 @@ class SetupTest(object):
             return
         user = User(username=name)
         user.add(self.session)
+
+    def add_group_to_group(self, member, group):
+        # type: (str, str) -> None
+        self.create_group(member)
+        self.create_group(group)
+        member_obj = Group.get(self.session, name=member)
+        assert member_obj
+        group_obj = Group.get(self.session, name=group)
+        assert group_obj
+        edge = GroupEdge(
+            group_id=group_obj.id,
+            member_type=OBJ_TYPES["Group"],
+            member_pk=member_obj.id,
+            active=True,
+            _role=GROUP_EDGE_ROLES.index("member"),
+        )
+        edge.add(self.session)
 
     def add_user_to_group(self, user, group, role="member"):
         # type: (str, str, str) -> None

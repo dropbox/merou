@@ -17,9 +17,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from grouper.entities.pagination import PaginatedList, Pagination
     from grouper.entities.permission import Permission
+    from grouper.entities.permission_grant import PermissionGrant
     from grouper.usecases.authorization import Authorization
     from grouper.usecases.list_permissions import ListPermissionsSortKey
-    from typing import ContextManager
+    from typing import ContextManager, List
 
 
 class PermissionInterface(object):
@@ -74,6 +75,11 @@ class UserInterface(object):
     """Abstract base class for user operations and queries."""
 
     __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def permission_grants_for_user(self, user):
+        # type: (str) -> List[PermissionGrant]
+        pass
 
     @abstractmethod
     def user_can_create_permissions(self, user):

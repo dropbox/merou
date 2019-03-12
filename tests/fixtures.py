@@ -17,7 +17,7 @@ from grouper.constants import (
 )
 from grouper.fe.main import create_fe_application
 from grouper.graph import Graph
-from grouper.initialization import create_usecase_factory
+from grouper.initialization import create_graph_usecase_factory
 from grouper.models.base.model_base import Model
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.group import Group
@@ -299,7 +299,7 @@ def permissions(session, users):
 def api_app(session, standard_graph):
     # type: (Session, GroupGraph) -> GrouperApplication
     settings = Settings({"debug": False})
-    usecase_factory = create_usecase_factory(settings, session, standard_graph)
+    usecase_factory = create_graph_usecase_factory(settings, session, standard_graph)
     return create_api_application(standard_graph, settings, usecase_factory)
 
 
@@ -307,7 +307,7 @@ def api_app(session, standard_graph):
 def fe_app(session, standard_graph, tmpdir):
     # type: (Session, GroupGraph, LocalPath) -> GrouperApplication
     settings = Settings({"debug": False})
-    usecase_factory = create_usecase_factory(settings, session, standard_graph)
+    usecase_factory = create_graph_usecase_factory(settings, session, standard_graph)
     return create_fe_application(
         settings, usecase_factory, "", xsrf_cookies=False, session=lambda: session
     )

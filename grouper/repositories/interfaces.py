@@ -7,9 +7,23 @@ if TYPE_CHECKING:
     from grouper.entities.permission_grant import PermissionGrant
     from grouper.repositories.audit_log import AuditLogRepository
     from grouper.repositories.checkpoint import CheckpointRepository
+    from grouper.repositories.group_request import GroupRequestRepository
+    from grouper.repositories.service_account import ServiceAccountRepository
     from grouper.repositories.transaction import TransactionRepository
+    from grouper.repositories.user import UserRepository
     from grouper.usecases.list_permissions import ListPermissionsSortKey
     from typing import List, Optional
+
+
+class GroupEdgeRepository(object):
+    """Abstract base class for group edge repositories."""
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def groups_of_user(self, username):
+        # type: (str) -> List[str]
+        pass
 
 
 class PermissionRepository(object):
@@ -34,7 +48,7 @@ class PermissionRepository(object):
 
 
 class PermissionGrantRepository(object):
-    """Abstract base class for permission grants."""
+    """Abstract base class for permission grant repositories."""
 
     __metaclass__ = ABCMeta
 
@@ -65,6 +79,16 @@ class RepositoryFactory(object):
         pass
 
     @abstractmethod
+    def create_group_edge_repository(self):
+        # type: () -> GroupEdgeRepository
+        pass
+
+    @abstractmethod
+    def create_group_request_repository(self):
+        # type: () -> GroupRequestRepository
+        pass
+
+    @abstractmethod
     def create_permission_repository(self):
         # type: () -> PermissionRepository
         pass
@@ -75,6 +99,16 @@ class RepositoryFactory(object):
         pass
 
     @abstractmethod
+    def create_service_account_repository(self):
+        # type: () -> ServiceAccountRepository
+        pass
+
+    @abstractmethod
     def create_transaction_repository(self):
         # type: () -> TransactionRepository
+        pass
+
+    @abstractmethod
+    def create_user_repository(self):
+        # type: () -> UserRepository
         pass

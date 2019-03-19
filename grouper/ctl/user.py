@@ -1,30 +1,26 @@
 import logging
+import sys
+from typing import TYPE_CHECKING
 
 from grouper import public_key
+from grouper.ctl.base import CtlCommand
 from grouper.ctl.util import ensure_valid_username, make_session
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
 from grouper.plugin.exceptions import PluginRejectedDisablingUser
 from grouper.role_user import disable_role_user, enable_role_user
+from grouper.usecases.convert_user_to_service_account import ConvertUserToServiceAccountUI
 from grouper.user import disable_user, enable_user, get_all_users
 from grouper.user_metadata import set_user_metadata
 
-
-def handle_command(args):
-    if args.subcommand == "list":
-        session = make_session()
-        all_users = get_all_users(session)
-        for user in all_users:
-            user_enabled = "enabled" if user.enabled else "disabled"
-            logging.info("{} has status {}".format(user.name, user_enabled))
-        return
-
-    else:
-        user_command(args)
+if TYPE_CHECKING:
+    from argparse import ArgumentParser, Namespace
+    from grouper.usecases.factory import UseCaseFactory
 
 
 @ensure_valid_username
 def user_command(args):
+    # type: (Namespace) -> None
     session = make_session()
 
     if args.subcommand == "create":
@@ -127,41 +123,100 @@ def user_command(args):
         )
 
 
-def add_parser(subparsers):
-    user_parser = subparsers.add_parser("user", help="Edit user")
-    user_parser.set_defaults(func=handle_command)
-    user_subparser = user_parser.add_subparsers(dest="subcommand")
+class UserCommand(CtlCommand, ConvertUserToServiceAccountUI):
+    """Commands to modify users."""
 
-    user_subparser.add_parser("list", help="List all users and their account statuses")
+    @staticmethod
+    def add_arguments(parser):
+        # type: (ArgumentParser) -> None
+        parser.add_argument(
+            "-a",
+            "--actor",
+            required=False,
+            dest="actor_name",
+            help=(
+                "Name of the entity performing this action."
+                " Must be a valid Grouper human or service account."
+            ),
+        )
 
-    user_create_parser = user_subparser.add_parser("create", help="Create a new user account")
-    user_create_parser.add_argument("username", nargs="+")
-    user_create_parser.add_argument(
-        "--role-user",
-        default=False,
-        action="store_true",
-        help="If given, identifies user as a role user.",
-    )
+        subparser = parser.add_subparsers(dest="subcommand")
 
-    user_disable_parser = user_subparser.add_parser("disable", help="Disable a user account")
-    user_disable_parser.add_argument("username", nargs="+")
+        user_key_parser = subparser.add_parser("add_public_key", help="Add public key to user")
+        user_key_parser.add_argument("username")
+        user_key_parser.add_argument("public_key")
 
-    user_enable_parser = user_subparser.add_parser("enable", help="(Re-)enable a user account")
-    user_enable_parser.add_argument("username", nargs="+")
-    user_enable_parser.add_argument(
-        "--preserve-membership",
-        default=False,
-        action="store_true",
-        help="Unless provided, scrub all group memberships when re-enabling user.",
-    )
+        user_convert_parser = subparser.add_parser(
+            "convert_to_service_account", help="Convert to service account"
+        )
+        user_convert_parser.add_argument(
+            "--owner", required=True, help="Name of group to own the service account"
+        )
+        user_convert_parser.add_argument("username")
 
-    user_key_parser = user_subparser.add_parser("add_public_key", help="Add public key to user")
-    user_key_parser.add_argument("username")
-    user_key_parser.add_argument("public_key")
+        user_create_parser = subparser.add_parser("create", help="Create a new user account")
+        user_create_parser.add_argument("username", nargs="+")
+        user_create_parser.add_argument(
+            "--role-user",
+            default=False,
+            action="store_true",
+            help="If given, identifies user as a role user.",
+        )
 
-    user_set_metadata_parser = user_subparser.add_parser(
-        "set_metadata", help="Set metadata on user"
-    )
-    user_set_metadata_parser.add_argument("username")
-    user_set_metadata_parser.add_argument("metadata_key")
-    user_set_metadata_parser.add_argument("metadata_value")
+        user_disable_parser = subparser.add_parser("disable", help="Disable a user account")
+        user_disable_parser.add_argument("username", nargs="+")
+
+        user_enable_parser = subparser.add_parser("enable", help="(Re-)enable a user account")
+        user_enable_parser.add_argument("username", nargs="+")
+        user_enable_parser.add_argument(
+            "--preserve-membership",
+            default=False,
+            action="store_true",
+            help="Unless provided, scrub all group memberships when re-enabling user.",
+        )
+
+        subparser.add_parser("list", help="List all users and their account statuses")
+
+        user_set_metadata_parser = subparser.add_parser(
+            "set_metadata", help="Set metadata on user"
+        )
+        user_set_metadata_parser.add_argument("username")
+        user_set_metadata_parser.add_argument("metadata_key")
+        user_set_metadata_parser.add_argument("metadata_value")
+
+    def __init__(self, usecase_factory):
+        # type: (UseCaseFactory) -> None
+        self.usecase_factory = usecase_factory
+
+    def converted_user_to_service_account(self, user, owner):
+        # type: (str, str) -> None
+        logging.info("converted user %s to service account owned by %s", user, owner)
+
+    def convert_user_to_service_account_failed_permission_denied(self, user):
+        # type: (str) -> None
+        logging.critical("not permitted to convert user %s to service account", user)
+        sys.exit(1)
+
+    def convert_user_to_service_account_failed_user_is_in_groups(self, user):
+        # type: (str) -> None
+        logging.critical("user %s cannot be converted while a member of any groups", user)
+        sys.exit(1)
+
+    def run(self, args):
+        # type: (Namespace) -> None
+        if args.subcommand == "convert_to_service_account":
+            usecase = self.usecase_factory.create_convert_user_to_service_account_usecase(
+                args.actor_name, self
+            )
+            usecase.convert_user_to_service_account(args.username, args.owner)
+
+        elif args.subcommand == "list":
+            session = make_session()
+            all_users = get_all_users(session)
+            for user in all_users:
+                user_enabled = "enabled" if user.enabled else "disabled"
+                logging.info("{} has status {}".format(user.name, user_enabled))
+            return
+
+        else:
+            user_command(args)

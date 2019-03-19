@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING
 from sqlalchemy import desc
 
 from grouper.entities.audit_log_entry import AuditLogEntry
+from grouper.entities.group import GroupNotFoundException
+from grouper.entities.permission import PermissionNotFoundException
+from grouper.entities.user import UserNotFoundException
 from grouper.models.audit_log import AuditLog, AuditLogCategory
 from grouper.models.group import Group
 from grouper.models.permission import Permission
@@ -14,24 +17,6 @@ if TYPE_CHECKING:
     from grouper.models.base.session import Session
     from grouper.usecases.authorization import Authorization
     from typing import List, Optional
-
-
-class UnknownGroupException(Exception):
-    """Group involved in a logged action does not exist."""
-
-    pass
-
-
-class UnknownPermissionException(Exception):
-    """Permission involved in a logged action does not exist."""
-
-    pass
-
-
-class UnknownUserException(Exception):
-    """User involved in a logged action does not exist."""
-
-    pass
 
 
 class AuditLogRepository(object):
@@ -99,21 +84,21 @@ class AuditLogRepository(object):
         # type: (str) -> int
         group_obj = Group.get(self.session, name=group)
         if not group_obj:
-            raise UnknownGroupException("unknown group {}".format(group))
+            raise GroupNotFoundException(group)
         return group_obj.id
 
     def _id_for_permission(self, permission):
         # type: (str) -> int
         permission_obj = Permission.get(self.session, name=permission)
         if not permission_obj:
-            raise UnknownUserException("unknown permission {}".format(permission))
+            raise PermissionNotFoundException(permission)
         return permission_obj.id
 
     def _id_for_user(self, user):
         # type: (str) -> int
         user_obj = User.get(self.session, name=user)
         if not user_obj:
-            raise UnknownUserException("unknown user {}".format(user))
+            raise UserNotFoundException(user)
         return user_obj.id
 
     def _to_audit_log_entry(self, entry):

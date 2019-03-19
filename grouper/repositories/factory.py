@@ -4,18 +4,26 @@ from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.repositories.audit_log import AuditLogRepository
 from grouper.repositories.checkpoint import CheckpointRepository
+from grouper.repositories.group_edge import GraphGroupEdgeRepository, SQLGroupEdgeRepository
+from grouper.repositories.group_request import GroupRequestRepository
 from grouper.repositories.interfaces import RepositoryFactory
 from grouper.repositories.permission import GraphPermissionRepository, SQLPermissionRepository
 from grouper.repositories.permission_grant import (
     GraphPermissionGrantRepository,
     SQLPermissionGrantRepository,
 )
+from grouper.repositories.service_account import ServiceAccountRepository
 from grouper.repositories.transaction import TransactionRepository
+from grouper.repositories.user import UserRepository
 from grouper.util import get_database_url
 
 if TYPE_CHECKING:
     from grouper.graph import GroupGraph
-    from grouper.repositories.interfaces import PermissionRepository, PermissionGrantRepository
+    from grouper.repositories.interfaces import (
+        GroupEdgeRepository,
+        PermissionRepository,
+        PermissionGrantRepository,
+    )
     from grouper.settings import Settings
     from typing import Optional
 
@@ -66,6 +74,14 @@ class GraphRepositoryFactory(RepositoryFactory):
         # type: () -> CheckpointRepository
         return CheckpointRepository(self.session)
 
+    def create_group_edge_repository(self):
+        # type: () -> GroupEdgeRepository
+        return GraphGroupEdgeRepository(self.graph)
+
+    def create_group_request_repository(self):
+        # type: () -> GroupRequestRepository
+        return GroupRequestRepository(self.session)
+
     def create_permission_repository(self):
         # type: () -> PermissionRepository
         sql_permission_repository = SQLPermissionRepository(self.session)
@@ -75,9 +91,17 @@ class GraphRepositoryFactory(RepositoryFactory):
         # type: () -> PermissionGrantRepository
         return GraphPermissionGrantRepository(self.graph)
 
+    def create_service_account_repository(self):
+        # type: () -> ServiceAccountRepository
+        return ServiceAccountRepository(self.session)
+
     def create_transaction_repository(self):
         # type: () -> TransactionRepository
         return TransactionRepository(self.session)
+
+    def create_user_repository(self):
+        # type: () -> UserRepository
+        return UserRepository(self.session)
 
 
 class SQLRepositoryFactory(RepositoryFactory):
@@ -116,6 +140,14 @@ class SQLRepositoryFactory(RepositoryFactory):
         # type: () -> CheckpointRepository
         return CheckpointRepository(self.session)
 
+    def create_group_edge_repository(self):
+        # type: () -> GroupEdgeRepository
+        return SQLGroupEdgeRepository(self.session)
+
+    def create_group_request_repository(self):
+        # type: () -> GroupRequestRepository
+        return GroupRequestRepository(self.session)
+
     def create_permission_repository(self):
         # type: () -> PermissionRepository
         return SQLPermissionRepository(self.session)
@@ -124,6 +156,14 @@ class SQLRepositoryFactory(RepositoryFactory):
         # type: () -> PermissionGrantRepository
         return SQLPermissionGrantRepository(self.session)
 
+    def create_service_account_repository(self):
+        # type: () -> ServiceAccountRepository
+        return ServiceAccountRepository(self.session)
+
     def create_transaction_repository(self):
         # type: () -> TransactionRepository
         return TransactionRepository(self.session)
+
+    def create_user_repository(self):
+        # type: () -> UserRepository
+        return UserRepository(self.session)

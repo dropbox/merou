@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from grouper.ctl.permission import PermissionCommand
+from grouper.ctl.user import UserCommand
 
 if TYPE_CHECKING:
     from argparse import _SubParsersAction
@@ -29,6 +30,8 @@ class CtlCommandFactory(object):
         """
         parser = subparsers.add_parser("permission", help="Manipulate permissions")
         PermissionCommand.add_arguments(parser)
+        parser = subparsers.add_parser("user", help="Manipulate users")
+        UserCommand.add_arguments(parser)
 
     def __init__(self, usecase_factory):
         # type: (UseCaseFactory) -> None
@@ -38,9 +41,15 @@ class CtlCommandFactory(object):
         # type: (str) -> CtlCommand
         if command == "permission":
             return self.construct_permission_command()
+        elif command == "user":
+            return self.construct_user_command()
         else:
             raise UnknownCommand("unknown command {}".format(command))
 
     def construct_permission_command(self):
         # type: () -> PermissionCommand
         return PermissionCommand(self.usecase_factory)
+
+    def construct_user_command(self):
+        # type: () -> UserCommand
+        return UserCommand(self.usecase_factory)

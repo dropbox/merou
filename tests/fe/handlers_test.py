@@ -44,6 +44,13 @@ def _get_unsent_and_mark_as_sent_emails_with_username(session, username):  # noq
 
 
 @pytest.mark.gen_test
+def test_health(session, http_client, base_url):  # noqa: F811
+    health_url = url(base_url, "/debug/health")
+    resp = yield http_client.fetch(health_url)
+    assert resp.code == 200
+
+
+@pytest.mark.gen_test
 def test_auth(users, http_client, base_url):  # noqa: F811
     # no 'auth' present
     with pytest.raises(HTTPError):

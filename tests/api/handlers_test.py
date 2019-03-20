@@ -30,6 +30,13 @@ from tests.url_util import url
 
 
 @pytest.mark.gen_test
+def test_health(session, http_client, base_url):  # noqa: F811
+    health_url = url(base_url, "/debug/health")
+    resp = yield http_client.fetch(health_url)
+    assert resp.code == 200
+
+
+@pytest.mark.gen_test
 def test_users(users, http_client, base_url):  # noqa: F811
     all_users = sorted(users.keys() + ["service@a.co"])
     users_wo_role = sorted([u for u in users if u != u"role@a.co"])

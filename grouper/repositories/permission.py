@@ -57,7 +57,9 @@ class GraphPermissionRepository(PermissionRepository):
             Permission(name=p.name, description=p.description, created_on=p.created_on)
             for p in perm_tuples
         ]
-        return PaginatedList[Permission](values=permissions, total=total, offset=pagination.offset)
+        return PaginatedList[Permission](
+            values=permissions, total=total, offset=pagination.offset, limit=pagination.limit
+        )
 
 
 class SQLPermissionRepository(PermissionRepository):

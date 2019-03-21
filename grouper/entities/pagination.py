@@ -39,10 +39,12 @@ class PaginatedList(Generic[T]):
         values: The members of the list
         total: Total number of list members were no pagination done
         offset: Offset from start of sorted list
+        limit: Requested limit on total number of items to return (actual items may be fewer)
     """
 
-    def __init__(self, values, total, offset):
-        # type: (List[T], int, int) -> None
+    def __init__(self, values, total, offset, limit):
+        # type: (List[T], int, int, Optional[int]) -> None
         self.values = values
         self.total = total
         self.offset = offset
+        self.limit = limit

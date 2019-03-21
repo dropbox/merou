@@ -18,6 +18,11 @@ class PermissionsPage(BasePage):
         all_permission_rows = self.find_elements_by_class_name("permission-row")
         return [PermissionRow(row) for row in all_permission_rows]
 
+    @property
+    def limit_label(self):
+        # type: () -> str
+        return self.find_element_by_class_name("dropdown-toggle").text.strip()
+
     def click_show_all_button(self):
         # type: () -> None
         button = self.find_element_by_class_name("show-all")

@@ -58,6 +58,7 @@ def test_list(tmpdir, setup, browser):
         assert seen_permissions == sorted(expected_permissions)
         assert page.heading == "Permissions"
         assert page.subheading == "{} permission(s)".format(len(expected_permissions))
+        assert page.limit_label == "Limit: 100"
 
         # Switch to only audited permissions.
         page.click_show_audited_button()
@@ -97,6 +98,15 @@ def test_list_pagination(tmpdir, setup, browser):
         page = PermissionsPage(browser)
         seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
         assert seen_permissions == sorted(expected_permissions)[1:2]
+        assert page.limit_label == "Limit: 1"
+
+        # Retrieve the last permission but with a larger limit to test that the limit isn't capped
+        # to the number of returned items.
+        browser.get(url(frontend_url, "/permissions?limit=10&offset=2"))
+        page = PermissionsPage(browser)
+        seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
+        assert seen_permissions == sorted(expected_permissions)[2:]
+        assert page.limit_label == "Limit: 10"
 
 
 def test_create_button(tmpdir, setup, browser):

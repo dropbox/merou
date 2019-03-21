@@ -19,7 +19,7 @@ class PermissionsView(GrouperHandler, ListPermissionsUI):
             "permissions.html",
             permissions=permissions.values,
             offset=permissions.offset,
-            limit=len(permissions.values),
+            limit=permissions.limit,
             total=permissions.total,
             can_create=can_create,
             audited_permissions=audited_only,

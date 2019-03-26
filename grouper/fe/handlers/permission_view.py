@@ -1,10 +1,11 @@
+from grouper.constants import AUDIT_MANAGER
 from grouper.fe.util import GrouperHandler
 from grouper.permissions import (
     get_groups_by_permission,
     get_log_entries_by_permission,
     get_permission,
 )
-from grouper.user_permissions import user_is_permission_admin
+from grouper.user_permissions import user_has_permission, user_is_permission_admin
 
 
 class PermissionView(GrouperHandler):
@@ -14,7 +15,9 @@ class PermissionView(GrouperHandler):
         if not permission:
             return self.notfound()
 
-        can_change_audit_status = user_is_permission_admin(self.session, self.current_user)
+        can_change_audit_status = user_is_permission_admin(
+            self.session, self.current_user
+        ) or user_has_permission(self.session, self.current_user, AUDIT_MANAGER)
         can_disable = user_is_permission_admin(self.session, self.current_user)
         mapped_groups = get_groups_by_permission(self.session, permission)
         log_entries = get_log_entries_by_permission(self.session, permission)

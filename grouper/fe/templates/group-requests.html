@@ -48,7 +48,9 @@
                         <td class="request-requester">{{ request.requester }}</td>
                         <td class="request-status">{{ request.status }}</td>
                         <td class="request-requested-at">{{ request.requested_at|print_date }}</td>
-                        <td class="request-expiration">{{ request.changes['expiration'] }}</td>
+                        {% if request.changes.get('expiration')%}
+                        <td class="request-expiration">{{ request.changes.expiration|print_date }}</td>
+                        {% endif %}
                     </tr>
                     <tr>
                         {% if current_user_role['is_approver'] %}

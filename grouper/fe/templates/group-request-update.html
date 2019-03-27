@@ -19,6 +19,7 @@
                 <th class="col-sm-2">From Status</th>
                 <th class="col-sm-2">To Status</th>
                 <th class="col-sm-2">Date</th>
+                <th class="col-sm-2">Expiration Date</th>
             </tr>
         </thead>
         <tbody>
@@ -28,6 +29,7 @@
                     <td>{{ update.from_status|default("", True) }}</td>
                     <td>{{ update.to_status }}</td>
                     <td>{{ update.change_at|print_date }}</td>
+                    <td>{{ request.changes.expiration|print_date }}</td>
                 </tr>
                 <tr>
                     <td colspan="5">

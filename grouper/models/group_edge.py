@@ -4,6 +4,7 @@ from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, Sm
 from sqlalchemy.orm import relationship
 
 from grouper.expiration import add_expiration, cancel_expiration
+from grouper.fe.template_util import _make_date_obj, _utcnow
 from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.base.model_base import Model
 from grouper.models.user import User
@@ -115,10 +116,12 @@ class GroupEdge(Model):
                     # Check for and remove pending expiration notification.
                     cancel_expiration(self.session, group_name, member_name)
                 if value:
-                    expiration = datetime.strptime(value, "%m/%d/%Y")
+                    expiration = _make_date_obj(value)
+                    assert isinstance(expiration, datetime)
                     setattr(self, key, expiration)
                     # Avoid sending notifications for expired edges.
-                    if expiration > datetime.utcnow():
+                    if expiration > _utcnow():
+                        assert expiration > _utcnow()
                         add_expiration(
                             self.session,
                             expiration,

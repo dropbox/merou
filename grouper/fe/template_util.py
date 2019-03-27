@@ -8,16 +8,21 @@ from six import string_types
 from grouper.fe.settings import settings
 
 
-def _make_date_obj(date_obj):
+def _make_date_obj(input_date_obj):
     """Given either a datetime object, float date/time in UTC unix epoch, or
     string date/time in the form '%Y-%m-%d %H:%M:%S.%f' return a datetime
     object."""
-    if isinstance(date_obj, float):
-        date_obj = datetime.fromtimestamp(date_obj, UTC)
-
-    if isinstance(date_obj, string_types):
-        date_obj = datetime.strptime(date_obj, "%Y-%m-%d %H:%M:%S.%f")
-        date_obj = date_obj.replace(tzinfo=UTC)
+    if isinstance(input_date_obj, float):
+        date_obj = datetime.fromtimestamp(input_date_obj, UTC)
+    elif isinstance(input_date_obj, basestring):
+        try:
+            date_obj = datetime.strptime(input_date_obj, "%m/%d/%Y")
+        except ValueError:
+            date_obj = datetime.strptime(input_date_obj, "%Y-%m-%d %H:%M:%S.%f")
+    elif isinstance(input_date_obj, datetime):
+        date_obj = input_date_obj
+    else:
+        assert False, '{}>>>{}'.format(input_date_obj, type(input_date_obj))
 
     assert isinstance(date_obj, datetime)
 
@@ -32,7 +37,7 @@ def _utcnow():
     return datetime.now(UTC)
 
 
-def print_date(date_obj):
+def print_date(input_date):
     """Print a human readable date/time string that respects system
     configuration for time zone and date/time format.
 
@@ -42,12 +47,11 @@ def print_date(date_obj):
 
     Returns human readable date/time string.
     """
-    if date_obj is None:
+    if input_date is None or input_date == '' or isinstance(input_date, Undefined):
         return ""
 
     date_obj = _make_date_obj(date_obj)
 
-    date_obj = date_obj.astimezone(settings["timezone"])
     return date_obj.strftime(settings["date_format"])
 
 

@@ -2,11 +2,13 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import relationship
 
 from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.base.model_base import Model
 from grouper.models.comment import CommentObjectMixin
 from grouper.models.counter import Counter
+from grouper.models.user_token import UserToken
 from grouper.plugin import get_plugin_proxy
 
 if TYPE_CHECKING:
@@ -23,6 +25,7 @@ class User(Model, CommentObjectMixin):
     enabled = Column(Boolean, default=True, nullable=False)
     role_user = Column(Boolean, default=False, nullable=False)
     is_service_account = Column(Boolean, default=False, nullable=False)
+    tokens = relationship("UserToken", backref="user")
 
     @hybrid_property
     def name(self):

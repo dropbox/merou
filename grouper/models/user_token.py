@@ -4,10 +4,8 @@ import os
 from datetime import datetime
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
-from sqlalchemy.orm import relationship
 
 from grouper.models.base.model_base import Model
-from grouper.models.user import User
 
 
 def _make_secret():
@@ -28,8 +26,6 @@ class UserToken(Model):
     disabled_at = Column(DateTime, default=None, nullable=True)
 
     hashed_secret = Column(String(length=64), unique=True, nullable=False)
-
-    user = relationship("User", backref="tokens")
 
     __table_args__ = (UniqueConstraint("user_id", "name"),)
 

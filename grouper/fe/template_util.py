@@ -2,6 +2,7 @@ from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
 from jinja2 import Environment, PackageLoader
+from jinja2.runtime import Undefined
 from pytz import UTC
 from six import string_types
 
@@ -22,7 +23,7 @@ def _make_date_obj(input_date_obj):
     elif isinstance(input_date_obj, datetime):
         date_obj = input_date_obj
     else:
-        assert False, '{}>>>{}'.format(input_date_obj, type(input_date_obj))
+        assert False, "{}>>>{}".format(input_date_obj, type(input_date_obj))
 
     assert isinstance(date_obj, datetime)
 
@@ -47,7 +48,7 @@ def print_date(input_date):
 
     Returns human readable date/time string.
     """
-    if input_date is None or input_date == '' or isinstance(input_date, Undefined):
+    if input_date is None or input_date == "" or isinstance(input_date, Undefined):
         return ""
 
     date_obj = _make_date_obj(date_obj)

@@ -120,7 +120,6 @@ class GroupEdge(Model):
                     setattr(self, key, expiration)
                     # Avoid sending notifications for expired edges.
                     if expiration > _utcnow():
-                        assert expiration > _utcnow()
                         add_expiration(
                             self.session,
                             expiration,

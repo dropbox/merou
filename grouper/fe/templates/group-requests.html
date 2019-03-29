@@ -49,7 +49,7 @@
                         <td class="request-status">{{ request.status }}</td>
                         <td class="request-requested-at">{{ request.requested_at|print_date }}</td>
                         {% if request.changes.get('expiration')%}
-                        <td class="request-expiration">{{ request.changes.expiration|print_date }}</td>
+                            <td class="request-expiration">{{ request.changes.expiration|print_date }}</td>
                         {% endif %}
                     </tr>
                     <tr>

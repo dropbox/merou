@@ -117,7 +117,6 @@ class GroupEdge(Model):
                     cancel_expiration(self.session, group_name, member_name)
                 if value:
                     expiration = _make_date_obj(value)
-                    assert isinstance(expiration, datetime)
                     setattr(self, key, expiration)
                     # Avoid sending notifications for expired edges.
                     if expiration > _utcnow():

@@ -15,7 +15,7 @@ def _make_date_obj(input_date_obj):
     object."""
     if isinstance(input_date_obj, float):
         date_obj = datetime.fromtimestamp(input_date_obj, UTC)
-    elif isinstance(input_date_obj, basestring):
+    elif isinstance(input_date_obj, string_types):
         try:
             date_obj = datetime.strptime(input_date_obj, "%m/%d/%Y")
         except ValueError:

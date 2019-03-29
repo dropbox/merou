@@ -51,7 +51,7 @@ def print_date(input_date):
     if input_date is None or input_date == "" or isinstance(input_date, Undefined):
         return ""
 
-    date_obj = _make_date_obj(date_obj)
+    date_obj = _make_date_obj(input_date)
 
     return date_obj.strftime(settings["date_format"])
 

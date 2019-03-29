@@ -131,7 +131,7 @@ def test_request_to_join_group(async_server, browser):  # noqa: F811
     request_row = page.find_request_row("User: cbguder@a.co")
     assert request_row.requester == "cbguder@a.co"
     assert request_row.status == "pending"
-    assert request_row.expiration == "2999-12-30 04:00 PM"
+    assert request_row.expiration == "2999-12-31 12:00 AM"
     assert request_row.role == "member"
     assert request_row.reason == "Testing"
 

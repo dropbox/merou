@@ -57,9 +57,9 @@ def test_print_date(mock_settings):
     mock_settings.__getitem__.side_effect = fake_settings_getitem
 
     for date_, expected, msg in [
-        (datetime(2015, 8, 11, 18, tzinfo=UTC), "2015-08-11 11:00 AM", "from datetime object"),
-        (datetime(2015, 8, 11, 18, 0, 10, 10, tzinfo=UTC), "2015-08-11 11:00 AM", "ignore sec/ms"),
-        ("2015-08-11 18:00:00.000", "2015-08-11 11:00 AM", "from string"),
-        (1439316000.0, "2015-08-11 11:00 AM", "from float / unix timestamp"),
+        (datetime(2015, 8, 11, 18, tzinfo=UTC), "2015-08-11 06:00 PM", "from datetime object"),
+        (datetime(2015, 8, 11, 18, 0, 10, 10, tzinfo=UTC), "2015-08-11 06:00 PM", "ignore sec/ms"),
+        ("2015-08-11 18:00:00.000", "2015-08-11 06:00 PM", "from string"),
+        (1439316000.0, "2015-08-11 06:00 PM", "from float / unix timestamp"),
     ]:
         assert print_date(date_) == expected, msg

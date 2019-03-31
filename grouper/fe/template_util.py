@@ -23,7 +23,9 @@ def _make_date_obj(input_date_obj):
     elif isinstance(input_date_obj, datetime):
         date_obj = input_date_obj
     else:
-        assert False, "input_date_obj {} is of unsupported type {}".format(input_date_obj, type(input_date_obj))
+        assert False, "input_date_obj {} is of unsupported type {}".format(
+            input_date_obj, type(input_date_obj)
+        )
 
     assert isinstance(date_obj, datetime)
 

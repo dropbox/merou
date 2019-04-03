@@ -2,7 +2,7 @@
 merou
 =====
 
-.. image:: https://travis-ci.org/dropbox/merou.png?branch=master
+.. image:: https://travis-ci.org/dropbox/merou.svg?branch=master
     :alt: Build Status
     :target: https://travis-ci.org/dropbox/merou
 

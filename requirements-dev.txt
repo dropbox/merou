@@ -1,7 +1,7 @@
-coverage==3.7.1
-flake8-import-order==0.18
-flake8==3.7.5
-groupy
+coverage==4.5.3
+flake8-import-order==0.18.1
+flake8==3.7.7
+groupy>=0.5.0
 mock==2.0.0
 mrproxy==0.3.4
 py==1.5.2
@@ -9,4 +9,4 @@ pytest-mock==1.10.0
 pytest-tornado==0.5.0
 pytest-xdist==1.10
 pytest==3.5.0
-selenium==3.6.0
+selenium==3.141.0

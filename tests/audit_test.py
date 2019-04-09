@@ -441,10 +441,10 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
 def test_get_auditors_group(session, standard_graph):  # noqa: F811
     with pytest.raises(NoSuchGroup) as exc:
         get_auditors_group(Mock(auditors_group=None), session)
-    assert exc.value.message == "Please ask your admin to configure the `auditors_group` settings"
+    assert str(exc.value) == "Please ask your admin to configure the `auditors_group` settings"
     with pytest.raises(NoSuchGroup) as exc:
         get_auditors_group(Mock(auditors_group="do-not-exist"), session)
-    assert exc.value.message == "Please ask your admin to configure the default group for auditors"
+    assert str(exc.value) == "Please ask your admin to configure the default group for auditors"
     # now should be able to get the group
     auditors_group = get_auditors_group(Mock(auditors_group="auditors"), session)
     assert auditors_group is not None

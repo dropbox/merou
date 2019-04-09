@@ -57,7 +57,7 @@ def user_command(args):
                     )
                     session.commit()
                 except PluginRejectedDisablingUser as e:
-                    logging.error(e.message)
+                    logging.error("%s", e)
 
         return
 

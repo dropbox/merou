@@ -52,7 +52,7 @@ class PublicKeyAdd(GrouperHandler):
         except public_key.PublicKeyParseError:
             form.public_key.errors.append("Public key appears to be invalid.")
         except public_key.BadPublicKey as e:
-            form.public_key.errors.append(e.message)
+            form.public_key.errors.append(str(e))
 
         if form.public_key.errors:
             return self.render(

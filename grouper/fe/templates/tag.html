@@ -2,6 +2,8 @@
 {% from 'macros/ui.html' import group_panel, member_panel, tag_permission_panel, log_entry_panel,
                                 help_for, account %}
 
+{% block subtitle %} tag {{tag.name}}{% endblock %}
+
 {% block heading %}
     <a href="/tags">Tags</a>
 {% endblock %}

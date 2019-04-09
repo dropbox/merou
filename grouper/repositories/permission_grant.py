@@ -75,6 +75,10 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         )
         group_ids = [g.id for g in groups]
 
+        # If the user was not a member of any group, we can return early.
+        if not group_ids:
+            return []
+
         # Now, get the parent groups of those groups and so forth until we run out of levels of the
         # tree.  Use a set of seen group_ids to avoid querying the same group twice if a user is a
         # member of it via multiple paths.

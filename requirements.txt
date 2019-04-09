@@ -12,7 +12,7 @@ plop==0.3.0
 pyflamegraph==0.0.2
 python-dateutil==2.4.2
 pytz==2017.2
-setuptools==40.0.0
+setuptools==40.8.0
 six==1.12.0
 sshpubkeys==2.2.0
 tornado==4.5.3

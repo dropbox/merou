@@ -3,6 +3,7 @@ from __future__ import print_function
 import errno
 import socket
 import subprocess
+import sys
 import time
 from contextlib import closing
 from typing import TYPE_CHECKING
@@ -32,6 +33,7 @@ def async_server(standard_graph, tmpdir):
 
     cmds = [
         [
+            sys.executable,
             src_path("bin", "grouper-ctl"),
             "-vvc",
             src_path("config", "dev.yaml"),
@@ -43,6 +45,7 @@ def async_server(standard_graph, tmpdir):
             "cbguder@a.co",
         ],
         [
+            sys.executable,
             src_path("bin", "grouper-fe"),
             "-c",
             src_path("config", "dev.yaml"),
@@ -75,6 +78,7 @@ def async_api_server(standard_graph, tmpdir):
     api_port = _get_unused_port()
 
     cmd = [
+        sys.executable,
         src_path("bin", "grouper-api"),
         "-c",
         src_path("config", "dev.yaml"),

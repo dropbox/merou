@@ -4,6 +4,7 @@ import optparse
 import subprocess
 import os
 import signal
+import sys
 
 parser = optparse.OptionParser(r"""
 
@@ -46,6 +47,7 @@ os.setpgrp()
 settings = os.environ.get("GROUPER_SETTINGS", "config/dev.yaml")
 cmds = [
     [
+        sys.executable,
         "bin/grouper-ctl",
         "-vvc",
         settings,
@@ -56,9 +58,9 @@ cmds = [
         options.listen_port,
         options.user,
     ],
-    ["bin/grouper-fe", "--config={}".format(settings)],
-    ["bin/grouper-api", "--config={}".format(settings)],
-    ["bin/grouper-background", "--config={}".format(settings)],
+    [sys.executable, "bin/grouper-fe", "--config={}".format(settings)],
+    [sys.executable, "bin/grouper-api", "--config={}".format(settings)],
+    [sys.executable, "bin/grouper-background", "--config={}".format(settings)],
 ]
 for cmd in cmds:
     subprocess.Popen(cmd)
@@ -67,7 +69,7 @@ for cmd in cmds:
 try:
     signal.pause()
 except KeyboardInterrupt:
-    print "Terminating development environment"
+    print("Terminating development environment")
 finally:
     # Kill everything in our process group.
     os.killpg(0, signal.SIGTERM)

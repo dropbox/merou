@@ -45,14 +45,7 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None):
     CtlCommandFactory.add_all_parsers(subparsers)
 
     # Add parsers for legacy commands that have not been refactored.
-    for subcommand_module in [
-        dump_sql,
-        group,
-        oneoff,
-        service_account,
-        shell,
-        sync_db,
-    ]:
+    for subcommand_module in [dump_sql, group, oneoff, service_account, shell, sync_db]:
         subcommand_module.add_parser(subparsers)  # type: ignore
 
     args = parser.parse_args(sys_argv[1:])

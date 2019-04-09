@@ -4,8 +4,6 @@ import getpass
 import logging
 from typing import cast, TYPE_CHECKING
 
-from six import PY2
-
 from grouper.ctl.base import CtlCommand
 
 try:
@@ -97,26 +95,18 @@ class ProxyHandler(BaseHTTPRequestHandler):
         headers["X-Grouper-User"] = cast(ProxyServer, self.server).username
         return headers
 
-    def do_GET(self, method="GET"):
-        # type: (str) -> None
+    def do_GET(self):
+        # type: () -> None
         headers = self.updated_headers()
-        if PY2:
-            request = Request(self.dest_url, headers=headers)
-            request.get_method = lambda: method
-        else:
-            request = Request(self.dest_url, method=method, headers=headers)
+        request = Request(self.dest_url, headers=headers)
         self.do_request(request)
 
-    def do_POST(self, method="POST"):
-        # type: (str) -> None
+    def do_POST(self):
+        # type: () -> None
         content_len = int(str(self.headers["Content-Length"]))
         data = self.rfile.read(content_len)
         headers = self.updated_headers()
-        if PY2:
-            request = Request(self.dest_url, headers=headers, data=data)
-            request.get_method = lambda: method
-        else:
-            request = Request(self.dest_url, method=method, headers=headers, data=data)
+        request = Request(self.dest_url, headers=headers, data=data)
         self.do_request(request)
 
 

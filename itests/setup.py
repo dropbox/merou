@@ -135,4 +135,4 @@ def selenium_browser():
     options.add_argument("headless")
     options.add_argument("no-sandbox")
     options.add_argument("window-size=1920,1080")
-    return Chrome(chrome_options=options)
+    return Chrome(options=options)

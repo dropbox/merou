@@ -91,12 +91,12 @@ def add_public_key(session, user, public_key_str):
     try:
         pubkey.parse()
     except sshpubkeys.InvalidKeyException as e:
-        raise PublicKeyParseError(e.message)
+        raise PublicKeyParseError(str(e))
 
     try:
         get_plugin_proxy().will_add_public_key(pubkey)
     except PluginRejectedPublicKey as e:
-        raise BadPublicKey(e.message)
+        raise BadPublicKey(str(e))
 
     db_pubkey = PublicKey(
         user=user,

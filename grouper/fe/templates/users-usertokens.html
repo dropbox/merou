@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% from 'macros/ui.html' import account, paginator, one_user_token_row, dropdown with context %}
 
+{% block subtitle %} user tokens{% endblock %}
+
 {% block heading %}
     {% if not form.enabled.data %}
       Disabled

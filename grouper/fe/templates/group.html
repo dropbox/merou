@@ -2,6 +2,8 @@
 {% from 'macros/ui.html' import group_panel, member_panel, permission_panel, log_entry_panel,
                                 help_for, account, service_account_panel %}
 
+{% block subtitle %} group {{group.groupname}}{% endblock %}
+
 {% block heading %}
     <a href="/groups">Groups</a>
 {% endblock %}

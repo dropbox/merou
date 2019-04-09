@@ -4,6 +4,8 @@
                                 shell_panel, passwords_panel %}
 {% from 'macros/ui.html' import public_key_panel with context %}
 
+{% block subtitle %} user {{user.username}}{% endblock %}
+
 {% block heading %}
     <a href="/users">Users</a>
 {% endblock %}

@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 {% from 'macros/ui.html' import permission, paginator, dropdown with context %}
 
+{% block subtitle %}
+    {% if audited_permissions %}
+      audited
+    {% endif %}
+    permissions
+{% endblock %}
+
 {% block heading %}
     {% if audited_permissions %}
       Audited

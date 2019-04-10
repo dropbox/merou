@@ -21,7 +21,7 @@ with open("requirements.txt") as requirements:
     required = requirements.read().splitlines()
 
 # Test suite requirements.
-with open("requirements-dev.txt") as requirements:
+with open("requirements-dev2.txt") as requirements:
     test_required = requirements.read().splitlines()
 
 package_data = defaultdict(list)  # type: Dict[str, List]
@@ -46,12 +46,10 @@ kwargs = {
     "package_data": package_data,
     "scripts": ["bin/grouper-api", "bin/grouper-fe", "bin/grouper-ctl"],
     "description": "Self-service Nested Group Management Server.",
-    # TODO(lfaraone): Check whether this is still needed for PyPI
     "long_description": open("README.rst").read(),
     "author": "Gary M. Josack",
-    "maintainer": "Gary M. Josack",
+    "maintainer": "Dropbox",
     "author_email": "gary@dropbox.com",
-    "maintainer_email": "gary@dropbox.com",
     "license": "Apache",
     "install_requires": required,
     "setup_requires": ["pytest-runner"],
@@ -59,7 +57,8 @@ kwargs = {
     "url": "https://github.com/dropbox/grouper",
     "download_url": "https://github.com/dropbox/grouper/archive/master.tar.gz",
     "classifiers": [
-        "Programming Language :: Python",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.7",
         "Topic :: Software Development",
         "Topic :: Software Development :: Libraries",
         "Topic :: Software Development :: Libraries :: Python Modules",

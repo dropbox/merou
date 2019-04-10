@@ -66,9 +66,9 @@ class GroupPermissionRequest(GrouperHandler):
         )
 
         argument_type = self.request.arguments.get("argument_type")
-        if argument_type and argument_type[0] == "text":
+        if argument_type and argument_type[0].decode() == "text":
             form = text_form
-        elif argument_type and argument_type[0] == "dropdown":
+        elif argument_type and argument_type[0].decode() == "dropdown":
             form = dropdown_form
             form.argument.choices = [(a, a) for a in args_by_perm[form.permission_name.data]]
         else:

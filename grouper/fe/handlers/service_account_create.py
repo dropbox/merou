@@ -27,8 +27,10 @@ class ServiceAccountCreate(GrouperHandler):
         if not group:
             return self.notfound()
 
-        if "@" not in self.request.arguments["name"][0]:
-            self.request.arguments["name"][0] += "@" + settings.service_account_email_domain
+        if "@" not in self.request.arguments["name"][0].decode():
+            self.request.arguments["name"][0] += (
+                b"@" + settings.service_account_email_domain.encode()
+            )
 
         if not can_create_service_account(self.session, self.current_user, group):
             return self.forbidden()

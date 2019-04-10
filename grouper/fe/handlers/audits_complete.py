@@ -28,7 +28,7 @@ class AuditsComplete(GrouperHandler):
         edges = {}
         for argument in self.request.arguments:
             if argument.startswith("audit_"):
-                edges[int(argument.split("_")[1])] = self.request.arguments[argument][0]
+                edges[int(argument.split("_")[1])] = self.request.arguments[argument][0].decode()
 
         for member in audit.my_members():
             if member.id in edges:

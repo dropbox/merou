@@ -14,12 +14,13 @@ import tornado.web
 from plop.collector import Collector
 from tornado.web import RequestHandler
 
-from grouper import perf_profile, stats
+from grouper import stats
 from grouper.constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATION
 from grouper.fe.settings import settings
 from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.user import User
+from grouper.perf_profile import record_trace
 from grouper.user_permissions import user_permissions
 from grouper.util import get_database_url
 
@@ -168,7 +169,7 @@ class GrouperHandler(RequestHandler):
     def on_finish(self):
         if self.perf_collector:
             self.perf_collector.stop()
-            perf_profile.record_trace(self.session, self.perf_collector, self.perf_trace_uuid)
+            record_trace(self.session, self.perf_collector, self.perf_trace_uuid)
 
         self.session.close()
 

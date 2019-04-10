@@ -9,7 +9,6 @@ enum34==1.1.6
 mysqlclient==1.4.2.post1
 networkx==1.8.1
 plop==0.3.0
-pyflamegraph==0.0.2
 python-dateutil==2.4.2
 pytz==2017.2
 setuptools==40.8.0

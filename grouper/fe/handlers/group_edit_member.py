@@ -136,7 +136,7 @@ class GroupEditMember(GrouperHandler):
                 group=group,
                 member=member,
                 edge=edge,
-                alerts=[Alert("danger", e.message)],
+                alerts=[Alert("danger", str(e))],
             )
 
         return self.redirect("/groups/{}?refresh=yes".format(group.name))

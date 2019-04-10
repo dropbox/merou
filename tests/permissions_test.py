@@ -154,10 +154,10 @@ def test_has_permission(session, standard_graph, users):  # noqa: F811
 
 class PermissionTests(unittest.TestCase):
     def test_reject_bad_permission_names(self):
-        self.assertEquals(len(grouper.fe.util.test_reserved_names("permission_lacks_period")), 1)
-        self.assertEquals(len(grouper.fe.util.test_reserved_names("grouper.prefix.reserved")), 1)
-        self.assertEquals(len(grouper.fe.util.test_reserved_names("admin.prefix.reserved")), 1)
-        self.assertEquals(len(grouper.fe.util.test_reserved_names("test.prefix.reserved")), 1)
+        self.assertEqual(len(grouper.fe.util.test_reserved_names("permission_lacks_period")), 1)
+        self.assertEqual(len(grouper.fe.util.test_reserved_names("grouper.prefix.reserved")), 1)
+        self.assertEqual(len(grouper.fe.util.test_reserved_names("admin.prefix.reserved")), 1)
+        self.assertEqual(len(grouper.fe.util.test_reserved_names("test.prefix.reserved")), 1)
 
         Field = namedtuple("field", "data")
 

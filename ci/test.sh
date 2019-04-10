@@ -14,6 +14,7 @@ fi
 # Python 3 currently only does static analysis.
 if [[ "$TRAVIS_PYTHON_VERSION" == 3* ]]; then
     mypy .
+    mypy --py2 .
     black --check .
     flake8 --count
 fi

@@ -3,10 +3,10 @@ import re
 import sys
 import traceback
 from contextlib import closing
-from cStringIO import StringIO
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from six import iteritems, StringIO
 from tornado.web import HTTPError, RequestHandler
 
 from grouper import stats

@@ -1,7 +1,7 @@
 import crypt
-import cStringIO as StringIO
 import csv
 import json
+from io import StringIO
 from urllib import urlencode
 
 import pytest
@@ -385,8 +385,7 @@ def test_public_keys(session, users, http_client, base_url):  # noqa: F811
     api_url = url(base_url, "/public-keys")
     resp = yield http_client.fetch(api_url)
 
-    body_io = StringIO.StringIO(resp.body)
-
+    body_io = StringIO(resp.body.decode())
     csv_reader = csv.DictReader(body_io)
     rows = list(csv_reader)
 

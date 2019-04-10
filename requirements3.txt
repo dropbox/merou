@@ -1,4 +1,0 @@
-black==19.3b0
-flake8-import-order==0.18.1
-flake8==3.7.7
-mypy==0.700

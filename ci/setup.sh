@@ -8,10 +8,11 @@ if [[ "$TRAVIS_PYTHON_VERSION" == 2* ]]; then
 
     mysql -e 'CREATE DATABASE merou;'
 
-    pip install -r requirements-dev.txt
     pip install -r requirements.txt
+    pip install -r requirements-dev.txt
 fi
 
 if [[ "$TRAVIS_PYTHON_VERSION" == 3* ]]; then
-    pip install -r requirements3.txt
+    pip install -r requirements.txt
+    pip install -r requirements-dev3.txt
 fi

@@ -258,7 +258,7 @@ class GrouperHandler(RequestHandler):
             self.log_exception(*sys.exc_info())
 
     def log_message(self, message, **kwargs):
-        if self.captureMessage:
+        if getattr(self, "captureMessage", None):
             self.captureMessage(message, **kwargs)
         else:
             logging.info("{}, kwargs={}".format(message, kwargs))

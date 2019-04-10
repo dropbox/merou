@@ -5,10 +5,10 @@
 {% endblock %}
 
 {% block subheading %}
-{{ status_code }}: {{ message }}
+{{ status_code }}: {{ message|e }}
 {% endblock %}
 
 {% block content %}
 <p class="lead">{{ status_code }}</p>
-    <p>{{ message }}</p>
+    <p>{{ message|e }}</p>
 {% endblock %}

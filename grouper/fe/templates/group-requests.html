@@ -62,7 +62,7 @@
                                 <span class="request-role">{{ ROLES[request.role] }}</span>
                                 <br/>
                                 <strong>Reason:</strong>
-                                <em class="request-reason">{{ request.reason }}</em>
+                                <em class="request-reason">{{ request.reason|e }}</em>
                             </div>
                         </td>
                     </tr>

@@ -6,11 +6,7 @@ from grouper.group_service_account import get_service_accounts
 from grouper.models.audit_member import AUDIT_STATUS_CHOICES
 from grouper.models.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.permissions import get_owner_arg_list, get_pending_request_by_group, get_requests
-from grouper.public_key import (
-    get_public_key_permissions,
-    get_public_key_tags,
-    get_public_keys_of_user,
-)
+from grouper.public_key import get_public_keys_of_user
 from grouper.role_user import can_manage_role_user
 from grouper.service_account import can_manage_service_account, service_account_permissions
 from grouper.user import (
@@ -132,12 +128,6 @@ def get_user_view_template_vars(session, actor, user, graph):
     ]
     ret["passwords"] = user_passwords(session, user)
     ret["public_keys"] = get_public_keys_of_user(session, user.id)
-    for key in ret["public_keys"]:
-        key.tags = get_public_key_tags(session, key)
-        key.pretty_permissions = [
-            "{} ({})".format(perm.name, perm.argument if perm.argument else "unargumented")
-            for perm in get_public_key_permissions(session, key)
-        ]
     ret["log_entries"] = get_log_entries_by_user(session, user)
     ret["user_tokens"] = user.tokens
 

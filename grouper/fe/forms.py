@@ -300,42 +300,6 @@ class UserShellForm(Form):
     shell = SelectField("Shell", [validators.DataRequired()])
 
 
-class TagCreateForm(Form):
-    tagname = StringField(
-        "Name",
-        [
-            validators.Length(min=3, max=32),
-            validators.DataRequired(),
-            ValidateRegex(constants.NAME_VALIDATION),
-        ],
-    )
-    description = TextAreaField("Description")
-
-
-class TagEditForm(Form):
-    description = TextAreaField("Description")
-    enabled = BooleanField("Enabled")
-
-
-class PermissionGrantTagForm(Form):
-    permission = SelectField(
-        "Permission", [validators.DataRequired()], choices=[["", "(select one)"]], default=""
-    )
-    argument = StringField(
-        "Argument",
-        [
-            validators.Length(min=0, max=constants.MAX_NAME_LENGTH),
-            ValidateRegex(constants.ARGUMENT_VALIDATION),
-        ],
-    )
-
-
-class PublicKeyAddTagForm(Form):
-    tagname = SelectField(
-        "Tag", [validators.DataRequired()], choices=[["", "(select one)"]], default=""
-    )
-
-
 class UserPasswordForm(Form):
     name = StringField(
         "Password name",

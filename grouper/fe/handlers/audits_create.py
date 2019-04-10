@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from six import itervalues
 from sqlalchemy.exc import IntegrityError
 
 from grouper.constants import AUDIT_MANAGER
@@ -59,7 +60,7 @@ class AuditsCreate(GrouperHandler):
             group.audit_id = audit.id
 
             # Step 3, now get all members of this group and set up audit rows for those edges.
-            for member in group.my_members().values():
+            for member in itervalues(group.my_members()):
                 auditmember = AuditMember(audit_id=audit.id, edge_id=member.edge_id)
                 try:
                     auditmember.add(self.session)

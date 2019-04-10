@@ -4,7 +4,7 @@ from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from six import string_types
+from six import itervalues, string_types
 
 from grouper.fe.template_util import get_template_env
 from grouper.models.async_notification import AsyncNotification
@@ -214,7 +214,7 @@ def notify_edge_expiration(settings, session, edge):
     # TODO(rra): Arbitrarily use the first listed owner of the group from which membership expired
     # as the actor, since we have to provide an actor and we didn't record who set the expiration
     # on the edge originally.
-    actor_id = next(edge.group.my_owners().itervalues()).id
+    actor_id = next(itervalues(edge.group.my_owners())).id
 
     # Pull data about the edge and the affected user or group.
     group_name = edge.group.name

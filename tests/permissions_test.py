@@ -195,7 +195,7 @@ class PermissionTests(unittest.TestCase):
 
 
 def assert_same_recipients(emails, recipients, msg="email recipients did not match expectation"):
-    actual_recipients = sorted(map(lambda email: email.email, emails))
+    actual_recipients = sorted([email.email for email in emails])
     expected_recipients = sorted(recipients)
     assert actual_recipients == expected_recipients, msg
 
@@ -570,7 +570,7 @@ def test_grant_and_revoke(
 
     def _check_graph_for_perm(graph):
         return any(
-            map(lambda x: x.permission == permission_name, graph.permission_metadata[group_name])
+            [x.permission == permission_name for x in graph.permission_metadata[group_name]]
         )
 
     # make some permission admins

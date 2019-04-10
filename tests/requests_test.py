@@ -1,3 +1,5 @@
+from six import iteritems, itervalues
+
 from grouper.group_requests import get_requests_by_group
 from grouper.models.request import Request
 from grouper.user import user_requests_aggregate
@@ -15,12 +17,12 @@ from tests.util import add_member
 
 def test_basic_request(graph, groups, permissions, session, standard_graph, users):  # noqa: F811
     group_sre = groups["team-sre"]
-    group_not_sre = [g for name, g in groups.items() if name != "team-sre"]
+    group_not_sre = [g for name, g in iteritems(groups) if name != "team-sre"]
 
     assert not any(
         [
             get_requests_by_group(session, group, status="pending").all()
-            for group in groups.values()
+            for group in itervalues(groups)
         ]
     ), "no group should start with pending requests"
 
@@ -41,7 +43,7 @@ def test_basic_request(graph, groups, permissions, session, standard_graph, user
     assert not any(
         [
             get_requests_by_group(session, group, status="pending").all()
-            for group in groups.values()
+            for group in itervalues(groups)
         ]
     ), "no group should have requests after being actioned"
 
@@ -51,11 +53,11 @@ def test_aggregate_request(
 ):
     gary = users["gary@a.co"]
     not_involved = [
-        user for name, user in users.items() if name not in ("gary@a.co", "testuser@a.co")
+        user for name, user in iteritems(users) if name not in ("gary@a.co", "testuser@a.co")
     ]
 
     assert not any(
-        [user_requests_aggregate(session, u).all() for u in users.values()]
+        [user_requests_aggregate(session, u).all() for u in itervalues(users)]
     ), "should have no pending requests to begin with"
 
     # one request to one team
@@ -103,7 +105,9 @@ def test_aggregate_request(
     assert (
         len(user_requests_aggregate(session, users["oliver@a.co"]).all()) == 1
     ), "owner should get request"
-    user_not_gary_oliver = [u for n, u in users.items() if n not in ("gary@a.co", "oliver@a.co")]
+    user_not_gary_oliver = [
+        u for n, u in iteritems(users) if n not in ("gary@a.co", "oliver@a.co")
+    ]
     assert not any([user_requests_aggregate(session, u).all() for u in user_not_gary_oliver])
 
     # manager and np-owner should get requests

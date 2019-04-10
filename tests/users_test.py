@@ -140,7 +140,7 @@ def test_graph_disable(
 ):
     graph.update_from_db(session)
     old_users = graph.users
-    assert sorted(old_users) == sorted(users.keys() + ["service@a.co"])
+    assert sorted(old_users) == sorted(list(users.keys()) + ["service@a.co"])
 
     # disable a user
     username = u"oliver@a.co"

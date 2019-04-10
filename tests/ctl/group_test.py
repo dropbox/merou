@@ -65,12 +65,12 @@ def test_group_bulk_add_remove(make_session, session, users, groups):  # noqa: F
     # bulk add
     usernames = {"oliver@a.co", "testuser@a.co", "zebu@a.co"}
     call_main(session, "group", "add_member", "--member", groupname, *usernames)
-    members = {u for _, u in Group.get(session, name=groupname).my_members().keys()}
+    members = {u for _, u in Group.get(session, name=groupname).my_members()}
     assert usernames.issubset(members)
 
     # bulk remove
     call_main(session, "group", "remove_member", groupname, *usernames)
-    members = {u for _, u in Group.get(session, name=groupname).my_members().keys()}
+    members = {u for _, u in Group.get(session, name=groupname).my_members()}
     assert not members.intersection(usernames)
 
 

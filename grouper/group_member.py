@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from six import iteritems
+
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
@@ -25,7 +27,7 @@ class MemberNotFound(Exception):
 
 def _serialize_changes(edge, **updates):
     changes = {}
-    for key, value in updates.items():
+    for key, value in iteritems(updates):
         if key not in ("role", "expiration", "active"):
             continue
         if getattr(edge, key) != value:

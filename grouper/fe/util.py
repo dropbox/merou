@@ -10,6 +10,7 @@ from uuid import uuid4
 import sqlalchemy.exc
 import tornado.web
 from plop.collector import Collector
+from six import iteritems
 from six.moves.urllib.parse import quote, unquote, urlencode, urljoin
 from tornado.web import RequestHandler
 
@@ -244,7 +245,7 @@ class GrouperHandler(RequestHandler):
 
     def get_form_alerts(self, errors):
         alerts = []
-        for field, field_errors in errors.items():
+        for field, field_errors in iteritems(errors):
             for error in field_errors:
                 alerts.append(Alert("danger", error, field))
         return alerts
@@ -336,7 +337,7 @@ def _deserialize_alert(alert_dict):
 
 def _serialize_alerts(alerts):
     # type: (List[Alert]) -> str
-    alert_dicts = map(_serialize_alert, alerts)
+    alert_dicts = list(map(_serialize_alert, alerts))
     alerts_json = json.dumps(alert_dicts, separators=(",", ":"))
     return quote(alerts_json)
 

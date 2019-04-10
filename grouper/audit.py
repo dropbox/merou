@@ -1,3 +1,5 @@
+from six import iteritems
+
 from grouper.constants import PERMISSION_AUDITOR
 from grouper.graph import Graph, NoSuchGroup
 from grouper.models.audit import Audit
@@ -53,7 +55,7 @@ def assert_controllers_are_auditors(group):
         if cur_group in checked:
             continue
         details = graph.get_group_details(cur_group)
-        for chk_user, info in details["users"].iteritems():
+        for chk_user, info in iteritems(details["users"]):
             if chk_user in checked:
                 continue
             # Only examine direct members of this group, because then the role is accurate.
@@ -70,7 +72,7 @@ def assert_controllers_are_auditors(group):
                         )
                     )
         # Now put subgroups into the queue to examine.
-        for chk_group, info in details["subgroups"].iteritems():
+        for chk_group, info in iteritems(details["subgroups"]):
             if info["distance"] == 1:
                 queue.append(chk_group)
 

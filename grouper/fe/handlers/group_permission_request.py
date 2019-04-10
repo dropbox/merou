@@ -16,9 +16,7 @@ class GroupPermissionRequest(GrouperHandler):
         text_form = GroupPermissionRequestTextForm(data)
 
         for form in [dropdown_form, text_form]:
-            form.permission_name.choices = [("", "")] + sorted(
-                [(p, p) for p in args_by_perm.keys()]
-            )
+            form.permission_name.choices = [("", "")] + sorted([(p, p) for p in args_by_perm])
 
         dropdown_form.argument.choices = [("", "")]
 

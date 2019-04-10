@@ -1,3 +1,5 @@
+from six import itervalues
+
 from grouper.audit import get_audits
 from grouper.constants import PERMISSION_AUDITOR
 from grouper.email_util import cancel_async_emails
@@ -18,7 +20,7 @@ class AuditsComplete(GrouperHandler):
         audit = self.session.query(Audit).filter(Audit.id == audit_id).one()
 
         # only owners can complete
-        owner_ids = {member.id for member in audit.group.my_owners().values()}
+        owner_ids = {member.id for member in itervalues(audit.group.my_owners())}
         if user.id not in owner_ids:
             return self.forbidden()
 

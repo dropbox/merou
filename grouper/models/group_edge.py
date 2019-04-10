@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from six import iteritems
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, SmallInteger
 from sqlalchemy.orm import relationship
 
@@ -96,7 +97,7 @@ class GroupEdge(Model):
         # TODO(cbguder): get around circular dependencies
         from grouper.models.group import Group
 
-        for key, value in changes.items():
+        for key, value in iteritems(changes):
             if key == "expiration":
                 group_name = self.group.name
                 if OBJ_TYPES_IDX[self.member_type] == "User":

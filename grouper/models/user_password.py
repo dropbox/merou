@@ -3,6 +3,7 @@ import hmac
 import os
 from datetime import datetime
 
+from six import PY2
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
@@ -10,7 +11,11 @@ from grouper.models.base.model_base import Model
 
 
 def _make_salt():
-    return os.urandom(20).encode("hex")
+    # type: () -> str
+    if PY2:
+        return os.urandom(20).encode("hex")
+    else:
+        return os.urandom(20).hex()
 
 
 class UserPassword(Model):
@@ -72,12 +77,14 @@ class UserPassword(Model):
         self.password = new_password
 
     def check_password(self, password_to_check):
+        # type: (str) -> bool
         h = crypt.crypt(password_to_check, self.salt)
         return self.check_hash(h)
 
     def check_hash(self, hash_to_check):
+        # type: (str) -> bool
         return self.enabled and hmac.compare_digest(
-            hash_to_check, self.password_hash.encode("utf-8")
+            hash_to_check.encode(), self.password_hash.encode()
         )
 
     @property

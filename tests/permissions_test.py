@@ -286,22 +286,20 @@ def test_permission_grant_to_owners(
 
     # make sure get_owner() respect substrings
     res = [
-        o
+        o.groupname
         for o, a in get_owner_arg_list(
             session, perm1, "somesubstring", owners_by_arg_by_perm=owners_by_arg_by_perm
         )
     ]
-    assert sorted(res) == sorted(
-        [groups["all-teams"], groups["team-sre"]]
-    ), "should include substring wildcard matches"
+    assert sorted(res) == ["all-teams", "team-sre"], "should include substring wildcard matches"
 
     res = [
-        o
+        o.groupname
         for o, a in get_owner_arg_list(
             session, perm1, "othersubstring", owners_by_arg_by_perm=owners_by_arg_by_perm
         )
     ]
-    assert sorted(res) == [groups["all-teams"]], "negative test of substring wildcard matches"
+    assert sorted(res) == ["all-teams"], "negative test of substring wildcard matches"
 
     # permission admins have all the power
     grant_permission(groups["security-team"], permissions[PERMISSION_ADMIN])

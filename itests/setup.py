@@ -8,6 +8,7 @@ import errno
 import logging
 import socket
 import subprocess
+import sys
 import time
 from contextlib import closing, contextmanager
 from typing import TYPE_CHECKING
@@ -62,6 +63,7 @@ def api_server(tmpdir):
     api_port = _get_unused_port()
 
     cmd = [
+        sys.executable,
         src_path("bin", "grouper-api"),
         "-c",
         src_path("config", "dev.yaml"),
@@ -91,6 +93,7 @@ def frontend_server(tmpdir, user):
 
     cmds = [
         [
+            sys.executable,
             src_path("bin", "grouper-ctl"),
             "-vvc",
             src_path("config", "dev.yaml"),
@@ -102,6 +105,7 @@ def frontend_server(tmpdir, user):
             user,
         ],
         [
+            sys.executable,
             src_path("bin", "grouper-fe"),
             "-vvc",
             src_path("config", "dev.yaml"),

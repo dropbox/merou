@@ -346,7 +346,7 @@ def test_permission_request_flow(
         headers={"X-Grouper-User": username},
     )
     assert resp.code == 200
-    assert "Field must match" in resp.body
+    assert b"Field must match" in resp.body
     emails = _get_unsent_and_mark_as_sent_emails(session)
     assert len(emails) == 0, "no emails queued"
 

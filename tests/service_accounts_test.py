@@ -348,7 +348,7 @@ def test_machine_set_plugin(
         fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode(update)
     )
     assert resp.code == 200
-    assert "service@a.co has invalid machine set" in resp.body
+    assert b"service@a.co has invalid machine set" in resp.body
     graph.update_from_db(session)
     metadata = graph.user_metadata["service@a.co"]
     assert metadata["service_account"]["machine_set"] == "some machines"
@@ -374,7 +374,7 @@ def test_machine_set_plugin(
         fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode(data)
     )
     assert resp.code == 200
-    assert "other@svc.localhost has invalid machine set" in resp.body
+    assert b"other@svc.localhost has invalid machine set" in resp.body
     graph.update_from_db(session)
     assert "other@svc.localhost" not in graph.users
 

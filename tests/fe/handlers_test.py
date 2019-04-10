@@ -145,7 +145,7 @@ def test_bad_public_key(session, users, http_client, base_url):  # noqa: F811
         headers={"X-Grouper-User": user.username},
     )
     assert resp.code == 200
-    assert "Public key appears to be invalid" in resp.body
+    assert b"Public key appears to be invalid" in resp.body
     assert not get_public_keys_of_user(session, user.id)
 
 
@@ -164,7 +164,7 @@ def test_rejected_public_key(session, users, http_client, base_url):  # noqa: F8
             headers={"X-Grouper-User": user.username},
         )
     assert resp.code == 200
-    assert "Your key is bad and you should feel bad" in resp.body
+    assert b"Your key is bad and you should feel bad" in resp.body
     assert not get_public_keys_of_user(session, user.id)
 
 
@@ -265,7 +265,7 @@ def test_usertokens(session, users, http_client, base_url):  # noqa: F811
     fe_url = url(base_url, "/users/{}".format(user.username))
     resp = yield http_client.fetch(fe_url, method="GET", headers={"X-Grouper-User": user.username})
     assert resp.code == 200
-    assert "Added token: myFoobarToken" in resp.body
+    assert b"Added token: myFoobarToken" in resp.body
 
     # Disable token
     fe_url = url(base_url, "/users/{}/tokens/1/disable".format(user.username))
@@ -278,7 +278,7 @@ def test_usertokens(session, users, http_client, base_url):  # noqa: F811
     fe_url = url(base_url, "/users/{}".format(user.username))
     resp = yield http_client.fetch(fe_url, method="GET", headers={"X-Grouper-User": user.username})
     assert resp.code == 200
-    assert "Disabled token: myFoobarToken" in resp.body
+    assert b"Disabled token: myFoobarToken" in resp.body
 
     # Add invalid token
     fe_url = url(base_url, "/users/{}/tokens/add".format(user.username))
@@ -294,7 +294,7 @@ def test_usertokens(session, users, http_client, base_url):  # noqa: F811
     fe_url = url(base_url, "/users/{}".format(user.username))
     resp = yield http_client.fetch(fe_url, method="GET", headers={"X-Grouper-User": user.username})
     assert resp.code == 200
-    assert "Added token: my_Foobar_Token" not in resp.body
+    assert b"Added token: my_Foobar_Token" not in resp.body
 
 
 @pytest.mark.gen_test
@@ -340,7 +340,7 @@ def test_sa_tokens(session, users, http_client, base_url):  # noqa: F811
     fe_url = url(base_url, "/users/{}".format("bob@svc.localhost"))
     resp = yield http_client.fetch(fe_url, method="GET", headers={"X-Grouper-User": user.username})
     assert resp.code == 200
-    assert "Added token: myDHDToken" in resp.body
+    assert b"Added token: myDHDToken" in resp.body
 
     with pytest.raises(HTTPError):
         # Disable token
@@ -360,7 +360,7 @@ def test_sa_tokens(session, users, http_client, base_url):  # noqa: F811
     fe_url = url(base_url, "/users/{}".format("bob@svc.localhost"))
     resp = yield http_client.fetch(fe_url, method="GET", headers={"X-Grouper-User": user.username})
     assert resp.code == 200
-    assert "Disabled token: myDHDToken" in resp.body
+    assert b"Disabled token: myDHDToken" in resp.body
 
 
 @pytest.mark.gen_test
@@ -861,7 +861,7 @@ def test_group_request_cancelled(session, users, groups, http_client, base_url):
         body=urlencode({"reason": "Test Request", "status": "actioned"}),
     )
     assert resp.code == 200
-    assert "Request has already been processed" in resp.body
+    assert b"Request has already been processed" in resp.body
 
     request = Request.get(session, requester_id=user.id, requesting_id=group.id)
     assert request.status == "cancelled"

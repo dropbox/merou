@@ -4,21 +4,11 @@ import getpass
 import logging
 from typing import cast, TYPE_CHECKING
 
-from grouper.ctl.base import CtlCommand
+from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from six.moves.urllib.error import HTTPError, URLError
+from six.moves.urllib.request import build_opener, HTTPErrorProcessor, Request
 
-try:
-    from http.server import BaseHTTPRequestHandler, HTTPServer
-    from urllib.error import HTTPError, URLError
-    from urllib.request import build_opener, HTTPErrorProcessor, Request
-except ImportError:
-    from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer  # type: ignore
-    from urllib2 import (  # type: ignore
-        build_opener,
-        HTTPError,
-        HTTPErrorProcessor,
-        Request,
-        URLError,
-    )
+from grouper.ctl.base import CtlCommand
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
@@ -67,20 +57,21 @@ class ProxyHandler(BaseHTTPRequestHandler):
         # type: (Request) -> None
         try:
             url = cast(ProxyServer, self.server).opener.open(request)
+            assert url, "urlopen for {} returned None".format(self.dest_url)
             code = url.getcode()
             msg = getattr(url, "msg", "")
             headers = str(url.info()).rstrip()
             data = url.read()
-        except HTTPError as err:
-            code = err.getcode()
+        except HTTPError as e:
+            code = e.getcode()
             msg = getattr(url, "msg", "")
-            headers = str(err.info()).rstrip()
-            data = err.read()
-        except URLError as err:
+            headers = str(e.info()).rstrip()
+            data = e.read()
+        except (AssertionError, URLError) as e:
             code = 503
             msg = "Service Unavailable"
-            headers = str(err)
-            data = "503 Service Unavailable: {}\n".format(headers).encode()
+            headers = ""
+            data = "503 Service Unavailable: {}\n".format(str(e)).encode()
 
         self.send_response(code, msg)
         for line in headers.splitlines():

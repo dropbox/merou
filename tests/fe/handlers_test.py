@@ -1,8 +1,8 @@
 from datetime import date, datetime, timedelta
-from urllib import urlencode
 
 import pytest
 from mock import patch
+from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 
 from grouper.models.async_notification import AsyncNotification

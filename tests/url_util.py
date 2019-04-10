@@ -1,5 +1,4 @@
-import urllib
-import urlparse
+from six.moves.urllib.parse import urlencode, urljoin, urlsplit, urlunsplit
 
 
 def url(base_url, path, query_dict=None):
@@ -13,10 +12,10 @@ def url(base_url, path, query_dict=None):
 
     Returns the newly updated url.
     """
-    url = urlparse.urljoin(base_url, path)
-    scheme, netloc, path, query, fragment = urlparse.urlsplit(url)
+    url = urljoin(base_url, path)
+    scheme, netloc, path, query, fragment = urlsplit(url)
 
     if query_dict:
-        query = urllib.urlencode(query_dict)
+        query = urlencode(query_dict)
 
-    return urlparse.urlunsplit((scheme, netloc, path, query, fragment))
+    return urlunsplit((scheme, netloc, path, query, fragment))

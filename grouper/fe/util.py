@@ -2,8 +2,6 @@ import json
 import logging
 import re
 import sys
-import urllib
-import urlparse
 from datetime import datetime
 from functools import wraps
 from typing import TYPE_CHECKING
@@ -12,6 +10,7 @@ from uuid import uuid4
 import sqlalchemy.exc
 import tornado.web
 from plop.collector import Collector
+from six.moves.urllib.parse import quote, unquote, urlencode, urljoin
 from tornado.web import RequestHandler
 
 from grouper import stats
@@ -124,10 +123,9 @@ class GrouperHandler(RequestHandler):
 
     def redirect(self, url, *args, **kwargs):
         if self.is_refresh():
-            url = urlparse.urljoin(url, "?refresh=yes")
+            url = urljoin(url, "?refresh=yes")
 
         self.set_alerts(kwargs.pop("alerts", []))
-
         return super(GrouperHandler, self).redirect(url, *args, **kwargs)
 
     def get_current_user(self):
@@ -189,7 +187,7 @@ class GrouperHandler(RequestHandler):
     def update_qs(self, **kwargs):
         qs = self.request.arguments.copy()
         qs.update(kwargs)
-        return "?" + urllib.urlencode(sorted(qs.items()), True)
+        return "?" + urlencode(sorted(qs.items()), True)
 
     def is_active(self, test_path):
         path = self.request.path
@@ -340,13 +338,13 @@ def _serialize_alerts(alerts):
     # type: (List[Alert]) -> str
     alert_dicts = map(_serialize_alert, alerts)
     alerts_json = json.dumps(alert_dicts, separators=(",", ":"))
-    return urllib.quote(alerts_json)
+    return quote(alerts_json)
 
 
 def _deserialize_alerts(quoted_alerts_json):
     # type: (str) -> List[Alert]
     try:
-        alerts_json = urllib.unquote(quoted_alerts_json)
+        alerts_json = unquote(quoted_alerts_json)
         alert_dicts = json.loads(alerts_json)
     except ValueError:
         alert_dicts = []

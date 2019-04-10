@@ -1,8 +1,8 @@
 import unittest
 from collections import namedtuple
-from urllib import urlencode
 
 import pytest
+from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 from wtforms.validators import ValidationError
 

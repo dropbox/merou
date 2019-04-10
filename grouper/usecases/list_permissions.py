@@ -2,6 +2,8 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from six import with_metaclass
+
 from grouper.entities.pagination import Pagination
 
 if TYPE_CHECKING:
@@ -16,10 +18,8 @@ class ListPermissionsSortKey(Enum):
     DATE = "date"
 
 
-class ListPermissionsUI(object):
+class ListPermissionsUI(with_metaclass(ABCMeta, object)):
     """Abstract base class for UI for ListPermissions."""
-
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def listed_permissions(self, permissions, can_create):

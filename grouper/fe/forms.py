@@ -338,7 +338,12 @@ class PublicKeyAddTagForm(Form):
 
 class UserPasswordForm(Form):
     name = StringField(
-        "Password name", [validators.DataRequired(), validators.Length(min=1, max=16)]
+        "Password name",
+        [
+            validators.DataRequired(),
+            validators.Length(min=1, max=16),
+            ValidateRegex(constants.TOKEN_NAME_VALIDATION),
+        ],
     )
     password = PasswordField("Password", [validators.DataRequired()])
 

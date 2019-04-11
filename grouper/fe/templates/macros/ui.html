@@ -184,7 +184,7 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>{{ shell }}</td>
+                        <td>{{ shell|e }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -546,9 +546,9 @@ enabled. Membership in this group is regularly reviewed.
     <div class="btn-group">
         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
             {% if current %}
-                {{key|title}}: {{current}}
+                {{key|title|e}}: {{current|e}}
             {% else %}
-                {{key|title}}
+                {{key|title|e}}
             {% endif %}
             <span class="caret"></span>
         </button>

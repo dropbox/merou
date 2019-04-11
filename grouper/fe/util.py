@@ -85,7 +85,9 @@ class GrouperHandler(RequestHandler):
         """Override for custom error page."""
         if status_code >= 500 and status_code < 600:
             template = self.template_env.get_template("errors/5xx.html")
-            self.write(template.render({"is_active": self.is_active}))
+            self.write(
+                template.render({"is_active": self.is_active, "static_url": self.static_url})
+            )
         else:
             template = self.template_env.get_template("errors/generic.html")
             self.write(

@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from grouper.audit import get_audits
 from grouper.constants import AUDIT_MANAGER, AUDIT_VIEWER
 from grouper.fe.util import GrouperHandler
@@ -5,13 +7,16 @@ from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog, AuditLogCategory
 from grouper.user_permissions import user_has_permission
 
+if TYPE_CHECKING:
+    from typing import Any
+
 
 class AuditsView(GrouperHandler):
-    def get(self):
-        user = self.get_current_user()
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
         if not (
-            user_has_permission(self.session, user, AUDIT_VIEWER)
-            or user_has_permission(self.session, user, AUDIT_MANAGER)
+            user_has_permission(self.session, self.current_user, AUDIT_VIEWER)
+            or user_has_permission(self.session, self.current_user, AUDIT_MANAGER)
         ):
             return self.forbidden()
 
@@ -28,7 +33,7 @@ class AuditsView(GrouperHandler):
         audits = audits.offset(offset).limit(limit).all()
 
         open_audits = self.session.query(Audit).filter(Audit.complete == False).all()
-        can_start = user_has_permission(self.session, user, AUDIT_MANAGER)
+        can_start = user_has_permission(self.session, self.current_user, AUDIT_MANAGER)
 
         # FIXME(herb): make limit selected from ui
         audit_log_entries = AuditLog.get_entries(

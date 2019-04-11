@@ -133,7 +133,7 @@ an existing tornado install at a different major release than that in our
     virtualenv ~/merou-venv
     ~/merou-venv/bin/pip install -r requirements.txt
     ~/merou-venv/bin/pip install -r requirements-dev.txt
-    ~/merou-venv/bin/py.test
+    ~/merou-venv/bin/pytest
 
 All Merou code is formatted with black, which is installed by the
 `requirements-dev.txt` requirements file for Python 3. After installation,

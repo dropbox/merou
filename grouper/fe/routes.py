@@ -37,6 +37,7 @@ from grouper.fe.handlers.perf_profile import PerfProfile
 from grouper.fe.handlers.permission_disable import PermissionDisable
 from grouper.fe.handlers.permission_disable_auditing import PermissionDisableAuditing
 from grouper.fe.handlers.permission_enable_auditing import PermissionEnableAuditing
+from grouper.fe.handlers.permission_request import PermissionRequest
 from grouper.fe.handlers.permission_view import PermissionView
 from grouper.fe.handlers.permissions_create import PermissionsCreate
 from grouper.fe.handlers.permissions_grant import PermissionsGrant
@@ -81,6 +82,7 @@ HANDLERS = [
     (r"/audits/create", AuditsCreate),
     (r"/groups", GroupsView),
     (r"/permissions/create", PermissionsCreate),
+    (r"/permissions/request", PermissionRequest),
     (r"/permissions/requests", PermissionsRequests),
     (r"/permissions/requests/(?P<request_id>[0-9]+)", PermissionsRequestUpdate),
     (r"/permissions/{}".format(PERMISSION_VALIDATION), PermissionView),

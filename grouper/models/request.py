@@ -71,6 +71,7 @@ class Request(Model, CommentObjectMixin):
 
     @flush_transaction
     def update_status(self, requester, status, reason):
+        # type: (User, str, str) -> None
         now = datetime.utcnow()
         current_status = self.status
         self.status = status

@@ -1,16 +1,23 @@
 import logging
 import sys
-import types
 from contextlib import contextmanager
+from types import MethodType
+from typing import TYPE_CHECKING
 
 from grouper.ctl.util import make_session
 from grouper.oneoff import BaseOneOff
 from grouper.plugin import load_plugins
 from grouper.settings import settings
 
+if TYPE_CHECKING:
+    from argparse import Namespace
+    from grouper.models.session import Session
+    from typing import Any, Iterator, Tuple
+
 
 @contextmanager
 def wrapped_session(session, make_read_only):
+    # type: (Session, bool) -> Iterator[Session]
     """Simple wrapper around a sqlalchemy session allowing it to be used in a
     context and to be made read-only.
 
@@ -25,13 +32,15 @@ def wrapped_session(session, make_read_only):
         # HACK: monkey patch sqlachemy session so nothing writes to
         # database but things think that it did
         def is_clean_ro(self):
+            # type: (Session) -> bool
             return True
 
         def flush_ro(self, objects=None):
+            # type: (Session, Any) -> None
             pass
 
-        session.flush = types.MethodType(flush_ro, session)
-        session._is_clean = types.MethodType(is_clean_ro, session)
+        session.flush = MethodType(flush_ro, session)
+        session._is_clean = MethodType(is_clean_ro, session)
 
         yield session
 
@@ -45,6 +54,7 @@ def wrapped_session(session, make_read_only):
 
 
 def key_value_arg_type(arg):
+    # type: (str) -> Tuple[str, str]
     """Simple validate/transform function to use in argparse as a 'type' for an
     argument where the argument is of the form 'key=value'."""
     k, v = arg.split("=", 1)
@@ -52,6 +62,7 @@ def key_value_arg_type(arg):
 
 
 def oneoff_command(args):
+    # type: (Namespace) -> None
     session = make_session()
 
     oneoffs = load_plugins(

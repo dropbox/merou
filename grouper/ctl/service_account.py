@@ -1,4 +1,5 @@
 import logging
+from typing import TYPE_CHECKING
 
 from grouper.ctl.util import ensure_valid_service_account_name, make_session
 from grouper.models.group import Group
@@ -6,9 +7,13 @@ from grouper.models.service_account import ServiceAccount
 from grouper.models.user import User
 from grouper.service_account import create_service_account
 
+if TYPE_CHECKING:
+    from argparse import Namespace
+
 
 @ensure_valid_service_account_name
 def service_account_command(args):
+    # type: (Namespace) -> None
     session = make_session()
     actor_user = User.get(session, name=args.actor_name)
     if not actor_user:

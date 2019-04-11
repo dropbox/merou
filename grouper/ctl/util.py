@@ -13,16 +13,18 @@ from grouper.settings import settings
 from grouper.util import get_database_url
 
 if TYPE_CHECKING:
+    from argparse import Namespace
     from datetime import date
-    from typing import Generator
-
+    from typing import Callable, Generator
 
 DATE_FORMAT = "%Y-%m-%d"
 
 
 def ensure_valid_username(f):
+    # type: (Callable[[Namespace], None]) -> Callable[[Namespace], None]
     @wraps(f)
     def wrapper(args):
+        # type: (Namespace) -> None
         usernames = args.username if type(args.username) == list else [args.username]
         valid = True
         for username in usernames:
@@ -39,8 +41,10 @@ def ensure_valid_username(f):
 
 
 def ensure_valid_groupname(f):
+    # type: (Callable[[Namespace], None]) -> Callable[[Namespace], None]
     @wraps(f)
     def wrapper(args):
+        # type: (Namespace) -> None
         if not re.match("^{}$".format(NAME_VALIDATION), args.groupname):
             logging.error("Invalid group name {}".format(args.groupname))
             return
@@ -51,8 +55,10 @@ def ensure_valid_groupname(f):
 
 
 def ensure_valid_service_account_name(f):
+    # type: (Callable[[Namespace], None]) -> Callable[[Namespace], None]
     @wraps(f)
     def wrapper(args):
+        # type: (Namespace) -> None
         if not re.match("^{}$".format(SERVICE_ACCOUNT_VALIDATION), args.name):
             logging.error('Invalid service account name "{}"'.format(args.name))
             return
@@ -63,6 +69,7 @@ def ensure_valid_service_account_name(f):
 
 
 def make_session():
+    # type: () -> Session
     db_engine = get_db_engine(get_database_url(settings))
     Session.configure(bind=db_engine)
     return Session()

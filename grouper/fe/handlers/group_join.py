@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.email_util import send_email
@@ -11,9 +12,16 @@ from grouper.models.group_edge import APPROVER_ROLE_INDICES, GROUP_EDGE_ROLES
 from grouper.models.user import User
 from grouper.user_group import get_groups_by_user
 
+if TYPE_CHECKING:
+    from typing import Any, Optional
+
 
 class GroupJoin(GrouperHandler):
-    def get(self, group_id=None, name=None):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        group_id = kwargs.get("group_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -24,7 +32,11 @@ class GroupJoin(GrouperHandler):
         form.member.choices = self._get_choices(group)
         return self.render("group-join.html", form=form, group=group, audited=group_md["audited"])
 
-    def post(self, group_id=None, name=None):
+    def post(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        group_id = kwargs.get("group_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -43,7 +55,7 @@ class GroupJoin(GrouperHandler):
             user_can_join = assert_can_join(group, member, role=form.data["role"])
         except UserNotAuditor as e:
             user_can_join = False
-            fail_message = e
+            fail_message = str(e)
         if not user_can_join:
             return self.render(
                 "group-join.html",

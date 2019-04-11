@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from grouper.fe.forms import ServiceAccountCreateForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
@@ -9,9 +11,16 @@ from grouper.service_account import (
     DuplicateServiceAccount,
 )
 
+if TYPE_CHECKING:
+    from typing import Any, Optional
+
 
 class ServiceAccountCreate(GrouperHandler):
-    def get(self, group_id=None, name=None):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        group_id = kwargs.get("group_id")  # type: Optional[str]
+        name = kwargs.get("name")  # type: Optional[str]
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -22,7 +31,11 @@ class ServiceAccountCreate(GrouperHandler):
         form = ServiceAccountCreateForm()
         return self.render("service-account-create.html", form=form, group=group)
 
-    def post(self, group_id=None, name=None):
+    def post(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        group_id = kwargs.get("group_id")  # type: Optional[str]
+        name = kwargs.get("name")  # type: Optional[str]
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()

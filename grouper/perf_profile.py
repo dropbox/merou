@@ -1,10 +1,15 @@
 from datetime import datetime, timedelta
 
 from plop.collector import FlamegraphFormatter, PlopFormatter
-from pyflamegraph import generate
 
 from grouper.models.perf_profile import PerfProfile
 
+try:
+    from pyflamegraph import generate
+
+    FLAMEGRAPH_SUPPORTED = True
+except ImportError:
+    FLAMEGRAPH_SUPPORTED = False
 
 ONE_WEEK = timedelta(days=7)
 
@@ -59,6 +64,9 @@ def get_trace(session, trace_uuid):
 
 
 def get_flamegraph_svg(session, trace_uuid):
+    if not FLAMEGRAPH_SUPPORTED:
+        raise NotImplementedError("performance profiling not supported")
+
     plop_input, flamegraph_input = get_trace(session, trace_uuid)
 
     return generate(flamegraph_input)

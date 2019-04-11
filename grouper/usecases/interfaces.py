@@ -14,6 +14,8 @@ By convention, all class names here end in Interface or Exception.
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
+from six import with_metaclass
+
 if TYPE_CHECKING:
     from grouper.entities.pagination import PaginatedList, Pagination
     from grouper.entities.permission import Permission
@@ -23,10 +25,8 @@ if TYPE_CHECKING:
     from typing import ContextManager, List
 
 
-class GroupRequestInterface(object):
+class GroupRequestInterface(with_metaclass(ABCMeta, object)):
     """Abstract base class for requests for group membership."""
-
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def cancel_all_requests_for_user(self, user, reason, authorization):
@@ -34,10 +34,8 @@ class GroupRequestInterface(object):
         pass
 
 
-class PermissionInterface(object):
+class PermissionInterface(with_metaclass(ABCMeta, object)):
     """Abstract base class for permission operations and queries."""
-
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def disable_permission(self, name, authorization):
@@ -60,10 +58,8 @@ class PermissionInterface(object):
         pass
 
 
-class ServiceAccountInterface(object):
+class ServiceAccountInterface(with_metaclass(ABCMeta, object)):
     """Abstract base class for service account operations and queries."""
-
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def create_service_account_from_disabled_user(self, user, authorization):
@@ -76,20 +72,16 @@ class ServiceAccountInterface(object):
         pass
 
 
-class TransactionInterface(object):
+class TransactionInterface(with_metaclass(ABCMeta, object)):
     """Abstract base class for starting and committing transactions."""
-
-    __metaclass__ = ABCMeta
 
     def transaction(self):
         # type: () -> ContextManager[None]
         pass
 
 
-class UserInterface(object):
+class UserInterface(with_metaclass(ABCMeta, object)):
     """Abstract base class for user operations and queries."""
-
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def disable_user(self, user, authorization):

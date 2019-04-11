@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from six import itervalues
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 
@@ -54,7 +55,7 @@ class Audit(Model):
         # them in the audit anymore. If someone new joins (or rejoins) then we also don't want
         # to audit them since they had to get approved into the group.
         auditmember_name_pairs = []
-        for member in self.group.my_members().values():
+        for member in itervalues(self.group.my_members()):
             if member.edge_id in auditmember_by_edge_id:
                 auditmember_name_pairs.append(
                     (member.name, auditmember_by_edge_id[member.edge_id])

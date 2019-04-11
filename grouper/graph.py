@@ -5,6 +5,7 @@ from threading import RLock
 from typing import TYPE_CHECKING
 
 from networkx import DiGraph, single_source_shortest_path
+from six import iteritems, itervalues
 from sqlalchemy import or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import label, literal
@@ -159,7 +160,7 @@ class GroupGraph(object):
                 self.groups = groups
                 self.permissions = {
                     perm.permission
-                    for perm_list in permission_metadata.values()
+                    for perm_list in itervalues(permission_metadata)
                     for perm in perm_list
                 }
                 self.user_metadata = user_metadata
@@ -444,7 +445,7 @@ class GroupGraph(object):
 
             # Get all mapped versions of the permission. This is only direct relationships.
             direct_groups = set()
-            for groupname, permissions in self.permission_metadata.iteritems():
+            for groupname, permissions in iteritems(self.permission_metadata):
                 for permission in permissions:
                     if permission.permission == name:
                         data["groups"][groupname] = self.get_group_details(
@@ -457,7 +458,7 @@ class GroupGraph(object):
             for groupname in direct_groups:
                 group = ("Group", groupname)
                 paths = single_source_shortest_path(self._graph, group, None)
-                for member, path in paths.iteritems():
+                for member, path in iteritems(paths):
                     if member == group:
                         continue
                     member_type, member_name = member
@@ -471,7 +472,7 @@ class GroupGraph(object):
                     )
 
             # Finally, add all service accounts.
-            for account, permissions in self.service_account_permissions.iteritems():
+            for account, permissions in iteritems(self.service_account_permissions):
                 for permission in permissions:
                     if permission.permission == name:
                         details = {
@@ -514,7 +515,7 @@ class GroupGraph(object):
                             return True
                     return False
 
-                directly_audited_groups = filter(is_directly_audited, groups)
+                directly_audited_groups = list(filter(is_directly_audited, groups))
                 if directly_audited:
                     return directly_audited_groups
                 queue = [("Group", group.groupname) for group in directly_audited_groups]
@@ -556,7 +557,7 @@ class GroupGraph(object):
             paths = single_source_shortest_path(self._graph, group, cutoff)
             rpaths = single_source_shortest_path(self._rgraph, group, cutoff)
 
-            for member, path in paths.iteritems():
+            for member, path in iteritems(paths):
                 if member == group:
                     continue
                 member_type, member_name = member
@@ -569,7 +570,7 @@ class GroupGraph(object):
                     "rolename": GROUP_EDGE_ROLES[role],
                 }
 
-            for parent, path in rpaths.iteritems():
+            for parent, path in iteritems(rpaths):
                 if parent == group:
                     continue
                 parent_type, parent_name = parent
@@ -674,11 +675,11 @@ class GroupGraph(object):
                     }
                     continue
                 new_rpaths = single_source_shortest_path(self._rgraph, group, max_dist)
-                for parent, path in new_rpaths.iteritems():
+                for parent, path in iteritems(new_rpaths):
                     if parent not in rpaths or 1 + len(path) < len(rpaths[parent]):
                         rpaths[parent] = [user] + path
 
-            for parent, path in rpaths.iteritems():
+            for parent, path in iteritems(rpaths):
                 if parent == user:
                     continue
                 parent_type, parent_name = parent

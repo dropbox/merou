@@ -3,10 +3,10 @@ import re
 import sys
 import traceback
 from contextlib import closing
-from cStringIO import StringIO
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from six import iteritems, StringIO
 from tornado.web import HTTPError, RequestHandler
 
 from grouper import stats
@@ -170,7 +170,7 @@ class Users(GraphHandler):
                     "users": sorted(
                         [
                             k
-                            for k, v in self.graph.user_metadata.iteritems()
+                            for k, v in iteritems(self.graph.user_metadata)
                             if (
                                 include_service_accounts
                                 or not ("service_account" in v or v["role_user"])
@@ -191,7 +191,7 @@ class MultiUsers(GraphHandler):
     def get(self):
         usernames = self.get_arguments("username")
         if not usernames:
-            usernames = self.graph.user_metadata.iterkeys()
+            usernames = iter(self.graph.user_metadata)
 
         cutoff = int(self.get_argument("cutoff", 100))
 
@@ -328,7 +328,7 @@ class ServiceAccounts(GraphHandler):
                     "service_accounts": sorted(
                         [
                             k
-                            for k, v in self.graph.user_metadata.iteritems()
+                            for k, v in iteritems(self.graph.user_metadata)
                             if "service_account" in v or v["role_user"]
                         ]
                     )

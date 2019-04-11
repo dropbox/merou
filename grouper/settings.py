@@ -4,6 +4,7 @@ import threading
 import time
 
 import yaml
+from six import iteritems
 
 from grouper import stats
 
@@ -33,7 +34,7 @@ class Settings(object):
         if section:
             settings.update(data.get(section, {}))
 
-        for key, value in settings.iteritems():
+        for key, value in iteritems(settings):
             key = key.lower()
 
             # Limit the parts of the config file that can have an effect.

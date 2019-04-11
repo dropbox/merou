@@ -6,6 +6,7 @@ from datetime import datetime
 from time import sleep
 from typing import TYPE_CHECKING
 
+from six import iteritems
 from sqlalchemy import and_
 
 from grouper import stats
@@ -99,7 +100,7 @@ class BackgroundProcessor(object):
         user_is_auditor = {}  # type: Dict[str, bool]
         for group_tuple in graph.get_groups(audited=True, directly_audited=False):
             group_md = graph.get_group_details(group_tuple.groupname, expose_aliases=False)
-            for username, user_md in group_md["users"].items():
+            for username, user_md in iteritems(group_md["users"]):
                 if username not in user_is_auditor:
                     user_perms = graph.get_user_details(username)["permissions"]
                     user_is_auditor[username] = any(
@@ -114,7 +115,7 @@ class BackgroundProcessor(object):
 
         if nonauditor_approver_to_groups:
             auditors_group = get_auditors_group(self.settings, session)
-            for username, group_names in nonauditor_approver_to_groups.items():
+            for username, group_names in iteritems(nonauditor_approver_to_groups):
                 reason = "auto-added due to having approver role(s) in group(s): {}".format(
                     ", ".join(group_names)
                 )

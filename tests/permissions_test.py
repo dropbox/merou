@@ -1,8 +1,8 @@
 import unittest
 from collections import namedtuple
-from urllib import urlencode
 
 import pytest
+from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 from wtforms.validators import ValidationError
 
@@ -154,10 +154,10 @@ def test_has_permission(session, standard_graph, users):  # noqa: F811
 
 class PermissionTests(unittest.TestCase):
     def test_reject_bad_permission_names(self):
-        self.assertEquals(len(grouper.fe.util.test_reserved_names("permission_lacks_period")), 1)
-        self.assertEquals(len(grouper.fe.util.test_reserved_names("grouper.prefix.reserved")), 1)
-        self.assertEquals(len(grouper.fe.util.test_reserved_names("admin.prefix.reserved")), 1)
-        self.assertEquals(len(grouper.fe.util.test_reserved_names("test.prefix.reserved")), 1)
+        self.assertEqual(len(grouper.fe.util.test_reserved_names("permission_lacks_period")), 1)
+        self.assertEqual(len(grouper.fe.util.test_reserved_names("grouper.prefix.reserved")), 1)
+        self.assertEqual(len(grouper.fe.util.test_reserved_names("admin.prefix.reserved")), 1)
+        self.assertEqual(len(grouper.fe.util.test_reserved_names("test.prefix.reserved")), 1)
 
         Field = namedtuple("field", "data")
 
@@ -195,7 +195,7 @@ class PermissionTests(unittest.TestCase):
 
 
 def assert_same_recipients(emails, recipients, msg="email recipients did not match expectation"):
-    actual_recipients = sorted(map(lambda email: email.email, emails))
+    actual_recipients = sorted([email.email for email in emails])
     expected_recipients = sorted(recipients)
     assert actual_recipients == expected_recipients, msg
 
@@ -286,22 +286,20 @@ def test_permission_grant_to_owners(
 
     # make sure get_owner() respect substrings
     res = [
-        o
+        o.groupname
         for o, a in get_owner_arg_list(
             session, perm1, "somesubstring", owners_by_arg_by_perm=owners_by_arg_by_perm
         )
     ]
-    assert sorted(res) == sorted(
-        [groups["all-teams"], groups["team-sre"]]
-    ), "should include substring wildcard matches"
+    assert sorted(res) == ["all-teams", "team-sre"], "should include substring wildcard matches"
 
     res = [
-        o
+        o.groupname
         for o, a in get_owner_arg_list(
             session, perm1, "othersubstring", owners_by_arg_by_perm=owners_by_arg_by_perm
         )
     ]
-    assert sorted(res) == [groups["all-teams"]], "negative test of substring wildcard matches"
+    assert sorted(res) == ["all-teams"], "negative test of substring wildcard matches"
 
     # permission admins have all the power
     grant_permission(groups["security-team"], permissions[PERMISSION_ADMIN])
@@ -348,7 +346,7 @@ def test_permission_request_flow(
         headers={"X-Grouper-User": username},
     )
     assert resp.code == 200
-    assert "Field must match" in resp.body
+    assert b"Field must match" in resp.body
     emails = _get_unsent_and_mark_as_sent_emails(session)
     assert len(emails) == 0, "no emails queued"
 
@@ -572,7 +570,7 @@ def test_grant_and_revoke(
 
     def _check_graph_for_perm(graph):
         return any(
-            map(lambda x: x.permission == permission_name, graph.permission_metadata[group_name])
+            [x.permission == permission_name for x in graph.permission_metadata[group_name]]
         )
 
     # make some permission admins

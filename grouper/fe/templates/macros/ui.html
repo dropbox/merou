@@ -371,10 +371,10 @@ enabled. Membership in this group is regularly reviewed.
                     </tr>
                 </thead>
                 <tbody>
-                {% for member in members.itervalues()|sort(attribute='name') if member.type == 'Group' %}
+                {% for member in members.values()|sort(attribute='name') if member.type == 'Group' %}
                     {{ member_row(group, member, members, current_user, current_user_role) }}
                 {% endfor %}
-                {% for member in members.itervalues()|sort(attribute='name') if member.type == 'User' %}
+                {% for member in members.values()|sort(attribute='name') if member.type == 'User' %}
                     {{ member_row(group, member, members, current_user, current_user_role) }}
                 {% endfor %}
                 {% if not members %}

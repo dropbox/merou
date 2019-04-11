@@ -3,6 +3,7 @@ from collections import defaultdict, namedtuple
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from six import iteritems, itervalues
 from sqlalchemy import asc
 from sqlalchemy.exc import IntegrityError
 
@@ -367,7 +368,7 @@ def filter_grantable_permissions(session, grants, all_permissions=None):
         grantable = grant.argument.split("/", 1)
         if not grantable:
             continue
-        for name, permission_obj in all_permissions.iteritems():
+        for name, permission_obj in iteritems(all_permissions):
             if matches_glob(grantable[0], name):
                 result.append((permission_obj, grantable[1] if len(grantable) > 1 else "*"))
 
@@ -413,7 +414,7 @@ def get_owners_by_grantable_permission(session, separate_global=False):
     for group in all_groups:
         # special case permission admins
         group_permissions = grants_by_group[group.id]
-        if any(filter(lambda g: g.name == PERMISSION_ADMIN, group_permissions)):
+        if any([g.name == PERMISSION_ADMIN for g in group_permissions]):
             for perm_name in all_permissions:
                 owners_by_arg_by_perm[perm_name]["*"].append(group)
             if separate_global:
@@ -429,8 +430,8 @@ def get_owners_by_grantable_permission(session, separate_global=False):
 
     # merge in plugin results
     for res in get_plugin_proxy().get_owner_by_arg_by_perm(session):
-        for perm, owners_by_arg in res.items():
-            for arg, owners in owners_by_arg.items():
+        for perm, owners_by_arg in iteritems(res):
+            for arg, owners in iteritems(owners_by_arg):
                 owners_by_arg_by_perm[perm][arg] += owners
 
     return owners_by_arg_by_perm
@@ -453,12 +454,12 @@ def get_grantable_permissions(session, restricted_ownership_permissions):
     """
     owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
     args_by_perm = defaultdict(list)
-    for permission, owners_by_arg in owners_by_arg_by_perm.items():
+    for permission, owners_by_arg in iteritems(owners_by_arg_by_perm):
         for argument in owners_by_arg:
             args_by_perm[permission].append(argument)
 
     def _reduce_args(perm_name, args):
-        non_wildcard_args = map(lambda a: a != "*", args)
+        non_wildcard_args = [a != "*" for a in args]
         if (
             restricted_ownership_permissions
             and perm_name in restricted_ownership_permissions
@@ -472,7 +473,7 @@ def get_grantable_permissions(session, restricted_ownership_permissions):
             # it's all wildcard so return that one
             return ["*"]
 
-    return {p: _reduce_args(p, a) for p, a in args_by_perm.items()}
+    return {p: _reduce_args(p, a) for p, a in iteritems(args_by_perm)}
 
 
 def get_owner_arg_list(session, permission, argument, owners_by_arg_by_perm=None):
@@ -498,7 +499,7 @@ def get_owner_arg_list(session, permission, argument, owners_by_arg_by_perm=None
 
     all_owner_arg_list = []
     owners_by_arg = owners_by_arg_by_perm[permission.name]
-    for arg, owners in owners_by_arg.items():
+    for arg, owners in iteritems(owners_by_arg):
         if matches_glob(arg, argument):
             all_owner_arg_list += [(owner, arg) for owner in owners]
 
@@ -624,8 +625,8 @@ def create_request(session, user, group, permission, argument, reason):
 
     mail_to = []
     global_owners = owners_by_arg_by_perm[GLOBAL_OWNERS]["*"]
-    non_wildcard_owners = filter(lambda grant: grant[1] != "*", owner_arg_list)
-    non_global_owners = filter(lambda grant: grant[0] not in global_owners, owner_arg_list)
+    non_wildcard_owners = [grant for grant in owner_arg_list if grant[1] != "*"]
+    non_global_owners = [grant for grant in owner_arg_list if grant[0] not in global_owners]
     if any(non_wildcard_owners):
         # non-wildcard owners should get all the notifications
         mailto_owner_arg_list = non_wildcard_owners
@@ -940,5 +941,5 @@ def permission_intersection(perms_a, perms_b):
         # If this permission is a wildcard, we add all permissions with the same name from
         # the other set
         if perm.argument == "*":
-            ret |= {p for p in pdict_b[perm.name].values()}
+            ret |= {p for p in itervalues(pdict_b[perm.name])}
     return ret

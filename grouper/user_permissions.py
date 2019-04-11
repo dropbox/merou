@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from six import itervalues
 from sqlalchemy import asc, or_
 
 from grouper.constants import (
@@ -83,7 +84,7 @@ def user_grantable_permissions(session, user):
 
     all_permissions = {permission.name: permission for permission in get_all_permissions(session)}
     if user_is_permission_admin(session, user):
-        result = [(perm, "*") for perm in all_permissions.values()]
+        result = [(perm, "*") for perm in itervalues(all_permissions)]
         return sorted(result, key=lambda x: x[0].name + x[1])
 
     # Someone can grant a permission if they are a member of a group that has a permission

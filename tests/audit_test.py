@@ -1,9 +1,9 @@
 from collections import namedtuple
 from datetime import datetime, timedelta
-from urllib import urlencode
 
 import pytest
 from mock import call, Mock, patch
+from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 
 from grouper.audit import (
@@ -175,7 +175,7 @@ def test_audit_end_to_end(session, users, groups, http_client, base_url, graph):
     open_audits = [
         Audit(
             x.id,
-            next(x.group.my_owners().iterkeys()),
+            next(iter(x.group.my_owners())),
             x.group.name,
             [AuditMember(am.id, am.edge.member_type, am.edge_id) for am in x.my_members()],
         )
@@ -214,7 +214,7 @@ def test_audit_end_to_end(session, users, groups, http_client, base_url, graph):
             # approve
             body_dict["audit_{}".format(am.id)] = "approved"
 
-    owner_name = next(one_audit.group.my_owners().iterkeys())
+    owner_name = next(iter(one_audit.group.my_owners()))
     fe_url = url(base_url, "/audits/{}/complete".format(one_audit.id))
     resp = yield http_client.fetch(
         fe_url, method="POST", body=urlencode(body_dict), headers={"X-Grouper-User": owner_name}

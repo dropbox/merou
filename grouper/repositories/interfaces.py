@@ -1,6 +1,8 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
+from six import with_metaclass
+
 if TYPE_CHECKING:
     from grouper.entities.pagination import PaginatedList, Pagination
     from grouper.entities.permission import Permission
@@ -15,10 +17,8 @@ if TYPE_CHECKING:
     from typing import List, Optional
 
 
-class GroupEdgeRepository(object):
+class GroupEdgeRepository(with_metaclass(ABCMeta, object)):
     """Abstract base class for group edge repositories."""
-
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def groups_of_user(self, username):
@@ -26,10 +26,8 @@ class GroupEdgeRepository(object):
         pass
 
 
-class PermissionRepository(object):
+class PermissionRepository(with_metaclass(ABCMeta, object)):
     """Abstract base class for permission repositories."""
-
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def get_permission(self, name):
@@ -47,10 +45,8 @@ class PermissionRepository(object):
         pass
 
 
-class PermissionGrantRepository(object):
+class PermissionGrantRepository(with_metaclass(ABCMeta, object)):
     """Abstract base class for permission grant repositories."""
-
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def permission_grants_for_user(self, user):
@@ -63,10 +59,8 @@ class PermissionGrantRepository(object):
         pass
 
 
-class RepositoryFactory(object):
+class RepositoryFactory(with_metaclass(ABCMeta, object)):
     """Abstract base class for repository factories."""
-
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def create_audit_log_repository(self):

@@ -1,10 +1,11 @@
 import crypt
-import cStringIO as StringIO
 import csv
 import json
-from urllib import urlencode
+from io import StringIO
 
 import pytest
+from six import iteritems, itervalues
+from six.moves.urllib.parse import urlencode
 
 from grouper.constants import USER_METADATA_SHELL_KEY
 from grouper.models.counter import Counter
@@ -38,7 +39,7 @@ def test_health(session, http_client, base_url):  # noqa: F811
 
 @pytest.mark.gen_test
 def test_users(users, http_client, base_url):  # noqa: F811
-    all_users = sorted(users.keys() + ["service@a.co"])
+    all_users = sorted(list(users.keys()) + ["service@a.co"])
     users_wo_role = sorted([u for u in users if u != u"role@a.co"])
 
     api_url = url(base_url, "/users")
@@ -73,7 +74,7 @@ def test_multi_users(users, http_client, base_url):  # noqa: F811
     assert resp.code == 200
     assert body["status"] == "ok"
     # Service Accounts should be included
-    assert sorted(body["data"].iterkeys()) == sorted(users.keys() + ["service@a.co"])
+    assert sorted(list(body["data"].keys())) == sorted(list(users.keys()) + ["service@a.co"])
 
     # Test case when only valid usernames are provided
     api_url = make_url("tyleromeara@a.co", "gary@a.co", "role@a.co")
@@ -83,9 +84,9 @@ def test_multi_users(users, http_client, base_url):  # noqa: F811
     assert resp.code == 200
     assert body["status"] == "ok"
     # Service Accounts should be included
-    assert sorted(body["data"].iterkeys()) == ["gary@a.co", "role@a.co", "tyleromeara@a.co"]
+    assert sorted(list(body["data"].keys())) == ["gary@a.co", "role@a.co", "tyleromeara@a.co"]
     # Verify that we return the same data as the single user endpoint
-    for username, data in body["data"].iteritems():
+    for username, data in iteritems(body["data"]):
         r = yield http_client.fetch(url(base_url, "/users/{}".format(username)))
         rbody = json.loads(r.body)
         assert data == rbody["data"]
@@ -97,7 +98,7 @@ def test_multi_users(users, http_client, base_url):  # noqa: F811
 
     assert resp.code == 200
     assert body["status"] == "ok"
-    assert sorted(body["data"].iterkeys()) == ["gary@a.co", "tyleromeara@a.co"]
+    assert sorted(list(body["data"].keys())) == ["gary@a.co", "tyleromeara@a.co"]
 
     # Test when only nonexistent usernames are given
     api_url = make_url("doesnotexist@a.co", "doesnotexist2@a.co")
@@ -106,7 +107,7 @@ def test_multi_users(users, http_client, base_url):  # noqa: F811
 
     assert resp.code == 200
     assert body["status"] == "ok"
-    assert sorted(body["data"].iterkeys()) == []
+    assert sorted(list(body["data"].keys())) == []
 
 
 @pytest.mark.gen_test
@@ -117,7 +118,7 @@ def test_service_accounts(session, standard_graph, users, http_client, base_url)
     assert resp.code == 200
     assert body["status"] == "ok"
     assert sorted(body["data"]["service_accounts"]) == sorted(
-        [u.name for u in users.values() if u.role_user] + ["service@a.co"]
+        [u.name for u in itervalues(users) if u.role_user] + ["service@a.co"]
     )
 
     # TODO: test cutoff
@@ -385,8 +386,7 @@ def test_public_keys(session, users, http_client, base_url):  # noqa: F811
     api_url = url(base_url, "/public-keys")
     resp = yield http_client.fetch(api_url)
 
-    body_io = StringIO.StringIO(resp.body)
-
+    body_io = StringIO(resp.body.decode())
     csv_reader = csv.DictReader(body_io)
     rows = list(csv_reader)
 

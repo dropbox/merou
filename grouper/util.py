@@ -63,7 +63,7 @@ def get_database_url(settings, retries=3, retry_wait_seconds=1):
                 _DB_URL_CACHED = url.strip()
                 return _DB_URL_CACHED
             except subprocess.CalledProcessError as e:
-                logging.info("database_source: " + str(settings.database_source))
+                logging.info("database_source: %s", settings.database_source)
                 logging.error(e)
                 retry += 1
                 if retry > retries:

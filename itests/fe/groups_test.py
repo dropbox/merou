@@ -29,7 +29,7 @@ def test_list_groups(async_server, browser, groups):  # noqa: F811
 
     page = GroupsViewPage(browser)
 
-    for name, _ in groups.iteritems():
+    for name in groups:
         row = page.find_group_row(name)
         assert row.href.endswith("/groups/{}".format(name))
 
@@ -43,7 +43,7 @@ def test_show_group(async_server, browser, groups):  # noqa: F811
     page = GroupViewPage(browser)
 
     members = group.my_members()
-    for [_, username], _ in members.iteritems():
+    for (_, username) in members:
         row = page.find_member_row(username)
         assert row.href.endswith("/users/{}".format(username))
 

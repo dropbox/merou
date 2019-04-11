@@ -1,7 +1,6 @@
-from urllib import urlencode
-
 import pytest
 from mock import patch
+from six.moves.urllib.parse import urlencode
 
 from grouper.constants import USER_METADATA_SHELL_KEY
 from grouper.models.user import User

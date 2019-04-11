@@ -1,0 +1,23 @@
+{% extends "email/base.txt" %}
+
+{% block subject %}Permission Grant Request{% endblock %}
+
+{% block content %}
+
+{{ user_name }} has requested a permission be granted to the group {{ group_name }}.
+
+More details about the request:
+
+    Permission: {{ permission_name }}
+    Argument: {{ argument }}
+    Reason: {{ reason }}
+
+Take action on this request:
+
+    {{ url }}/permissions/requests/{{ request_id }}
+
+All pending requests:
+
+    {{ url }}/permissions/requests?status=pending
+
+{% endblock %}

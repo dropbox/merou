@@ -51,7 +51,7 @@
 
                     <form class="navbar-form navbar-right" role="search" action="/search" method="get">
                         <div class="input-group search-input">
-                            <input type="text" class="form-control" placeholder="Search" name="query" id="query" value="{{search_query|e}}">
+                            <input type="text" class="form-control" placeholder="Search" name="query" id="query" value="{{search_query}}">
                             <div class="input-group-btn">
                                 <button class="btn btn-default" type="submit"><i class="fa fa-search"></i></button>
                             </div>
@@ -67,9 +67,9 @@
                         {% for alert in alerts %}
                             <div class="row">
                                 <div class="col-md-12">
-                                    <div class="alert alert-{{alert.severity|e}} alert-dismissable">
+                                    <div class="alert alert-{{alert.severity}} alert-dismissable">
                                         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-                                        <strong>{{alert.heading|e}}</strong> {{alert.message|e}}
+                                        <strong>{{alert.heading}}</strong> {{alert.message}}
                                     </div>
                                 </div>
                             </div>

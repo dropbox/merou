@@ -22,7 +22,7 @@
                 <div class="form-group text-center">
                     Disable token with name <strong>{{ token.name }}</strong>?
                 </div>
-                {{ xsrf_form() }}
+                {{ xsrf_form()|safe }}
                 <div class="form-group text-center">
                     <button type="submit" class="btn btn-primary">Disable token</button>
                 </div>

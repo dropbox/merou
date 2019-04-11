@@ -22,7 +22,7 @@
                 <div class="form-group text-center">
                     Delete key with fingerprint <strong>{{ key.fingerprint_sha256 }}</strong>?
                 </div>
-                {{ xsrf_form() }}
+                {{ xsrf_form()|safe }}
                 <div class="form-group text-center">
                     <button type="submit" class="btn btn-primary">Delete Key</button>
                 </div>

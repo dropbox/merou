@@ -72,16 +72,14 @@
 <div class="row">
     <div class="col-md-6">
         <blockquote><p>
-            <em>{{group.description|default("", True)|escape}}</em>
+            <em>{{group.description|default("", True)}}</em>
         </p></blockquote>
     </div>
     <div class="col-md-6">
         <h4>
             {% if audited %}
                 <span class="label label-warning pull-right">
-                    <i class="fa fa-gavel"></i> <span {{ help_for("audited_group") }}>
-                        Auditing Enabled
-                    </span>
+                    <i class="fa fa-gavel"></i> {{ help_for("audited_group", "Auditing Enabled") }}
                 </span>
             {% endif %}
             {% if group.canjoin == "canjoin" %}
@@ -156,7 +154,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default"
                             data-dismiss="modal">Close</button>
-                    {{ xsrf_form() }}
+                    {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Enable</button>
                 </div>
             </form>
@@ -183,7 +181,7 @@
                         data-dismiss="modal">Close</button>
                 <form action="/users/{{user.id}}/disable" method="post"
                       class="inline">
-                    {{ xsrf_form() }}
+                    {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Disable</button>
                 </form>
             </div>
@@ -215,7 +213,7 @@
                       action="#" method="post">
                     <input type="hidden" name="member" />
                     <input type="hidden" name="member_type" />
-                    {{ xsrf_form() }}
+                    {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Remove</button>
                 </form>
             </div>
@@ -282,7 +280,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-default"
                         data-dismiss="modal">Close</button>
-                    {{ xsrf_form() }}
+                    {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Complete Audit</button>
             </div>
         </div>

@@ -1,0 +1,22 @@
+{% extends "email/base.html" %}
+
+{% block subject %}Permission Grant Request{% endblock %}
+
+{% block content %}
+
+<p><strong><a href="{{ url }}/users/{{ user_name }}">{{ user_name }}</a></strong> has requested
+a permission be granted to the group <strong><a href="{{ url }}/groups/{{ group_name }}">{{ group_name }}</a></strong>.</p>
+
+<p>More details about the request:</p>
+
+<ul>
+    <li><strong>Permission:</strong> <a href="{{ url }}/permissions/{{ permission_name }}">{{ permission_name }}</a></li>
+    <li><strong>Argument:</strong> {{ argument }}</li>
+    <li><strong>Reason:</strong> {{ reason }}</li>
+</ul>
+
+<p><strong><a href="{{ url }}/permissions/requests/{{ request_id }}">Take action on this permission request</a></strong></p>
+
+<p>You can see all your outstanding requests from the <a href="{{ url }}/permissions/requests?status=pending">permission requests queue</a>.</p>
+
+{% endblock %}

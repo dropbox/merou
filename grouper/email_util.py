@@ -140,12 +140,8 @@ def get_email_from_template(recipient_list, subject, template, settings, context
 
     context["url"] = settings["url"]
 
-    text_template = template_env.get_template("email/{}_text.tmpl".format(template)).render(
-        **context
-    )
-    html_template = template_env.get_template("email/{}_html.tmpl".format(template)).render(
-        **context
-    )
+    text_template = template_env.get_template("email/{}.txt".format(template)).render(**context)
+    html_template = template_env.get_template("email/{}.html".format(template)).render(**context)
 
     text = MIMEText(text_template, "plain", "utf-8")
     html = MIMEText(html_template, "html", "utf-8")

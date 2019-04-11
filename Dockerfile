@@ -51,6 +51,4 @@ RUN ( \
 
 EXPOSE 8888
 
-# By default, launch the CI tests.
-
 CMD ["/bin/bash", "-c", "/etc/init.d/mysql start && exec /bin/bash"]

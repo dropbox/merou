@@ -323,7 +323,7 @@ def ensure_audit_security(perm_arg):
                     for name, argument, _, _ in user_permissions(self.session, self.current_user)
                 ]
             ):
-                self.forbidden()
+                return self.forbidden()
 
             f(self, *args, **kwargs)
 

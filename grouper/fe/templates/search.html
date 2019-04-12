@@ -32,6 +32,8 @@
                     <td>
                         {% if result.type == "Group" %}
                             <a href="/groups/{{result.name}}">{{result.name}}</a>
+                        {% elif result.type == "Permission" %}
+                            <a href="/permissions/{{result.name}}">{{result.name}}</a>
                         {% elif result.type == "User" %}
                             <a href="/users/{{result.name}}">{{result.name}}</a>
                         {% else %}

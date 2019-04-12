@@ -1,5 +1,10 @@
+from typing import TYPE_CHECKING
+
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
+
+if TYPE_CHECKING:
+    from selenium.webdriver.remote.webelement import WebElement
 
 
 class BaseFinder(object):
@@ -39,6 +44,16 @@ class BasePage(BaseFinder):
     def subheading(self):
         # type: () -> str
         return self.find_element_by_xpath("//div[@class='header']/h3[1]/small[1]").text
+
+    @property
+    def search_input(self):
+        # type: () -> WebElement
+        return self.find_element_by_xpath("//div[contains(@class, 'search-input')]/input[1]")
+
+    def click_search_button(self):
+        # type: () -> None
+        button = self.find_element_by_xpath("//div[contains(@class, 'search-input')]//button[1]")
+        button.click()
 
     def has_text(self, text):
         return text in self.root.page_source

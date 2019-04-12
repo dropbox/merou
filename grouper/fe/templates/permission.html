@@ -33,7 +33,7 @@
 {% block content %}
 {% if permission.description %}
     <p>
-        <b>Description:</b> “{{ permission.description | escape }}”
+        <b>Description:</b> “{{ permission.description }}”
     </p>
 {% endif %}
 
@@ -102,7 +102,7 @@
                         data-dismiss="modal">Close</button>
                 <form action="/permissions/{{permission.name}}/enable-auditing" method="post"
                       class="inline">
-                    {{ xsrf_form() }}
+                    {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Enable</button>
                 </form>
             </div>
@@ -129,7 +129,7 @@
                         data-dismiss="modal">Close</button>
                 <form action="/permissions/{{permission.name}}/disable-auditing" method="post"
                       class="inline">
-                    {{ xsrf_form() }}
+                    {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Disable</button>
                 </form>
             </div>
@@ -156,7 +156,7 @@
                         data-dismiss="modal">Close</button>
                 <form action="/permissions/{{permission.name}}/disable" method="post"
                       class="inline">
-                    {{ xsrf_form() }}
+                    {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Disable</button>
                 </form>
             </div>

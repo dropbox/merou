@@ -1,0 +1,13 @@
+{% extends "email/base.html" %}
+
+{% block subject %}Membership in '{{ group_name }}' set to expire{% endblock %}
+
+{% block content %}
+<p>{{ group_name }} is an audited group, but you are not an auditor. Because of this, your
+membership in {{ group_name }} has been set to expire. You may resolve this by becoming an
+auditor and then having an owner or np-owner in {{ group_name }} reset your expiration time.
+For more information on how to become an auditor, please see
+<a href="{{ url }}/help">Grouper Help</a>.
+</p>
+
+{% endblock %}

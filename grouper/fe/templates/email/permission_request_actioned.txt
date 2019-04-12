@@ -1,0 +1,13 @@
+{% extends "email/base.txt" %}
+
+{% block subject %}Request for Permission Actioned{% endblock %}
+
+{% block content %}
+You request for permission {{ permission_name }} with argument {{ argument }}
+has been granted to the group {{ group_name }}.
+
+More details about the request:
+
+    Actioned By: {{ action_taken_by }}
+    Reason: {{ reason }}
+{% endblock %}

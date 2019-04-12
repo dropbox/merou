@@ -8,7 +8,7 @@
     </td>
     <td>
         <span class="pull-right">
-        <button class="btn btn-default btn-xs public-key" key-body="{{ key.public_key|escape }}">
+        <button class="btn btn-default btn-xs public-key" key-body="{{ key.public_key }}">
             <i class="fa fa-search"></i>
         </button>
     {% if can_control %}
@@ -49,7 +49,7 @@
     </td>
     <td>
         <span class="pull-right">
-        <button class="btn btn-default btn-xs public-key" key-body="{{ key.public_key|escape }}">
+        <button class="btn btn-default btn-xs public-key" key-body="{{ key.public_key }}">
             <i class="fa fa-search"></i>
         </button>
     {% if can_control %}
@@ -163,7 +163,7 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>{{ shell|e }}</td>
+                        <td>{{ shell }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -179,10 +179,8 @@
 {%- endmacro %}
 
 
-{% macro help_for(subj) -%}
-class="has-help"
-data-toggle="popover"
-title="Grouper Help" data-content="
+{% macro help_for(subj, text) -%}
+    <span class="has-help" data-toggle="popover" title="Grouper Help" data-content="
 {% if subj == "role" %}
 A 'role' describes someone's ability to control the group. There are three types of roles:
 <ul><li><strong>member</strong> has no special power</li>
@@ -193,7 +191,7 @@ A 'role' describes someone's ability to control the group. There are three types
 One or more of the permissions that apply to this group have auditing
 enabled. Membership in this group is regularly reviewed.
 {% endif %}
-"
+">{{ text }}</span>
 {%- endmacro %}
 
 {% macro group_panel(groups, show_role=False) -%}
@@ -384,7 +382,7 @@ enabled. Membership in this group is regularly reviewed.
                             {{ account(entry.actor) }}
                         </td>
                         <td class="col-sm-2">{{ entry.action }}</td>
-                        <td class="col-sm-2">{{ entry.description|escape }}</td>
+                        <td class="col-sm-2">{{ entry.description }}</td>
                         <td class="col-sm-2">
                             {% if entry.on_group %}
                                 Group: {{ account(entry.on_group) }}<br />
@@ -433,7 +431,7 @@ enabled. Membership in this group is regularly reviewed.
                 {% for map in mappings if not map.alias %}
                     <tr class="permission-row">
                         <td class="permission-name">{{ permission(map) }}</td>
-                        <td class="permission-argument col-sm-2">{{ map.argument|default("(unargumented)", True)|escape }}</td>
+                        <td class="permission-argument col-sm-2">{{ map.argument|default("(unargumented)", True) }}</td>
                         <td class="permission-source col-sm-2">
                         {% if map.distance == 0 %}
                             (direct)
@@ -515,9 +513,9 @@ enabled. Membership in this group is regularly reviewed.
     <div class="btn-group">
         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
             {% if current %}
-                {{key|title|e}}: {{current|e}}
+                {{key|title}}: {{current}}
             {% else %}
-                {{key|title|e}}
+                {{key|title}}
             {% endif %}
             <span class="caret"></span>
         </button>
@@ -571,7 +569,7 @@ enabled. Membership in this group is regularly reviewed.
             {{ field.label.text }}
             {% if help %}
             <a data-toggle="popover" title="restricted argument set"
-                    data-content="{{ help|escape }}">
+                    data-content="{{ help }}">
                 <sup>?</sup>
             </a>
             {% endif %}

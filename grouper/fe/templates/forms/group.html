@@ -11,4 +11,4 @@
 {{ form_field(form.require_clickthru_tojoin, 3, 4,
         help="require agreement to the group's description, prior requesting membership") }}
 
-{{ xsrf_form() }}
+{{ xsrf_form()|safe }}

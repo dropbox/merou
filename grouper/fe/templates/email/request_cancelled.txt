@@ -1,0 +1,15 @@
+{% extends "email/base.txt" %}
+
+{% block subject %}Request Cancelled{% endblock %}
+
+{% block content %}
+Your request to join the group {{ group_name }} has been cancelled by
+{{ cancelled_by }}.  The reason they gave was:
+
+    {{ reason }}
+
+More details about the request:
+
+    Role: {{ role }}
+    Expiration: {{ expiration|expires_when_str }}
+{% endblock %}

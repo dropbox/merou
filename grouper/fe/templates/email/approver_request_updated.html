@@ -1,0 +1,18 @@
+{% extends "email/base.html" %}
+
+{% block subject %}Membership Request Updated{% endblock %}
+
+{% block content %}
+
+<p><strong><a href="{{url}}/users/{{requester}}">{{ requester }}</a></strong>'s request
+to join <strong><a href="{{url}}/groups/{{group_name}}">{{ group_name }}</a></strong> has been
+<strong>{{ status }}</strong> by <a href="{{url}}/users/{{changed_by}}">{{ changed_by }}</a>.
+
+<p>More details about the action:</p>
+
+<ul>
+    <li><strong>Role:</strong> {{ role }}</li>
+    <li><strong>Reason:</strong> {{ reason }}</li>
+</ul>
+
+{% endblock %}

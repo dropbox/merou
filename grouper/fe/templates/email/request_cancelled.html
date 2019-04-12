@@ -1,0 +1,20 @@
+{% extends "email/base.html" %}
+
+{% block subject %}Request Cancelled{% endblock %}
+
+{% block content %}
+
+<p>Your request to join the group
+<strong><a href="{{url}}/groups/{{group_name}}">{{ group_name }}</a></strong>
+has been cancelled by {{ cancelled_by }}.  The reason they gave was:</p>
+
+<blockquote><p>{{ reason }}</p></blockquote>
+
+<p>More details about the request:</p>
+
+<ul>
+    <li><strong>Role:</strong> {{ role }}</li>
+    <li><strong>Expiration:</strong> {{ expiration|expires_when_str }}</li>
+</ul>
+
+{% endblock %}

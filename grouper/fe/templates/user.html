@@ -147,7 +147,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default"
                             data-dismiss="modal">Close</button>
-                    {{ xsrf_form() }}
+                    {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Enable</button>
                 </div>
             </form>
@@ -174,7 +174,7 @@
                         data-dismiss="modal">Close</button>
                 <form action="/users/{{user.id}}/disable" method="post"
                       class="inline">
-                    {{ xsrf_form() }}
+                    {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Disable</button>
                 </form>
             </div>

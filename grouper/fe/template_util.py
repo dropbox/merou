@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from dateutil.relativedelta import relativedelta
-from jinja2 import Environment, PackageLoader
+from jinja2 import Environment, PackageLoader, select_autoescape
 from pytz import UTC
 from six import string_types
 
@@ -133,7 +133,9 @@ def get_template_env(
     if extra_globals:
         j_globals.update(extra_globals)
 
-    env = Environment(loader=PackageLoader(package, "templates"))
+    env = Environment(
+        loader=PackageLoader(package, "templates"), autoescape=select_autoescape(["html"])
+    )
     env.filters.update(filters)
     env.globals.update(j_globals)
 

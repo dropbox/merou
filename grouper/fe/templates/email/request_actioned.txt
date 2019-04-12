@@ -1,0 +1,13 @@
+{% extends "email/base.txt" %}
+
+{% block subject %}Added to Group{% endblock %}
+
+{% block content %}
+You have been added to the group {{ group_name }} by {{ actioned_by }}.
+
+More details about the request:
+
+    Role: {{ role }}
+    Expiration: {{ expiration|expires_when_str }}
+    Reason: {{ reason }}
+{% endblock %}

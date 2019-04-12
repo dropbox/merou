@@ -1,0 +1,13 @@
+{% extends "email/base.txt" %}
+
+{% block subject %}Membership Request Updated{% endblock %}
+
+{% block content %}
+{{ requester }}'s request to join {{ group_name }} has been {{ status }} by {{ changed_by }}.
+
+More details about the update:
+
+    Role: {{ role }}
+    Reason: {{ reason }}
+
+{% endblock %}

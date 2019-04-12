@@ -40,7 +40,7 @@ class GroupPermissionRequest(GrouperHandler):
             return self.forbidden()
 
         args_by_perm = get_grantable_permissions(
-            self.session, settings.restricted_ownership_permissions
+            self.session, settings().restricted_ownership_permissions
         )
         dropdown_form, text_form = GroupPermissionRequest._get_forms(args_by_perm, None)
 
@@ -50,8 +50,8 @@ class GroupPermissionRequest(GrouperHandler):
             text_form=text_form,
             group=group,
             args_by_perm_json=json.dumps(args_by_perm),
-            dropdown_help=settings.permission_request_dropdown_help,
-            text_help=settings.permission_request_text_help,
+            dropdown_help=settings().permission_request_dropdown_help,
+            text_help=settings().permission_request_text_help,
         )
 
     def post(self, *args, **kwargs):
@@ -69,7 +69,7 @@ class GroupPermissionRequest(GrouperHandler):
 
         # check inputs
         args_by_perm = get_grantable_permissions(
-            self.session, settings.restricted_ownership_permissions
+            self.session, settings().restricted_ownership_permissions
         )
         dropdown_form, text_form = GroupPermissionRequest._get_forms(
             args_by_perm, self.request.arguments
@@ -96,8 +96,8 @@ class GroupPermissionRequest(GrouperHandler):
                 group=group,
                 args_by_perm_json=json.dumps(args_by_perm),
                 alerts=self.get_form_alerts(form.errors),
-                dropdown_help=settings.permission_request_dropdown_help,
-                text_help=settings.permission_request_text_help,
+                dropdown_help=settings().permission_request_dropdown_help,
+                text_help=settings().permission_request_text_help,
             )
 
         permission = get_permission(self.session, form.permission_name.data)

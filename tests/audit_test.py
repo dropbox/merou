@@ -16,6 +16,7 @@ from grouper.audit import (
     UserNotAuditor,
 )
 from grouper.background.background_processor import BackgroundProcessor
+from grouper.background.settings import BackgroundSettings
 from grouper.constants import AUDIT_VIEWER, PERMISSION_AUDITOR
 from grouper.graph import NoSuchGroup
 from grouper.models.audit_log import AuditLog, AuditLogCategory
@@ -23,7 +24,7 @@ from grouper.models.group import Group
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
 from grouper.permissions import enable_permission_auditing, get_or_create_permission
-from grouper.settings import settings
+from grouper.settings import set_global_settings
 from tests.fixtures import (  # noqa: F401
     fe_app as app,
     graph,
@@ -291,6 +292,8 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
     user43 will be added to the auditors group.
 
     """
+    settings = BackgroundSettings()
+    set_global_settings(settings)
 
     #
     # set up our test part of the graph

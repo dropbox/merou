@@ -1,19 +1,10 @@
 from datetime import datetime
 
 import pytz
-from mock import patch
 from pytz import UTC
 
 from grouper.fe.template_util import expires_when_str, long_ago_str, print_date
-
-
-def fake_settings_getitem(key):
-    if key == "timezone":
-        return pytz.timezone("US/Pacific")
-    elif key == "date_format":
-        return "%Y-%m-%d %I:%M %p"
-
-    assert "unknown setting"
+from grouper.settings import set_global_settings, Settings
 
 
 def test_expires_when_str():
@@ -52,9 +43,13 @@ def test_long_ago_str():
         assert long_ago_str(date_, utcnow_fn=utcnow_fn) == expected, msg
 
 
-@patch("grouper.fe.template_util.settings")
-def test_print_date(mock_settings):
-    mock_settings.__getitem__.side_effect = fake_settings_getitem
+def test_print_date():
+    # type: () -> None
+    settings = Settings()
+    settings.date_format = "%Y-%m-%d %I:%M %p"
+    settings.timezone = "US/Pacific"
+    settings._timezone_object = pytz.timezone("US/Pacific")
+    set_global_settings(settings)
 
     for date_, expected, msg in [
         (datetime(2015, 8, 11, 18, tzinfo=UTC), "2015-08-11 11:00 AM", "from datetime object"),

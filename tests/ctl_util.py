@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from grouper.ctl.main import main
+from tests.path_util import src_path
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
@@ -9,11 +10,11 @@ if TYPE_CHECKING:
 
 def call_main(session, *args):
     # type: (Session, *str) -> None
-    argv = ["grouper-ctl"] + list(args)
-    main(sys_argv=argv, start_config_thread=False, session=session)
+    argv = ["grouper-ctl", "-c", src_path("config", "dev.yaml")] + list(args)
+    main(sys_argv=argv, session=session)
 
 
 def run_ctl(setup, *args):
     # type: (SetupTest, *str) -> None
-    argv = ["grouper-ctl"] + list(args)
-    main(sys_argv=argv, start_config_thread=False, session=setup.session)
+    argv = ["grouper-ctl", "-c", src_path("config", "dev.yaml")] + list(args)
+    main(sys_argv=argv, session=setup.session)

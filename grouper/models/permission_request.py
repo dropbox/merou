@@ -34,4 +34,4 @@ class PermissionRequest(Model):
     @property
     def reference_id(self):
         # type: () -> str
-        return reference_id(settings, "permission", self)
+        return reference_id(settings(), "permission", self)

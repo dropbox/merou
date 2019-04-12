@@ -83,7 +83,7 @@ class PublicKeyDelete(GrouperHandler):
             [user.name],
             "Public SSH key removed",
             "ssh_keys_changed",
-            settings,
+            settings(),
             email_context,
         )
 

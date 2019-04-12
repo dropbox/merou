@@ -96,7 +96,7 @@ class UserTokenAdd(GrouperHandler):
             [user.name],
             "User token created",
             "user_tokens_changed",
-            settings,
+            settings(),
             email_context,
         )
         return self.render("user-token-created.html", token=token, secret=secret)

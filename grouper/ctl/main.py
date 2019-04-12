@@ -6,10 +6,11 @@ from typing import TYPE_CHECKING
 from grouper import __version__
 from grouper.ctl import dump_sql, group, oneoff, service_account, shell, sync_db
 from grouper.ctl.factory import CtlCommandFactory
+from grouper.ctl.settings import CtlSettings
 from grouper.initialization import create_sql_usecase_factory
 from grouper.plugin import initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
-from grouper.settings import default_settings_path, settings
+from grouper.settings import default_settings_path, set_global_settings
 from grouper.util import get_loglevel
 
 if TYPE_CHECKING:
@@ -19,8 +20,8 @@ if TYPE_CHECKING:
 sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
 
-def main(sys_argv=sys.argv, start_config_thread=True, session=None):
-    # type: (List[str], bool, Optional[Session]) -> None
+def main(sys_argv=sys.argv, session=None):
+    # type: (List[str], Optional[Session]) -> None
     description_msg = "Grouper Control"
     parser = argparse.ArgumentParser(description=description_msg)
 
@@ -50,9 +51,9 @@ def main(sys_argv=sys.argv, start_config_thread=True, session=None):
 
     args = parser.parse_args(sys_argv[1:])
 
-    if start_config_thread:
-        settings.update_from_config(args.config)
-        settings.start_config_thread(args.config)
+    settings = CtlSettings()
+    settings.update_from_config(args.config)
+    set_global_settings(settings)
 
     log_level = get_loglevel(args, base=logging.INFO)
     logging.basicConfig(level=log_level, format=settings.log_format)

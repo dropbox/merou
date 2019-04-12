@@ -4,11 +4,12 @@ import pytest
 from mock import patch
 
 from grouper.background.background_processor import BackgroundProcessor
+from grouper.background.settings import BackgroundSettings
 from grouper.models.async_notification import AsyncNotification
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
-from grouper.settings import settings
+from grouper.settings import set_global_settings
 from tests.fixtures import (  # noqa: F401
     graph,
     groups,
@@ -60,6 +61,8 @@ def test_expire_edges(expired_graph, session):  # noqa: F811
         assert edge.active == True
 
     # Expire the edges.
+    settings = BackgroundSettings()
+    set_global_settings(settings)
     background = BackgroundProcessor(settings, None)
     background.expire_edges(session)
 
@@ -108,6 +111,8 @@ def test_promote_nonauditors(
         assert not affected_users.intersection(get_users(graph, "auditors"))
 
         # do the promotion logic
+        settings = BackgroundSettings()
+        set_global_settings(settings)
         background = BackgroundProcessor(settings, None)
         background.promote_nonauditors(session)
 

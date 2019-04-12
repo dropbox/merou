@@ -150,7 +150,7 @@ class GroupAdd(GrouperHandler):
                 [member.name],
                 "Added to group: {}".format(group.name),
                 "request_actioned",
-                settings,
+                settings(),
                 {
                     "group_name": group.name,
                     "actioned_by": self.current_user.name,

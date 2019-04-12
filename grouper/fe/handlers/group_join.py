@@ -136,7 +136,7 @@ class GroupJoin(GrouperHandler):
             subj = self.render_template(
                 "email/pending_request_subj.tmpl", group=group.name, user=self.current_user.name
             )
-            send_email(self.session, mail_to, subj, "pending_request", settings, email_context)
+            send_email(self.session, mail_to, subj, "pending_request", settings(), email_context)
 
         elif group.canjoin == "canjoin":
             AuditLog.log(

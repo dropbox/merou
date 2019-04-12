@@ -59,7 +59,8 @@ class SetupTest(object):
         # type: (LocalPath) -> None
         self.session = self.create_session(tmpdir)
         self.graph = GroupGraph()
-        self.settings = Settings({"database": db_url(tmpdir)})
+        self.settings = Settings()
+        self.settings.database = db_url(tmpdir)
         self.repository_factory = GraphRepositoryFactory(self.settings, self.session, self.graph)
         self.service_factory = ServiceFactory(self.repository_factory)
         self.usecase_factory = UseCaseFactory(self.service_factory)

@@ -95,7 +95,7 @@ class PublicKeyAdd(GrouperHandler):
             [user.name],
             "Public SSH key added",
             "ssh_keys_changed",
-            settings,
+            settings(),
             email_context,
         )
 

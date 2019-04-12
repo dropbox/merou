@@ -26,7 +26,7 @@ from grouper.perf_profile import prune_old_traces
 from grouper.util import get_database_url
 
 if TYPE_CHECKING:
-    from grouper.settings import Settings
+    from grouper.background.settings import BackgroundSettings
     from grouper.error_reporting import SentryProxy
     from typing import Dict, Set
 
@@ -38,7 +38,7 @@ class BackgroundProcessor(object):
     """
 
     def __init__(self, settings, sentry_client):
-        # type: (Settings, SentryProxy) -> None
+        # type: (BackgroundSettings, SentryProxy) -> None
         """Initialize new BackgroundProcessor"""
 
         self.settings = settings

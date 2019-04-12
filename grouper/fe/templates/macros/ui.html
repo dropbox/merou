@@ -48,31 +48,11 @@
         <code>{{ key.fingerprint_sha256 }}</code>
     </td>
     <td>
-        {% for tag in key.tags %}
-            {% if can_control %}
-            <form action="/users/{{ username }}/public-key/{{ key.id }}/delete_tag/{{ tag.id }}" method="post" class="inline">
-            {% endif %}
-                <button type="submit" class="btn btn-danger">
-                    {{ tag.name }}
-                </button>
-            {% if can_control %}
-                {{ xsrf_form() }}
-            </form>
-            {% endif %}
-        {% endfor %}
-    </td>
-    <td>
         <span class="pull-right">
         <button class="btn btn-default btn-xs public-key" key-body="{{ key.public_key|escape }}">
             <i class="fa fa-search"></i>
         </button>
-        <button class="btn btn-default btn-xs public-key" key-body="{{ ",".join(key.pretty_permissions)|escape }}">
-            <i class="fa fa-key"></i>
-        </button>
     {% if can_control %}
-        <a class="btn btn-default btn-xs" href="/users/{{ username }}/public-key/{{ key.id }}/tag">
-            <span class="glyphicon glyphicon-tag glyphicon-vertical-adjust"></span>
-        </a>
         <a class="btn btn-default btn-xs" href="/users/{{ username }}/public-key/{{ key.id }}/delete">
             <span class="glyphicon glyphicon-remove glyphicon-vertical-adjust"></span>
         </a>
@@ -95,7 +75,6 @@
                         <th class="col-sm-1">Type</th>
                         <th class="col-sm-1">Size</th>
                         <th class="col-sm-3 hidden-xs">Fingerprint</th>
-                        <th class="col-sm-1">Tags</th>
                         <th class="col-sm-2"></th>
                     </tr>
                 </thead>
@@ -321,13 +300,6 @@ enabled. Membership in this group is regularly reviewed.
 </a>
 {%- endmacro %}
 
-{% macro format_tag(t) -%}
-<a class="tag-link" href="/tags/{{t.name}}">
-    <i class="fa fa-tag hidden-xs"></i>
-    {{t.name}}
-</a>
-{%- endmacro %}
-
 {% macro member_row(group, member, members, current_user, current_user_role) -%}
     <tr class="member-row">
         <td>
@@ -414,9 +386,6 @@ enabled. Membership in this group is regularly reviewed.
                         <td class="col-sm-2">{{ entry.action }}</td>
                         <td class="col-sm-2">{{ entry.description|escape }}</td>
                         <td class="col-sm-2">
-                            {% if entry.on_tag %}
-                                Tag: {{ format_tag(entry.on_tag) }}<br />
-                            {% endif %}
                             {% if entry.on_group %}
                                 Group: {{ account(entry.on_group) }}<br />
                             {% endif %}
@@ -591,64 +560,6 @@ enabled. Membership in this group is regularly reviewed.
             <a class="btn btn-default" href="{{ update_qs(offset=(pages-1)*limit) }}"><i class="fa fa-angle-double-right"></i></a>
         {% else %}
             <a class="btn btn-default disabled"><i class="fa fa-angle-double-right"></i></a>
-        {% endif %}
-    </div>
-{%- endmacro %}
-
-{% macro tag_permission_panel(mappings, tag, can_grant=None) -%}
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">Permissions</h3>
-        </div>
-        <div class="standard-panel">
-            <table class="{% if mappings %}datatable {% endif %}table table-striped table-condensed">
-                <thead>
-                    <tr>
-                        <th class="col-sm-2">Permission</th>
-                        <th class="col-sm-2">Argument</th>
-                        <th class="col-sm-2">Granted</th>
-                        {% if can_grant %}
-                            <th class="col-sm-2"></th>
-                        {% endif %}
-                    </tr>
-                </thead>
-                <tbody>
-                {% for map in mappings %}
-                    <tr>
-                        <td>{{ permission(map) }}</td>
-                        <td class="col-sm-2">{{ map.argument|default("(unargumented)", True)|escape }}</td>
-                        <td class="col-sm-2" title="{{ map.granted_on|print_date }}">
-                            {{ map.granted_on|long_ago_str }}
-                        </td>
-                        {% if can_grant %}
-                            <td class="col-sm-2">
-                            {% for grantable in can_grant if grantable.name == map.name %}
-                                {% if loop.first %}
-                                    <a class="btn btn-default btn-xs" href="/permissions/{{ map.name }}/revoke_tag/{{ map.mapping_id }}">
-                                    <span class="glyphicon glyphicon-remove glyphicon-vertical-adjust"></span> Revoke
-                                    </a>
-                                {% endif %}
-                            {% endfor %}
-                            </td>
-                        {% endif %}
-                    </tr>
-                {% endfor %}
-                {% if not mappings and not pending_requests %}
-                    <tr>
-                        <td colspan="5" class="text-center">
-                            <em>No permissions found.</em>
-                        </td>
-                    </tr>
-                {% endif %}
-                </tbody>
-            </table>
-        </div>
-        {% if can_grant %}
-        <div class='panel-footer'>
-            <a class="btn btn-default btn-sm" href="/permissions/grant_tag/{{ tag.name }}">
-                <span class="glyphicon glyphicon-plus"></span> Add Permission
-            </a>
-        </div>
         {% endif %}
     </div>
 {%- endmacro %}

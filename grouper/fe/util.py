@@ -22,7 +22,6 @@ from grouper.models.base.session import get_db_engine, Session
 from grouper.models.user import User
 from grouper.perf_profile import record_trace
 from grouper.user_permissions import user_permissions
-from grouper.util import get_database_url
 
 if TYPE_CHECKING:
     from grouper.usecases.factory import UseCaseFactory
@@ -151,7 +150,7 @@ class GrouperHandler(RequestHandler):
         except sqlalchemy.exc.OperationalError:
             # Failed to connect to database or create user, try to reconfigure the db. This invokes
             # the fetcher to try to see if our URL string has changed.
-            Session.configure(bind=get_db_engine(get_database_url(settings())))
+            Session.configure(bind=get_db_engine(settings().database_url))
             raise DatabaseFailure()
 
         # service accounts are, by definition, not interactive users

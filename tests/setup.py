@@ -58,10 +58,10 @@ class SetupTest(object):
 
     def __init__(self, tmpdir):
         # type: (LocalPath) -> None
-        self.session = self.create_session(tmpdir)
-        self.graph = GroupGraph()
         self.settings = Settings()
         self.settings.database = db_url(tmpdir)
+        self.session = self.create_session(tmpdir)
+        self.graph = GroupGraph()
         self.repository_factory = GraphRepositoryFactory(self.settings, self.session, self.graph)
         self.service_factory = ServiceFactory(self.repository_factory)
         self.usecase_factory = UseCaseFactory(self.service_factory)
@@ -69,7 +69,7 @@ class SetupTest(object):
 
     def create_session(self, tmpdir):
         # type: (LocalPath) -> Session
-        db_engine = get_db_engine(db_url(tmpdir))
+        db_engine = get_db_engine(self.settings.database_url)
 
         # Reinitialize plugins in case a previous test configured some.
         initialize_plugins([], [], "tests")

@@ -23,7 +23,6 @@ from grouper.models.group import Group
 from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge
 from grouper.models.user import User
 from grouper.perf_profile import prune_old_traces
-from grouper.util import get_database_url
 
 if TYPE_CHECKING:
     from grouper.background.settings import BackgroundSettings
@@ -129,10 +128,10 @@ class BackgroundProcessor(object):
 
     def run(self):
         # type: () -> None
-        initial_url = get_database_url(self.settings)
+        initial_url = self.settings.database_url
         while True:
             try:
-                if get_database_url(self.settings) != initial_url:
+                if self.settings.database_url != initial_url:
                     self.crash()
                 with closing(Session()) as session:
                     self.logger.info("Expiring edges....")

@@ -6,7 +6,6 @@ from sqlalchemy.schema import CreateIndex, CreateTable
 
 from grouper.models.base.model_base import Model
 from grouper.models.base.session import get_db_engine
-from grouper.util import get_database_url
 
 if TYPE_CHECKING:
     from argparse import _SubParsersAction, Namespace
@@ -15,7 +14,7 @@ if TYPE_CHECKING:
 
 def dump_sql_command(args, settings):
     # type: (Namespace, CtlSettings) -> None
-    db_engine = get_db_engine(get_database_url(settings))
+    db_engine = get_db_engine(settings.database_url)
     for table in Model.metadata.sorted_tables:
         print(CreateTable(table).compile(db_engine))
         for index in table.indexes:

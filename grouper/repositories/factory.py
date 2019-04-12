@@ -15,7 +15,6 @@ from grouper.repositories.permission_grant import (
 from grouper.repositories.service_account import ServiceAccountRepository
 from grouper.repositories.transaction import TransactionRepository
 from grouper.repositories.user import UserRepository
-from grouper.util import get_database_url
 
 if TYPE_CHECKING:
     from grouper.graph import GroupGraph
@@ -61,7 +60,7 @@ class GraphRepositoryFactory(RepositoryFactory):
     def session(self):
         # type: () -> Session
         if not self._session:
-            db_engine = get_db_engine(get_database_url(self.settings))
+            db_engine = get_db_engine(self.settings.database_url)
             Session.configure(bind=db_engine)
             self._session = Session()
         return self._session
@@ -128,7 +127,7 @@ class SQLRepositoryFactory(RepositoryFactory):
     def session(self):
         # type: () -> Session
         if not self._session:
-            db_engine = get_db_engine(get_database_url(self.settings))
+            db_engine = get_db_engine(self.settings.database_url)
             Session.configure(bind=db_engine)
             self._session = Session()
         return self._session

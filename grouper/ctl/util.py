@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 
 from grouper.constants import NAME_VALIDATION, SERVICE_ACCOUNT_VALIDATION, USERNAME_VALIDATION
 from grouper.models.base.session import get_db_engine, Session
-from grouper.util import get_database_url
 
 if TYPE_CHECKING:
     from argparse import Namespace
@@ -70,7 +69,7 @@ def ensure_valid_service_account_name(f):
 
 def make_session(settings):
     # type: (CtlSettings) -> Session
-    db_engine = get_db_engine(get_database_url(settings))
+    db_engine = get_db_engine(settings.database_url)
     Session.configure(bind=db_engine)
     return Session()
 

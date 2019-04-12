@@ -76,6 +76,25 @@ class AuditLogInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
+class GroupInterface(with_metaclass(ABCMeta, object)):
+    """Abstract base class for group operations and queries."""
+
+    @abstractmethod
+    def group_exists(self, name):
+        # type: (str) -> bool
+        pass
+
+    @abstractmethod
+    def initialize_administrator_group(self):
+        # type: () -> None
+        pass
+
+    @abstractmethod
+    def initialize_auditors_group(self):
+        # type: () -> None
+        pass
+
+
 class GroupRequestInterface(with_metaclass(ABCMeta, object)):
     """Abstract base class for requests for group membership."""
 
@@ -87,6 +106,16 @@ class GroupRequestInterface(with_metaclass(ABCMeta, object)):
 
 class PermissionInterface(with_metaclass(ABCMeta, object)):
     """Abstract base class for permission operations and queries."""
+
+    @abstractmethod
+    def create_permission(self, name, description=""):
+        # type: (str, str) -> None
+        pass
+
+    @abstractmethod
+    def create_system_permissions(self):
+        # type: () -> None
+        pass
 
     @abstractmethod
     def disable_permission(self, name, authorization):

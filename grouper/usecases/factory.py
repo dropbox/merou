@@ -52,7 +52,12 @@ class UseCaseFactory(object):
     def create_initialize_schema_usecase(self):
         # type: () -> InitializeSchema
         schema_service = self.service_factory.create_schema_service()
-        return InitializeSchema(schema_service)
+        group_service = self.service_factory.create_group_service()
+        permission_service = self.service_factory.create_permission_service()
+        transaction_service = self.service_factory.create_transaction_service()
+        return InitializeSchema(
+            schema_service, group_service, permission_service, transaction_service
+        )
 
     def create_view_permission_usecase(self, ui):
         # type: (ViewPermissionUI) -> ViewPermission

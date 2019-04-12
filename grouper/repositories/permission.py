@@ -25,13 +25,17 @@ class GraphPermissionRepository(PermissionRepository):
         self.graph = graph
         self.repository = repository
 
-    def get_permission(self, name):
-        # type: (str) -> Optional[Permission]
-        return self.repository.get_permission(name)
+    def create_permission(self, name, description=""):
+        # type: (str, str) -> None
+        self.repository.create_permission(name, description)
 
     def disable_permission(self, name):
         # type: (str) -> None
         self.repository.disable_permission(name)
+
+    def get_permission(self, name):
+        # type: (str) -> Optional[Permission]
+        return self.repository.get_permission(name)
 
     def list_permissions(self, pagination, audited_only):
         # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]
@@ -75,6 +79,18 @@ class SQLPermissionRepository(PermissionRepository):
         # type: (Session) -> None
         self.session = session
 
+    def create_permission(self, name, description=""):
+        # type: (str, str) -> None
+        permission = SQLPermission(name=name, description=description)
+        permission.add(self.session)
+
+    def disable_permission(self, name):
+        # type: (str) -> None
+        permission = SQLPermission.get(self.session, name=name)
+        if not permission:
+            raise PermissionNotFoundException(name)
+        permission.enabled = False
+
     def get_permission(self, name):
         # type: (str) -> Optional[Permission]
         permission = SQLPermission.get(self.session, name=name)
@@ -87,13 +103,6 @@ class SQLPermissionRepository(PermissionRepository):
             audited=permission.audited,
             enabled=permission.enabled,
         )
-
-    def disable_permission(self, name):
-        # type: (str) -> None
-        permission = SQLPermission.get(self.session, name=name)
-        if not permission:
-            raise PermissionNotFoundException(name)
-        permission.enabled = False
 
     def list_permissions(self, pagination, audited_only):
         # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]

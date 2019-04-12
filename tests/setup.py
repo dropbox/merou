@@ -88,7 +88,7 @@ class SetupTest(object):
         self.repository_factory = GraphRepositoryFactory(
             self.settings, PluginProxy([]), SingletonSessionFactory(self.session), self.graph
         )
-        self.service_factory = ServiceFactory(self.repository_factory)
+        self.service_factory = ServiceFactory(self.settings, self.repository_factory)
         self.usecase_factory = UseCaseFactory(self.service_factory)
         self._transaction_service = self.service_factory.create_transaction_service()
 

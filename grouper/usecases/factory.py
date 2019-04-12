@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from grouper.usecases.convert_user_to_service_account import ConvertUserToServiceAccount
 from grouper.usecases.disable_permission import DisablePermission
+from grouper.usecases.dump_schema import DumpSchema
 from grouper.usecases.initialize_schema import InitializeSchema
 from grouper.usecases.list_permissions import ListPermissions
 from grouper.usecases.view_permission import ViewPermission
@@ -11,6 +12,7 @@ if TYPE_CHECKING:
     from grouper.settings import Settings
     from grouper.usecases.convert_user_to_service_account import ConvertUserToServiceAccountUI
     from grouper.usecases.disable_permission import DisablePermissionUI
+    from grouper.usecases.dump_schema import DumpSchemaUI
     from grouper.usecases.list_permissions import ListPermissionsUI
     from grouper.usecases.view_permission import ViewPermissionUI
 
@@ -44,6 +46,11 @@ class UseCaseFactory(object):
         transaction_service = self.service_factory.create_transaction_service()
         user_service = self.service_factory.create_user_service()
         return DisablePermission(actor, ui, permission_service, user_service, transaction_service)
+
+    def create_dump_schema_usecase(self, ui):
+        # type: (DumpSchemaUI) -> DumpSchema
+        schema_service = self.service_factory.create_schema_service()
+        return DumpSchema(ui, schema_service)
 
     def create_list_permissions_usecase(self, ui):
         # type: (ListPermissionsUI) -> ListPermissions

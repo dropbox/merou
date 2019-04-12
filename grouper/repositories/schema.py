@@ -11,6 +11,9 @@ models are added, be sure to also add them to the import list.
 
 from typing import TYPE_CHECKING
 
+from six import StringIO
+from sqlalchemy.schema import CreateIndex, CreateTable
+
 from grouper.models.async_notification import AsyncNotification  # noqa: F401
 from grouper.models.audit import Audit  # noqa: F401
 from grouper.models.audit_log import AuditLog  # noqa: F401
@@ -55,6 +58,16 @@ class SchemaRepository(object):
         """Not exposed via a service, used primarily for tests."""
         db_engine = get_db_engine(self.settings.database)
         Model.metadata.drop_all(db_engine)
+
+    def dump_schema(self):
+        # type: () -> str
+        db_engine = get_db_engine(self.settings.database)
+        sql = StringIO()
+        for table in Model.metadata.sorted_tables:
+            sql.write(str(CreateTable(table).compile(db_engine)))
+            for index in table.indexes:
+                sql.write(str(CreateIndex(index).compile(db_engine)))
+        return sql.getvalue()
 
     def initialize_schema(self):
         # type: () -> None

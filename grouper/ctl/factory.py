@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from grouper.ctl.dump_sql import DumpSqlCommand
 from grouper.ctl.permission import PermissionCommand
 from grouper.ctl.sync_db import SyncDbCommand
 from grouper.ctl.user import UserCommand
@@ -31,6 +32,8 @@ class CtlCommandFactory(object):
         information such as the database URL that may be overridden on the command line and thus
         cannot be created until after command-line parsing.
         """
+        parser = subparsers.add_parser("dump_sql", help="Dump database schema")
+        DumpSqlCommand.add_arguments(parser)
         parser = subparsers.add_parser("permission", help="Manipulate permissions")
         PermissionCommand.add_arguments(parser)
         parser = subparsers.add_parser("sync_db", help="Create database schema")
@@ -47,7 +50,9 @@ class CtlCommandFactory(object):
 
     def construct_command(self, command):
         # type: (str) -> CtlCommand
-        if command == "permission":
+        if command == "dump_sql":
+            return self.construct_dump_sql_command()
+        elif command == "permission":
             return self.construct_permission_command()
         elif command == "sync_db":
             return self.construct_sync_db_command()
@@ -57,6 +62,10 @@ class CtlCommandFactory(object):
             return self.construct_user_proxy_command()
         else:
             raise UnknownCommand("unknown command {}".format(command))
+
+    def construct_dump_sql_command(self):
+        # type: () -> DumpSqlCommand
+        return DumpSqlCommand(self.usecase_factory)
 
     def construct_permission_command(self):
         # type: () -> PermissionCommand

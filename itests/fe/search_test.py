@@ -48,7 +48,7 @@ def test_search_escaping(tmpdir, setup, browser):
         browser.get(url(frontend_url, "/"))
 
         page = UserViewPage(browser)
-        page.search_input.send_keys('SEARCH"><marquee>foo<marquee>')
+        page.search_input.send_keys('SEARCH"><marquee>foo</marquee>')
         page.click_search_button()
 
         results_page = SearchResultsPage(browser)

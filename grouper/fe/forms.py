@@ -238,18 +238,18 @@ class GroupPermissionRequestTextForm(Form):
     argument_type = HiddenField(default="text")
 
 
-_argument_validators = [
-    validators.DataRequired(),
-    validators.Length(min=0, max=64),
-    ValidateRegex(constants.ARGUMENT_VALIDATION),
-]
-
-
 class PermissionRequestForm(Form):
     # Caller will add <select> field choices.
     group_name = SelectField("Group", [validators.DataRequired()])
     permission_name = SelectField("Permission", [validators.DataRequired()])
-    argument = StringField("Argument", _argument_validators)
+    argument = StringField(
+        "Argument",
+        [
+            validators.DataRequired(),
+            validators.Length(min=0, max=64),
+            ValidateRegex(constants.ARGUMENT_VALIDATION),
+        ],
+    )
     reason = TextAreaField("Reason", [validators.DataRequired()])
 
 

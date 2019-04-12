@@ -3,6 +3,7 @@ from sqlalchemy.sql import label, literal
 
 from grouper.fe.util import GrouperHandler
 from grouper.models.group import Group
+from grouper.models.permission import Permission
 from grouper.models.user import User
 
 
@@ -24,6 +25,16 @@ class Search(GrouperHandler):
             .subquery()
         )
 
+        permissions = (
+            self.session.query(
+                label("type", literal("Permission")),
+                label("id", Permission.id),
+                label("name", Permission.name),
+            )
+            .filter(Permission.enabled == True, Permission.name.like("%{}%".format(query)))
+            .subquery()
+        )
+
         users = (
             self.session.query(
                 label("type", literal("User")), label("id", User.id), label("name", User.username)
@@ -33,7 +44,7 @@ class Search(GrouperHandler):
         )
 
         results_query = self.session.query("type", "id", "name").select_entity_from(
-            union_all(users.select(), groups.select())
+            union_all(users.select(), permissions.select(), groups.select())
         )
         total = results_query.count()
         results = results_query.offset(offset).limit(limit).all()

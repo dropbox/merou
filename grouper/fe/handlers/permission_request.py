@@ -1,18 +1,15 @@
 import json
 
+from tornado.web import HTTPError
+
 from grouper import permissions
 from grouper.audit import UserNotAuditor
-from grouper.fe.forms import (
-    GroupPermissionRequestDropdownForm,
-    GroupPermissionRequestTextForm,
-    PermissionRequestForm,
-)
+from grouper.fe.forms import PermissionRequestForm
 from grouper.fe.settings import settings
 from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.group import Group
 from grouper.permissions import get_grantable_permissions, get_permission
 from grouper.user_group import get_groups_by_user
-from tornado.web import HTTPError
 
 
 def _build_form(request, data):
@@ -36,31 +33,31 @@ def _build_form(request, data):
     args_by_perm = get_grantable_permissions(session, settings.restricted_ownership_permissions)
     permission_names = {p for p in args_by_perm}
 
-    group_param = request.get_argument('group', None)
+    group_param = request.get_argument("group", None)
     if group_param is not None:
         if group_param not in group_names:
             raise HTTPError(
-                status_code=404, reason='the group name in the URL is not one you belong to'
+                status_code=404, reason="the group name in the URL is not one you belong to"
             )
         form.group_name.choices = pairs([group_param])
-        form.group_name.render_kw = {'readonly': 'readonly'}
+        form.group_name.render_kw = {"readonly": "readonly"}
     else:
         form.group_name.choices = pairs([""] + sorted(group_names))
 
-    permission_param = request.get_argument('permission', None)
+    permission_param = request.get_argument("permission", None)
     if permission_param is not None:
         if permission_param not in permission_names:
             raise HTTPError(
-                status_code=404, reason='an unrecognized permission is specified in the URL'
+                status_code=404, reason="an unrecognized permission is specified in the URL"
             )
         form.permission_name.choices = pairs([permission_param])
-        form.permission_name.render_kw = {'readonly': 'readonly'}
+        form.permission_name.render_kw = {"readonly": "readonly"}
     else:
         form.permission_name.choices = pairs([""] + sorted(permission_names))
 
-    argument_param = request.get_argument('argument', '')
+    argument_param = request.get_argument("argument", "")
     if argument_param:
-        form.argument.render_kw = {'readonly': 'readonly'}
+        form.argument.render_kw = {"readonly": "readonly"}
         form.argument.data = argument_param
 
     return form, args_by_perm

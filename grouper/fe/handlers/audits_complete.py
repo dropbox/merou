@@ -13,15 +13,14 @@ from grouper.user_permissions import user_has_permission
 
 class AuditsComplete(GrouperHandler):
     def post(self, audit_id):
-        user = self.get_current_user()
-        if not user_has_permission(self.session, user, PERMISSION_AUDITOR):
+        if not user_has_permission(self.session, self.current_user, PERMISSION_AUDITOR):
             return self.forbidden()
 
         audit = self.session.query(Audit).filter(Audit.id == audit_id).one()
 
         # only owners can complete
         owner_ids = {member.id for member in itervalues(audit.group.my_owners())}
-        if user.id not in owner_ids:
+        if self.current_user.id not in owner_ids:
             return self.forbidden()
 
         if audit.complete:
@@ -36,7 +35,7 @@ class AuditsComplete(GrouperHandler):
             if member.id in edges:
                 # You can only approve yourself (otherwise you can remove yourself
                 # from the group and leave it ownerless)
-                if member.member.id == user.id:
+                if member.member.id == self.current_user.id:
                     member.status = "approved"
                 elif edges[member.id] in AUDIT_STATUS_CHOICES:
                     member.status = edges[member.id]

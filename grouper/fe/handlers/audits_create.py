@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
 
 from six import itervalues
 from sqlalchemy.exc import IntegrityError
@@ -15,24 +16,27 @@ from grouper.models.group import Group
 from grouper.models.group_edge import GROUP_EDGE_ROLES
 from grouper.user_permissions import user_has_permission
 
+if TYPE_CHECKING:
+    from typing import Any
+
 
 class AuditsCreate(GrouperHandler):
-    def get(self):
-        user = self.get_current_user()
-        if not user_has_permission(self.session, user, AUDIT_MANAGER):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        if not user_has_permission(self.session, self.current_user, AUDIT_MANAGER):
             return self.forbidden()
 
         self.render("audit-create.html", form=AuditCreateForm())
 
-    def post(self):
+    def post(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
         form = AuditCreateForm(self.request.arguments)
         if not form.validate():
             return self.render(
                 "audit-create.html", form=form, alerts=self.get_form_alerts(form.errors)
             )
 
-        user = self.get_current_user()
-        if not user_has_permission(self.session, user, AUDIT_MANAGER):
+        if not user_has_permission(self.session, self.current_user, AUDIT_MANAGER):
             return self.forbidden()
 
         # Step 1, detect if there are non-completed audits and fail if so.

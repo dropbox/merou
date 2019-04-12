@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy.exc import IntegrityError
 
 from grouper.fe.forms import GroupCreateForm
@@ -5,9 +7,13 @@ from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
 
+if TYPE_CHECKING:
+    from typing import Any
+
 
 class GroupsView(GrouperHandler):
-    def get(self):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
         self.handle_refresh()
         offset = int(self.get_argument("offset", 0))
         limit = int(self.get_argument("limit", 100))
@@ -45,14 +51,13 @@ class GroupsView(GrouperHandler):
             enabled=enabled,
         )
 
-    def post(self):
+    def post(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
         form = GroupCreateForm(self.request.arguments)
         if not form.validate():
             return self.render(
                 "group-create.html", form=form, alerts=self.get_form_alerts(form.errors)
             )
-
-        user = self.get_current_user()
 
         group = Group(
             groupname=form.data["groupname"],
@@ -70,7 +75,14 @@ class GroupsView(GrouperHandler):
                 "group-create.html", form=form, alerts=self.get_form_alerts(form.errors)
             )
 
-        group.add_member(user, user, "Group Creator", "actioned", None, form.data["creatorrole"])
+        group.add_member(
+            self.current_user,
+            self.current_user,
+            "Group Creator",
+            "actioned",
+            None,
+            form.data["creatorrole"],
+        )
         self.session.commit()
 
         AuditLog.log(

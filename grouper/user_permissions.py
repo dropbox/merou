@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from six import itervalues
 from sqlalchemy import asc, or_
@@ -15,22 +16,21 @@ from grouper.models.group_edge import GroupEdge
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from grouper.models.user import User
+    from typing import Optional
+
 
 def user_has_permission(session, user, permission, argument=None):
+    # type: (Session, User, str, Optional[str]) -> bool
     """See if this user has a given permission/argument
 
     NOTE: only enabled permissions are considered.
 
     This walks a user's permissions (local/direct only) and determines if they have the given
-    permission. If an argument is specified, we validate if they have exactly that argument
+    permission. If an argument is specified, return True only if they have exactly that argument
     or if they have the wildcard ('*') argument.
-
-    Args:
-        permission (str): Name of permission to check for.
-        argument (str, Optional): Name of argument to check for.
-
-    Returns:
-        bool: Whether or not this user fulfills the permission.
     """
     for perm in user_permissions(session, user):
         if perm.name != permission:

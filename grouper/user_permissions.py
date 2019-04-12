@@ -23,24 +23,15 @@ if TYPE_CHECKING:
 
 
 def user_has_permission(session, user, permission, argument=None):
-    # type: (Session, Optional[User], str, Optional[str]) -> bool
+    # type: (Session, User, str, Optional[str]) -> bool
     """See if this user has a given permission/argument
 
     NOTE: only enabled permissions are considered.
 
     This walks a user's permissions (local/direct only) and determines if they have the given
-    permission. If an argument is specified, we validate if they have exactly that argument
+    permission. If an argument is specified, return True only if they have exactly that argument
     or if they have the wildcard ('*') argument.
-
-    Args:
-        permission (str): Name of permission to check for.
-        argument (str, Optional): Name of argument to check for.
-
-    Returns:
-        bool: Whether or not this user fulfills the permission.
     """
-    if not user:
-        return False
     for perm in user_permissions(session, user):
         if perm.name != permission:
             continue

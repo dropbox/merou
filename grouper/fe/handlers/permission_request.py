@@ -70,7 +70,7 @@ class PermissionRequest(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors),
             )
 
-        group = self.session.query(Group).filter(Group.groupname == form.group_name.data)
+        group = self.session.query(Group).filter(Group.groupname == form.group_name.data).first()
         assert group is not None, "our prefilled permission should exist or we have problems"
 
         permission = get_permission(self.session, form.permission_name.data)

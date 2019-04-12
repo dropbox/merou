@@ -9,22 +9,23 @@ from typing import TYPE_CHECKING
 
 from grouper.constants import NAME_VALIDATION, SERVICE_ACCOUNT_VALIDATION, USERNAME_VALIDATION
 from grouper.models.base.session import get_db_engine, Session
-from grouper.settings import settings
 from grouper.util import get_database_url
 
 if TYPE_CHECKING:
     from argparse import Namespace
     from datetime import date
+    from grouper.ctl.settings import CtlSettings
+    from grouper.settings import Settings
     from typing import Callable, Generator
 
 DATE_FORMAT = "%Y-%m-%d"
 
 
 def ensure_valid_username(f):
-    # type: (Callable[[Namespace], None]) -> Callable[[Namespace], None]
+    # type: (Callable[[Namespace, CtlSettings], None]) -> Callable[[Namespace, CtlSettings], None]
     @wraps(f)
-    def wrapper(args):
-        # type: (Namespace) -> None
+    def wrapper(args, settings):
+        # type: (Namespace, CtlSettings) -> None
         usernames = args.username if type(args.username) == list else [args.username]
         valid = True
         for username in usernames:
@@ -35,42 +36,42 @@ def ensure_valid_username(f):
         if not valid:
             return
 
-        return f(args)
+        return f(args, settings)
 
     return wrapper
 
 
 def ensure_valid_groupname(f):
-    # type: (Callable[[Namespace], None]) -> Callable[[Namespace], None]
+    # type: (Callable[[Namespace, CtlSettings], None]) -> Callable[[Namespace, CtlSettings], None]
     @wraps(f)
-    def wrapper(args):
-        # type: (Namespace) -> None
+    def wrapper(args, settings):
+        # type: (Namespace, CtlSettings) -> None
         if not re.match("^{}$".format(NAME_VALIDATION), args.groupname):
             logging.error("Invalid group name {}".format(args.groupname))
             return
 
-        return f(args)
+        return f(args, settings)
 
     return wrapper
 
 
 def ensure_valid_service_account_name(f):
-    # type: (Callable[[Namespace], None]) -> Callable[[Namespace], None]
+    # type: (Callable[[Namespace, CtlSettings], None]) -> Callable[[Namespace, CtlSettings], None]
     @wraps(f)
-    def wrapper(args):
-        # type: (Namespace) -> None
+    def wrapper(args, settings):
+        # type: (Namespace, CtlSettings) -> None
         if not re.match("^{}$".format(SERVICE_ACCOUNT_VALIDATION), args.name):
             logging.error('Invalid service account name "{}"'.format(args.name))
             return
 
-        return f(args)
+        return f(args, settings)
 
     return wrapper
 
 
-def make_session():
-    # type: () -> Session
-    db_engine = get_db_engine(get_database_url(settings()))
+def make_session(settings):
+    # type: (Settings) -> Session
+    db_engine = get_db_engine(get_database_url(settings))
     Session.configure(bind=db_engine)
     return Session()
 

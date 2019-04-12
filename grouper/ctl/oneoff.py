@@ -4,13 +4,13 @@ from contextlib import contextmanager
 from types import MethodType
 from typing import TYPE_CHECKING
 
-from grouper.ctl.settings import settings
 from grouper.ctl.util import make_session
 from grouper.oneoff import BaseOneOff
 from grouper.plugin import load_plugins
 
 if TYPE_CHECKING:
     from argparse import Namespace
+    from grouper.ctl.settings import CtlSettings
     from grouper.models.session import Session
     from typing import Any, Iterator, Tuple
 
@@ -61,12 +61,12 @@ def key_value_arg_type(arg):
     return (k, v)
 
 
-def oneoff_command(args):
-    # type: (Namespace) -> None
-    session = make_session()
+def oneoff_command(args, settings):
+    # type: (Namespace, CtlSettings) -> None
+    session = make_session(settings)
 
     oneoffs = load_plugins(
-        BaseOneOff, settings().oneoff_dirs, settings().oneoff_module_paths, "grouper-ctl"
+        BaseOneOff, settings.oneoff_dirs, settings.oneoff_module_paths, "grouper-ctl"
     )
 
     if args.subcommand == "run":

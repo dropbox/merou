@@ -15,13 +15,14 @@ from grouper.user_metadata import set_user_metadata
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
+    from grouper.ctl.settings import CtlSettings
     from grouper.usecases.factory import UseCaseFactory
 
 
 @ensure_valid_username
-def user_command(args):
-    # type: (Namespace) -> None
-    session = make_session()
+def user_command(args, settings):
+    # type: (Namespace, CtlSettings) -> None
+    session = make_session(settings)
 
     if args.subcommand == "create":
         for username in args.username:
@@ -184,8 +185,9 @@ class UserCommand(CtlCommand, ConvertUserToServiceAccountUI):
         user_set_metadata_parser.add_argument("metadata_key")
         user_set_metadata_parser.add_argument("metadata_value")
 
-    def __init__(self, usecase_factory):
-        # type: (UseCaseFactory) -> None
+    def __init__(self, settings, usecase_factory):
+        # type: (CtlSettings, UseCaseFactory) -> None
+        self.settings = settings
         self.usecase_factory = usecase_factory
 
     def converted_user_to_service_account(self, user, owner):
@@ -211,7 +213,7 @@ class UserCommand(CtlCommand, ConvertUserToServiceAccountUI):
             usecase.convert_user_to_service_account(args.username, args.owner)
 
         elif args.subcommand == "list":
-            session = make_session()
+            session = make_session(self.settings)
             all_users = get_all_users(session)
             for user in all_users:
                 user_enabled = "enabled" if user.enabled else "disabled"
@@ -219,4 +221,4 @@ class UserCommand(CtlCommand, ConvertUserToServiceAccountUI):
             return
 
         else:
-            user_command(args)
+            user_command(args, self.settings)

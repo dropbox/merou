@@ -66,12 +66,12 @@ def main(sys_argv=sys.argv, session=None):
         sa_log.setLevel(logging.INFO)
 
     usecase_factory = create_sql_usecase_factory(settings, session)
-    command_factory = CtlCommandFactory(usecase_factory)
+    command_factory = CtlCommandFactory(settings, usecase_factory)
 
     # Old-style subcommands store a func in callable when setting up their arguments.  New-style
     # subcommands are handled via a factory that constructs and calls the correct object.
     if getattr(args, "func", None):
-        args.func(args)
+        args.func(args, settings)
     else:
         command = command_factory.construct_command(args.command)
         command.run(args)

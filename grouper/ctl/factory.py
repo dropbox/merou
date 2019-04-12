@@ -7,6 +7,7 @@ from grouper.ctl.user_proxy import UserProxyCommand
 if TYPE_CHECKING:
     from argparse import _SubParsersAction
     from grouper.ctl.base import CtlCommand
+    from grouper.ctl.settings import CtlSettings
     from grouper.usecases.factory import UseCaseFactory
 
 
@@ -36,8 +37,9 @@ class CtlCommandFactory(object):
         parser = subparsers.add_parser("user_proxy", help="Start a development reverse proxy")
         UserProxyCommand.add_arguments(parser)
 
-    def __init__(self, usecase_factory):
-        # type: (UseCaseFactory) -> None
+    def __init__(self, settings, usecase_factory):
+        # type: (CtlSettings, UseCaseFactory) -> None
+        self.settings = settings
         self.usecase_factory = usecase_factory
 
     def construct_command(self, command):
@@ -57,7 +59,7 @@ class CtlCommandFactory(object):
 
     def construct_user_command(self):
         # type: () -> UserCommand
-        return UserCommand(self.usecase_factory)
+        return UserCommand(self.settings, self.usecase_factory)
 
     def construct_user_proxy_command(self):
         # type: () -> UserProxyCommand

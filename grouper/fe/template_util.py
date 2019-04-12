@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from dateutil.relativedelta import relativedelta
 from jinja2 import Environment, PackageLoader
@@ -7,8 +8,12 @@ from six import string_types
 
 from grouper.fe.settings import settings
 
+if TYPE_CHECKING:
+    from typing import Any, Callable, Dict, Optional, Union
+
 
 def _make_date_obj(date_obj):
+    # type: (Union[datetime, float, str]) -> datetime
     """Given either a datetime object, float date/time in UTC unix epoch, or
     string date/time in the form '%Y-%m-%d %H:%M:%S.%f' return a datetime
     object."""
@@ -29,10 +34,12 @@ def _make_date_obj(date_obj):
 
 
 def _utcnow():
+    # type: () -> datetime
     return datetime.now(UTC)
 
 
-def print_date(date_obj):
+def print_date(date):
+    # type: (Optional[Union[datetime, float, str]]) -> str
     """Print a human readable date/time string that respects system
     configuration for time zone and date/time format.
 
@@ -42,11 +49,10 @@ def print_date(date_obj):
 
     Returns human readable date/time string.
     """
-    if date_obj is None:
+    if date is None:
         return ""
 
-    date_obj = _make_date_obj(date_obj)
-
+    date_obj = _make_date_obj(date)
     date_obj = date_obj.astimezone(settings["timezone"])
     return date_obj.strftime(settings["date_format"])
 
@@ -99,8 +105,12 @@ def highest_period_delta_str(delta):
 
 
 def get_template_env(
-    package="grouper.fe", deployment_name="", extra_filters=None, extra_globals=None
+    package="grouper.fe",  # type: str
+    deployment_name="",  # type: str
+    extra_filters=None,  # type: Optional[Dict[str, Callable[..., Any]]]
+    extra_globals=None,  # type: Optional[Dict[str, Any]]
 ):
+    # type: (...) -> Environment
     # TODO(herb): get around circular depdendencies; long term remove call to
     # send_async_email() from grouper.models
     from grouper.models.base.constants import OBJ_TYPES_IDX
@@ -112,7 +122,7 @@ def get_template_env(
         "long_ago_str": long_ago_str,
     }
     j_globals = {
-        "cdnjs_prefix": settings["cdnjs_prefix"],
+        "cdnjs_prefix": settings.cdnjs_prefix,
         "deployment_name": deployment_name,
         "ROLES": GROUP_EDGE_ROLES,
         "TYPES": OBJ_TYPES_IDX,

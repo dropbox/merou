@@ -17,6 +17,7 @@ except ImportError:
 
 if TYPE_CHECKING:
     from types import FrameType
+    from typing import Optional
 
 
 signame_by_signum = {
@@ -38,7 +39,7 @@ class SentryProxy(object):
 
 
 def get_sentry_client(sentry_dsn):
-    # type: (str) -> SentryProxy
+    # type: (Optional[str]) -> SentryProxy
     if sentry_dsn and raven_installed:
         logging.info("sentry client setup dsn={}".format(sentry_dsn))
         sentry_client = SentryProxy(sentry_client=AsyncSentryClient(sentry_dsn))

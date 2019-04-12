@@ -1,4 +1,5 @@
 import json
+from typing import TYPE_CHECKING
 
 from grouper import permissions
 from grouper.audit import UserNotAuditor
@@ -7,6 +8,9 @@ from grouper.fe.settings import settings
 from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.group import Group
 from grouper.permissions import get_grantable_permissions, get_permission
+
+if TYPE_CHECKING:
+    from typing import Any, Optional
 
 
 class GroupPermissionRequest(GrouperHandler):
@@ -22,7 +26,11 @@ class GroupPermissionRequest(GrouperHandler):
 
         return dropdown_form, text_form
 
-    def get(self, group_id=None, name=None):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        group_id = kwargs.get("group_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -46,7 +54,11 @@ class GroupPermissionRequest(GrouperHandler):
             text_help=settings.permission_request_text_help,
         )
 
-    def post(self, group_id=None, name=None):
+    def post(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        group_id = kwargs.get("group_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -127,7 +139,7 @@ class GroupPermissionRequest(GrouperHandler):
         except UserNotAuditor as e:
             alerts = [Alert("danger", str(e))]
         else:
-            alerts = None
+            alerts = []
 
         if alerts:
             return self.render(

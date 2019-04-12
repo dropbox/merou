@@ -33,6 +33,7 @@ from grouper.util import matches_glob
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
+    from grouper.models.user import User
     from typing import Dict, List, Optional, Set, Tuple
 
 # Singleton
@@ -497,6 +498,7 @@ class PermissionIsDisabled(PermissionRequestException):
 
 
 def create_request(session, user, group, permission, argument, reason):
+    # type: (Session, User, Group, Permission, str, str) -> PermissionRequest
     """
     Creates an permission request and sends notification to the responsible approvers.
 
@@ -758,7 +760,14 @@ def get_changes_by_request_id(session, request_id):
     return [(sc, comment_by_status_change_id[sc.id]) for sc in status_changes]
 
 
-def update_request(session, request, user, new_status, comment):
+def update_request(
+    session,  # type: Session
+    request,  # type: PermissionRequest
+    user,  # type: User
+    new_status,  # type: str
+    comment,  # type: str
+):
+    # type: (...) -> None
     """Update a request.
 
     Args:

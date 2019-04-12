@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy.exc import IntegrityError
 
 from grouper.constants import (
@@ -15,8 +17,12 @@ from grouper.permissions import create_permission, get_permission, grant_permiss
 from grouper.settings import settings
 from grouper.util import get_auditors_group_name, get_database_url
 
+if TYPE_CHECKING:
+    from argparse import Namespace
+
 
 def sync_db_command(args):
+    # type: (Namespace) -> None
     # Models not implicitly or explictly imported above are explicitly imported here
     from grouper.models.perf_profile import PerfProfile  # noqa: F401
     from grouper.models.user_token import UserToken  # noqa: F401

@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from six import iteritems
 
 from grouper.constants import PERMISSION_AUDITOR
@@ -5,6 +7,13 @@ from grouper.graph import Graph, NoSuchGroup
 from grouper.models.audit import Audit
 from grouper.models.group import Group
 from grouper.util import get_auditors_group_name
+
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from grouper.models.user import User
+    from grouper.settings import Settings
+    from sqlalchemy.orm.query import Query
+    from typing import Set, Union
 
 
 class UserNotAuditor(Exception):
@@ -16,6 +25,7 @@ class GroupDoesNotHaveAuditPermission(Exception):
 
 
 def user_is_auditor(username):
+    # type: (str) -> bool
     """Check if a user is an auditor
 
     This is defined as the user having the audit permission.
@@ -35,6 +45,7 @@ def user_is_auditor(username):
 
 
 def assert_controllers_are_auditors(group):
+    # type: (Group) -> bool
     """Return whether not all owners/np-owners/managers in a group (and below) are auditors
 
     This is used to ensure that all of the people who can control a group
@@ -49,7 +60,8 @@ def assert_controllers_are_auditors(group):
         bool: True if the tree is completely controlled by auditors, else it will raise as above.
     """
     graph = Graph()
-    checked, queue = set(), [group.name]
+    checked = set()  # type: Set[str]
+    queue = [group.name]
     while queue:
         cur_group = queue.pop()
         if cur_group in checked:
@@ -81,6 +93,7 @@ def assert_controllers_are_auditors(group):
 
 
 def assert_can_join(group, user_or_group, role="member"):
+    # type: (Group, Union[Group, User], str) -> bool
     """Enforce audit rules on joining a group
 
     This applies the auditing rules to determine whether or not a given user can join the given
@@ -128,6 +141,7 @@ def assert_can_join(group, user_or_group, role="member"):
 
 
 def get_audits(session, only_open):
+    # type: (Session, bool) -> Query
     """Return audits in the system.
 
     Args:
@@ -143,6 +157,7 @@ def get_audits(session, only_open):
 
 
 def get_auditors_group(settings, session):
+    # type: (Settings, Session) -> Group
     """Retrieve the group for auditors
 
     Arg(s):

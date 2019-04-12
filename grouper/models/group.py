@@ -1,7 +1,7 @@
 import logging
 from collections import OrderedDict
 from datetime import datetime
-from typing import List
+from typing import TYPE_CHECKING
 
 from six import iteritems
 from sqlalchemy import Boolean, Column, desc, Enum, Integer, Interval, or_, String, Text, union_all
@@ -23,6 +23,10 @@ from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge, OWNER_RO
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
+
+if TYPE_CHECKING:
+    from grouper.models.request import Request
+    from typing import List, Optional, Union
 
 GROUP_JOIN_CHOICES = {
     # Anyone can join with automatic approval
@@ -122,8 +126,15 @@ class Group(Model, CommentObjectMixin):
 
     @flush_transaction
     def add_member(
-        self, requester, user_or_group, reason, status="pending", expiration=None, role="member"
+        self,
+        requester,  # type: User
+        user_or_group,  # type: Union[User, Group]
+        reason,  # type: str
+        status="pending",  # type: str
+        expiration=None,  # type: Optional[datetime]
+        role="member",  # type: str
     ):
+        # type: (...) -> Request
         """ Add a member (User or Group) to this group.
 
             Arguments:

@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.email_util import send_email
 from grouper.fe.forms import GroupRequestModifyForm
@@ -11,9 +13,17 @@ from grouper.models.request import Request
 from grouper.request import get_on_behalf_by_request
 from grouper.user import user_role
 
+if TYPE_CHECKING:
+    from typing import Any, Optional
+
 
 class GroupRequestUpdate(GrouperHandler):
-    def get(self, request_id, group_id=None, name=None):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        request_id = kwargs["request_id"]  # type: int
+        group_id = kwargs.get("group_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -45,7 +55,12 @@ class GroupRequestUpdate(GrouperHandler):
             updates=updates,
         )
 
-    def post(self, request_id, group_id=None, name=None):
+    def post(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        request_id = kwargs["request_id"]  # type: int
+        group_id = kwargs.get("group_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -103,7 +118,7 @@ class GroupRequestUpdate(GrouperHandler):
                 )
             except UserNotAuditor as e:
                 user_can_join = False
-                fail_message = e
+                fail_message = str(e)
             if not user_can_join:
                 return self.render(
                     "group-request-update.html",

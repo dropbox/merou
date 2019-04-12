@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from six import iteritems
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, SmallInteger
@@ -8,6 +9,9 @@ from grouper.expiration import add_expiration, cancel_expiration
 from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.base.model_base import Model
 from grouper.models.user import User
+
+if TYPE_CHECKING:
+    from typing import Any, Dict
 
 # Note: the order of the GROUP_EDGE_ROLES tuple matters! New roles must be
 # appended!  When adding a new role, be sure to update the regression test.
@@ -51,10 +55,12 @@ class GroupEdge(Model):
 
     @property
     def role(self):
+        # type: () -> str
         return GROUP_EDGE_ROLES[self._role]
 
     @role.setter
     def role(self, role):
+        # type: (str) -> None
         prev_role = self._role
         self._role = GROUP_EDGE_ROLES.index(role)
 
@@ -66,7 +72,9 @@ class GroupEdge(Model):
         if (self._role in OWNER_ROLE_INDICES) == (prev_role in OWNER_ROLE_INDICES):
             return
 
-        recipient = User.get(self.session, pk=self.member_pk).username
+        user = User.get(self.session, pk=self.member_pk)
+        assert user
+        recipient = user.username
         expiring_supergroups = self.group.my_expiring_groups()
         member_name = self.group.name
 
@@ -94,6 +102,7 @@ class GroupEdge(Model):
                 )
 
     def apply_changes(self, changes):
+        # type: (Dict[str, Any]) -> None
         # TODO(cbguder): get around circular dependencies
         from grouper.models.group import Group
 
@@ -103,6 +112,7 @@ class GroupEdge(Model):
                 if OBJ_TYPES_IDX[self.member_type] == "User":
                     # If affected member is a user, plan to notify that user.
                     user = User.get(self.session, pk=self.member_pk)
+                    assert user
                     member_name = user.username
                     recipients = [member_name]
                     member_is_user = True

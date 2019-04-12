@@ -27,7 +27,7 @@ from grouper.util import get_database_url
 if TYPE_CHECKING:
     from grouper.usecases.factory import UseCaseFactory
     from jinja2 import Environment
-    from typing import Any, Dict, List, Optional
+    from typing import Any, Callable, Dict, List, Optional, Text
 
 
 class Alert(object):
@@ -130,9 +130,10 @@ class GrouperHandler(RequestHandler):
         return super(GrouperHandler, self).redirect(url, *args, **kwargs)
 
     def get_current_user(self):
+        # type: () -> Optional[User]
         username = self.request.headers.get(settings.user_auth_header)
         if not username:
-            return
+            return None
 
         # Users must be fully qualified
         if not re.match("^{}$".format(USERNAME_VALIDATION), username):
@@ -160,12 +161,14 @@ class GrouperHandler(RequestHandler):
         return user
 
     def prepare(self):
+        # type: () -> None
         if not self.current_user or not self.current_user.enabled:
             self.forbidden()
             self.finish()
             return
 
     def on_finish(self):
+        # type: () -> None
         if self.perf_collector:
             self.perf_collector.stop()
             record_trace(self.session, self.perf_collector, self.perf_trace_uuid)
@@ -262,25 +265,30 @@ class GrouperHandler(RequestHandler):
         else:
             logging.info("{}, kwargs={}".format(message, kwargs))
 
-    # TODO(gary): Add json error responses.
-    def badrequest(self, format_type=None):
+    def badrequest(self):
+        # type: () -> None
         self.set_status(400)
         self.raise_and_log_exception(tornado.web.HTTPError(400))
         self.render("errors/badrequest.html")
 
-    def forbidden(self, format_type=None):
+    def forbidden(self):
+        # type: () -> None
         self.set_status(403)
         self.raise_and_log_exception(tornado.web.HTTPError(403))
         self.render("errors/forbidden.html", how_to_get_help=settings.how_to_get_help)
 
-    def notfound(self, format_type=None):
+    def notfound(self):
+        # type: () -> None
         self.set_status(404)
         self.raise_and_log_exception(tornado.web.HTTPError(404))
         self.render("errors/notfound.html")
 
     def get_sentry_user_info(self):
-        user = self.get_current_user()
-        return {"username": user.username}
+        # type: () -> Dict[str, Optional[str]]
+        if self.current_user:
+            return {"username": self.current_user.username}
+        else:
+            return {"username": None}
 
 
 def test_reserved_names(permission_name):
@@ -297,6 +305,7 @@ def test_reserved_names(permission_name):
 
 
 def ensure_audit_security(perm_arg):
+    # type: (Text) -> Callable[[Callable[..., None]], Callable[..., None]]
     """Decorator for web handler methods to ensure the current_user has the
     AUDIT_SECURITY permission with the specified argument.
 
@@ -305,7 +314,9 @@ def ensure_audit_security(perm_arg):
     """
 
     def _wrapper(f):
+        # type: (Callable[..., None]) -> Callable[..., None]
         def _decorator(self, *args, **kwargs):
+            # type: (GrouperHandler, *Any, **Any) -> None
             if not any(
                 [
                     name == AUDIT_SECURITY and argument == perm_arg
@@ -314,7 +325,7 @@ def ensure_audit_security(perm_arg):
             ):
                 return self.forbidden()
 
-            return f(self, *args, **kwargs)
+            f(self, *args, **kwargs)
 
         return wraps(f)(_decorator)
 

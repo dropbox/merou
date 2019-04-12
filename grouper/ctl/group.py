@@ -33,6 +33,7 @@ def group_command(args):
         # these subcommands
         @ensure_valid_username
         def call_mutate(args):
+            # type: (Namespace) -> None
             mutate_group_command(session, group, args)
 
         call_mutate(args)

@@ -16,8 +16,21 @@ from tornado.web import HTTPError
 
 
 def _build_form(request, data):
+    """Build the permission request form given the request and POST data.
+
+    Normally all fields of the form will be editable.  But if the URL
+    locks down a specific value for the group, permission, or argument,
+    then the specified fields will display those values and will be
+    grayed out and not editable.
+
+    """
     session = request.session
     current_user = request.current_user
+
+    def pairs(seq):
+        return [(item, item) for item in seq]
+
+    form = PermissionRequestForm(data)
 
     group_names = {g.groupname for g, e in get_groups_by_user(session, current_user)}
     args_by_perm = get_grantable_permissions(session, settings.restricted_ownership_permissions)
@@ -29,9 +42,10 @@ def _build_form(request, data):
             raise HTTPError(
                 status_code=404, reason='the group name in the URL is not one you belong to'
             )
-        group_choices = [group_param]
+        form.group_name.choices = pairs([group_param])
+        form.group_name.render_kw = {'readonly': 'readonly'}
     else:
-        group_choices = [""] + sorted(group_names)
+        form.group_name.choices = pairs([""] + sorted(group_names))
 
     permission_param = request.get_argument('permission', None)
     if permission_param is not None:
@@ -39,13 +53,16 @@ def _build_form(request, data):
             raise HTTPError(
                 status_code=404, reason='an unrecognized permission is specified in the URL'
             )
-        permission_choices = [permission_param]
+        form.permission_name.choices = pairs([permission_param])
+        form.permission_name.render_kw = {'readonly': 'readonly'}
     else:
-        permission_choices = [""] + sorted(args_by_perm.keys())
+        form.permission_name.choices = pairs([""] + sorted(permission_names))
 
-    form = PermissionRequestForm(data)
-    form.group_name.choices = [(c, c) for c in group_choices]
-    form.permission_name.choices = [(c, c) for c in permission_choices]
+    argument_param = request.get_argument('argument', '')
+    if argument_param:
+        form.argument.render_kw = {'readonly': 'readonly'}
+        form.argument.data = argument_param
+
     return form, args_by_perm
 
 
@@ -118,11 +135,9 @@ class PermissionRequest(GrouperHandler):
 
         if alerts:
             return self.render(
-                "group-permission-request.html",
-                dropdown_form=dropdown_form,
-                text_form=text_form,
-                group=group,
+                "permission-request.html",
                 args_by_perm_json=json.dumps(args_by_perm),
+                form=form,
                 alerts=alerts,
             )
         else:

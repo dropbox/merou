@@ -190,7 +190,6 @@ $(function () {
     $('#permission-request').each(function() {
         $form = $(this);
         var args_by_perm = $form.data('permission');
-        console.log(args_by_perm);
 
         var $argument_div = $form.find('.form-group-argument');
         var $reason_div = $form.find('.form-group-reason');
@@ -199,24 +198,15 @@ $(function () {
         var $permission_input = $form.find('#permission_name');
         var $argument_input = $form.find('#argument');
 
-        // Supplement the standard <input> field with an adjacent
-        // dropdown that we can fill with permission-specific options.
-        // We use careful enabling and disabling, below, to make sure
-        // only one of the inputs is eligible to be included in the
-        // submitted form.
+        // Supplement the <input> "argument" field with an adjacent
+        // "argument" dropdown that we can fill with permission-specific
+        // options.  We use renaming, below, to make sure only one of
+        // the two inputs is actually named "argument" when the form
+        // submits.
         var $argument_select = $("<select>", {
             "name": $argument_input.attr('name'),
             "class": $argument_input.attr('class'),
         }).insertAfter($argument_input);
-
-        // Helpfully gray out drop-downs that have arrived with only one
-        // option, meaning that they have been specified in the URL.
-        function disable_if_only_one_option($input) {
-            if ($input.find('option').size() == 1)
-                $input.prop('disabled', true);
-        }
-        disable_if_only_one_option($group_input);
-        disable_if_only_one_option($permission_input);
 
         function update() {
             $permission = $permission_input.val()
@@ -234,16 +224,16 @@ $(function () {
 
             if (args.length == 1 && args[0] == "*") {
                 $argument_input.show();
-                $argument_select.hide();
+                $argument_input.prop('name', 'argument');
 
-                $argument_input.prop('disabled', false);
-                $argument_select.prop('disabled', true);
+                $argument_select.hide();
+                $argument_select.prop('name', 'ignore');
             } else {
                 $argument_input.hide();
-                $argument_select.show();
+                $argument_input.prop('name', 'ignore');
 
-                $argument_input.prop('disabled', true);
-                $argument_select.prop('disabled', false);
+                $argument_select.show();
+                $argument_select.prop('name', 'argument');
 
                 $argument_select.empty();
                 $.each(args, function(index, arg) {
@@ -256,12 +246,6 @@ $(function () {
         update();
 
         $permission_input.on('change', update);
-
-        $form.on('submit', function() {
-            // Re-enable possibly disabled inputs, so they get transmitted.
-            $group_input.prop('disabled', false);
-            $permission_input.prop('disabled', false);
-        });
     });
 
     $("#clickthruModal #agree-clickthru-btn").on("click", function(e) {

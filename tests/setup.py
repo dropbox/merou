@@ -28,7 +28,6 @@ from typing import TYPE_CHECKING
 
 from grouper.graph import GroupGraph
 from grouper.models.base.constants import OBJ_TYPES
-from grouper.models.base.model_base import Model
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.group import Group
 from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
@@ -79,16 +78,16 @@ class SetupTest(object):
     def create_session(self):
         # type: () -> Session
         db_engine = get_db_engine(self.settings.database_url)
+        schema_repository = SchemaRepository(self.settings)
 
         # Reinitialize plugins in case a previous test configured some.
         initialize_plugins([], [], "tests")
 
         # If using a persistent database, clear the database first.
         if "MEROU_TEST_DATABASE" in os.environ:
-            Model.metadata.drop_all(db_engine)
+            schema_repository.drop_schema()
 
         # Create the database schema.
-        schema_repository = SchemaRepository(self.settings)
         schema_repository.initialize_schema()
 
         # Configure and create the session.

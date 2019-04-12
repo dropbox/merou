@@ -50,6 +50,12 @@ class SchemaRepository(object):
         # type: (Settings) -> None
         self.settings = settings
 
+    def drop_schema(self):
+        # type: () -> None
+        """Not exposed via a service, used primarily for tests."""
+        db_engine = get_db_engine(self.settings.database_url)
+        Model.metadata.drop_all(db_engine)
+
     def initialize_schema(self):
         # type: () -> None
         db_engine = get_db_engine(self.settings.database_url)

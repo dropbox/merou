@@ -25,7 +25,11 @@
         <tbody>
             {% for change_status, comment in change_comment_list %}
                 <tr>
-                    <td>{{ change_status.user.name }}</td>
+                    <td>
+                        <a href="/users/{{ change_status.user.name }}">
+                            {{ change_status.user.name }}
+                        </a>
+                    </td>
                     <td>{{ change_status.from_status|default("", True) }}</td>
                     <td>{{ change_status.to_status }}</td>
                     <td>{{ change_status.change_at|print_date }}</td>

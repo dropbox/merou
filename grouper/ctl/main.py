@@ -4,7 +4,7 @@ import sys
 from typing import TYPE_CHECKING
 
 from grouper import __version__
-from grouper.ctl import dump_sql, group, oneoff, service_account, shell, sync_db
+from grouper.ctl import dump_sql, group, oneoff, service_account, shell
 from grouper.ctl.factory import CtlCommandFactory
 from grouper.ctl.settings import CtlSettings
 from grouper.initialization import create_sql_usecase_factory
@@ -29,10 +29,13 @@ def main(sys_argv=sys.argv, session=None):
         "-c", "--config", default=default_settings_path(), help="Path to config file."
     )
     parser.add_argument(
-        "-v", "--verbose", action="count", default=0, help="Increase logging verbosity."
+        "-d", "--database-url", type=str, default=None, help="Override database URL in config."
     )
     parser.add_argument(
         "-q", "--quiet", action="count", default=0, help="Decrease logging verbosity."
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="count", default=0, help="Increase logging verbosity."
     )
     parser.add_argument(
         "-V",
@@ -46,7 +49,7 @@ def main(sys_argv=sys.argv, session=None):
     CtlCommandFactory.add_all_parsers(subparsers)
 
     # Add parsers for legacy commands that have not been refactored.
-    for subcommand_module in [dump_sql, group, oneoff, service_account, shell, sync_db]:
+    for subcommand_module in [dump_sql, group, oneoff, service_account, shell]:
         subcommand_module.add_parser(subparsers)  # type: ignore
 
     args = parser.parse_args(sys_argv[1:])
@@ -55,6 +58,8 @@ def main(sys_argv=sys.argv, session=None):
     # object.  All code in grouper.ctl.* takes the CtlSettings object as an argument if needed, but
     # it may call other legacy code that requires the global Settings object be present.
     settings = CtlSettings.global_settings_from_config(args.config)
+    if args.database_url:
+        settings.database = args.database_url
 
     log_level = get_loglevel(args, base=logging.INFO)
     logging.basicConfig(level=log_level, format=settings.log_format)

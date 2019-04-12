@@ -39,6 +39,7 @@ from grouper.models.service_account_permission_map import ServiceAccountPermissi
 from grouper.models.user import User
 from grouper.plugin import initialize_plugins
 from grouper.repositories.factory import GraphRepositoryFactory
+from grouper.repositories.schema import SchemaRepository
 from grouper.services.factory import ServiceFactory
 from grouper.settings import Settings
 from grouper.usecases.factory import UseCaseFactory
@@ -86,13 +87,11 @@ class SetupTest(object):
         if "MEROU_TEST_DATABASE" in os.environ:
             Model.metadata.drop_all(db_engine)
 
-        # TODO(rra): Temporary hack to ensure models used by tests are imported and therefore
-        # created.  Will be replaced with a proper repository.
-        from grouper.models.permission_request import PermissionRequest  # noqa: F401
-        from grouper.models.user_token import UserToken  # noqa: F401
+        # Create the database schema.
+        schema_repository = SchemaRepository(self.settings)
+        schema_repository.initialize_schema()
 
-        # Create the database schema and the corresponding session.
-        Model.metadata.create_all(db_engine)
+        # Configure and create the session.
         Session.configure(bind=db_engine)
         return Session()
 

@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from grouper.repositories.audit_log import AuditLogRepository
     from grouper.repositories.checkpoint import CheckpointRepository
     from grouper.repositories.group_request import GroupRequestRepository
+    from grouper.repositories.schema import SchemaRepository
     from grouper.repositories.service_account import ServiceAccountRepository
     from grouper.repositories.transaction import TransactionRepository
     from grouper.repositories.user import UserRepository
@@ -104,6 +105,11 @@ class RepositoryFactory(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def create_permission_grant_repository(self):
         # type: () -> PermissionGrantRepository
+        pass
+
+    @abstractmethod
+    def create_schema_repository(self):
+        # type: () -> SchemaRepository
         pass
 
     @abstractmethod

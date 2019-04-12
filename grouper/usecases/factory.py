@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from grouper.usecases.convert_user_to_service_account import ConvertUserToServiceAccount
 from grouper.usecases.disable_permission import DisablePermission
+from grouper.usecases.initialize_schema import InitializeSchema
 from grouper.usecases.list_permissions import ListPermissions
 from grouper.usecases.view_permission import ViewPermission
 
@@ -47,6 +48,11 @@ class UseCaseFactory(object):
         permission_service = self.service_factory.create_permission_service()
         user_service = self.service_factory.create_user_service()
         return ListPermissions(ui, permission_service, user_service)
+
+    def create_initialize_schema_usecase(self):
+        # type: () -> InitializeSchema
+        schema_service = self.service_factory.create_schema_service()
+        return InitializeSchema(schema_service)
 
     def create_view_permission_usecase(self, ui):
         # type: (ViewPermissionUI) -> ViewPermission

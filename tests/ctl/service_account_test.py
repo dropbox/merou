@@ -16,7 +16,7 @@ from tests.fixtures import (  # noqa: F401
 
 @patch("grouper.ctl.service_account.make_session")
 def test_service_account_create(
-    make_session, groups, service_accounts, session, users  # noqa: F811
+    make_session, groups, service_accounts, session, tmpdir, users  # noqa: F811
 ):
     make_session.return_value = session
 
@@ -31,6 +31,7 @@ def test_service_account_create(
     # no-op if non-existing actor
     call_main(
         session,
+        tmpdir,
         "service_account",
         "--actor",
         "no-such-actor@a.co",
@@ -43,6 +44,7 @@ def test_service_account_create(
     # ... or if bad account name
     call_main(
         session,
+        tmpdir,
         "service_account",
         "--actor",
         good_actor_username,
@@ -55,6 +57,7 @@ def test_service_account_create(
     # ... or non-existing owner group
     call_main(
         session,
+        tmpdir,
         "service_account",
         "--actor",
         good_actor_username,
@@ -71,6 +74,7 @@ def test_service_account_create(
     # now it works
     call_main(
         session,
+        tmpdir,
         "service_account",
         "--actor",
         good_actor_username,
@@ -90,6 +94,7 @@ def test_service_account_create(
     # no-op if account name already exists
     call_main(
         session,
+        tmpdir,
         "service_account",
         "--actor",
         good_actor_username,
@@ -109,6 +114,7 @@ def test_service_account_create(
     # actor can be a service account as well
     call_main(
         session,
+        tmpdir,
         "service_account",
         "--actor",
         "service@a.co",

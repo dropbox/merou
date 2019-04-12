@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 from grouper.graph import Graph
-from grouper.models.base.session import get_db_engine, Session
 from grouper.repositories.audit_log import AuditLogRepository
 from grouper.repositories.checkpoint import CheckpointRepository
 from grouper.repositories.group_edge import GraphGroupEdgeRepository, SQLGroupEdgeRepository
@@ -19,6 +18,7 @@ from grouper.repositories.user import UserRepository
 
 if TYPE_CHECKING:
     from grouper.graph import GroupGraph
+    from grouper.models.base.session import Session
     from grouper.plugin.proxy import PluginProxy
     from grouper.repositories.interfaces import (
         GroupEdgeRepository,
@@ -63,9 +63,8 @@ class GraphRepositoryFactory(RepositoryFactory):
     def session(self):
         # type: () -> Session
         if not self._session:
-            db_engine = get_db_engine(self.settings.database_url)
-            Session.configure(bind=db_engine)
-            self._session = Session()
+            schema_repository = self.create_schema_repository()
+            self._session = schema_repository.create_session()
         return self._session
 
     def create_audit_log_repository(self):
@@ -135,9 +134,8 @@ class SQLRepositoryFactory(RepositoryFactory):
     def session(self):
         # type: () -> Session
         if not self._session:
-            db_engine = get_db_engine(self.settings.database_url)
-            Session.configure(bind=db_engine)
-            self._session = Session()
+            schema_repository = self.create_schema_repository()
+            self._session = schema_repository.create_session()
         return self._session
 
     def create_audit_log_repository(self):

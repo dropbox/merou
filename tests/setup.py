@@ -28,7 +28,6 @@ from typing import TYPE_CHECKING
 
 from grouper.graph import GroupGraph
 from grouper.models.base.constants import OBJ_TYPES
-from grouper.models.base.session import get_db_engine, Session
 from grouper.models.group import Group
 from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
 from grouper.models.permission import Permission
@@ -46,6 +45,7 @@ from grouper.usecases.factory import UseCaseFactory
 from tests.path_util import db_url
 
 if TYPE_CHECKING:
+    from grouper.models.base.session import Session
     from py.local import LocalPath
     from typing import Iterator, Optional
 
@@ -81,7 +81,6 @@ class SetupTest(object):
 
     def create_session(self):
         # type: () -> Session
-        db_engine = get_db_engine(self.settings.database_url)
         schema_repository = SchemaRepository(self.settings)
 
         # Reinitialize the global plugin proxy with an empty set of plugins in case a previous test
@@ -93,12 +92,9 @@ class SetupTest(object):
         if "MEROU_TEST_DATABASE" in os.environ:
             schema_repository.drop_schema()
 
-        # Create the database schema.
+        # Create the database schema and the session.
         schema_repository.initialize_schema()
-
-        # Configure and create the session.
-        Session.configure(bind=db_engine)
-        return Session()
+        return schema_repository.create_session()
 
     def close(self):
         # type: () -> None

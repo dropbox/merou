@@ -28,9 +28,23 @@ def create_test_data(setup):
     now_minus_one_second = datetime.utcfromtimestamp(int(time() - 1))
     now = datetime.utcfromtimestamp(int(time()))
     permissions = [
-        Permission(name="first-permission", description="first", created_on=now_minus_one_second),
-        Permission(name="audited-permission", description="", created_on=now),
-        Permission(name="early-permission", description="is early", created_on=early_date),
+        Permission(
+            name="first-permission",
+            description="first",
+            created_on=now_minus_one_second,
+            audited=False,
+            enabled=True,
+        ),
+        Permission(
+            name="audited-permission", description="", created_on=now, audited=True, enabled=True
+        ),
+        Permission(
+            name="early-permission",
+            description="is early",
+            created_on=early_date,
+            audited=False,
+            enabled=True,
+        ),
     ]
     with setup.transaction():
         for permission in permissions:
@@ -38,7 +52,7 @@ def create_test_data(setup):
                 name=permission.name,
                 description=permission.description,
                 created_on=permission.created_on,
-                audited=(permission.name == "audited-permission"),
+                audited=permission.audited,
             )
         setup.create_permission("disabled", enabled=False)
         setup.create_user("gary@a.co")

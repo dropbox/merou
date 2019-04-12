@@ -26,8 +26,8 @@ class AuditLogRepository(object):
         # type: (Session) -> None
         self.session = session
 
-    def get_entries_affecting_permission(self, permission):
-        # type: (str) -> List[AuditLogEntry]
+    def entries_affecting_permission(self, permission, limit):
+        # type: (str, int) -> List[AuditLogEntry]
         permission_obj = Permission.get(self.session, name=permission)
         if not permission_obj:
             return []
@@ -35,6 +35,7 @@ class AuditLogRepository(object):
             self.session.query(AuditLog)
             .filter(AuditLog.on_permission_id == permission_obj.id)
             .order_by(desc(AuditLog.log_time))
+            .limit(limit)
         )
         return [self._to_audit_log_entry(e) for e in results]
 
@@ -104,6 +105,7 @@ class AuditLogRepository(object):
     def _to_audit_log_entry(self, entry):
         # type: (AuditLog) -> AuditLogEntry
         return AuditLogEntry(
+            date=entry.log_time,
             actor=entry.actor.username,
             action=entry.action,
             description=entry.description,

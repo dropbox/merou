@@ -5,15 +5,15 @@ from grouper.usecases.interfaces import GroupRequestInterface
 
 if TYPE_CHECKING:
     from grouper.repositories.group_request import GroupRequestRepository
-    from grouper.services.audit_log import AuditLogService
     from grouper.usecases.authorization import Authorization
+    from grouper.usecases.interfaces import AuditLogInterface
 
 
 class GroupRequestService(GroupRequestInterface):
     """High-level logic to manipulate requests to join groups."""
 
     def __init__(self, group_request_repository, audit_log_service):
-        # type: (GroupRequestRepository, AuditLogService) -> None
+        # type: (GroupRequestRepository, AuditLogInterface) -> None
         self.group_request_repository = group_request_repository
         self.audit_log_service = audit_log_service
 

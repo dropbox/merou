@@ -17,12 +17,57 @@ from typing import TYPE_CHECKING
 from six import with_metaclass
 
 if TYPE_CHECKING:
+    from grouper.entities.audit_log_entry import AuditLogEntry
+    from grouper.entities.group_request import GroupRequestStatus, UserGroupRequest
     from grouper.entities.pagination import PaginatedList, Pagination
-    from grouper.entities.permission import Permission
-    from grouper.entities.permission_grant import PermissionGrant
+    from grouper.entities.permission import Permission, PermissionAccess
+    from grouper.entities.permission_grant import (
+        GroupPermissionGrant,
+        PermissionGrant,
+        ServiceAccountPermissionGrant,
+    )
     from grouper.usecases.authorization import Authorization
     from grouper.usecases.list_permissions import ListPermissionsSortKey
-    from typing import ContextManager, List
+    from typing import ContextManager, List, Optional
+
+
+class AuditLogInterface(with_metaclass(ABCMeta, object)):
+    """Abstract base class for the audit log."""
+
+    @abstractmethod
+    def log_create_service_account_from_disabled_user(self, user, authorization):
+        # type: (str, Authorization) -> None
+        pass
+
+    @abstractmethod
+    def log_create_permission(self, permission, authorization):
+        # type: (str, Authorization) -> None
+        pass
+
+    @abstractmethod
+    def log_disable_permission(self, permission, authorization):
+        # type: (str, Authorization) -> None
+        pass
+
+    @abstractmethod
+    def log_disable_user(self, username, authorization):
+        # type: (str, Authorization) -> None
+        pass
+
+    @abstractmethod
+    def log_enable_service_account(self, user, owner, authorization):
+        # type: (str, str, Authorization) -> None
+        pass
+
+    @abstractmethod
+    def log_user_group_request_status_change(self, request, status, authorization):
+        # type: (UserGroupRequest, GroupRequestStatus, Authorization) -> None
+        pass
+
+    @abstractmethod
+    def entries_affecting_permission(self, permission, limit):
+        # type: (str, int) -> List[AuditLogEntry]
+        pass
 
 
 class GroupRequestInterface(with_metaclass(ABCMeta, object)):
@@ -43,8 +88,13 @@ class PermissionInterface(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
-    def permission_exists(self, name):
-        # type: (str) -> bool
+    def group_grants_for_permission(self, name):
+        # type: (str) -> List[GroupPermissionGrant]
+        pass
+
+    @abstractmethod
+    def service_account_grants_for_permission(self, name):
+        # type: (str) -> List[ServiceAccountPermissionGrant]
         pass
 
     @abstractmethod
@@ -55,6 +105,16 @@ class PermissionInterface(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def list_permissions(self, pagination, audited_only):
         # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]
+        pass
+
+    @abstractmethod
+    def permission(self, name):
+        # type: (str) -> Optional[Permission]
+        pass
+
+    @abstractmethod
+    def permission_exists(self, name):
+        # type: (str) -> bool
         pass
 
 
@@ -91,6 +151,11 @@ class UserInterface(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def groups_of_user(self, user):
         # type: (str) -> List[str]
+        pass
+
+    @abstractmethod
+    def permission_access_for_user(self, user, permission):
+        # type: (str, str) -> PermissionAccess
         pass
 
     @abstractmethod

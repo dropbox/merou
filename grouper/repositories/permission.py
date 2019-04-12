@@ -54,7 +54,13 @@ class GraphPermissionRepository(PermissionRepository):
 
         # Convert to the correct data transfer object.
         permissions = [
-            Permission(name=p.name, description=p.description, created_on=p.created_on)
+            Permission(
+                name=p.name,
+                description=p.description,
+                created_on=p.created_on,
+                audited=p.audited,
+                enabled=True,
+            )
             for p in perm_tuples
         ]
         return PaginatedList[Permission](
@@ -78,6 +84,8 @@ class SQLPermissionRepository(PermissionRepository):
             name=permission.name,
             description=permission.description,
             created_on=permission.created_on,
+            audited=permission.audited,
+            enabled=permission.enabled,
         )
 
     def disable_permission(self, name):

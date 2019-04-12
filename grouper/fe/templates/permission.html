@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import log_entry_panel, paginator, dropdown with context %}
+{% from 'macros/ui.html' import audit_log_panel, paginator, dropdown with context %}
 
 {% block subtitle %} permission {{ permission.name }}{% endblock %}
 
@@ -12,12 +12,12 @@
 {% endblock %}
 
 {% block headingbuttons %}
-    {% if permission.enabled and can_disable %}
+    {% if permission.enabled and access.can_disable %}
         <button class="btn btn-danger disable-permission" data-toggle="modal" data-target="#disablePermModal">
             <i class="fa fa-minus"></i> Disable Permission
         </button>
     {% endif %}
-    {% if permission.enabled and can_change_audit_status %}
+    {% if permission.enabled and access.can_change_audited_status %}
         {% if permission.audited %}
             <button class="btn btn-danger disable-auditing" data-toggle="modal" data-target="#disableAuditingModal">
                 <i class="fa fa-minus"></i> Disable Auditing
@@ -63,17 +63,17 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for mapped_group in mapped_groups %}
+                {% for grant in group_grants %}
                     <tr class="grant-row">
                         <td class="grant-group">
-                            <a href="/groups/{{mapped_group.groupname}}">{{mapped_group.groupname}}</a>
+                            <a href="/groups/{{grant.group}}">{{grant.group}}</a>
                         </td>
                         <td class="grant-argument">
-                            {{mapped_group.argument|default("(unargumented)", True)}}
+                            {{grant.argument|default("(unargumented)", True)}}
                         </td>
                     </tr>
                 {% endfor %}
-                {% if not mapped_groups %}
+                {% if not group_grants %}
                     <tr class="no-grants">
                         <td colspan="2" class="text-center"><em>This permission is not mapped to any
                         groups. To grant this permission to a group, visit the group page.</em></td>
@@ -87,7 +87,7 @@
 
 <div class="row">
     <div class="col-md-10 col-md-offset-1">
-        {{ log_entry_panel(log_entries) }}
+        {{ audit_log_panel(audit_log_entries) }}
     </div>
 </div>
 

@@ -1,12 +1,16 @@
 from typing import TYPE_CHECKING
 
+from grouper.usecases.interfaces import AuditLogInterface
+
 if TYPE_CHECKING:
+    from grouper.entities.audit_log_entry import AuditLogEntry
     from grouper.entities.group_request import GroupRequestStatus, UserGroupRequest
     from grouper.repositories.audit_log import AuditLogRepository
     from grouper.usecases.authorization import Authorization
+    from typing import List
 
 
-class AuditLogService(object):
+class AuditLogService(AuditLogInterface):
     """Updates the audit log when changes are made."""
 
     def __init__(self, audit_log_repository):
@@ -20,6 +24,15 @@ class AuditLogService(object):
             action="create_service_account_from_disabled_user",
             description="Convert a disabled user into a disabled service account",
             on_user=user,
+        )
+
+    def log_create_permission(self, permission, authorization):
+        # type: (str, Authorization) -> None
+        self.audit_log_repository.log(
+            authorization=authorization,
+            action="create_permission",
+            description="Created permission.",
+            on_permission=permission,
         )
 
     def log_disable_permission(self, permission, authorization):
@@ -59,3 +72,7 @@ class AuditLogService(object):
             on_group=request.group,
             on_user=request.requester,
         )
+
+    def entries_affecting_permission(self, permission, limit):
+        # type: (str, int) -> List[AuditLogEntry]
+        return self.audit_log_repository.entries_affecting_permission(permission, limit)

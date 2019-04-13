@@ -44,12 +44,12 @@
 <div class="row">
     <div class="col-md-10 col-md-offset-1">
         {% if not permission.enabled %}
-            <div class="alert alert-warning">
+            <div class="alert alert-warning disabled-warning">
                 <strong>This permission is disabled.</strong> It continues to exist for the record but otherwise has no effect.
             </div>
         {% else %}
             {% if permission.audited %}
-                <div class="alert alert-warning">
+                <div class="alert alert-warning audited-warning">
                     <strong>This is an audited permission.</strong> Any group this permission is applied
                     to will become audited.
                 </div>

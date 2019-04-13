@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 from six import with_metaclass
 
 if TYPE_CHECKING:
+    from datetime import datetime
     from grouper.entities.audit_log_entry import AuditLogEntry
     from grouper.entities.group_request import GroupRequestStatus, UserGroupRequest
     from grouper.entities.pagination import PaginatedList, Pagination
@@ -32,36 +33,41 @@ if TYPE_CHECKING:
 
 
 class AuditLogInterface(with_metaclass(ABCMeta, object)):
-    """Abstract base class for the audit log."""
+    """Abstract base class for the audit log.
+
+    The date parameter to the log methods is primarily for use in tests, where to get a consistent
+    sort order the audit log entries may need to be spaced out over time.  If not set, the default
+    is the current time.
+    """
 
     @abstractmethod
-    def log_create_service_account_from_disabled_user(self, user, authorization):
-        # type: (str, Authorization) -> None
+    def log_create_service_account_from_disabled_user(self, user, authorization, date=None):
+        # type: (str, Authorization, Optional[datetime]) -> None
         pass
 
     @abstractmethod
-    def log_create_permission(self, permission, authorization):
-        # type: (str, Authorization) -> None
+    def log_create_permission(self, permission, authorization, date=None):
+        # type: (str, Authorization, Optional[datetime]) -> None
         pass
 
     @abstractmethod
-    def log_disable_permission(self, permission, authorization):
-        # type: (str, Authorization) -> None
+    def log_disable_permission(self, permission, authorization, date=None):
+        # type: (str, Authorization, Optional[datetime]) -> None
         pass
 
     @abstractmethod
-    def log_disable_user(self, username, authorization):
-        # type: (str, Authorization) -> None
+    def log_disable_user(self, username, authorization, date=None):
+        # type: (str, Authorization, Optional[datetime]) -> None
         pass
 
     @abstractmethod
-    def log_enable_service_account(self, user, owner, authorization):
-        # type: (str, str, Authorization) -> None
+    def log_enable_service_account(self, user, owner, authorization, date=None):
+        # type: (str, str, Authorization, Optional[datetime]) -> None
         pass
 
     @abstractmethod
-    def log_user_group_request_status_change(self, request, status, authorization):
-        # type: (UserGroupRequest, GroupRequestStatus, Authorization) -> None
+    def log_user_group_request_status_change(self, request, status, authorization, date=None):
+        # type: (UserGroupRequest, GroupRequestStatus, Authorization, Optional[datetime]) -> None
         pass
 
     @abstractmethod

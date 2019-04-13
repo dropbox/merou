@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 from grouper.constants import AUDIT_MANAGER, PERMISSION_ADMIN
@@ -49,7 +50,10 @@ def test_view_permissions(setup):
         setup.create_user("gary@a.co")
         audit_log_service = setup.service_factory.create_audit_log_service()
         authorization = Authorization("gary@a.co")
-        audit_log_service.log_create_permission("disabled-permission", authorization)
+        one_minute_ago = datetime.utcnow() - timedelta(minutes=1)
+        audit_log_service.log_create_permission(
+            "disabled-permission", authorization, date=one_minute_ago
+        )
         audit_log_service.log_disable_permission("disabled-permission", authorization)
 
     # Regular permission with some grants.

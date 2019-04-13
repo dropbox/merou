@@ -28,6 +28,8 @@ from grouper.models.group import Group
 from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
+from grouper.models.service_account import ServiceAccount
+from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.models.user import User
 from grouper.plugin import initialize_plugins
 from grouper.repositories.factory import GraphRepositoryFactory
@@ -199,3 +201,31 @@ class SetupTest(object):
         group_obj.add_member(
             requester=user_obj, user_or_group=user_obj, reason="", status="pending", role=role
         )
+
+    def create_service_account(self, service_account, owner, description="", machine_set=""):
+        # type: (str, str, str, str) -> None
+        self.create_group(owner)
+        if User.get(self.session, name=service_account):
+            return
+        user = User(username=service_account)
+        user.add(self.session)
+        service_account_obj = ServiceAccount(
+            user_id=user.id, description=description, machine_set=machine_set
+        )
+        service_account_obj.add(self.session)
+        user.is_service_account = True
+
+    def grant_permission_to_service_account(self, permission, argument, service_account):
+        # type: (str, str, str) -> None
+        self.create_permission(permission)
+        permission_obj = Permission.get(self.session, name=permission)
+        assert permission_obj
+        user_obj = User.get(self.session, name=service_account)
+        assert user_obj, "Must create the service account first"
+        assert user_obj.is_service_account
+        grant = ServiceAccountPermissionMap(
+            permission_id=permission_obj.id,
+            service_account_id=user_obj.service_account.id,
+            argument=argument,
+        )
+        grant.add(self.session)

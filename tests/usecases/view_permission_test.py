@@ -47,6 +47,10 @@ def test_view_permissions(setup):
         setup.create_permission("disabled-permission", "", enabled=False)
         setup.grant_permission_to_group("some-permission", "", "another-group")
         setup.grant_permission_to_group("some-permission", "foo", "some-group")
+        setup.create_service_account("service@svc.localhost", "owner-group")
+        setup.grant_permission_to_service_account(
+            "audited-permission", "argument", "service@svc.localhost"
+        )
         setup.create_user("gary@a.co")
         audit_log_service = setup.service_factory.create_audit_log_service()
         authorization = Authorization("gary@a.co")
@@ -56,7 +60,7 @@ def test_view_permissions(setup):
         )
         audit_log_service.log_disable_permission("disabled-permission", authorization)
 
-    # Regular permission with some grants.
+    # Regular permission with some group grants.
     usecase.view_permission("some-permission", "gary@a.co", 20)
     assert mock_ui.permission.name == "some-permission"
     assert mock_ui.permission.description == "Some permission"
@@ -72,13 +76,17 @@ def test_view_permissions(setup):
     assert not mock_ui.access.can_change_audited_status
     assert mock_ui.audit_log_entries == []
 
-    # Audited permission without grants.
+    # Audited permission without group grants but some service account grants.
     usecase.view_permission("audited-permission", "gary@a.co", 20)
     assert mock_ui.permission.name == "audited-permission"
     assert mock_ui.permission.description == ""
     assert mock_ui.permission.audited
     assert mock_ui.permission.enabled
     assert mock_ui.group_grants == []
+    service_account_grants = [
+        (g.service_account, g.permission, g.argument) for g in mock_ui.service_account_grants
+    ]
+    assert service_account_grants == [("service@svc.localhost", "audited-permission", "argument")]
 
     # Disabled permission with some log entries.
     usecase.view_permission("disabled-permission", "gary@a.co", 20)

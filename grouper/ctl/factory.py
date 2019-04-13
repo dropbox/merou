@@ -64,7 +64,7 @@ class CtlCommandFactory(object):
 
     def construct_sync_db_command(self):
         # type: () -> SyncDbCommand
-        return SyncDbCommand(self.settings, self.usecase_factory)
+        return SyncDbCommand(self.usecase_factory)
 
     def construct_user_command(self):
         # type: () -> UserCommand

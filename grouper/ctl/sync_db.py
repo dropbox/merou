@@ -4,7 +4,6 @@ from grouper.ctl.base import CtlCommand
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
-    from grouper.ctl.settings import CtlSettings
     from grouper.usecases.factory import UseCaseFactory
 
 
@@ -16,9 +15,8 @@ class SyncDbCommand(CtlCommand):
         # type: (ArgumentParser) -> None
         return
 
-    def __init__(self, settings, usecase_factory):
-        # type: (CtlSettings, UseCaseFactory) -> None
-        self.settings = settings
+    def __init__(self, usecase_factory):
+        # type: (UseCaseFactory) -> None
         self.usecase_factory = usecase_factory
 
     def run(self, args):

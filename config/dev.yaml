@@ -35,12 +35,6 @@ common:
     # Type: str
     log_format: "%(asctime)-15s\t%(levelname)s\t%(message)s  [%(name)s]"
 
-    # Number of days for approvers of audited groups who are not auditors to
-    # become auditors before being expired out of the group
-    #
-    # Type: int
-    nonauditor_expiration_days: 5
-
     # Directories for plugins. If set, load plugins from these directories.
     #
     # Type: List[str]

@@ -41,7 +41,6 @@ class Settings(object):
         self.date_format = "%Y-%m-%d %I:%M %p"
         self.expiration_notice_days = 7
         self.log_format = "%(asctime)-15s\t%(levelname)s\t%(message)s  [%(name)s]"
-        self.nonauditor_expiration_days = 5
         self.plugin_dirs = []  # type: List[str]
         self.plugin_module_paths = []  # type: List[str]
         self.restricted_ownership_permissions = []  # type: List[str]

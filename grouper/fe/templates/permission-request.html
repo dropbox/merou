@@ -17,20 +17,29 @@
         <div class="panel-heading">
             <h3 class="panel-title">Request Permission</h3>
         </div>
-
-        <form id="permission-request" class="form-horizontal" role="form"
-              method="post" action="{{ uri }}"
-              {{ { "data-permission" : args_by_perm_json } | xmlattr }}>
-            {{ form_field(form.group_name, 3, 8, class_="form-control") }}
-            {{ form_field(form.permission_name, 3, 8, class_="form-control") }}
-            {{ form_field(form.argument, 3, 8, class_="form-control") }}
-            {{ form_field(form.reason, 3, 8, class_="form-control") }}
-            {{ xsrf_form() }}
-            <div class="col-sm-offset-3 col-sm-4">
-                <button type="submit" class="btn btn-primary">Submit</button>
-            </div>
-        </form>
-
+        <div class="panel-body">
+            <form id="permission-request" class="form-horizontal" role="form"
+                  method="post" action="{{ uri }}"
+                  {{ { "data-permission" : args_by_perm_json } | xmlattr }}>
+                {{ form_field(form.group_name, 3, 8, class_="form-control") }}
+                {{ form_field(form.permission_name, 3, 8, class_="form-control") }}
+                {{ form_field(form.argument, 3, 8, class_="form-control") }}
+                {{ form_field(form.reason, 3, 8, class_="form-control") }}
+                {{ xsrf_form() }}
+                <div class="col-sm-offset-3 col-sm-4">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+<p>
+    <b>Hint.</b>
+    You can create links to this form
+    that automatically fill in the values of Group, Permission, and Argument
+    by adding the query parameters “group=” “permission=” and “argument=”
+    to the URL.
+</p>
+
 {% endblock %}

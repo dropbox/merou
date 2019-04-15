@@ -29,6 +29,21 @@ class Settings(object):
     values and configuration of what sections of the settings file to load.
     """
 
+    @staticmethod
+    def global_settings_from_config(filename=None, section=None):
+        # type: (Optional[str], Optional[str]) -> Settings
+        """Create and return a new global Settings singleton.
+
+        Create a new Settings object, load the specified configuration file, and then set it as the
+        global singleton Settings object.  This static method is currently required because so much
+        of the code assumes a globally-accessible Settings object rather than passing Settings in
+        to functions that need it.  Once Settings is injected everywhere, this will be deleted.
+        """
+        settings = Settings()
+        settings.update_from_config(filename, section)
+        set_global_settings(settings)
+        return settings
+
     def __init__(self):
         # type: () -> None
         """Set up base defaults."""
@@ -64,7 +79,7 @@ class Settings(object):
         return self._timezone_object
 
     def update_from_config(self, filename=None, section=None):
-        # type: (str, Optional[str]) -> None
+        # type: (Optional[str], Optional[str]) -> None
         """Load configuration information from a file and update settings.
 
         The file will be parsed as YAML.  By default, the common section will be loaded.  If any

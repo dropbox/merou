@@ -22,7 +22,6 @@ from grouper.initialization import create_graph_usecase_factory
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import get_plugin_proxy, initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
-from grouper.settings import set_global_settings
 from grouper.setup import build_arg_parser, setup_logging
 from grouper.util import get_database_url
 
@@ -124,9 +123,7 @@ def main(sys_argv=sys.argv):
 
     try:
         # load settings
-        settings = FrontendSettings()
-        settings.update_from_config(args.config)
-        set_global_settings(settings)
+        settings = FrontendSettings.global_settings_from_config(args.config)
 
         # setup logging
         setup_logging(args, settings.log_format)

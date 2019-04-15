@@ -10,7 +10,7 @@ from grouper.ctl.settings import CtlSettings
 from grouper.initialization import create_sql_usecase_factory
 from grouper.plugin import initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
-from grouper.settings import default_settings_path, set_global_settings
+from grouper.settings import default_settings_path
 from grouper.util import get_loglevel
 
 if TYPE_CHECKING:
@@ -51,9 +51,7 @@ def main(sys_argv=sys.argv, session=None):
 
     args = parser.parse_args(sys_argv[1:])
 
-    settings = CtlSettings()
-    settings.update_from_config(args.config)
-    set_global_settings(settings)
+    settings = CtlSettings.global_settings_from_config(args.config)
 
     log_level = get_loglevel(args, base=logging.INFO)
     logging.basicConfig(level=log_level, format=settings.log_format)

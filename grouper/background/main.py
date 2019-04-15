@@ -10,7 +10,7 @@ from grouper.error_reporting import get_sentry_client, setup_signal_handlers
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
-from grouper.settings import default_settings_path, set_global_settings
+from grouper.settings import default_settings_path
 from grouper.setup import setup_logging
 from grouper.util import get_database_url
 
@@ -74,9 +74,7 @@ def main(sys_argv=sys.argv):
 
     try:
         # load settings
-        settings = BackgroundSettings()
-        settings.update_from_config(args.config)
-        set_global_settings(settings)
+        settings = BackgroundSettings.global_settings_from_config(args.config)
 
         # setup logging
         setup_logging(args, settings.log_format)

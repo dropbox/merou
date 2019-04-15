@@ -1,6 +1,6 @@
 from typing import cast, TYPE_CHECKING
 
-from grouper.settings import Settings, settings as global_settings
+from grouper.settings import set_global_settings, Settings, settings as global_settings
 
 if TYPE_CHECKING:
     from typing import List, Optional
@@ -8,6 +8,15 @@ if TYPE_CHECKING:
 
 class CtlSettings(Settings):
     """grouper-ctl settings."""
+
+    @staticmethod
+    def global_settings_from_config(filename=None, section="ctl"):
+        # type: (Optional[str], Optional[str]) -> CtlSettings
+        """Create and return a new global Settings singleton."""
+        settings = CtlSettings()
+        settings.update_from_config(filename, section)
+        set_global_settings(settings)
+        return settings
 
     def __init__(self):
         # type: () -> None

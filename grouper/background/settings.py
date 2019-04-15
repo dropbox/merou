@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from grouper.settings import Settings
+from grouper.settings import set_global_settings, Settings
 
 if TYPE_CHECKING:
     from typing import Optional
@@ -8,6 +8,15 @@ if TYPE_CHECKING:
 
 class BackgroundSettings(Settings):
     """Grouper background processor settings."""
+
+    @staticmethod
+    def global_settings_from_config(filename=None, section="background"):
+        # type: (Optional[str], Optional[str]) -> BackgroundSettings
+        """Create and return a new global Settings singleton."""
+        settings = BackgroundSettings()
+        settings.update_from_config(filename, section)
+        set_global_settings(settings)
+        return settings
 
     def __init__(self):
         # type: () -> None

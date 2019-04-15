@@ -38,7 +38,7 @@ class UserShell(GrouperHandler):
             return self.forbidden()
 
         form = UserShellForm()
-        form.shell.choices = settings.shell
+        form.shell.choices = settings().shell
 
         self.render("user-shell.html", form=form, user=user)
 
@@ -55,7 +55,7 @@ class UserShell(GrouperHandler):
             return self.forbidden()
 
         form = UserShellForm(self.request.arguments)
-        form.shell.choices = settings.shell
+        form.shell.choices = settings().shell
         if not form.validate():
             return self.render(
                 "user-shell.html", form=form, user=user, alerts=self.get_form_alerts(form.errors)

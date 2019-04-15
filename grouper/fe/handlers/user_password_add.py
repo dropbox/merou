@@ -92,7 +92,7 @@ class UserPasswordAdd(GrouperHandler):
             [user.name],
             "User password created",
             "user_password_created",
-            settings,
+            settings(),
             email_context,
         )
         return self.redirect("/users/{}?refresh=yes".format(user.name))

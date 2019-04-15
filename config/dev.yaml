@@ -11,189 +11,240 @@ common:
     # Type: str
     database: "sqlite:///grouper.sqlite"
 
-    # If this exists, it should be the path to an executable that Grouper will run. This program
-    # should print a single SqlAlchemy URL and exit 0.
+    # If this exists, it should be the path to an executable that Grouper will
+    # run. This program should print a single SqlAlchemy URL and exit 0.
     #
     # Type: str
     database_source: ""
 
+    # The format in which to display dates in the interface. More details here:
+    # https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+    #
+    # Type: str
+    date_format: "%Y-%m-%d %I:%M %p"
+
+    # Number of days before membership expires from a group at which
+    # notification of the upcoming expiration will be sent.
+    #
+    # Type: int
+    expiration_notice_days: 7
+
     # Format for logging output.
-    # See https://docs.python.org/2/library/logging.html#logrecord-attributes
+    # See https://docs.python.org/3/library/logging.html#logrecord-attributes
+    #
     # Type: str
     log_format: "%(asctime)-15s\t%(levelname)s\t%(message)s  [%(name)s]"
 
-    # Directories for plugins. If set, load plugins from these directories. Plugins can affect the
-    # behavior of Grouper.
-    # Type: list of str
+    # Directories for plugins. If set, load plugins from these directories.
+    #
+    # Type: List[str]
     plugin_dirs: []
 
-    # Module paths for plugins to load from.
-    # Type: list of str
+    # Module paths to load as plugins, in addition to any found in plugin_dirs.
+    #
+    # Type: List[str]
     plugin_module_paths:
-    - plugins.group_ownership_policy
-    - plugins.ssh_key_policy
-    - plugins.permission_aliases
-
-    # Directories for one-offs. If set, load oneoffs from these directories which
-    # are run via grouper-ctl.
-    # Type: list of str
-    oneoff_dirs: []
-
-    # Module paths for one-offs to load from.
-    # Type: list of str
-    oneoff_module_paths:
-    - oneoffs.refresh_public_keys
-    - oneoffs.check_public_keys
+      - plugins.group_ownership_policy
+      - plugins.permission_aliases
+      - plugins.ssh_key_policy
 
     # Name of permissions for which we restrict ownership calculations to
     # exclude wildcard ownership if any non-wildcard owners are avaiable.
-    # Type: list of str
-    restricted_ownership_permissions:
+    #
+    # Type: List[str]
+    restricted_ownership_permissions: []
 
     # Whether to send notification e-mails.
+    #
     # Type: bool
     send_emails: false
 
     # Server to use to send notification e-mails.
+    #
     # Type: str
     smtp_server: "localhost"
 
-    # Whether to connect to the SMTP server using TLS
+    # Whether to connect to the SMTP server using TLS.
+    #
     # Type: bool
     smtp_use_ssl: false
 
-    # Username to use for logging in to the SMTP server
-    # You should probably not use this unless smtp_use_ssl is true
-    # Leave blank if you want to not authenticate to the SMTP server
+    # Username to use for logging in to the SMTP server. You should probably not
+    # use this unless smtp_use_ssl is true. Leave blank if you want to not
+    # authenticate to the SMTP server.
+    #
     # Type: str
     smtp_username: ""
 
-    # Password to use for logging in to the SMTP server
-    # You should probably not use this unless smtp_use_ssl is true
+    # Password to use for logging in to the SMTP server.  You should probably
+    # not use this unless smtp_use_ssl is true.
+    #
     # Type: str
     smtp_password: ""
 
-    # Address to send email from
+    # Address to send email from.
+    #
     # Type: str
     from_addr: "no-reply@grouper.local"
 
-    # Number of days for approvers of audited groups who are not auditors to become auditors
-    # before being expired out of the group
-    # Type: int
-    nonauditor_expiration_days: 5
-
-    # Url is the location of the Grouper homepage, no trailing slash. This should include a
-    # port if one is needed.
+    # Sentry DSN for logging exceptions.
+    #
     # Type: str
-    url: "http://127.0.0.1:8888"
+    sentry_dsn:
 
-fe:
-    # Number of worker processes to fork for receving requests. This option
-    # is mutually exclusive with debug.
-    # Type: int
-    num_processes: 1
-
-    # The port to listen to requests on.
-    # Type: int
-    port: 8989
-
-    # The IP address to listen to requests on, or leave empty to listen to
-    # all addresses.
+    # The email domain that all service accounts must have.  This will also be
+    # used as the domain when constructing message IDs when Grouper sends email.
+    #
     # Type: str
-    address: "127.0.0.1"
+    service_account_email_domain: "svc.localhost"
 
-    # All traps are stored in the database in UTC. This option chooses the
+    # All times are stored in the database in UTC. This option chooses the
     # timezone for displaying datetime values.
+    #
     # Type: str
     timezone: "UTC"
 
-    # The format in which to display dates in the interface. More details here:
-    # https://docs.python.org/2/library/datetime.html#strftime-and-strptime-behavior
+    # Location of the Grouper homepage, no trailing slash. This should include a
+    # port if one is needed.
+    #
     # Type: str
-    date_format: "%Y-%m-%d %I:%M %p"
+    url: "http://127.0.0.1:8888"
 
-    # Passing debug option down tornado. Useful for development to
-    # automatically reload code.
+api:
+    # The IP address to listen to requests on, or leave empty to listen to all
+    # addresses.
+    #
+    # Type: str
+    address: "127.0.0.1"
+
+    # The port to listen to requests on.
+    #
+    # Type: int
+    port: 8990
+
+    # Passing debug option down Tornado. Useful for development to automatically
+    # reload code.
+    #
     # Type: bool
     debug: true
 
-    # This is the prefix url in template to cdnjs. This allows you to point at
-    # and internal mirror for production deployments.
-    # Type: str
-    cdnjs_prefix: "//cdnjs.cloudflare.com"
-
-    # Header to check for Authenticated Username
-    # Type: str
-    user_auth_header: "X-Grouper-User"
+    # Number of worker processes to fork for receving requests. This option is
+    # mutually exclusive with debug.
+    #
+    # Type: int
+    num_processes: 1
 
     # How often to pull cache data from database in seconds.
+    #
     # Type: int
     refresh_interval: 1
 
-    # How to get help from the people who run this Grouper deployment. Should be in the form
-    # of an imperative sentence https://en.wikipedia.org/wiki/Sentence_function#Imperative
-    # For example: "email grouper-admin@example.com"
+    # Sentry DSN for logging exceptions.
+    #
+    # Type: str
+    sentry_dsn:
+
+background:
+    # Sentry DSN for logging exceptions.
+    #
+    # Type: str
+    sentry_dsn:
+
+    # How long to wait between iterations.
+    #
+    # Type: int
+    sleep_interval: 60
+
+ctl:
+    # Directories for one-offs. If set, load oneoffs from these directories
+    # which are run via grouper-ctl.
+    #
+    # Type: List[str]
+    oneoff_dirs: []
+
+    # Module paths for one-offs to load from.
+    #
+    # Type: List[str]
+    oneoff_module_paths:
+      - oneoffs.refresh_public_keys
+      - oneoffs.check_public_keys
+
+fe:
+    # The IP address to listen to requests on, or leave empty to listen to
+    # all addresses.
+    #
+    # Type: str
+    address: "127.0.0.1"
+
+    # The port to listen to requests on.
+    #
+    # Type: int
+    port: 8989
+
+    # This is the prefix URL used to access external resources hosted by a
+    # mirror of CDNJS. This allows you to point at an internal mirror if you
+    # prefer.
+    #
+    # Type: str
+    cdnjs_prefix: "//cdnjs.cloudflare.com"
+
+    # Passing debug option down Tornado. Useful for development to automatically
+    # reload code.
+    #
+    # Type: bool
+    debug: true
+
+    # How to get help from the people who run this Grouper deployment. Should be
+    # in the form of an imperative sentence.
+    # https://en.wikipedia.org/wiki/Sentence_function#Imperative
+    # For example:"email grouper-admin@example.com"
+    #
     # Type: str
     how_to_get_help: "if this is prod, ask someone to fix the how_to_get_help setting"
+
+    # Number of worker processes to fork for receving requests. This option
+    # is mutually exclusive with debug.
+    #
+    # Type: int
+    num_processes: 1
 
     # Help text given when a dropdown permission argument is available in
     # permission request. This is probably help around how this dropdown was
     # populated and how to get what the user wants if they don't see it as an
     # option.
+    #
     # Type: str
-    permission_request_dropdown_help:
+    permission_request_dropdown_help: ""
 
-    # Site-specific docs.
-    # Type: list of maps giving url, name, and description strings.
-    site_docs:
-
-    # Sentry DSN for logging exceptions
+    # Help text given when a text entry field is used for the permission
+    # argument. This is probably help for how to determine what values can be
+    # typed into this entry field.
+    #
     # Type: str
-    sentry_dsn:
-
-    # A list of lists of the shells that users are allowed to select. The first argument is
-    # the shell location (i.e. /bin/bash), and the second is a user readable format for the
-    # shell
-    shell:
-        - [/bin/false, Your administrator has not configured Grouper for shell management]
-
-    # The email domain that all service accounts must have
-    # Type: str
-    service_account_email_domain: "svc.localhost"
-
-api:
-    # Number of worker processes to fork for receving requests. This option
-    # is mutually exclusive with debug.
-    # Type: int
-    num_processes: 1
-
-    # The port to listen to requests on.
-    # Type: int
-    port: 8990
-
-    # The IP address to listen to requests on, or leave empty to listen to
-    # all addresses.
-    # Type: str
-    address: "127.0.0.1"
-
-    # Passing debug option down tornado. Useful for development to
-    # automatically reload code.
-    # Type: bool
-    debug: true
+    permission_request_text_help: ""
 
     # How often to pull cache data from database in seconds.
+    #
     # Type: int
     refresh_interval: 1
 
-    # Sentry DSN for logging exceptions
-    # Type: str
-    sentry_dsn:
+    # A list of lists of the shells that users are allowed to select. The first
+    # argument is the shell location (i.e. /bin/bash), and the second is a user
+    # readable comment describing the shell.
+    #
+    # Type: List[Tuple[str, str]]
+    shell:
+        - [/bin/false, Your administrator has not configured Grouper for shell management]
 
-background:
-    # Sentry DSN for logging exceptions
-    # Type: str
-    sentry_dsn:
+    # Site-specific docs.  Each list entry should provide url, name, and
+    # description keys.
+    #
+    # Type: List[Dict[str, str]]
+    site_docs: []
 
-    # How long to wait between iterations
-    # Type: int
-    sleep_interval: 60
+    # Header that contains the authenticated username of a Grouper user. This
+    # must be provided by an upstream web proxy that does authentication.
+    # Grouper itself has no mechanism to authenticate users.
+    #
+    # Type: str
+    user_auth_header: "X-Grouper-User"

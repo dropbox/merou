@@ -15,7 +15,7 @@ from grouper.app import GrouperApplication
 from grouper.database import DbRefreshThread
 from grouper.error_reporting import get_sentry_client, setup_signal_handlers
 from grouper.fe.routes import HANDLERS
-from grouper.fe.settings import settings
+from grouper.fe.settings import FrontendSettings
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
 from grouper.initialization import create_graph_usecase_factory
@@ -28,32 +28,37 @@ from grouper.util import get_database_url
 if TYPE_CHECKING:
     from argparse import Namespace
     from grouper.error_reporting import SentryProxy
-    from grouper.fe.settings import Settings
     from grouper.usecases.factory import UseCaseFactory
     from typing import Callable, List
 
 
 def create_fe_application(
-    settings, usecase_factory, deployment_name, xsrf_cookies=True, session=None
+    settings,  # type: FrontendSettings
+    usecase_factory,  # type: UseCaseFactory
+    deployment_name,  # type: str
+    xsrf_cookies=True,  # type: bool
+    session=None,  # type: Callable[[], Session]
 ):
-    # type: (Settings, UseCaseFactory, str, bool, Callable[[], Session]) -> GrouperApplication
+    # type: (...) -> GrouperApplication
     tornado_settings = {
         "debug": settings.debug,
         "static_path": os.path.join(os.path.dirname(grouper.fe.__file__), "static"),
         "xsrf_cookies": xsrf_cookies,
     }
+    extra_globals = {"cdnjs_prefix": settings.cdnjs_prefix}
     handler_settings = {
         "session": session if session else Session,
-        "template_env": get_template_env(deployment_name=deployment_name),
+        "template_env": get_template_env(
+            deployment_name=deployment_name, extra_globals=extra_globals
+        ),
         "usecase_factory": usecase_factory,
     }
     handlers = [(route, handler_class, handler_settings) for (route, handler_class) in HANDLERS]
     return GrouperApplication(handlers, **tornado_settings)
 
 
-def start_server(args, sentry_client):
-    # type: (Namespace, SentryProxy) -> None
-
+def start_server(args, settings, sentry_client):
+    # type: (Namespace, FrontendSettings, SentryProxy) -> None
     log_level = logging.getLevelName(logging.getLogger().level)
     logging.info("begin. log_level={}".format(log_level))
 
@@ -90,11 +95,8 @@ def start_server(args, sentry_client):
 
     stats.set_defaults()
 
-    # Create the Graph and start the config / graph update threads post fork to ensure each
-    # process gets updated.
-
-    settings.start_config_thread(args.config, "fe")
-
+    # Create the Graph and start the graph update thread post fork to ensure each process gets
+    # updated.
     with closing(Session()) as session:
         graph = Graph()
         graph.update_from_db(session)
@@ -121,7 +123,7 @@ def main(sys_argv=sys.argv):
 
     try:
         # load settings
-        settings.update_from_config(args.config, "fe")
+        settings = FrontendSettings.global_settings_from_config(args.config)
 
         # setup logging
         setup_logging(args, settings.log_format)
@@ -133,7 +135,7 @@ def main(sys_argv=sys.argv):
         sys.exit(1)
 
     try:
-        start_server(args, sentry_client)
+        start_server(args, settings, sentry_client)
     except Exception:
         sentry_client.captureException()
     finally:

@@ -3,6 +3,7 @@ import smtplib
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from typing import TYPE_CHECKING
 
 from six import itervalues, string_types
 
@@ -11,6 +12,10 @@ from grouper.models.async_notification import AsyncNotification
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.user import User
+
+if TYPE_CHECKING:
+    from grouper.settings import Settings
+    from typing import List
 
 
 def send_email(session, recipients, subject, template, settings, context):
@@ -136,9 +141,9 @@ def get_email_from_template(recipient_list, subject, template, settings, context
         MIMEMultipart: Constructed object for the email message.
     """
     template_env = get_template_env()
-    sender = settings["from_addr"]
+    sender = settings.from_addr
 
-    context["url"] = settings["url"]
+    context["url"] = settings.url
 
     text_template = template_env.get_template("email/{}.txt".format(template)).render(**context)
     html_template = template_env.get_template("email/{}.html".format(template)).render(**context)
@@ -160,6 +165,7 @@ def get_email_from_template(recipient_list, subject, template, settings, context
 
 
 def send_email_raw(settings, recipient_list, msg_raw):
+    # type: (Settings, List[str], str) -> None
     """Send raw email (from string)
 
     Given some recipients and the string version of a message, this sends it immediately
@@ -174,17 +180,17 @@ def send_email_raw(settings, recipient_list, msg_raw):
     Returns:
         Nothing.
     """
-    if not settings["send_emails"]:
+    if not settings.send_emails:
         logging.debug(msg_raw)
         return
 
-    sender = settings["from_addr"]
-    username = settings["smtp_username"]
-    password = settings["smtp_password"]
-    use_ssl = settings["smtp_use_ssl"]
+    sender = settings.from_addr
+    username = settings.smtp_username
+    password = settings.smtp_password
+    use_ssl = settings.smtp_use_ssl
 
     smtp_cls = smtplib.SMTP_SSL if use_ssl else smtplib.SMTP
-    smtp = smtp_cls(settings["smtp_server"])
+    smtp = smtp_cls(settings.smtp_server)
 
     if username:
         smtp.login(username, password)

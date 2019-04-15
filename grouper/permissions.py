@@ -613,7 +613,9 @@ def create_request(session, user, group, permission, argument, reason):
         .get_template("email/pending_permission_request_subj.tmpl")
         .render(permission=permission.name, group=group.name)
     )
-    send_email(session, set(mail_to), subj, "pending_permission_request", settings, email_context)
+    send_email(
+        session, set(mail_to), subj, "pending_permission_request", settings(), email_context
+    )
 
     return request
 
@@ -857,7 +859,9 @@ def update_request(
         "argument": request.argument,
     }
 
-    send_email(session, [request.requester.name], subject, email_template, settings, email_context)
+    send_email(
+        session, [request.requester.name], subject, email_template, settings(), email_context
+    )
 
 
 def permission_list_to_dict(perms):

@@ -107,7 +107,7 @@ class AuditsCreate(GrouperHandler):
                 mail_to,
                 "Group Audit: {}".format(group.name),
                 "audit_notice",
-                settings,
+                settings(),
                 {"group": group.name, "ends_at": ends_at},
             )
 
@@ -117,7 +117,7 @@ class AuditsCreate(GrouperHandler):
                     mail_to,
                     "Group Audit: {} - {} day(s) left".format(group.name, days_prior),
                     "audit_notice_reminder",
-                    settings,
+                    settings(),
                     {"group": group.name, "ends_at": ends_at, "days_left": days_prior},
                     email_time,
                     async_key="audit-{}".format(group.id),

@@ -131,7 +131,7 @@ class GrouperHandler(RequestHandler):
 
     def get_current_user(self):
         # type: () -> Optional[User]
-        username = self.request.headers.get(settings.user_auth_header)
+        username = self.request.headers.get(settings().user_auth_header)
         if not username:
             return None
 
@@ -151,7 +151,7 @@ class GrouperHandler(RequestHandler):
         except sqlalchemy.exc.OperationalError:
             # Failed to connect to database or create user, try to reconfigure the db. This invokes
             # the fetcher to try to see if our URL string has changed.
-            Session.configure(bind=get_db_engine(get_database_url(settings)))
+            Session.configure(bind=get_db_engine(get_database_url(settings())))
             raise DatabaseFailure()
 
         # service accounts are, by definition, not interactive users
@@ -275,7 +275,7 @@ class GrouperHandler(RequestHandler):
         # type: () -> None
         self.set_status(403)
         self.raise_and_log_exception(tornado.web.HTTPError(403))
-        self.render("errors/forbidden.html", how_to_get_help=settings.how_to_get_help)
+        self.render("errors/forbidden.html", how_to_get_help=settings().how_to_get_help)
 
     def notfound(self):
         # type: () -> None

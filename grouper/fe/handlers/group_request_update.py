@@ -161,7 +161,7 @@ class GroupRequestUpdate(GrouperHandler):
             approver_mail_to,
             subj,
             "approver_request_updated",
-            settings,
+            settings(),
             {
                 "group_name": group.name,
                 "requester": request.requester.username,
@@ -179,7 +179,7 @@ class GroupRequestUpdate(GrouperHandler):
                 [request.requester.name],
                 "Added to group: {}".format(group.groupname),
                 "request_actioned",
-                settings,
+                settings(),
                 {
                     "group_name": group.name,
                     "actioned_by": self.current_user.name,
@@ -194,7 +194,7 @@ class GroupRequestUpdate(GrouperHandler):
                 [request.requester.name],
                 "Request to join cancelled: {}".format(group.groupname),
                 "request_cancelled",
-                settings,
+                settings(),
                 {
                     "group_name": group.name,
                     "cancelled_by": self.current_user.name,

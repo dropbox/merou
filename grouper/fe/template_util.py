@@ -53,8 +53,8 @@ def print_date(date):
         return ""
 
     date_obj = _make_date_obj(date)
-    date_obj = date_obj.astimezone(settings["timezone"])
-    return date_obj.strftime(settings["date_format"])
+    date_obj = date_obj.astimezone(settings().timezone_object)
+    return date_obj.strftime(settings().date_format)
 
 
 def expires_when_str(date_obj, utcnow_fn=_utcnow):
@@ -122,7 +122,6 @@ def get_template_env(
         "long_ago_str": long_ago_str,
     }
     j_globals = {
-        "cdnjs_prefix": settings.cdnjs_prefix,
         "deployment_name": deployment_name,
         "ROLES": GROUP_EDGE_ROLES,
         "TYPES": OBJ_TYPES_IDX,

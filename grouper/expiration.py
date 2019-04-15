@@ -5,7 +5,6 @@ from sqlalchemy import or_
 
 from grouper.constants import ILLEGAL_NAME_CHARACTER
 from grouper.email_util import send_async_email
-from grouper.fe.settings import settings as fe_settings
 from grouper.models.async_notification import AsyncNotification
 from grouper.settings import settings
 
@@ -60,7 +59,7 @@ def add_expiration(
 ):
     # type: (...) -> None
     async_key = _expiration_key(group_name, member_name)
-    send_after = expiration - timedelta(settings.expiration_notice_days)
+    send_after = expiration - timedelta(settings().expiration_notice_days)
     email_context = {
         "expiration": expiration,
         "group_name": group_name,
@@ -73,7 +72,7 @@ def add_expiration(
         recipients=recipients,
         subject="expiration warning for membership in group '{}'".format(group_name),
         template="expiration_warning",
-        settings=fe_settings,
+        settings=settings(),
         context=email_context,
         send_after=send_after,
         async_key=async_key,

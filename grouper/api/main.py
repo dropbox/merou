@@ -10,7 +10,7 @@ import tornado.ioloop
 
 from grouper import stats
 from grouper.api.routes import HANDLERS
-from grouper.api.settings import settings
+from grouper.api.settings import ApiSettings
 from grouper.app import GrouperApplication
 from grouper.database import DbRefreshThread
 from grouper.error_reporting import get_sentry_client, setup_signal_handlers
@@ -25,23 +25,21 @@ from grouper.util import get_database_url
 if TYPE_CHECKING:
     from argparse import Namespace
     from grouper.error_reporting import SentryProxy
-    from grouper.fe.settings import Settings
     from grouper.graph import GroupGraph
     from grouper.usecases.factory import UseCaseFactory
     from typing import List
 
 
 def create_api_application(graph, settings, usecase_factory):
-    # type: (GroupGraph, Settings, UseCaseFactory) -> GrouperApplication
+    # type: (GroupGraph, ApiSettings, UseCaseFactory) -> GrouperApplication
     tornado_settings = {"debug": settings.debug}
     handler_settings = {"graph": graph, "usecase_factory": usecase_factory}
     handlers = [(route, handler_class, handler_settings) for (route, handler_class) in HANDLERS]
     return GrouperApplication(handlers, **tornado_settings)
 
 
-def start_server(args, sentry_client):
-    # type: (Namespace, SentryProxy) -> None
-
+def start_server(args, settings, sentry_client):
+    # type: (Namespace, ApiSettings, SentryProxy) -> None
     log_level = logging.getLevelName(logging.getLogger().level)
     logging.info("begin. log_level={}".format(log_level))
 
@@ -59,8 +57,6 @@ def start_server(args, sentry_client):
     logging.debug("configure database session")
     database_url = args.database_url or get_database_url(settings)
     Session.configure(bind=get_db_engine(database_url))
-
-    settings.start_config_thread(args.config, "api")
 
     with closing(Session()) as session:
         graph = Graph()
@@ -101,7 +97,7 @@ def main(sys_argv=sys.argv):
 
     try:
         # load settings
-        settings.update_from_config(args.config, "api")
+        settings = ApiSettings.global_settings_from_config(args.config)
 
         # setup logging
         setup_logging(args, settings.log_format)
@@ -113,7 +109,7 @@ def main(sys_argv=sys.argv):
         sys.exit(1)
 
     try:
-        start_server(args, sentry_client)
+        start_server(args, settings, sentry_client)
     except Exception:
         sentry_client.captureException()
     finally:

@@ -4,10 +4,10 @@ from contextlib import contextmanager
 from types import MethodType
 from typing import TYPE_CHECKING
 
+from grouper.ctl.settings import settings
 from grouper.ctl.util import make_session
 from grouper.oneoff import BaseOneOff
 from grouper.plugin import load_plugins
-from grouper.settings import settings
 
 if TYPE_CHECKING:
     from argparse import Namespace
@@ -66,7 +66,7 @@ def oneoff_command(args):
     session = make_session()
 
     oneoffs = load_plugins(
-        BaseOneOff, settings.oneoff_dirs, settings.oneoff_module_paths, "grouper-ctl"
+        BaseOneOff, settings().oneoff_dirs, settings().oneoff_module_paths, "grouper-ctl"
     )
 
     if args.subcommand == "run":

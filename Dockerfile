@@ -33,7 +33,7 @@ RUN /etc/init.d/mysql start && mysql -e "\
  "
 
 RUN /etc/init.d/mysql start && \
- TRAVIS_PYTHON_VERSION=2.7 ci/setup.sh \
+ TRAVIS_PYTHON_VERSION=2.7 ci/setup.sh && \
  pip3 install isort mypy
 
 COPY . /app
@@ -52,5 +52,6 @@ RUN ( \
 
 EXPOSE 8888
 
+ENV PYTHONDONTWRITEBYTECODE=PLEASE
 ENV TRAVIS_PYTHON_VERSION 2.7
 CMD ["/bin/bash", "-c", "/etc/init.d/mysql start && exec /bin/bash"]

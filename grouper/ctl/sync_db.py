@@ -27,7 +27,7 @@ def sync_db_command(args):
     from grouper.models.perf_profile import PerfProfile  # noqa: F401
     from grouper.models.user_token import UserToken  # noqa: F401
 
-    db_engine = get_db_engine(get_database_url(settings))
+    db_engine = get_db_engine(get_database_url(settings()))
     Model.metadata.create_all(db_engine)
 
     # Add some basic database structures we know we will need if they don't exist.
@@ -68,7 +68,7 @@ def sync_db_command(args):
 
         session.commit()
 
-    auditors_group_name = get_auditors_group_name(settings)
+    auditors_group_name = get_auditors_group_name(settings())
     auditors_group = Group.get(session, name=auditors_group_name)
     if not auditors_group:
         auditors_group = Group(

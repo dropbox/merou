@@ -70,7 +70,7 @@ def ensure_valid_service_account_name(f):
 
 def make_session():
     # type: () -> Session
-    db_engine = get_db_engine(get_database_url(settings))
+    db_engine = get_db_engine(get_database_url(settings()))
     Session.configure(bind=db_engine)
     return Session()
 

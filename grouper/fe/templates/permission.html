@@ -28,6 +28,9 @@
             </button>
         {% endif %}
     {% endif %}
+    <a class="btn btn-warning" href="/permissions/request?permission={{ permission.name }}">
+        <i class="fa fa-plus"></i> Request this permission
+    </a>
 {% endblock %}
 
 {% block content %}

@@ -187,6 +187,66 @@ $(function () {
         });
     }
 
+    $('#permission-request').each(function() {
+        $form = $(this);
+        var args_by_perm = $form.data('permission');
+
+        var $argument_div = $form.find('.form-group-argument');
+        var $reason_div = $form.find('.form-group-reason');
+
+        var $group_input = $form.find('#group_name');
+        var $permission_input = $form.find('#permission_name');
+        var $argument_input = $form.find('#argument');
+
+        // Supplement the <input> "argument" field with an adjacent
+        // "argument" dropdown that we can fill with permission-specific
+        // options.  We use renaming, below, to make sure only one of
+        // the two inputs is actually named "argument" when the form
+        // submits.
+        var $argument_select = $("<select>", {
+            "name": $argument_input.attr('name'),
+            "class": $argument_input.attr('class'),
+        }).insertAfter($argument_input);
+
+        function update() {
+            $permission = $permission_input.val()
+
+            if ($permission === "") {
+                $argument_div.hide();
+                $reason_div.hide();
+                return
+            }
+
+            $argument_div.show();
+            $reason_div.show();
+
+            var args = args_by_perm[$permission];
+
+            if (args.length == 1 && args[0] == "*") {
+                $argument_input.show();
+                $argument_input.prop('name', 'argument');
+
+                $argument_select.hide();
+                $argument_select.prop('name', 'ignore');
+            } else {
+                $argument_input.hide();
+                $argument_input.prop('name', 'ignore');
+
+                $argument_select.show();
+                $argument_select.prop('name', 'argument');
+
+                $argument_select.empty();
+                $.each(args, function(index, arg) {
+                    var option = $("<option></option>").attr("value", arg).text(arg);
+                    $argument_select.append(option);
+                });
+            }
+        }
+
+        update();
+
+        $permission_input.on('change', update);
+    });
 
     $("#clickthruModal #agree-clickthru-btn").on("click", function(e) {
         $(".join-group-form .clickthru-checkbox").prop("checked", true);

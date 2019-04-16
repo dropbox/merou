@@ -31,6 +31,26 @@ def test_permission_disable(setup):
     assert audit_log_entries[0].on_permission == "some-permission"
 
 
+def test_permission_disable_inactive_grants(setup):
+    # type: (SetupTest) -> None
+    """Test that permission grants to disabled objects are automatically deleted."""
+    with setup.transaction():
+        setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
+        setup.add_user_to_group("gary@a.co", "admins")
+        setup.grant_permission_to_group("some-permission", "argument", "some-group")
+        setup.disable_group("some-group")
+
+    mock_ui = MagicMock()
+    usecase = setup.usecase_factory.create_disable_permission_usecase("gary@a.co", mock_ui)
+    usecase.disable_permission("some-permission")
+    assert mock_ui.mock_calls == [call.disabled_permission("some-permission")]
+    permission_grant_repository = setup.repository_factory.create_permission_grant_repository()
+    grants = permission_grant_repository.group_grants_for_permission(
+        "some-permission", include_disabled_groups=True
+    )
+    assert grants == []
+
+
 def test_permission_disable_denied(setup):
     # type: (SetupTest) -> None
     with setup.transaction():

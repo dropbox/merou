@@ -39,6 +39,27 @@ class PermissionService(PermissionInterface):
 
     def disable_permission(self, name, authorization):
         # type: (str, Authorization) -> None
+        """Disable a permission.
+
+        An invariant for permissions is that disabled permissions are not granted to anyone.  The
+        usecase is responsible for checking whether a permission is granted to any active groups or
+        service accounts before calling this service method, forcing the user disabling the
+        permission to remove those grants first.  However, grants to disabled groups are invisible
+        (by design) and retained only to be able to re-enable the group with its previous set of
+        permissions.  Semantically, it makes sense for those grants to quietly disappear without
+        explicit action.
+
+        Therefore, this service call first deletes all grants of the permission to disabled groups
+        before disabling the underlying permission.
+
+        All permission grants for a service account are deleted when that service account is
+        disabled, so this issue doesn't apply for service accounts.
+        """
+        grants = self.permission_grant_repository.revoke_inactive_group_grants_for_permission(name)
+        for grant in grants:
+            self.audit_log.log_revoke_group_permission_grant(
+                grant.group, grant.permission, grant.argument, authorization
+            )
         self.permission_repository.disable_permission(name)
         self.audit_log.log_disable_permission(name, authorization)
 

@@ -25,7 +25,7 @@
                 {{ form_field(form.permission_name, 3, 8, class_="form-control") }}
                 {{ form_field(form.argument, 3, 8, class_="form-control") }}
                 {{ form_field(form.reason, 3, 8, class_="form-control") }}
-                {{ xsrf_form() }}
+                {{ xsrf_form() | safe }}
                 <div class="col-sm-offset-3 col-sm-4">
                     <button type="submit" class="btn btn-primary">Submit</button>
                 </div>

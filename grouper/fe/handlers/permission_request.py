@@ -11,9 +11,14 @@ from grouper.models.group import Group
 from grouper.permissions import get_grantable_permissions, get_permission
 from grouper.user_group import get_groups_by_user
 
+if False:
+    from grouper.models.permission import Permission
+    from typing import Any, Dict, Iterable, List, Optional, Tuple
+
 
 class PermissionRequest(GrouperHandler):
-    def get(self):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
         form, args_by_perm = self._build_form(None)
         self.render(
             "permission-request.html",
@@ -22,7 +27,8 @@ class PermissionRequest(GrouperHandler):
             uri=self.request.uri,
         )
 
-    def post(self):
+    def post(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
         form, args_by_perm = self._build_form(self.request.arguments)
 
         if not form.validate():
@@ -33,7 +39,7 @@ class PermissionRequest(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors),
             )
 
-        group = self.session.query(Group).filter(Group.groupname == form.group_name.data).first()
+        group = Group.get(self.session, name=form.group_name.data)
         if group is None:
             raise HTTPError(status_code=400, reason="that group does not exist")
 
@@ -80,7 +86,7 @@ class PermissionRequest(GrouperHandler):
         except UserNotAuditor as e:
             alerts = [Alert("danger", str(e))]
         else:
-            alerts = None
+            alerts = []
 
         if alerts:
             return self.render(
@@ -93,6 +99,7 @@ class PermissionRequest(GrouperHandler):
             return self.redirect("/permissions/requests/{}".format(request.id))
 
     def _build_form(self, data):
+        # type: (Optional[int]) -> Tuple[PermissionRequestForm, Dict[Permission, List[str]]]
         """Build the permission request form given the request and POST data.
 
         Normally all fields of the form will be editable.  But if the URL
@@ -105,6 +112,7 @@ class PermissionRequest(GrouperHandler):
         current_user = self.current_user
 
         def pairs(seq):
+            # type: (Iterable[str]) -> List[Tuple[str, str]]
             return [(item, item) for item in seq]
 
         form = PermissionRequestForm(data)

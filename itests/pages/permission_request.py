@@ -1,8 +1,9 @@
 from typing import TYPE_CHECKING
 
-from itests.pages.base import BasePage
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
+
+from itests.pages.base import BasePage
 
 if TYPE_CHECKING:
     from typing import List

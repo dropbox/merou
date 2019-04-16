@@ -12,7 +12,7 @@ class PermissionRequestPage(BasePage):
     def get_option_values(self, id):
         # type: (str) -> List[str]
         select = Select(self.find_element_by_id(id))
-        return [option.get_attribute('value') for option in select.options]
+        return [option.get_attribute("value") for option in select.options]
 
     def set_select_value(self, id, value):
         # type: (str, str) -> None
@@ -23,4 +23,4 @@ class PermissionRequestPage(BasePage):
         self.find_element_by_id(id).send_keys(value)
 
     def submit_request(self):
-        self.find_element_by_id('argument').send_keys(Keys.ENTER)
+        self.find_element_by_id("argument").send_keys(Keys.ENTER)

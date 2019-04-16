@@ -37,27 +37,27 @@ def test_requesting_permission(tmpdir, setup, browser):
         page2 = PermissionRequestPage(browser)
         assert page2.heading == "Permissions"
         assert page2.subheading == "Request Permission"
-        assert page2.get_option_values("group_name") == [u'', u'front-end']
-        assert page2.get_option_values("permission_name") == [u'git.repo.read']
+        assert page2.get_option_values("group_name") == [u"", u"front-end"]
+        assert page2.get_option_values("permission_name") == [u"git.repo.read"]
 
         page2.set_select_value("group_name", "front-end")
-        page2.fill_field('argument', 'server')
-        page2.fill_field('reason', 'So they can do development')
+        page2.fill_field("argument", "server")
+        page2.fill_field("reason", "So they can do development")
         page2.submit_request()
 
-        text = ' '.join(browser.find_element_by_tag_name('body').text.split())
-        assert browser.current_url.endswith('/permissions/requests/1')
-        assert 'brhodes@a.co pending' in text
+        text = " ".join(browser.find_element_by_tag_name("body").text.split())
+        assert browser.current_url.endswith("/permissions/requests/1")
+        assert "brhodes@a.co pending" in text
         assert (
-            'Group: front-end Permission: git.repo.read Argument: server '
-            'Reason: So they can do development Waiting for approval' in text
+            "Group: front-end Permission: git.repo.read Argument: server "
+            "Reason: So they can do development Waiting for approval" in text
         )
 
     # TODO: the subsequent test "test_pending_inbound_requests" fails in
     # the MySQL version of the test suite if the request is not deleted.
     # Someone should at some point work out the test isolation story.
     setup.session.commit()
-    p = Permission.get(setup.session, name='git.repo.read')
+    p = Permission.get(setup.session, name="git.repo.read")
     r = PermissionRequest.get(setup.session, permission=p)
     h = PermissionRequestStatusChange.get(setup.session, request=r)
     h.delete(setup.session)

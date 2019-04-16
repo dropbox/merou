@@ -128,11 +128,12 @@ class GrouperHandler(RequestHandler):
             self.graph.update_from_db(self.session)
 
     def redirect(self, url, *args, **kwargs):
+        # type: (str, *Any, **Any) -> None
         if self.is_refresh():
             url = urljoin(url, "?refresh=yes")
-
-        self.set_alerts(kwargs.pop("alerts", []))
-        return super(GrouperHandler, self).redirect(url, *args, **kwargs)
+        alerts = kwargs.pop("alerts", [])  # type: List[Alert]
+        self.set_alerts(alerts)
+        super(GrouperHandler, self).redirect(url, *args, **kwargs)
 
     def get_current_user(self):
         # type: () -> Optional[User]

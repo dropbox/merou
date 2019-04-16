@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from mock import call, MagicMock
 
 from grouper.constants import PERMISSION_ADMIN, PERMISSION_CREATE
+from grouper.entities.permission_grant import GroupPermissionGrant, ServiceAccountPermissionGrant
 from grouper.models.permission import Permission
 
 if TYPE_CHECKING:
@@ -42,6 +43,39 @@ def test_permission_disable_denied(setup):
         call.disable_permission_failed_permission_denied("some-permission")
     ]
     assert Permission.get(setup.session, name="some-permission").enabled
+
+
+def test_permission_disable_existing_grants(setup):
+    # type: (SetupTest) -> None
+    with setup.transaction():
+        setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
+        setup.add_user_to_group("gary@a.co", "admins")
+        setup.grant_permission_to_group("some-permission", "argument", "some-group")
+
+    mock_ui = MagicMock()
+    usecase = setup.usecase_factory.create_disable_permission_usecase("gary@a.co", mock_ui)
+    usecase.disable_permission("some-permission")
+    group_grants = [GroupPermissionGrant("some-group", "some-permission", "argument")]
+    assert mock_ui.mock_calls == [
+        call.disable_permission_failed_existing_group_grants("some-permission", group_grants)
+    ]
+
+    with setup.transaction():
+        setup.create_service_account("service@svc.localhost", "some-group")
+        setup.grant_permission_to_service_account("some-permission", "", "service@svc.localhost")
+        setup.revoke_permission_from_group("some-permission", "argument", "some-group")
+
+    mock_ui = MagicMock()
+    usecase = setup.usecase_factory.create_disable_permission_usecase("gary@a.co", mock_ui)
+    usecase.disable_permission("some-permission")
+    service_grants = [
+        ServiceAccountPermissionGrant("service@svc.localhost", "some-permission", "")
+    ]
+    assert mock_ui.mock_calls == [
+        call.disable_permission_failed_existing_service_account_grants(
+            "some-permission", service_grants
+        )
+    ]
 
 
 def test_permission_disable_system(setup):

@@ -192,6 +192,18 @@ class SetupTest(object):
         group_service = self.service_factory.create_group_service()
         group_service.grant_permission_to_group(permission, argument, group)
 
+    def revoke_permission_from_group(self, permission, argument, group):
+        # type: (str, str, str) -> None
+        permission_obj = Permission.get(self.session, name=permission)
+        assert permission_obj
+        group_obj = Group.get(self.session, name=group)
+        assert group_obj
+        self.session.query(PermissionMap).filter(
+            PermissionMap.permission_id == permission_obj.id,
+            PermissionMap.group_id == group_obj.id,
+            PermissionMap.argument == argument,
+        ).delete()
+
     def create_group_request(self, user, group, role="member"):
         # type: (str, str, str) -> None
         self.create_user(user)

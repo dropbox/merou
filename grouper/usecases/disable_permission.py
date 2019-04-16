@@ -11,6 +11,11 @@ if TYPE_CHECKING:
         TransactionInterface,
         UserInterface,
     )
+    from grouper.entities.permission_grant import (
+        GroupPermissionGrant,
+        ServiceAccountPermissionGrant,
+    )
+    from typing import List
 
 
 class DisablePermissionUI(with_metaclass(ABCMeta, object)):
@@ -19,6 +24,16 @@ class DisablePermissionUI(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def disabled_permission(self, name):
         # type: (str) -> None
+        pass
+
+    @abstractmethod
+    def disable_permission_failed_existing_group_grants(self, name, grants):
+        # type: (str, List[GroupPermissionGrant]) -> None
+        pass
+
+    @abstractmethod
+    def disable_permission_failed_existing_service_account_grants(self, name, grants):
+        # type: (str, List[ServiceAccountPermissionGrant]) -> None
         pass
 
     @abstractmethod
@@ -59,12 +74,26 @@ class DisablePermission(object):
         # type: (str) -> None
         if self.permission_service.is_system_permission(name):
             self.ui.disable_permission_failed_system_permission(name)
+            return
         elif not self.permission_service.permission_exists(name):
             self.ui.disable_permission_failed_not_found(name)
+            return
         elif not self.user_service.user_is_permission_admin(self.actor):
             self.ui.disable_permission_failed_permission_denied(name)
-        else:
-            authorization = Authorization(self.actor)
-            with self.transaction_service.transaction():
-                self.permission_service.disable_permission(name, authorization)
-            self.ui.disabled_permission(name)
+            return
+
+        # Check if this permission is still granted to any groups or service accounts.
+        group_grants = self.permission_service.group_grants_for_permission(name)
+        if group_grants:
+            self.ui.disable_permission_failed_existing_group_grants(name, group_grants)
+            return
+        service_grants = self.permission_service.service_account_grants_for_permission(name)
+        if service_grants:
+            self.ui.disable_permission_failed_existing_service_account_grants(name, service_grants)
+            return
+
+        # Everything looks good.  Disable the permission.
+        authorization = Authorization(self.actor)
+        with self.transaction_service.transaction():
+            self.permission_service.disable_permission(name, authorization)
+        self.ui.disabled_permission(name)

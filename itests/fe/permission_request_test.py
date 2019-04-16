@@ -1,8 +1,5 @@
 from typing import TYPE_CHECKING
 
-from grouper.models.permission import Permission
-from grouper.models.permission_request import PermissionRequest
-from grouper.models.permission_request_status_change import PermissionRequestStatusChange
 from itests.pages.permission import PermissionPage
 from itests.pages.permission_request import PermissionRequestPage
 from itests.setup import frontend_server
@@ -52,15 +49,3 @@ def test_requesting_permission(tmpdir, setup, browser):
             "Group: front-end Permission: git.repo.read Argument: server "
             "Reason: So they can do development Waiting for approval" in text
         )
-
-    # TODO: the subsequent test "test_pending_inbound_requests" fails in
-    # the MySQL version of the test suite if the request is not deleted.
-    # Someone should at some point work out the test isolation story.
-    setup.session.commit()
-    p = Permission.get(setup.session, name="git.repo.read")
-    r = PermissionRequest.get(setup.session, permission=p)
-    h = PermissionRequestStatusChange.get(setup.session, request=r)
-    h.delete(setup.session)
-    r.delete(setup.session)
-    p.delete(setup.session)
-    setup.session.commit()

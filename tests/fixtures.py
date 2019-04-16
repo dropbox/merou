@@ -33,6 +33,7 @@ from tests.util import add_member, grant_permission
 
 if TYPE_CHECKING:
     from grouper.graph import GroupGraph
+    from pytest import FixtureRequest
     from py.local import LocalPath
     from typing import Dict
 
@@ -166,10 +167,15 @@ def standard_graph(session, graph, users, groups, service_accounts, permissions)
 
 @pytest.fixture
 def session(request, tmpdir):
+    # type: (FixtureRequest, LocalPath) -> None
     settings = Settings()
     set_global_settings(settings)
 
     db_engine = get_db_engine(db_url(tmpdir))
+
+    # Clean up from previous tests if using a persistent database.
+    if "MEROU_TEST_DATABASE" in os.environ:
+        Model.metadata.drop_all(db_engine)
 
     # Create the database schema and the corresponding session.
     Model.metadata.create_all(db_engine)
@@ -178,10 +184,8 @@ def session(request, tmpdir):
 
     def fin():
         # type: () -> None
-        """Explicitly close the session and clean up if using a persistent database."""
+        """Explicitly close the session to avoid any dangling transactions."""
         session.close()
-        if "MEROU_TEST_DATABASE" in os.environ:
-            Model.metadata.drop_all(db_engine)
 
     request.addfinalizer(fin)
     return session

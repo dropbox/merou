@@ -119,7 +119,7 @@ class PermissionRequest(GrouperHandler):
 
         group_names = {g.groupname for g, e in get_groups_by_user(session, current_user)}
         args_by_perm = get_grantable_permissions(
-            session, settings.restricted_ownership_permissions
+            session, settings().restricted_ownership_permissions
         )
         permission_names = {p for p in args_by_perm}
 

@@ -29,6 +29,7 @@ from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
+from grouper.plugin import initialize_plugins
 from grouper.repositories.factory import GraphRepositoryFactory
 from grouper.services.factory import ServiceFactory
 from grouper.settings import Settings
@@ -69,6 +70,9 @@ class SetupTest(object):
     def create_session(self, tmpdir):
         # type: (LocalPath) -> Session
         db_engine = get_db_engine(db_url(tmpdir))
+
+        # Reinitialize plugins in case a previous test configured some.
+        initialize_plugins([], [], "tests")
 
         # If using a persistent database, clear the database first.
         if "MEROU_TEST_DATABASE" in os.environ:

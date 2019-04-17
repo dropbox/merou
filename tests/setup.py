@@ -60,15 +60,15 @@ class SetupTest(object):
         # type: (LocalPath) -> None
         self.settings = Settings()
         self.settings.database = db_url(tmpdir)
-        self.session = self.create_session(tmpdir)
+        self.session = self.create_session()
         self.graph = GroupGraph()
         self.repository_factory = GraphRepositoryFactory(self.settings, self.session, self.graph)
         self.service_factory = ServiceFactory(self.repository_factory)
         self.usecase_factory = UseCaseFactory(self.service_factory)
         self._transaction_service = self.service_factory.create_transaction_service()
 
-    def create_session(self, tmpdir):
-        # type: (LocalPath) -> Session
+    def create_session(self):
+        # type: () -> Session
         db_engine = get_db_engine(self.settings.database_url)
 
         # Reinitialize plugins in case a previous test configured some.

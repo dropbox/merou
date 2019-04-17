@@ -24,22 +24,15 @@ from grouper.models.service_account import ServiceAccount
 from grouper.models.user import User
 from grouper.permissions import (
     create_permission,
-    disable_permission,
-    filter_grantable_permissions,
     get_all_permissions,
     get_grantable_permissions,
-    get_groups_by_permission,
     get_owner_arg_list,
     get_owners_by_grantable_permission,
     get_permission,
     get_requests,
     grant_permission_to_service_account,
 )
-from grouper.user_permissions import (
-    user_grantable_permissions,
-    user_has_permission,
-    user_permissions,
-)
+from grouper.user_permissions import user_grantable_permissions, user_has_permission
 from tests.fixtures import (  # noqa: F401
     fe_app as app,
     graph,
@@ -625,66 +618,3 @@ def test_grant_and_revoke(
 
     graph.update_from_db(session)
     assert not _check_graph_for_perm(graph), "permissions revoked successfully"
-
-
-def test_exclude_disabled_permissions(
-    session, standard_graph, graph, users, groups, permissions  # noqa: F811
-):
-    """
-    Ensure that disabled permissions are excluded from various
-    functions/methods that return data from the models.
-    """
-    perm_ssh = get_permission(session, "ssh")
-    perm_grant = create_permission(session, PERMISSION_GRANT)
-    session.commit()
-    # this user has grouper.permission.grant with argument "ssh/*"
-    grant_permission(groups["group-admins"], perm_grant, argument="ssh/*")
-    graph.update_from_db(session)
-
-    grant_perms = [
-        x for x in user_permissions(session, users["cbguder@a.co"]) if x.name == PERMISSION_GRANT
-    ]
-    assert "ssh" == filter_grantable_permissions(session, grant_perms)[0][0].name
-    assert "ssh" in (p.name for p in get_all_permissions(session))
-    assert "ssh" in (p.name for p in get_all_permissions(session, include_disabled=False))
-    assert "ssh" in (p.name for p in get_all_permissions(session, include_disabled=True))
-    assert "ssh" in get_grantable_permissions(session, [])
-    assert "team-sre" in [g[0] for g in get_groups_by_permission(session, perm_ssh)]
-    assert get_owner_arg_list(session, perm_ssh, "*")
-    assert "ssh" in get_owners_by_grantable_permission(session)
-    assert "ssh" in (x[0].name for x in user_grantable_permissions(session, users["cbguder@a.co"]))
-    assert user_has_permission(session, users["zay@a.co"], "ssh")
-    assert "ssh" in (p.name for p in user_permissions(session, users["zay@a.co"]))
-    assert "ssh" in (p["permission"] for p in graph.get_group_details("team-sre")["permissions"])
-    assert "ssh" in (pt.name for pt in graph.get_permissions())
-    assert "team-sre" in graph.get_permission_details("ssh")["groups"]
-    assert "ssh" in (p["permission"] for p in graph.get_user_details("zay@a.co")["permissions"])
-
-    # now disable the ssh permission
-    disable_permission(session, "ssh", users["cbguder@a.co"].id)
-    graph.update_from_db(session)
-
-    grant_perms = [
-        x for x in user_permissions(session, users["cbguder@a.co"]) if x.name == PERMISSION_GRANT
-    ]
-    assert not filter_grantable_permissions(session, grant_perms)
-    assert "ssh" not in (p.name for p in get_all_permissions(session))
-    assert "ssh" not in (p.name for p in get_all_permissions(session, include_disabled=False))
-    assert "ssh" in (p.name for p in get_all_permissions(session, include_disabled=True))
-    assert "ssh" not in get_grantable_permissions(session, [])
-    assert not get_groups_by_permission(session, perm_ssh)
-    assert not get_owner_arg_list(session, perm_ssh, "*")
-    assert "ssh" not in get_owners_by_grantable_permission(session)
-    assert "ssh" not in (
-        x[0].name for x in user_grantable_permissions(session, users["cbguder@a.co"])
-    )
-    assert not user_has_permission(session, users["zay@a.co"], "ssh")
-    assert "ssh" not in (p.name for p in user_permissions(session, users["zay@a.co"]))
-    assert "ssh" not in (
-        p["permission"] for p in graph.get_group_details("team-sre")["permissions"]
-    )
-    assert "ssh" not in (pt.name for pt in graph.get_permissions())
-    assert not graph.get_permission_details("ssh")["groups"]
-    assert "ssh" not in (
-        p["permission"] for p in graph.get_user_details("zay@a.co")["permissions"]
-    )

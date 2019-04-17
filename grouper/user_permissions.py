@@ -58,7 +58,6 @@ def user_permissions(session, user):
             GroupEdge.active == True,
             user.enabled == True,
             Group.enabled == True,
-            Permission.enabled == True,
             or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
         )
         .order_by(asc("name"), asc("argument"), asc("groupname"))

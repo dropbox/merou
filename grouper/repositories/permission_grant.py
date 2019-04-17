@@ -199,8 +199,10 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
             .all()
         )
         ids = [g.id for g in grants]
-        self.session.query(PermissionMap).filter(PermissionMap.id.in_(ids)).delete()
-        return [GroupPermissionGrant(g.groupname, permission, g.argument) for g in grants]
+        self.session.query(PermissionMap).filter(PermissionMap.id.in_(ids)).delete(
+            synchronize_session="fetch"
+        )
+        return [GroupPermissionGrant(g.groupname, name, g.argument) for g in grants]
 
     def user_has_permission(self, user, permission):
         # type: (str, str) -> bool

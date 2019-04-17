@@ -8,12 +8,7 @@ from sqlalchemy import asc
 from sqlalchemy.exc import IntegrityError
 
 from grouper.audit import assert_controllers_are_auditors
-from grouper.constants import (
-    ARGUMENT_VALIDATION,
-    PERMISSION_ADMIN,
-    PERMISSION_GRANT,
-    SYSTEM_PERMISSIONS,
-)
+from grouper.constants import ARGUMENT_VALIDATION, PERMISSION_ADMIN, PERMISSION_GRANT
 from grouper.email_util import EmailTemplateEngine, send_email
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
@@ -192,31 +187,6 @@ def grant_permission_to_service_account(session, account, permission, argument="
     session.commit()
 
 
-def disable_permission(session, permission_name, actor_user_id):
-    """Set a permission as disabled.
-
-    Args:
-        session(models.base.session.Session): database session
-        permission_name(str): name of permission in question
-        actor_user_id(int): id of user who is disabling the permission
-    """
-    if permission_name in (entry[0] for entry in SYSTEM_PERMISSIONS):
-        raise CannotDisableASystemPermission(permission_name)
-    permission = get_permission(session, permission_name)
-    if not permission:
-        raise NoSuchPermission(name=permission_name)
-    permission.enabled = False
-    AuditLog.log(
-        session,
-        actor_user_id,
-        "disable_permission",
-        "Disabled permission.",
-        on_permission_id=permission.id,
-    )
-    Counter.incr(session, "updates")
-    session.commit()
-
-
 def enable_permission_auditing(session, permission_name, actor_user_id):
     """Set a permission as audited.
 
@@ -362,11 +332,7 @@ def get_owners_by_grantable_permission(session, separate_global=False):
 
     all_group_permissions = (
         session.query(Permission.name, PermissionMap.argument, PermissionMap.granted_on, Group)
-        .filter(
-            PermissionMap.group_id == Group.id,
-            Permission.id == PermissionMap.permission_id,
-            Permission.enabled == True,
-        )
+        .filter(PermissionMap.group_id == Group.id, Permission.id == PermissionMap.permission_id)
         .all()
     )
 

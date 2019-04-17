@@ -106,6 +106,16 @@ class Settings(object):
     @property
     def database_url(self):
         # type: () -> str
+        """Return the configured database URL.
+
+        If database is set in the config file or directly on the Settings object, it is the static
+        URL.  Otherwise, database_source must be set and be the path to a program that will be run
+        to determine the database URL.
+
+        The database_source program will be run every time the database_url attribute is accessed.
+        Caching doesn't seem worthwhile given that it is only accessed during process startup, on
+        each loop of a periodic background thread, or after a database error.
+        """
         if self.database:
             return self.database
         if not self.database and not self.database_source:

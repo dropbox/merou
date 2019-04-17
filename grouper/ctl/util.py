@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from argparse import Namespace
     from datetime import date
     from grouper.ctl.settings import CtlSettings
-    from grouper.settings import Settings
     from typing import Callable, Generator
 
 DATE_FORMAT = "%Y-%m-%d"
@@ -70,7 +69,7 @@ def ensure_valid_service_account_name(f):
 
 
 def make_session(settings):
-    # type: (Settings) -> Session
+    # type: (CtlSettings) -> Session
     db_engine = get_db_engine(get_database_url(settings))
     Session.configure(bind=db_engine)
     return Session()

@@ -10,11 +10,11 @@ from grouper.util import get_database_url
 
 if TYPE_CHECKING:
     from argparse import _SubParsersAction, Namespace
-    from grouper.settings import Settings
+    from grouper.ctl.settings import CtlSettings
 
 
 def dump_sql_command(args, settings):
-    # type: (Namespace, Settings) -> None
+    # type: (Namespace, CtlSettings) -> None
     db_engine = get_db_engine(get_database_url(settings))
     for table in Model.metadata.sorted_tables:
         print(CreateTable(table).compile(db_engine))

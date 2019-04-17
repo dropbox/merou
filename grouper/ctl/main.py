@@ -51,6 +51,9 @@ def main(sys_argv=sys.argv, session=None):
 
     args = parser.parse_args(sys_argv[1:])
 
+    # Construct the CtlSettings object used for all commands, and set it as the global Settings
+    # object.  All code in grouper.ctl.* takes the CtlSettings object as an argument if needed, but
+    # it may call other legacy code that requires the global Settings object be present.
     settings = CtlSettings.global_settings_from_config(args.config)
 
     log_level = get_loglevel(args, base=logging.INFO)

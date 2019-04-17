@@ -12,7 +12,6 @@ from grouper.plugin import initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
 from grouper.settings import default_settings_path
 from grouper.setup import setup_logging
-from grouper.util import get_database_url
 
 if TYPE_CHECKING:
     from argparse import Namespace
@@ -58,7 +57,7 @@ def start_processor(args, settings, sentry_client):
 
     # setup database
     logging.debug("configure database session")
-    Session.configure(bind=get_db_engine(get_database_url(settings)))
+    Session.configure(bind=get_db_engine(settings.database_url))
 
     background = BackgroundProcessor(settings, sentry_client)
     background.run()

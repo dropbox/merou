@@ -1,11 +1,8 @@
 import fnmatch
 import functools
 import logging
-import random as insecure_random
 import re
-import subprocess
 import threading
-import time
 from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
@@ -15,11 +12,6 @@ if TYPE_CHECKING:
 T_Co = TypeVar("T_Co", covariant=True)
 
 _TRUTHY = {"true", "yes", "1", ""}
-
-_DB_URL_REFRESH_TIME = 0
-_DB_URL_REFRESH_JITTER = 30
-_DB_URL_CACHED = None
-_DB_URL_LOCK = threading.Lock()
 
 
 def qp_to_bool(arg):
@@ -42,33 +34,6 @@ def try_update(dct, update):
 
 def get_auditors_group_name(settings):
     return settings.auditors_group
-
-
-def get_database_url(settings, retries=3, retry_wait_seconds=1):
-    """Given settings, load a database URL either from our executable source or the bare string."""
-    if not settings.database_source:
-        assert settings.database is not None
-        return settings.database
-
-    # Use a cached/jitter so we don't hit the script for every request.
-    global _DB_URL_CACHED, _DB_URL_REFRESH_TIME, _DB_URL_REFRESH_JITTER, _DB_URL_LOCK
-    with _DB_URL_LOCK:
-        if _DB_URL_REFRESH_TIME > time.time() and _DB_URL_CACHED is not None:
-            return _DB_URL_CACHED
-        _DB_URL_REFRESH_TIME = time.time() + (insecure_random.random() * _DB_URL_REFRESH_JITTER)
-        retry = 0
-        while True:
-            try:
-                url = subprocess.check_output([settings.database_source])
-                _DB_URL_CACHED = url.strip()
-                return _DB_URL_CACHED
-            except subprocess.CalledProcessError as e:
-                logging.info("database_source: %s", settings.database_source)
-                logging.error(e)
-                retry += 1
-                if retry > retries:
-                    raise
-                time.sleep(retry_wait_seconds)
 
 
 # TODO(lfaraone): Consider moving this to a LRU cache to avoid memory leaks

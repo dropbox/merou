@@ -1,5 +1,9 @@
 import logging
 import os
+import subprocess
+import threading
+import time
+from random import SystemRandom
 from typing import TYPE_CHECKING
 
 import pytz
@@ -20,6 +24,18 @@ def default_settings_path():
     return os.environ.get("GROUPER_SETTINGS", "/etc/grouper.yaml")
 
 
+class DatabaseSourceException(Exception):
+    """Raised if the database_source program repeatedly fails."""
+
+    pass
+
+
+class InvalidSettingsError(Exception):
+    """Raised if configuration settings are invalid."""
+
+    pass
+
+
 class Settings(object):
     """Grouper configuration settings.
 
@@ -28,6 +44,15 @@ class Settings(object):
     Grouper application with its own settings will subclass this class and add additional default
     values and configuration of what sections of the settings file to load.
     """
+
+    # Special attributes that are synthesized from other settings and therefore cannot be set in a
+    # configuration file.
+    SPECIAL_SETTINGS = ["database_url", "timezone_object"]
+
+    # If running the database_source command fails, retry up to DB_URL_RETRIES times, pausing
+    # DB_URL_RETRY_DELAY seconds between attempt.
+    DB_URL_RETRIES = 3
+    DB_URL_RETRY_DELAY = 1
 
     @staticmethod
     def global_settings_from_config(filename=None, section=None):
@@ -70,8 +95,34 @@ class Settings(object):
         self.timezone = "UTC"
         self.url = "http://127.0.0.1:8888"
 
-        # Hide this with a leading underscore so that the configuration can't mess with it.
+        # This is kept in sync with the str timezone attribute.
         self._timezone_object = pytz.timezone("UTC")
+
+        # Cached information from running the database_source command.
+        self._database_url = ""
+        self._database_url_lock = threading.Lock()
+        self._random = SystemRandom()
+
+    @property
+    def database_url(self):
+        # type: () -> str
+        """Return the configured database URL.
+
+        If database is set in the config file or directly on the Settings object, it is the static
+        URL.  Otherwise, database_source must be set and be the path to a program that will be run
+        to determine the database URL.
+
+        The database_source program will be run every time the database_url attribute is accessed.
+        Caching doesn't seem worthwhile given that it is only accessed during process startup, on
+        each loop of a periodic background thread, or after a database error.
+        """
+        if self.database:
+            return self.database
+        if not self.database and not self.database_source:
+            raise InvalidSettingsError("Settings not initialized from a configuration file")
+        with self._database_url_lock:
+            self._refresh_database_url()
+            return self._database_url
 
     @property
     def timezone_object(self):
@@ -104,7 +155,7 @@ class Settings(object):
         # needed.
         for key, value in iteritems(settings):
             key = key.lower()
-            if key.startswith("_"):
+            if key.startswith("_") or key in self.SPECIAL_SETTINGS:
                 self._logger.warning("Ignoring invalid setting %s", key)
                 continue
             if not hasattr(self, key):
@@ -113,6 +164,36 @@ class Settings(object):
             setattr(self, key, value)
             if key == "timezone":
                 self._timezone_object = pytz.timezone(self.timezone)
+
+        # Ensure the settings are valid.
+        if not self.database and not self.database_source:
+            msg = "Neither database nor database_source are set in {}".format(filename)
+            raise InvalidSettingsError(msg)
+
+    def _refresh_database_url(self):
+        # type: () -> None
+        """Run the database_source command to get a new database URL."""
+        retry = 0
+        while True:
+            try:
+                self._logger.debug("Getting database URL by running %s", self.database_source)
+                url = subprocess.check_output([self.database_source], stderr=subprocess.STDOUT)
+                self._database_url = url.strip()
+                if not self._database_url:
+                    raise DatabaseSourceException("Returned URL is empty")
+                self._logger.debug("New database URL is %s", self._database_url)
+                return
+            except (DatabaseSourceException, subprocess.CalledProcessError) as e:
+                self._logger.exception("Running %s failed", self.database_source)
+                retry += 1
+                if retry < self.DB_URL_RETRIES:
+                    self._logger.warning("Retrying after %ds", self.DB_URL_RETRY_DELAY)
+                    time.sleep(self.DB_URL_RETRY_DELAY)
+                else:
+                    msg = "Unable to get a database URL from {} after {} tries: {}".format(
+                        self.database_source, self.DB_URL_RETRIES, str(e)
+                    )
+                    raise DatabaseSourceException(msg)
 
 
 def settings():

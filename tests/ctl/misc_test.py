@@ -109,7 +109,6 @@ def test_user_public_key(make_session, session, users):  # noqa: F811
 
 @patch("grouper.ctl.sync_db.make_session")
 @patch("grouper.ctl.sync_db.get_auditors_group_name", return_value="my-auditors")
-@patch("grouper.ctl.sync_db.get_database_url", new=noop)
 @patch("grouper.ctl.sync_db.get_db_engine", new=noop)
 @patch.object(Model.metadata, "create_all", new=noop)
 def test_sync_db_default_group(

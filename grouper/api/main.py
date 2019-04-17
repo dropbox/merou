@@ -20,7 +20,6 @@ from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
 from grouper.setup import build_arg_parser, setup_logging
-from grouper.util import get_database_url
 
 if TYPE_CHECKING:
     from argparse import Namespace
@@ -55,8 +54,9 @@ def start_server(args, settings, sentry_client):
 
     # setup database
     logging.debug("configure database session")
-    database_url = args.database_url or get_database_url(settings)
-    Session.configure(bind=get_db_engine(database_url))
+    if args.database_url:
+        settings.database = args.database_url
+    Session.configure(bind=get_db_engine(settings.database_url))
 
     with closing(Session()) as session:
         graph = Graph()

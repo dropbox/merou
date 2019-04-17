@@ -49,13 +49,6 @@ class Settings(object):
     # configuration file.
     SPECIAL_SETTINGS = ["database_url", "timezone_object"]
 
-    # If database_source is set, database_url is dynamically set by running that command, but not
-    # on every request.  Instead, return the cached value for a random amount of time between
-    # DB_URL_MIN_CACHE_TIME and DB_URL_MAX_CACHE_TIME (both in seconds) before re-running the
-    # script.
-    DB_URL_MIN_CACHE_TIME = 0
-    DB_URL_MAX_CACHE_TIME = 30
-
     # If running the database_source command fails, retry up to DB_URL_RETRIES times, pausing
     # DB_URL_RETRY_DELAY seconds between attempt.
     DB_URL_RETRIES = 3
@@ -107,7 +100,6 @@ class Settings(object):
 
         # Cached information from running the database_source command.
         self._database_url = ""
-        self._database_url_next_refresh = 0.0
         self._database_url_lock = threading.Lock()
         self._random = SystemRandom()
 
@@ -118,10 +110,6 @@ class Settings(object):
             return self.database
         if not self.database and not self.database_source:
             raise InvalidSettingsError("Settings not initialized from a configuration file")
-        if self._database_url and self._database_url_next_refresh > time.time():
-            return self._database_url
-
-        # Re-run the database_source command to get a possibly-new database URL.
         with self._database_url_lock:
             self._refresh_database_url()
             return self._database_url
@@ -183,10 +171,6 @@ class Settings(object):
                 self._database_url = url.strip()
                 if not self._database_url:
                     raise DatabaseSourceException("Returned URL is empty")
-                delay = self._random.uniform(
-                    self.DB_URL_MIN_CACHE_TIME, self.DB_URL_MAX_CACHE_TIME
-                )
-                self._database_url_next_refresh = time.time() + delay
                 self._logger.debug("New database URL is %s", self._database_url)
                 return
             except (DatabaseSourceException, subprocess.CalledProcessError) as e:

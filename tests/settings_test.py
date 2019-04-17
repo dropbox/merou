@@ -113,23 +113,3 @@ def test_database_url():
             mock_subprocess.return_value = ""
             with pytest.raises(DatabaseSourceException):
                 assert settings.database_url
-
-    # If the minimum delay before retrying hasn't been reached, the program shouldn't be called
-    # repeatedly on subsequent accesses.  But it should be called repeatedly if the delay has been
-    # reached.
-    settings = Settings()
-    settings.database_source = "/path/to/program"
-    with patch.object(Settings, "DB_URL_MIN_CACHE_TIME", new=15):
-        with patch("subprocess.check_output") as mock_subprocess:
-            mock_subprocess.return_value = "sqlite:///cache.sqlite"
-            assert settings.database_url == "sqlite:///cache.sqlite"
-            assert settings.database_url == "sqlite:///cache.sqlite"
-            assert mock_subprocess.call_count == 1
-    settings = Settings()
-    settings.database_source = "/path/to/program"
-    with patch.object(Settings, "DB_URL_MAX_CACHE_TIME", new=0):
-        with patch("subprocess.check_output") as mock_subprocess:
-            mock_subprocess.return_value = "sqlite:///cache.sqlite"
-            assert settings.database_url == "sqlite:///cache.sqlite"
-            assert settings.database_url == "sqlite:///cache.sqlite"
-            assert mock_subprocess.call_count == 2

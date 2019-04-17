@@ -16,13 +16,14 @@ from grouper.plugin.exceptions import PluginRejectedGroupMembershipUpdate
 
 if TYPE_CHECKING:
     from argparse import Namespace
+    from grouper.ctl.settings import CtlSettings
     from grouper.models.base.session import Session
 
 
 @ensure_valid_groupname
-def group_command(args):
-    # type: (Namespace) -> None
-    session = make_session()
+def group_command(args, settings):
+    # type: (Namespace, CtlSettings) -> None
+    session = make_session(settings)
     group = session.query(Group).filter_by(groupname=args.groupname).scalar()
     if not group:
         logging.error("No such group %s".format(args.groupname))
@@ -32,11 +33,11 @@ def group_command(args):
         # somewhat hacky: using function instance to use # `ensure_valid_username` only on
         # these subcommands
         @ensure_valid_username
-        def call_mutate(args):
-            # type: (Namespace) -> None
+        def call_mutate(args, settings):
+            # type: (Namespace, CtlSettings) -> None
             mutate_group_command(session, group, args)
 
-        call_mutate(args)
+        call_mutate(args, settings)
 
     elif args.subcommand == "log_dump":
         logdump_group_command(session, group, args)

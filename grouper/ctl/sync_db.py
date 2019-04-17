@@ -14,24 +14,24 @@ from grouper.models.base.model_base import Model
 from grouper.models.base.session import get_db_engine
 from grouper.models.group import Group
 from grouper.permissions import create_permission, get_permission, grant_permission
-from grouper.settings import settings
 from grouper.util import get_auditors_group_name, get_database_url
 
 if TYPE_CHECKING:
     from argparse import Namespace
+    from grouper.ctl.settings import CtlSettings
 
 
-def sync_db_command(args):
-    # type: (Namespace) -> None
+def sync_db_command(args, settings):
+    # type: (Namespace, CtlSettings) -> None
     # Models not implicitly or explictly imported above are explicitly imported here
     from grouper.models.perf_profile import PerfProfile  # noqa: F401
     from grouper.models.user_token import UserToken  # noqa: F401
 
-    db_engine = get_db_engine(get_database_url(settings()))
+    db_engine = get_db_engine(get_database_url(settings))
     Model.metadata.create_all(db_engine)
 
     # Add some basic database structures we know we will need if they don't exist.
-    session = make_session()
+    session = make_session(settings)
 
     for name, description in SYSTEM_PERMISSIONS:
         test = get_permission(session, name)
@@ -68,7 +68,7 @@ def sync_db_command(args):
 
         session.commit()
 
-    auditors_group_name = get_auditors_group_name(settings())
+    auditors_group_name = get_auditors_group_name(settings)
     auditors_group = Group.get(session, name=auditors_group_name)
     if not auditors_group:
         auditors_group = Group(
@@ -82,7 +82,7 @@ def sync_db_command(args):
             session.flush()
         except IntegrityError:
             session.rollback()
-            raise Exception("Failed to create group: {}".format(auditors_group_name))
+            raise Exception("Failed to create group: {}".format(settings.auditors_group))
 
         permission = get_permission(session, PERMISSION_AUDITOR)
         assert permission, "Permission should have been created earlier!"

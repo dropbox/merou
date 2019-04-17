@@ -1,6 +1,6 @@
-from typing import cast, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
-from grouper.settings import set_global_settings, Settings, settings as global_settings
+from grouper.settings import set_global_settings, Settings
 
 if TYPE_CHECKING:
     from typing import List, Optional
@@ -29,10 +29,3 @@ class CtlSettings(Settings):
     def update_from_config(self, filename=None, section="ctl"):
         # type: (Optional[str], Optional[str]) -> None
         super(CtlSettings, self).update_from_config(filename, section)
-
-
-# See grouper.settings for more information about why this nonsense is here.
-def settings():
-    # type: () -> CtlSettings
-    """Return a global CtlSettings for grouper-ctl code."""
-    return cast(CtlSettings, global_settings())

@@ -9,12 +9,13 @@ from grouper.service_account import create_service_account
 
 if TYPE_CHECKING:
     from argparse import Namespace
+    from grouper.ctl.settings import CtlSettings
 
 
 @ensure_valid_service_account_name
-def service_account_command(args):
-    # type: (Namespace) -> None
-    session = make_session()
+def service_account_command(args, settings):
+    # type: (Namespace, CtlSettings) -> None
+    session = make_session(settings)
     actor_user = User.get(session, name=args.actor_name)
     if not actor_user:
         logging.fatal('Actor user "{}" is not a valid Grouper user'.format(args.actor_name))

@@ -18,7 +18,6 @@ from grouper.fe.routes import HANDLERS
 from grouper.fe.settings import FrontendSettings
 from grouper.fe.template_util import get_template_env
 from grouper.graph import Graph
-from grouper.initialization import create_graph_usecase_factory
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import get_plugin_proxy, initialize_plugins
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
@@ -28,13 +27,11 @@ from grouper.util import get_database_url
 if TYPE_CHECKING:
     from argparse import Namespace
     from grouper.error_reporting import SentryProxy
-    from grouper.usecases.factory import UseCaseFactory
     from typing import Callable, List
 
 
 def create_fe_application(
     settings,  # type: FrontendSettings
-    usecase_factory,  # type: UseCaseFactory
     deployment_name,  # type: str
     xsrf_cookies=True,  # type: bool
     session=None,  # type: Callable[[], Session]
@@ -51,7 +48,6 @@ def create_fe_application(
         "template_env": get_template_env(
             deployment_name=deployment_name, extra_globals=extra_globals
         ),
-        "usecase_factory": usecase_factory,
     }
     handlers = [(route, handler_class, handler_settings) for (route, handler_class) in HANDLERS]
     return GrouperApplication(handlers, **tornado_settings)
@@ -77,8 +73,7 @@ def start_server(args, settings, sentry_client):
     database_url = args.database_url or get_database_url(settings)
     Session.configure(bind=get_db_engine(database_url))
 
-    usecase_factory = create_graph_usecase_factory(settings, Session())
-    application = create_fe_application(settings, usecase_factory, args.deployment_name)
+    application = create_fe_application(settings, args.deployment_name)
 
     address = args.address or settings.address
     port = args.port or settings.port

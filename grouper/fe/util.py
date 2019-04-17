@@ -18,6 +18,7 @@ from grouper import stats
 from grouper.constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATION
 from grouper.fe.settings import settings
 from grouper.graph import Graph
+from grouper.initialization import create_graph_usecase_factory
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.user import User
 from grouper.perf_profile import record_trace
@@ -25,7 +26,6 @@ from grouper.user_permissions import user_permissions
 from grouper.util import get_database_url
 
 if TYPE_CHECKING:
-    from grouper.usecases.factory import UseCaseFactory
     from jinja2 import Environment
     from typing import Any, Callable, Dict, List, Optional, Text
 
@@ -67,7 +67,7 @@ class GrouperHandler(RequestHandler):
         self.graph = Graph()
         self.session = kwargs["session"]()  # type: Session
         self.template_env = kwargs["template_env"]  # type: Environment
-        self.usecase_factory = kwargs["usecase_factory"]  # type: UseCaseFactory
+        self.usecase_factory = create_graph_usecase_factory(settings(), self.session)
 
         if self.get_argument("_profile", False):
             self.perf_collector = Collector()

@@ -322,7 +322,4 @@ def fe_app(session, standard_graph, tmpdir):
     # type: (Session, GroupGraph, LocalPath) -> GrouperApplication
     settings = FrontendSettings()
     set_global_settings(settings)
-    usecase_factory = create_graph_usecase_factory(settings, session, standard_graph)
-    return create_fe_application(
-        settings, usecase_factory, "", xsrf_cookies=False, session=lambda: session
-    )
+    return create_fe_application(settings, "", xsrf_cookies=False, session=lambda: session)

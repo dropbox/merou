@@ -44,12 +44,12 @@
 <div class="row">
     <div class="col-md-10 col-md-offset-1">
         {% if not permission.enabled %}
-            <div class="alert alert-warning">
+            <div class="alert alert-warning disabled-warning">
                 <strong>This permission is disabled.</strong> It continues to exist for the record but otherwise has no effect.
             </div>
         {% else %}
             {% if permission.audited %}
-                <div class="alert alert-warning">
+                <div class="alert alert-warning audited-warning">
                     <strong>This is an audited permission.</strong> Any group this permission is applied
                     to will become audited.
                 </div>
@@ -64,7 +64,7 @@
                 </thead>
                 <tbody>
                 {% for grant in group_grants %}
-                    <tr class="grant-row">
+                    <tr class="group-grant-row">
                         <td class="grant-group">
                             <a href="/groups/{{grant.group}}">{{grant.group}}</a>
                         </td>
@@ -74,9 +74,37 @@
                     </tr>
                 {% endfor %}
                 {% if not group_grants %}
-                    <tr class="no-grants">
+                    <tr class="no-group-grants">
                         <td colspan="2" class="text-center"><em>This permission is not mapped to any
                         groups. To grant this permission to a group, visit the group page.</em></td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+
+            <table class="table table-elist">
+                <thead>
+                    <tr>
+                        <th class="col-sm-2">Service Account</th>
+                        <th class="col-sm-5">Argument</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for grant in service_account_grants %}
+                    <tr class="service-grant-row">
+                        <td class="grant-service">
+                            <a href="/users/{{grant.service_account}}">{{grant.service_account}}</a>
+                        </td>
+                        <td class="grant-argument">
+                            {{grant.argument|default("(unargumented)", True)}}
+                        </td>
+                    </tr>
+                {% endfor %}
+                {% if not service_account_grants %}
+                    <tr class="no-service-grants">
+                        <td colspan="2" class="text-center"><em>This permission is not mapped to
+                        any service accounts. To grant this permission to a service account, visit
+                        the service account page.</em></td>
                     </tr>
                 {% endif %}
                 </tbody>

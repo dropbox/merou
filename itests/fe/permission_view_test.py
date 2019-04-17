@@ -111,3 +111,24 @@ def test_view_disable(tmpdir, setup, browser):
         assert page.subheading == "some-permission"
         assert page.has_disabled_warning
         assert not page.has_disable_permission_button
+
+
+def test_view_disable_with_grants(tmpdir, setup, browser):
+    # type: (LocalPath, SetupTest, Chrome) -> None
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "administrators")
+        setup.grant_permission_to_group(PERMISSION_ADMIN, "", "administrators")
+        setup.grant_permission_to_group("some-permission", "argument", "some-group")
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/permissions/some-permission"))
+        page = PermissionViewPage(browser)
+        assert page.has_disable_permission_button
+
+        page.click_disable_permission_button()
+        disable_permission_modal = page.get_disable_permission_modal()
+        disable_permission_modal.confirm()
+
+        assert page.has_alert("cannot be disabled while it is still granted")
+        assert not page.has_disabled_warning
+        assert page.has_disable_permission_button

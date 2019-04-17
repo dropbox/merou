@@ -12,6 +12,12 @@ without creating the user and group first, and both will be created if not prese
 
 This is the new test setup mechanism, replacing the fixtures defined in tests.fixtures.  All new
 tests should use this mechanism and not rely on standard_graph or other pytest fixtures.
+
+Currently, most test setup work here is done via direct calls to the model.  This is only temporary
+because the necessary methods are not yet available from service and repository objects.  As soon
+as a facility is available from a service or repository, the setup code should call that method
+instead of directly manipulating the model.  Eventually, it should just be another client of the
+service and repository layers.
 """
 
 import os

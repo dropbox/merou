@@ -80,7 +80,7 @@ def test_database_url():
     settings.database = ""
     settings.database_source = "/path/to/program"
     with patch("subprocess.check_output") as mock_subprocess:
-        mock_subprocess.return_value = "sqlite:///other.sqlite"
+        mock_subprocess.return_value = "sqlite:///other.sqlite\n"
         assert settings.database_url == "sqlite:///other.sqlite"
         assert mock_subprocess.call_args_list == [
             call(["/path/to/program"], stderr=subprocess.STDOUT)

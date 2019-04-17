@@ -2,7 +2,19 @@ from datetime import datetime
 from typing import NamedTuple
 
 Permission = NamedTuple(
-    "Permission", [("name", str), ("description", str), ("created_on", datetime)]
+    "Permission",
+    [
+        ("name", str),
+        ("description", str),
+        ("created_on", datetime),
+        ("audited", bool),
+        ("enabled", bool),
+    ],
+)
+
+# The actions a user can perform on a permission.
+PermissionAccess = NamedTuple(
+    "PermissionAccess", [("can_disable", bool), ("can_change_audited_status", bool)]
 )
 
 

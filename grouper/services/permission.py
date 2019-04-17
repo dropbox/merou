@@ -6,24 +6,39 @@ from grouper.usecases.interfaces import PermissionInterface
 if TYPE_CHECKING:
     from grouper.entities.pagination import PaginatedList, Pagination
     from grouper.entities.permission import Permission
+    from grouper.entities.permission_grant import (
+        GroupPermissionGrant,
+        ServiceAccountPermissionGrant,
+    )
     from grouper.repositories.permission import PermissionRepository
-    from grouper.services.audit_log import AuditLogService
+    from grouper.repositories.permission_grant import PermissionGrantRepository
     from grouper.usecases.authorization import Authorization
     from grouper.usecases.list_permissions import ListPermissionsSortKey
+    from grouper.usecases.interfaces import AuditLogInterface
+    from typing import List, Optional
 
 
 class PermissionService(PermissionInterface):
     """High-level logic to manipulate permissions."""
 
-    def __init__(self, audit_log, permission_repository):
-        # type: (AuditLogService, PermissionRepository) -> None
+    def __init__(self, audit_log, permission_repository, permission_grant_repository):
+        # type: (AuditLogInterface, PermissionRepository, PermissionGrantRepository) -> None
         self.audit_log = audit_log
         self.permission_repository = permission_repository
+        self.permission_grant_repository = permission_grant_repository
 
     def disable_permission(self, name, authorization):
         # type: (str, Authorization) -> None
         self.permission_repository.disable_permission(name)
         self.audit_log.log_disable_permission(name, authorization)
+
+    def group_grants_for_permission(self, name):
+        # type: (str) -> List[GroupPermissionGrant]
+        return self.permission_grant_repository.group_grants_for_permission(name)
+
+    def service_account_grants_for_permission(self, name):
+        # type: (str) -> List[ServiceAccountPermissionGrant]
+        return self.permission_grant_repository.service_account_grants_for_permission(name)
 
     def is_system_permission(self, name):
         # type: (str) -> bool
@@ -32,6 +47,10 @@ class PermissionService(PermissionInterface):
     def list_permissions(self, pagination, audited_only):
         # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]
         return self.permission_repository.list_permissions(pagination, audited_only)
+
+    def permission(self, name):
+        # type: (str) -> Optional[Permission]
+        return self.permission_repository.get_permission(name)
 
     def permission_exists(self, name):
         # type: (str) -> bool

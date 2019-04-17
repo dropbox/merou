@@ -1,8 +1,10 @@
+from datetime import datetime
 from typing import NamedTuple, Optional
 
 AuditLogEntry = NamedTuple(
     "AuditLogEntry",
     [
+        ("date", datetime),
         ("actor", str),
         ("action", str),
         ("description", str),

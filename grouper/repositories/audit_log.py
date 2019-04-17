@@ -26,8 +26,8 @@ class AuditLogRepository(object):
         # type: (Session) -> None
         self.session = session
 
-    def get_entries_affecting_permission(self, permission):
-        # type: (str) -> List[AuditLogEntry]
+    def entries_affecting_permission(self, permission, limit):
+        # type: (str, int) -> List[AuditLogEntry]
         permission_obj = Permission.get(self.session, name=permission)
         if not permission_obj:
             return []
@@ -35,6 +35,7 @@ class AuditLogRepository(object):
             self.session.query(AuditLog)
             .filter(AuditLog.on_permission_id == permission_obj.id)
             .order_by(desc(AuditLog.log_time))
+            .limit(limit)
         )
         return [self._to_audit_log_entry(e) for e in results]
 
@@ -47,6 +48,7 @@ class AuditLogRepository(object):
         on_group=None,  # type: Optional[str]
         on_permission=None,  # type: Optional[str]
         category=AuditLogCategory.general,  # type: AuditLogCategory
+        date=None,  # type: Optional[datetime]
     ):
         # type: (...) -> None
         """Log an action to the audit log.
@@ -55,6 +57,8 @@ class AuditLogRepository(object):
         are ported to this service.
         """
         actor = self._id_for_user(authorization.actor)
+        if not date:
+            date = datetime.utcnow()
 
         # We currently have no way to log audit log entries for objects that no longer exist.  This
         # should eventually be fixed via a schema change to use strings for all fields of the audit
@@ -65,7 +69,7 @@ class AuditLogRepository(object):
 
         entry = AuditLog(
             actor_id=actor,
-            log_time=datetime.utcnow(),
+            log_time=date,
             action=action,
             description=description,
             on_user_id=user,
@@ -104,6 +108,7 @@ class AuditLogRepository(object):
     def _to_audit_log_entry(self, entry):
         # type: (AuditLog) -> AuditLogEntry
         return AuditLogEntry(
+            date=entry.log_time,
             actor=entry.actor.username,
             action=entry.action,
             description=entry.description,

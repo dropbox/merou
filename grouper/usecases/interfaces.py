@@ -17,12 +17,63 @@ from typing import TYPE_CHECKING
 from six import with_metaclass
 
 if TYPE_CHECKING:
+    from datetime import datetime
+    from grouper.entities.audit_log_entry import AuditLogEntry
+    from grouper.entities.group_request import GroupRequestStatus, UserGroupRequest
     from grouper.entities.pagination import PaginatedList, Pagination
-    from grouper.entities.permission import Permission
-    from grouper.entities.permission_grant import PermissionGrant
+    from grouper.entities.permission import Permission, PermissionAccess
+    from grouper.entities.permission_grant import (
+        GroupPermissionGrant,
+        PermissionGrant,
+        ServiceAccountPermissionGrant,
+    )
     from grouper.usecases.authorization import Authorization
     from grouper.usecases.list_permissions import ListPermissionsSortKey
-    from typing import ContextManager, List
+    from typing import ContextManager, List, Optional
+
+
+class AuditLogInterface(with_metaclass(ABCMeta, object)):
+    """Abstract base class for the audit log.
+
+    The date parameter to the log methods is primarily for use in tests, where to get a consistent
+    sort order the audit log entries may need to be spaced out over time.  If not set, the default
+    is the current time.
+    """
+
+    @abstractmethod
+    def log_create_service_account_from_disabled_user(self, user, authorization, date=None):
+        # type: (str, Authorization, Optional[datetime]) -> None
+        pass
+
+    @abstractmethod
+    def log_create_permission(self, permission, authorization, date=None):
+        # type: (str, Authorization, Optional[datetime]) -> None
+        pass
+
+    @abstractmethod
+    def log_disable_permission(self, permission, authorization, date=None):
+        # type: (str, Authorization, Optional[datetime]) -> None
+        pass
+
+    @abstractmethod
+    def log_disable_user(self, username, authorization, date=None):
+        # type: (str, Authorization, Optional[datetime]) -> None
+        pass
+
+    @abstractmethod
+    def log_enable_service_account(self, user, owner, authorization, date=None):
+        # type: (str, str, Authorization, Optional[datetime]) -> None
+        pass
+
+    @abstractmethod
+    def log_user_group_request_status_change(self, request, status, authorization, date=None):
+        # type: (UserGroupRequest, GroupRequestStatus, Authorization, Optional[datetime]) -> None
+        pass
+
+    @abstractmethod
+    def entries_affecting_permission(self, permission, limit):
+        # type: (str, int) -> List[AuditLogEntry]
+        pass
 
 
 class GroupRequestInterface(with_metaclass(ABCMeta, object)):
@@ -43,8 +94,13 @@ class PermissionInterface(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
-    def permission_exists(self, name):
-        # type: (str) -> bool
+    def group_grants_for_permission(self, name):
+        # type: (str) -> List[GroupPermissionGrant]
+        pass
+
+    @abstractmethod
+    def service_account_grants_for_permission(self, name):
+        # type: (str) -> List[ServiceAccountPermissionGrant]
         pass
 
     @abstractmethod
@@ -55,6 +111,16 @@ class PermissionInterface(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def list_permissions(self, pagination, audited_only):
         # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]
+        pass
+
+    @abstractmethod
+    def permission(self, name):
+        # type: (str) -> Optional[Permission]
+        pass
+
+    @abstractmethod
+    def permission_exists(self, name):
+        # type: (str) -> bool
         pass
 
 
@@ -91,6 +157,11 @@ class UserInterface(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def groups_of_user(self, user):
         # type: (str) -> List[str]
+        pass
+
+    @abstractmethod
+    def permission_access_for_user(self, user, permission):
+        # type: (str, str) -> PermissionAccess
         pass
 
     @abstractmethod

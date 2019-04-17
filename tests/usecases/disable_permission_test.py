@@ -22,8 +22,8 @@ def test_permission_disable(setup):
     assert mock_ui.mock_calls == [call.disabled_permission("some-permission")]
     assert not Permission.get(setup.session, name="some-permission").enabled
 
-    audit_log_repository = setup.repository_factory.create_audit_log_repository()
-    audit_log_entries = audit_log_repository.get_entries_affecting_permission("some-permission")
+    audit_log_service = setup.service_factory.create_audit_log_service()
+    audit_log_entries = audit_log_service.entries_affecting_permission("some-permission", 20)
     assert len(audit_log_entries) == 1
     assert audit_log_entries[0].actor == "gary@a.co"
     assert audit_log_entries[0].action == "disable_permission"

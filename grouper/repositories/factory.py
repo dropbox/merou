@@ -89,7 +89,8 @@ class GraphRepositoryFactory(RepositoryFactory):
 
     def create_permission_grant_repository(self):
         # type: () -> PermissionGrantRepository
-        return GraphPermissionGrantRepository(self.graph)
+        sql_permission_grant_repository = SQLPermissionGrantRepository(self.session)
+        return GraphPermissionGrantRepository(self.graph, sql_permission_grant_repository)
 
     def create_service_account_repository(self):
         # type: () -> ServiceAccountRepository

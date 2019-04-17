@@ -12,8 +12,8 @@ if TYPE_CHECKING:
     from grouper.repositories.group_request import GroupRequestRepository
     from grouper.repositories.service_account import ServiceAccountRepository
     from grouper.repositories.user import UserRepository
-    from grouper.services.audit_log import AuditLogService
     from grouper.usecases.authorization import Authorization
+    from grouper.usecases.interfaces import AuditLogInterface
 
 
 class ServiceAccountService(ServiceAccountInterface):
@@ -25,7 +25,7 @@ class ServiceAccountService(ServiceAccountInterface):
         service_account_repository,  # type: ServiceAccountRepository
         group_edge_repository,  # type: GroupEdgeRepository
         group_request_repository,  # type: GroupRequestRepository
-        audit_log_service,  # type: AuditLogService
+        audit_log_service,  # type: AuditLogInterface
     ):
         # type: (...) -> None
         self.user_repository = user_repository

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import log_entry_panel, paginator, dropdown with context %}
+{% from 'macros/ui.html' import audit_log_panel, paginator, dropdown with context %}
 
 {% block subtitle %} permission {{ permission.name }}{% endblock %}
 
@@ -12,18 +12,18 @@
 {% endblock %}
 
 {% block headingbuttons %}
-    {% if permission.enabled and can_disable %}
+    {% if permission.enabled and access.can_disable %}
         <button class="btn btn-danger disable-permission" data-toggle="modal" data-target="#disablePermModal">
             <i class="fa fa-minus"></i> Disable Permission
         </button>
     {% endif %}
-    {% if permission.enabled and can_change_audit_status %}
+    {% if permission.enabled and access.can_change_audited_status %}
         {% if permission.audited %}
-            <button class="btn btn-danger" data-toggle="modal" data-target="#disableAuditingModal">
+            <button class="btn btn-danger disable-auditing" data-toggle="modal" data-target="#disableAuditingModal">
                 <i class="fa fa-minus"></i> Disable Auditing
             </button>
         {% else %}
-            <button class="btn btn-warning" data-toggle="modal" data-target="#enableAuditingModal">
+            <button class="btn btn-warning enable-auditing" data-toggle="modal" data-target="#enableAuditingModal">
                 <i class="fa fa-plus"></i> Enable Auditing
             </button>
         {% endif %}
@@ -36,7 +36,8 @@
 {% block content %}
 {% if permission.description %}
     <p>
-        <b>Description:</b> “{{ permission.description }}”
+        <b>Description:</b>
+        “<span class="permission-description">{{ permission.description }}</span>”
     </p>
 {% endif %}
 
@@ -62,14 +63,18 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for mapped_group in mapped_groups %}
-                    <tr>
-                        <td><a href="/groups/{{mapped_group.groupname}}">{{mapped_group.groupname}}</a></td>
-                        <td>{{mapped_group.argument|default("(unargumented)", True)}}</td>
+                {% for grant in group_grants %}
+                    <tr class="grant-row">
+                        <td class="grant-group">
+                            <a href="/groups/{{grant.group}}">{{grant.group}}</a>
+                        </td>
+                        <td class="grant-argument">
+                            {{grant.argument|default("(unargumented)", True)}}
+                        </td>
                     </tr>
                 {% endfor %}
-                {% if not mapped_groups %}
-                    <tr>
+                {% if not group_grants %}
+                    <tr class="no-grants">
                         <td colspan="2" class="text-center"><em>This permission is not mapped to any
                         groups. To grant this permission to a group, visit the group page.</em></td>
                     </tr>
@@ -82,7 +87,7 @@
 
 <div class="row">
     <div class="col-md-10 col-md-offset-1">
-        {{ log_entry_panel(log_entries) }}
+        {{ audit_log_panel(audit_log_entries) }}
     </div>
 </div>
 

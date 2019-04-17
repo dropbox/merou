@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from grouper.constants import PERMISSION_CREATE
 from grouper.entities.permission import Permission
 from grouper.fe.template_util import print_date
+from itests.pages.permission_view import PermissionViewPage
 from itests.pages.permissions import PermissionsPage
 from itests.setup import frontend_server
 from tests.url_util import url
@@ -27,9 +28,23 @@ def create_test_data(setup):
     now_minus_one_second = datetime.utcfromtimestamp(int(time() - 1))
     now = datetime.utcfromtimestamp(int(time()))
     permissions = [
-        Permission(name="first-permission", description="first", created_on=now_minus_one_second),
-        Permission(name="audited-permission", description="", created_on=now),
-        Permission(name="early-permission", description="is early", created_on=early_date),
+        Permission(
+            name="first-permission",
+            description="first",
+            created_on=now_minus_one_second,
+            audited=False,
+            enabled=True,
+        ),
+        Permission(
+            name="audited-permission", description="", created_on=now, audited=True, enabled=True
+        ),
+        Permission(
+            name="early-permission",
+            description="is early",
+            created_on=early_date,
+            audited=False,
+            enabled=True,
+        ),
     ]
     with setup.transaction():
         for permission in permissions:
@@ -37,7 +52,7 @@ def create_test_data(setup):
                 name=permission.name,
                 description=permission.description,
                 created_on=permission.created_on,
-                audited=(permission.name == "audited-permission"),
+                audited=permission.audited,
             )
         setup.create_permission("disabled", enabled=False)
         setup.create_user("gary@a.co")
@@ -109,7 +124,7 @@ def test_list_pagination(tmpdir, setup, browser):
         assert page.limit_label == "Limit: 10"
 
 
-def test_create_button(tmpdir, setup, browser):
+def test_list_create_button(tmpdir, setup, browser):
     # type: (LocalPath, SetupTest, Chrome) -> None
     with setup.transaction():
         setup.create_user("gary@a.co")
@@ -124,3 +139,34 @@ def test_create_button(tmpdir, setup, browser):
             setup.add_user_to_group("gary@a.co", "admins")
         browser.get(url(frontend_url, "/permissions?refresh=yes"))
         assert page.has_create_permission_button
+
+
+def test_view(tmpdir, setup, browser):
+    # type: (LocalPath, SetupTest, Chrome) -> None
+    with setup.transaction():
+        setup.create_permission("audited-permission", "", audited=True)
+        setup.create_permission("some-permission", "Some permission")
+        setup.grant_permission_to_group("some-permission", "", "another-group")
+        setup.grant_permission_to_group("some-permission", "foo", "some-group")
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/permissions/some-permission"))
+        page = PermissionViewPage(browser)
+        assert page.subheading == "some-permission"
+        assert page.description == "Some permission"
+        assert not page.has_disable_permission_button
+        assert not page.has_disable_auditing_button
+        assert not page.has_enable_auditing_button
+        assert not page.has_audited_warning
+
+        grants = [(r.group, r.argument) for r in page.permission_grant_rows]
+        assert grants == [("another-group", "(unargumented)"), ("some-group", "foo")]
+
+        browser.get(url(frontend_url, "/permissions/audited-permission"))
+        page = PermissionViewPage(browser)
+        assert page.subheading == "audited-permission"
+        assert not page.description
+        assert page.has_audited_warning
+        assert not page.has_disable_auditing_button
+        assert not page.has_enable_auditing_button
+        assert page.has_no_grants

@@ -56,6 +56,9 @@ SYSTEM_PERMISSIONS = [
     (USER_DISABLE, "Ability to disable an enabled user."),
 ]
 
+# Name of the administrators group created automatically by sync-db.
+DEFAULT_ADMIN_GROUP = "grouper-administrators"
+
 # Used to construct name tuples in notification engine.
 ILLEGAL_NAME_CHARACTER = "|"
 

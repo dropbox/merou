@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 def call_main(session, tmpdir, *args):
     # type: (Session, LocalPath, *str) -> None
+    """Legacy test driver, use run_ctl instead for all new code."""
     argv = ["grouper-ctl", "-c", src_path("config", "dev.yaml"), "-d", db_url(tmpdir)] + list(args)
     main(sys_argv=argv, session=session)
 

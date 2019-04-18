@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy.exc import IntegrityError
 
 from grouper.constants import (
+    DEFAULT_ADMIN_GROUP,
     GROUP_ADMIN,
     PERMISSION_ADMIN,
     PERMISSION_AUDITOR,
@@ -57,10 +58,10 @@ class SyncDbCommand(CtlCommand):
             session.commit()
 
         # This group is needed to bootstrap a Grouper installation.
-        admin_group = Group.get(session, name="grouper-administrators")
+        admin_group = Group.get(session, name=DEFAULT_ADMIN_GROUP)
         if not admin_group:
             admin_group = Group(
-                groupname="grouper-administrators",
+                groupname=DEFAULT_ADMIN_GROUP,
                 description="Administrators of the Grouper system.",
                 canjoin="nobody",
             )

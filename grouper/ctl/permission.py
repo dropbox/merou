@@ -44,18 +44,23 @@ class PermissionCommand(CtlCommand, DisablePermissionUI):
         # type: (str) -> None
         logging.info("disabled permission %s", name)
 
-    def disable_permission_failed_existing_group_grants(self, name, grants):
-        # type: (str, List[GroupPermissionGrant]) -> None
-        groups = [g.group for g in grants]
-        logging.critical("permission %s still granted to groups %s", name, ", ".join(groups))
-        sys.exit(1)
-
-    def disable_permission_failed_existing_service_account_grants(self, name, grants):
-        # type: (str, List[ServiceAccountPermissionGrant]) -> None
-        service_accounts = [g.service_account for g in grants]
-        logging.critical(
-            "permission %s still granted to service accounts %s", name, ", ".join(service_accounts)
-        )
+    def disable_permission_failed_existing_grants(
+        self,
+        name,  # type: str
+        group_grants,  # type: List[GroupPermissionGrant]
+        service_account_grants,  # type: List[ServiceAccountPermissionGrant]
+    ):
+        # type: (...) -> None
+        message = ""
+        if group_grants:
+            groups = [g.group for g in group_grants]
+            message = "groups " + ", ".join(groups)
+        if service_account_grants:
+            service_accounts = [g.service_account for g in service_account_grants]
+            if message:
+                message += " and "
+            message += "service accounts " + ", ".join(service_accounts)
+        logging.critical("permission %s still granted to %s", message)
         sys.exit(1)
 
     def disable_permission_failed_not_found(self, name):

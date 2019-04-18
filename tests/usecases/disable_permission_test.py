@@ -71,29 +71,17 @@ def test_permission_disable_existing_grants(setup):
         setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
         setup.add_user_to_group("gary@a.co", "admins")
         setup.grant_permission_to_group("some-permission", "argument", "some-group")
-
-    mock_ui = MagicMock()
-    usecase = setup.usecase_factory.create_disable_permission_usecase("gary@a.co", mock_ui)
-    usecase.disable_permission("some-permission")
-    group_grants = [GroupPermissionGrant("some-group", "some-permission", "argument")]
-    assert mock_ui.mock_calls == [
-        call.disable_permission_failed_existing_group_grants("some-permission", group_grants)
-    ]
-
-    with setup.transaction():
         setup.create_service_account("service@svc.localhost", "some-group")
         setup.grant_permission_to_service_account("some-permission", "", "service@svc.localhost")
-        setup.revoke_permission_from_group("some-permission", "argument", "some-group")
 
     mock_ui = MagicMock()
     usecase = setup.usecase_factory.create_disable_permission_usecase("gary@a.co", mock_ui)
     usecase.disable_permission("some-permission")
-    service_grants = [
-        ServiceAccountPermissionGrant("service@svc.localhost", "some-permission", "")
-    ]
     assert mock_ui.mock_calls == [
-        call.disable_permission_failed_existing_service_account_grants(
-            "some-permission", service_grants
+        call.disable_permission_failed_existing_grants(
+            "some-permission",
+            [GroupPermissionGrant("some-group", "some-permission", "argument")],
+            [ServiceAccountPermissionGrant("service@svc.localhost", "some-permission", "")],
         )
     ]
 

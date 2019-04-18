@@ -18,20 +18,20 @@ class PermissionDisable(GrouperHandler, DisablePermissionUI):
         # type: (str) -> None
         self.redirect("/permissions/{}".format(name))
 
-    def disable_permission_failed_existing_group_grants(self, name, grants):
-        # type: (str, List[GroupPermissionGrant]) -> None
-        """The permission view page will show the grants, so we don't include them in the error."""
-        alert = Alert(
-            "danger", "Permission cannot be disabled while it is still granted to some groups"
-        )
-        self.redirect("/permissions/{}".format(name), alerts=[alert])
-
-    def disable_permission_failed_existing_service_account_grants(self, name, grants):
-        # type: (str, List[ServiceAccountPermissionGrant]) -> None
+    def disable_permission_failed_existing_grants(
+        self,
+        name,  # type: str
+        group_grants,  # type: List[GroupPermissionGrant]
+        service_account_grants,  # type: List[ServiceAccountPermissionGrant]
+    ):
+        # type: (...) -> None
         """The permission view page will show the grants, so we don't include them in the error."""
         alert = Alert(
             "danger",
-            "Permission cannot be disabled while it is still granted to some service accounts",
+            (
+                "Permission cannot be disabled while it is still granted to some groups or"
+                " service accounts"
+            ),
         )
         self.redirect("/permissions/{}".format(name), alerts=[alert])
 

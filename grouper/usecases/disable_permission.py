@@ -27,13 +27,13 @@ class DisablePermissionUI(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
-    def disable_permission_failed_existing_group_grants(self, name, grants):
-        # type: (str, List[GroupPermissionGrant]) -> None
-        pass
-
-    @abstractmethod
-    def disable_permission_failed_existing_service_account_grants(self, name, grants):
-        # type: (str, List[ServiceAccountPermissionGrant]) -> None
+    def disable_permission_failed_existing_grants(
+        self,
+        name,  # type: str
+        group_grants,  # type: List[GroupPermissionGrant]
+        service_account_grants,  # type: List[ServiceAccountPermissionGrant]
+    ):
+        # type: (...) -> None
         pass
 
     @abstractmethod
@@ -84,12 +84,9 @@ class DisablePermission(object):
 
         # Check if this permission is still granted to any groups or service accounts.
         group_grants = self.permission_service.group_grants_for_permission(name)
-        if group_grants:
-            self.ui.disable_permission_failed_existing_group_grants(name, group_grants)
-            return
         service_grants = self.permission_service.service_account_grants_for_permission(name)
-        if service_grants:
-            self.ui.disable_permission_failed_existing_service_account_grants(name, service_grants)
+        if group_grants or service_grants:
+            self.ui.disable_permission_failed_existing_grants(name, group_grants, service_grants)
             return
 
         # Everything looks good.  Disable the permission.

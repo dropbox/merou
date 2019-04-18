@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from grouper.ctl.util import make_session
 from grouper.oneoff import BaseOneOff
-from grouper.plugin import load_plugins
+from grouper.plugin.load import load_plugins
 
 if TYPE_CHECKING:
     from argparse import Namespace

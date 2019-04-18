@@ -11,10 +11,10 @@ from grouper.models.audit_log import AuditLog, AuditLogCategory
 from grouper.models.group import Group
 from grouper.models.permission import Permission
 from grouper.models.user import User
-from grouper.plugin import get_plugin_proxy
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
+    from grouper.plugin.proxy import PluginProxy
     from grouper.usecases.authorization import Authorization
     from typing import List, Optional
 
@@ -22,9 +22,10 @@ if TYPE_CHECKING:
 class AuditLogRepository(object):
     """SQL storage layer for audit log entries."""
 
-    def __init__(self, session):
-        # type: (Session) -> None
+    def __init__(self, session, plugins):
+        # type: (Session, PluginProxy) -> None
         self.session = session
+        self.plugins = plugins
 
     def entries_affecting_permission(self, permission, limit):
         # type: (str, int) -> List[AuditLogEntry]
@@ -82,7 +83,7 @@ class AuditLogRepository(object):
         # This should happen at the service layer, not the repository layer, but the API for the
         # plugin currently takes a SQL object.  This can move to the service layer once a data
         # transfer object is defined instead.
-        get_plugin_proxy().log_auditlog_entry(entry)
+        self.plugins.log_auditlog_entry(entry)
 
     def _id_for_group(self, group):
         # type: (str) -> int

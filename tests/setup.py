@@ -37,7 +37,8 @@ from grouper.models.permission_map import PermissionMap
 from grouper.models.service_account import ServiceAccount
 from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.models.user import User
-from grouper.plugin import initialize_plugins
+from grouper.plugin import set_global_plugin_proxy
+from grouper.plugin.proxy import PluginProxy
 from grouper.repositories.factory import GraphRepositoryFactory
 from grouper.services.factory import ServiceFactory
 from grouper.settings import Settings
@@ -57,9 +58,10 @@ class SetupTest(object):
     before the test starts running.
 
     Attributes:
+        settings: Settings object for tests (only the database is configured)
         graph: Underlying graph (not refreshed from the database automatically!)
-        repository_factory: Factory for repository objects
         session: The underlying database session
+        repository_factory: Factory for repository objects
         service_factory: Factory for service objects
         usecase_factory: Factory for usecase objects
     """
@@ -70,7 +72,9 @@ class SetupTest(object):
         self.settings.database = db_url(tmpdir)
         self.session = self.create_session()
         self.graph = GroupGraph()
-        self.repository_factory = GraphRepositoryFactory(self.settings, self.session, self.graph)
+        self.repository_factory = GraphRepositoryFactory(
+            self.settings, PluginProxy([]), self.session, self.graph
+        )
         self.service_factory = ServiceFactory(self.repository_factory)
         self.usecase_factory = UseCaseFactory(self.service_factory)
         self._transaction_service = self.service_factory.create_transaction_service()
@@ -79,8 +83,10 @@ class SetupTest(object):
         # type: () -> Session
         db_engine = get_db_engine(self.settings.database_url)
 
-        # Reinitialize plugins in case a previous test configured some.
-        initialize_plugins([], [], "tests")
+        # Reinitialize the global plugin proxy with an empty set of plugins in case a previous test
+        # initialized plugins.  This can go away once a plugin proxy is injected into everything
+        # that needs it instead of maintained as a global.
+        set_global_plugin_proxy(PluginProxy([]))
 
         # If using a persistent database, clear the database first.
         if "MEROU_TEST_DATABASE" in os.environ:

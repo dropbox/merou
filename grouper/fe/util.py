@@ -22,6 +22,7 @@ from grouper.initialization import create_graph_usecase_factory
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.user import User
 from grouper.perf_profile import record_trace
+from grouper.plugin import get_plugin_proxy
 from grouper.user_permissions import user_permissions
 
 if TYPE_CHECKING:
@@ -66,7 +67,8 @@ class GrouperHandler(RequestHandler):
         self.graph = Graph()
         self.session = kwargs["session"]()  # type: Session
         self.template_env = kwargs["template_env"]  # type: Environment
-        self.usecase_factory = create_graph_usecase_factory(settings(), self.session)
+        self.plugins = get_plugin_proxy()
+        self.usecase_factory = create_graph_usecase_factory(settings(), self.plugins, self.session)
 
         if self.get_argument("_profile", False):
             self.perf_collector = Collector()

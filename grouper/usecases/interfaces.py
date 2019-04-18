@@ -124,6 +124,15 @@ class PermissionInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
+class SchemaInterface(with_metaclass(ABCMeta, object)):
+    """Abstract base class for low-level schema manipulation."""
+
+    @abstractmethod
+    def initialize_schema(self):
+        # type: () -> None
+        pass
+
+
 class ServiceAccountInterface(with_metaclass(ABCMeta, object)):
     """Abstract base class for service account operations and queries."""
 

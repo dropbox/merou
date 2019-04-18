@@ -1,11 +1,11 @@
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
-from grouper.repositories.transaction import TransactionRepository
 from grouper.usecases.interfaces import TransactionInterface
 
 if TYPE_CHECKING:
     from grouper.repositories.checkpoint import CheckpointRepository
+    from grouper.repositories.transaction import TransactionRepository
     from typing import Iterator
 
 

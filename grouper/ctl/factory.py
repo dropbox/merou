@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from grouper.ctl.permission import PermissionCommand
+from grouper.ctl.sync_db import SyncDbCommand
 from grouper.ctl.user import UserCommand
 from grouper.ctl.user_proxy import UserProxyCommand
 
@@ -32,6 +33,8 @@ class CtlCommandFactory(object):
         """
         parser = subparsers.add_parser("permission", help="Manipulate permissions")
         PermissionCommand.add_arguments(parser)
+        parser = subparsers.add_parser("sync_db", help="Create database schema")
+        SyncDbCommand.add_arguments(parser)
         parser = subparsers.add_parser("user", help="Manipulate users")
         UserCommand.add_arguments(parser)
         parser = subparsers.add_parser("user_proxy", help="Start a development reverse proxy")
@@ -46,6 +49,8 @@ class CtlCommandFactory(object):
         # type: (str) -> CtlCommand
         if command == "permission":
             return self.construct_permission_command()
+        elif command == "sync_db":
+            return self.construct_sync_db_command()
         elif command == "user":
             return self.construct_user_command()
         elif command == "user_proxy":
@@ -56,6 +61,10 @@ class CtlCommandFactory(object):
     def construct_permission_command(self):
         # type: () -> PermissionCommand
         return PermissionCommand(self.usecase_factory)
+
+    def construct_sync_db_command(self):
+        # type: () -> SyncDbCommand
+        return SyncDbCommand(self.settings, self.usecase_factory)
 
     def construct_user_command(self):
         # type: () -> UserCommand

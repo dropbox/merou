@@ -12,6 +12,7 @@ from grouper.repositories.permission_grant import (
     GraphPermissionGrantRepository,
     SQLPermissionGrantRepository,
 )
+from grouper.repositories.schema import SchemaRepository
 from grouper.repositories.service_account import ServiceAccountRepository
 from grouper.repositories.transaction import TransactionRepository
 from grouper.repositories.user import UserRepository
@@ -95,6 +96,10 @@ class GraphRepositoryFactory(RepositoryFactory):
         # type: () -> ServiceAccountRepository
         return ServiceAccountRepository(self.session)
 
+    def create_schema_repository(self):
+        # type: () -> SchemaRepository
+        return SchemaRepository(self.settings)
+
     def create_transaction_repository(self):
         # type: () -> TransactionRepository
         return TransactionRepository(self.session)
@@ -155,6 +160,10 @@ class SQLRepositoryFactory(RepositoryFactory):
     def create_permission_grant_repository(self):
         # type: () -> PermissionGrantRepository
         return SQLPermissionGrantRepository(self.session)
+
+    def create_schema_repository(self):
+        # type: () -> SchemaRepository
+        return SchemaRepository(self.settings)
 
     def create_service_account_repository(self):
         # type: () -> ServiceAccountRepository

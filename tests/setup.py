@@ -28,7 +28,6 @@ from typing import TYPE_CHECKING
 
 from grouper.graph import GroupGraph
 from grouper.models.base.constants import OBJ_TYPES
-from grouper.models.base.model_base import Model
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.group import Group
 from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
@@ -39,6 +38,7 @@ from grouper.models.service_account_permission_map import ServiceAccountPermissi
 from grouper.models.user import User
 from grouper.plugin import initialize_plugins
 from grouper.repositories.factory import GraphRepositoryFactory
+from grouper.repositories.schema import SchemaRepository
 from grouper.services.factory import ServiceFactory
 from grouper.settings import Settings
 from grouper.usecases.factory import UseCaseFactory
@@ -78,21 +78,19 @@ class SetupTest(object):
     def create_session(self):
         # type: () -> Session
         db_engine = get_db_engine(self.settings.database_url)
+        schema_repository = SchemaRepository(self.settings)
 
         # Reinitialize plugins in case a previous test configured some.
         initialize_plugins([], [], "tests")
 
         # If using a persistent database, clear the database first.
         if "MEROU_TEST_DATABASE" in os.environ:
-            Model.metadata.drop_all(db_engine)
+            schema_repository.drop_schema()
 
-        # TODO(rra): Temporary hack to ensure models used by tests are imported and therefore
-        # created.  Will be replaced with a proper repository.
-        from grouper.models.permission_request import PermissionRequest  # noqa: F401
-        from grouper.models.user_token import UserToken  # noqa: F401
+        # Create the database schema.
+        schema_repository.initialize_schema()
 
-        # Create the database schema and the corresponding session.
-        Model.metadata.create_all(db_engine)
+        # Configure and create the session.
         Session.configure(bind=db_engine)
         return Session()
 

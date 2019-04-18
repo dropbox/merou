@@ -24,15 +24,22 @@ CONFIG_BOGUS = """
 common:
     _logger: bar
     foo: bar
-    timezone_object: UTC
-    database_url: blah
 """
+
+
+def test_timezone():
+    # type: () -> None
+    settings = Settings()
+
+    # mypy 0.700 thinks setting timezone to a str is a type mismatch because it doesn't understand
+    # the type magic, so work around the type error by using setattr.
+    setattr(settings, "timezone", "US/Eastern")
+    assert settings.timezone == pytz.timezone("US/Eastern")
 
 
 def test_update_from_config(tmpdir):
     # type: (LocalPath) -> None
     settings = Settings()
-    assert not settings.database
 
     # Create a config file that sets database to different values in different sections.
     config_path = str(tmpdir.join("test.yaml"))
@@ -45,12 +52,12 @@ def test_update_from_config(tmpdir):
     settings.update_from_config(config_path, section="other")
     assert settings.database == "bar"
 
-    # The special timezone_object attribute should be initialized and kept in sync.
-    assert settings.timezone_object == pytz.timezone("UTC")
+    # The timezone attribute is special and should be converted to a timezone on setting.
+    assert settings.timezone == pytz.timezone("UTC")
     with open(config_path, "w") as config:
         config.write("common:\n  timezone: US/Pacific\n")
     settings.update_from_config(config_path)
-    assert settings.timezone_object == pytz.timezone("US/Pacific")
+    assert settings.timezone == pytz.timezone("US/Pacific")
 
     # Create a config file that tries to set unknown or internal attributes.
     with open(config_path, "w") as config:
@@ -58,30 +65,35 @@ def test_update_from_config(tmpdir):
     settings.update_from_config(config_path)
     assert settings._logger != "bar"
     assert not hasattr(settings, "foo")
-    assert settings.timezone_object == pytz.timezone("US/Pacific")
-    assert settings.database_url == "bar"
+
+    # A configuration that doesn't set database or database_source should raise an exception.
+    settings = Settings()
+    with open(config_path, "w") as config:
+        config.write("common:\n  auditors_group: some-group\n")
+    with pytest.raises(InvalidSettingsError):
+        settings.update_from_config(config_path)
 
 
-def test_database_url():
+def test_database():
     # type: () -> None
     settings = Settings()
 
     # The default is uninitialized and should throw an error until we load a configuration.
     with pytest.raises(InvalidSettingsError):
-        assert settings.database_url
+        assert settings.database
 
     # If database is set, it should be used.
     settings.database = "sqlite:///grouper.sqlite"
-    assert settings.database_url == "sqlite:///grouper.sqlite"
+    assert settings.database == "sqlite:///grouper.sqlite"
     settings.database_source = "/bin/false"
-    assert settings.database_url == "sqlite:///grouper.sqlite"
+    assert settings.database == "sqlite:///grouper.sqlite"
 
     # If only database_source is set, it should be run to get a URL.
     settings.database = ""
     settings.database_source = "/path/to/program"
     with patch("subprocess.check_output") as mock_subprocess:
         mock_subprocess.return_value = "sqlite:///other.sqlite\n"
-        assert settings.database_url == "sqlite:///other.sqlite"
+        assert settings.database == "sqlite:///other.sqlite"
         assert mock_subprocess.call_args_list == [
             call(["/path/to/program"], stderr=subprocess.STDOUT)
         ]
@@ -93,7 +105,7 @@ def test_database_url():
         with patch("subprocess.check_output") as mock_subprocess:
             exception = subprocess.CalledProcessError(1, "/path/to/program")
             mock_subprocess.side_effect = [exception, "sqlite:///third.sqlite"]
-            assert settings.database_url == "sqlite:///third.sqlite"
+            assert settings.database == "sqlite:///third.sqlite"
             assert mock_subprocess.call_count == 2
 
     # Commands that return an empty URL should also be retried.
@@ -102,7 +114,7 @@ def test_database_url():
     with patch.object(Settings, "DB_URL_RETRY_DELAY", new=0):
         with patch("subprocess.check_output") as mock_subprocess:
             mock_subprocess.side_effect = ["", "sqlite:///notempty.sqlite"]
-            assert settings.database_url == "sqlite:///notempty.sqlite"
+            assert settings.database == "sqlite:///notempty.sqlite"
             assert mock_subprocess.call_count == 2
 
     # Too many retries should raise an exception.
@@ -112,4 +124,4 @@ def test_database_url():
         with patch("subprocess.check_output") as mock_subprocess:
             mock_subprocess.return_value = ""
             with pytest.raises(DatabaseSourceException):
-                assert settings.database_url
+                assert settings.database

@@ -1,6 +1,5 @@
 from datetime import datetime
 
-import pytz
 from pytz import UTC
 
 from grouper.fe.template_util import expires_when_str, long_ago_str, print_date
@@ -49,7 +48,6 @@ def test_print_date():
     settings = Settings()
     settings.date_format = "%Y-%m-%d %I:%M %p"
     settings.timezone = "US/Pacific"
-    settings._timezone_object = pytz.timezone("US/Pacific")
     set_global_settings(settings)
 
     for date_, expected, msg in [

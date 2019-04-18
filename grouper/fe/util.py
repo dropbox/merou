@@ -156,7 +156,7 @@ class GrouperHandler(RequestHandler):
         except sqlalchemy.exc.OperationalError:
             # Failed to connect to database or create user, try to reconfigure the db. This invokes
             # the fetcher to try to see if our URL string has changed.
-            Session.configure(bind=get_db_engine(settings().database_url))
+            Session.configure(bind=get_db_engine(settings().database))
             raise DatabaseFailure()
 
         # service accounts are, by definition, not interactive users

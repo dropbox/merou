@@ -58,7 +58,7 @@ def start_server(args, settings, sentry_client):
     logging.debug("configure database session")
     if args.database_url:
         settings.database = args.database_url
-    Session.configure(bind=get_db_engine(settings.database_url))
+    Session.configure(bind=get_db_engine(settings.database))
 
     with closing(Session()) as session:
         graph = Graph()

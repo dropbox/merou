@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 def dump_sql_command(args, settings, session_factory):
     # type: (Namespace, CtlSettings, SessionFactory) -> None
-    db_engine = get_db_engine(settings.database_url)
+    db_engine = get_db_engine(settings.database)
     for table in Model.metadata.sorted_tables:
         print(CreateTable(table).compile(db_engine))
         for index in table.indexes:

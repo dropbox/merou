@@ -41,7 +41,7 @@ def print_date(date):
         return ""
     if date.tzinfo is None:
         date = date.replace(tzinfo=UTC)
-    date = date.astimezone(settings().timezone_object)
+    date = date.astimezone(settings().timezone)
     return date.strftime(settings().date_format)
 
 

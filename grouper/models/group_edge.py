@@ -1,7 +1,7 @@
 from datetime import datetime
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, SmallInteger
-from sqlalchemy.orm import relationship
 
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, SmallInteger
+from sqlalchemy.orm import relationship 
 
 from grouper.expiration import add_expiration, cancel_expiration
 from grouper.models.base.constants import OBJ_TYPES_IDX

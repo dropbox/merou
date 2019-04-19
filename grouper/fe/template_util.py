@@ -10,17 +10,27 @@ from grouper.fe.settings import settings
 if TYPE_CHECKING:
     from typing import Any, Callable, Dict, Optional
 
-# Components of a relativedelta, in order from longest interval to shortest.
+# Components of a relativedelta, in order from longest interval to shortest.  microseconds are
+# intentionally ignored; a relativedelta with only microseconds is treated the same as zero.
 DELTA_COMPONENTS = ["year", "month", "day", "hour", "minute", "second"]
 
 
-def highest_period_delta_str(delta):
+def _highest_period_delta_str(delta):
     # type: (relativedelta) -> Optional[str]
-    """Given a relativedelta, return a string version of only the longest interval."""
+    """Return a string version of the longest non-microsecond interval in a relativedelta.
+
+    If relativedelta is negative or zero, return None.  The caller is responsible for mapping a
+    None response to a string representation that makes sense for the context.
+
+    microseconds are ignored, and a relativedelta differing only in microseconds is treated the
+    same as one that's zero.
+    """
     for component in DELTA_COMPONENTS:
         value = getattr(delta, "{}s".format(component))
         if value > 0:
             return "{} {}{}".format(value, component, "s" if value > 1 else "")
+
+    # relativedelta is negative or zero.
     return None
 
 
@@ -53,7 +63,7 @@ def expires_when_str(date, utcnow_fn=_utcnow):
         return "Expired"
 
     delta = relativedelta(date, now)
-    delta_str = highest_period_delta_str(delta)
+    delta_str = _highest_period_delta_str(delta)
     if delta_str is None:
         return "Expired"
     else:
@@ -71,7 +81,7 @@ def long_ago_str(date, utcnow_fn=_utcnow):
         return "in the future"
 
     delta = relativedelta(now, date)
-    delta_str = highest_period_delta_str(delta)
+    delta_str = _highest_period_delta_str(delta)
     if delta_str is None:
         return "now"
     else:

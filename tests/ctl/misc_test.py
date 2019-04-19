@@ -13,10 +13,7 @@ def noop(*k):
     None
 
 
-@patch("grouper.ctl.user.make_session")
-def test_user_create(make_session, session, tmpdir, users):  # noqa: F811
-    make_session.return_value = session
-
+def test_user_create(session, tmpdir, users):  # noqa: F811
     # simple
     username = "john@a.co"
     call_main(session, tmpdir, "user", "create", username)
@@ -39,14 +36,7 @@ def test_user_create(make_session, session, tmpdir, users):  # noqa: F811
     assert not any(users), "one bad seed means no users created"
 
 
-@patch("grouper.ctl.user.make_session")
-@patch("grouper.ctl.group.make_session")
-def test_user_status_changes(
-    make_user_session, make_group_session, session, tmpdir, users, groups  # noqa: F811
-):
-    make_user_session.return_value = session
-    make_group_session.return_value = session
-
+def test_user_status_changes(session, tmpdir, users, groups):  # noqa: F811
     username = "zorkian@a.co"
     groupname = "team-sre"
 
@@ -77,10 +67,7 @@ def test_user_status_changes(
     assert (u"User", username) not in groups[groupname].my_members()
 
 
-@patch("grouper.ctl.user.make_session")
-def test_user_public_key(make_session, session, tmpdir, users):  # noqa: F811
-    make_session.return_value = session
-
+def test_user_public_key(session, tmpdir, users):  # noqa: F811
     # good key
     username = "zorkian@a.co"
     call_main(session, tmpdir, "user", "add_public_key", username, SSH_KEY_1)
@@ -106,9 +93,7 @@ def test_user_public_key(make_session, session, tmpdir, users):  # noqa: F811
 
 
 @patch("grouper.ctl.oneoff.load_plugins")
-@patch("grouper.ctl.oneoff.make_session")
-def test_oneoff(mock_make_session, mock_load_plugins, session, tmpdir):  # noqa: F811
-    mock_make_session.return_value = session
+def test_oneoff(mock_load_plugins, session, tmpdir):  # noqa: F811
     username = "fake_user@a.co"
     other_username = "fake_user2@a.co"
     groupname = "fake_group"

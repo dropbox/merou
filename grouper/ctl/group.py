@@ -6,7 +6,6 @@ from grouper.ctl.util import (
     argparse_validate_date,
     ensure_valid_groupname,
     ensure_valid_username,
-    make_session,
     open_file,
 )
 from grouper.models.audit_log import AuditLog
@@ -18,12 +17,13 @@ if TYPE_CHECKING:
     from argparse import Namespace
     from grouper.ctl.settings import CtlSettings
     from grouper.models.base.session import Session
+    from grouper.repositories.factory import SessionFactory
 
 
 @ensure_valid_groupname
-def group_command(args, settings):
-    # type: (Namespace, CtlSettings) -> None
-    session = make_session(settings)
+def group_command(args, settings, session_factory):
+    # type: (Namespace, CtlSettings, SessionFactory) -> None
+    session = session_factory.create_session()
     group = session.query(Group).filter_by(groupname=args.groupname).scalar()
     if not group:
         logging.error("No such group %s".format(args.groupname))
@@ -33,11 +33,11 @@ def group_command(args, settings):
         # somewhat hacky: using function instance to use # `ensure_valid_username` only on
         # these subcommands
         @ensure_valid_username
-        def call_mutate(args, settings):
-            # type: (Namespace, CtlSettings) -> None
+        def call_mutate(args, settings, session_factory):
+            # type: (Namespace, CtlSettings, SessionFactory) -> None
             mutate_group_command(session, group, args)
 
-        call_mutate(args, settings)
+        call_mutate(args, settings, session_factory)
 
     elif args.subcommand == "log_dump":
         logdump_group_command(session, group, args)

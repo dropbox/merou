@@ -37,7 +37,11 @@ from grouper.models.service_account_permission_map import ServiceAccountPermissi
 from grouper.models.user import User
 from grouper.plugin import set_global_plugin_proxy
 from grouper.plugin.proxy import PluginProxy
-from grouper.repositories.factory import GraphRepositoryFactory
+from grouper.repositories.factory import (
+    GraphRepositoryFactory,
+    SessionFactory,
+    SingletonSessionFactory,
+)
 from grouper.repositories.schema import SchemaRepository
 from grouper.services.factory import ServiceFactory
 from grouper.settings import Settings
@@ -70,16 +74,19 @@ class SetupTest(object):
         # type: (LocalPath) -> None
         self.settings = Settings()
         self.settings.database = db_url(tmpdir)
-        self.session = self.create_session()
+
+        self.initialize_database()
+
+        self.session = SessionFactory(self.settings).create_session()
         self.graph = GroupGraph()
         self.repository_factory = GraphRepositoryFactory(
-            self.settings, PluginProxy([]), self.session, self.graph
+            self.settings, PluginProxy([]), SingletonSessionFactory(self.session), self.graph
         )
         self.service_factory = ServiceFactory(self.repository_factory)
         self.usecase_factory = UseCaseFactory(self.service_factory)
         self._transaction_service = self.service_factory.create_transaction_service()
 
-    def create_session(self):
+    def initialize_database(self):
         # type: () -> Session
         schema_repository = SchemaRepository(self.settings)
 
@@ -92,9 +99,8 @@ class SetupTest(object):
         if "MEROU_TEST_DATABASE" in os.environ:
             schema_repository.drop_schema()
 
-        # Create the database schema and the session.
+        # Create the database schema.
         schema_repository.initialize_schema()
-        return schema_repository.create_session()
 
     def close(self):
         # type: () -> None

@@ -16,7 +16,7 @@ from grouper.models.audit import Audit  # noqa: F401
 from grouper.models.audit_log import AuditLog  # noqa: F401
 from grouper.models.audit_member import AuditMember  # noqa: F401
 from grouper.models.base.model_base import Model
-from grouper.models.base.session import get_db_engine, Session
+from grouper.models.base.session import get_db_engine
 from grouper.models.comment import Comment  # noqa: F401
 from grouper.models.counter import Counter  # noqa: F401
 from grouper.models.group import Group  # noqa: F401
@@ -44,17 +44,11 @@ if TYPE_CHECKING:
 
 
 class SchemaRepository(object):
-    """Manipulate the database schema and manage database sessions."""
+    """Manipulate the database schema."""
 
     def __init__(self, settings):
         # type: (Settings) -> None
         self.settings = settings
-
-    def create_session(self):
-        # type: () -> Session
-        db_engine = get_db_engine(self.settings.database_url)
-        Session.configure(bind=db_engine)
-        return Session()
 
     def drop_schema(self):
         # type: () -> None

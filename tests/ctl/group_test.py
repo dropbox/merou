@@ -12,10 +12,7 @@ from tests.ctl_util import call_main
 from tests.fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401
 
 
-@patch("grouper.ctl.group.make_session")
-def test_group_add_remove_member(make_session, session, tmpdir, users, groups):  # noqa: F811
-    make_session.return_value = session
-
+def test_group_add_remove_member(session, tmpdir, users, groups):  # noqa: F811
     username = "oliver@a.co"
     groupname = "team-sre"
 
@@ -33,11 +30,7 @@ def test_group_add_remove_member(make_session, session, tmpdir, users, groups): 
 
 
 @patch("grouper.group_member.get_plugin_proxy")
-@patch("grouper.ctl.group.make_session")
-def test_group_add_remove_owner(
-    make_session, get_plugin_proxy, session, tmpdir, users, groups  # noqa: F811
-):
-    make_session.return_value = session
+def test_group_add_remove_owner(get_plugin_proxy, session, tmpdir, users, groups):  # noqa: F811
     get_plugin_proxy.return_value = PluginProxy([GroupOwnershipPolicyPlugin()])
 
     username = "oliver@a.co"
@@ -56,10 +49,7 @@ def test_group_add_remove_owner(
     assert (u"User", username) in Group.get(session, name=groupname).my_members()
 
 
-@patch("grouper.ctl.group.make_session")
-def test_group_bulk_add_remove(make_session, session, tmpdir, users, groups):  # noqa: F811
-    make_session.return_value = session
-
+def test_group_bulk_add_remove(session, tmpdir, users, groups):  # noqa: F811
     groupname = "team-sre"
 
     # bulk add
@@ -74,10 +64,7 @@ def test_group_bulk_add_remove(make_session, session, tmpdir, users, groups):  #
     assert not members.intersection(usernames)
 
 
-@patch("grouper.ctl.group.make_session")
-def test_group_name_checks(make_session, session, tmpdir, users, groups):  # noqa: F811
-    make_session.return_value = session
-
+def test_group_name_checks(session, tmpdir, users, groups):  # noqa: F811
     username = "oliver@a.co"
     groupname = "team-sre"
 
@@ -90,10 +77,7 @@ def test_group_name_checks(make_session, session, tmpdir, users, groups):  # noq
     assert (u"User", bad_username) not in Group.get(session, name=groupname).my_members()
 
 
-@patch("grouper.ctl.group.make_session")
-def test_group_logdump(make_session, session, tmpdir, users, groups):  # noqa: F811
-    make_session.return_value = session
-
+def test_group_logdump(session, tmpdir, users, groups):  # noqa: F811
     groupname = "team-sre"
     group_id = groups[groupname].id
 

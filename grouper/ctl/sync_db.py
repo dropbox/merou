@@ -11,9 +11,9 @@ from grouper.constants import (
     USER_ADMIN,
 )
 from grouper.ctl.base import CtlCommand
-from grouper.ctl.util import make_session
 from grouper.models.group import Group
 from grouper.permissions import create_permission, get_permission, grant_permission
+from grouper.repositories.factory import SessionFactory
 from grouper.util import get_auditors_group_name
 
 if TYPE_CHECKING:
@@ -43,7 +43,7 @@ class SyncDbCommand(CtlCommand):
         # TODO(rra): The code below will move into use cases later.
 
         # Add some basic database structures we know we will need if they don't exist.
-        session = make_session(self.settings)
+        session = SessionFactory(self.settings).create_session()
 
         for name, description in SYSTEM_PERMISSIONS:
             test = get_permission(session, name)

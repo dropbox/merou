@@ -28,6 +28,7 @@ from grouper.models.user import User
 from grouper.permissions import enable_permission_auditing
 from grouper.plugin import set_global_plugin_proxy
 from grouper.plugin.proxy import PluginProxy
+from grouper.repositories.factory import SingletonSessionFactory
 from grouper.service_account import create_service_account
 from grouper.settings import set_global_settings, Settings
 from tests.path_util import db_url
@@ -314,7 +315,10 @@ def api_app(session, standard_graph):
     # type: (Session, GroupGraph) -> GrouperApplication
     settings = ApiSettings()
     set_global_settings(settings)
-    usecase_factory = create_graph_usecase_factory(settings, session, standard_graph)
+    session_factory = SingletonSessionFactory(session)
+    usecase_factory = create_graph_usecase_factory(
+        settings, PluginProxy([]), session_factory, standard_graph
+    )
     return create_api_application(standard_graph, settings, usecase_factory)
 
 

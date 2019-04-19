@@ -26,7 +26,8 @@ from grouper.models.group import Group
 from grouper.models.permission import Permission
 from grouper.models.user import User
 from grouper.permissions import enable_permission_auditing
-from grouper.plugin import initialize_plugins
+from grouper.plugin import set_global_plugin_proxy
+from grouper.plugin.proxy import PluginProxy
 from grouper.service_account import create_service_account
 from grouper.settings import set_global_settings, Settings
 from tests.path_util import db_url
@@ -173,7 +174,7 @@ def session(request, tmpdir):
     set_global_settings(settings)
 
     # Reinitialize plugins in case a previous test configured some.
-    initialize_plugins(settings.plugin_dirs, settings.plugin_module_paths, "tests")
+    set_global_plugin_proxy(PluginProxy([]))
 
     db_engine = get_db_engine(db_url(tmpdir))
 

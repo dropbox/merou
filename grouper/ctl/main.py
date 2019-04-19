@@ -8,8 +8,9 @@ from grouper.ctl import dump_sql, group, oneoff, service_account, shell
 from grouper.ctl.factory import CtlCommandFactory
 from grouper.ctl.settings import CtlSettings
 from grouper.initialization import create_sql_usecase_factory
-from grouper.plugin import initialize_plugins
+from grouper.plugin import set_global_plugin_proxy
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
+from grouper.plugin.proxy import PluginProxy
 from grouper.settings import default_settings_path
 from grouper.util import get_loglevel
 
@@ -64,16 +65,19 @@ def main(sys_argv=sys.argv, session=None):
     log_level = get_loglevel(args, base=logging.INFO)
     logging.basicConfig(level=log_level, format=settings.log_format)
 
-    try:
-        initialize_plugins(settings.plugin_dirs, settings.plugin_module_paths, "grouper-ctl")
-    except PluginsDirectoryDoesNotExist as e:
-        logging.fatal("Plugin directory does not exist: {}".format(e))
-        sys.exit(1)
-
     if log_level < 0:
         sa_log.setLevel(logging.INFO)
 
-    usecase_factory = create_sql_usecase_factory(settings, session)
+    # Initialize plugins.  The global plugin proxy is used by legacy code.
+    try:
+        plugins = PluginProxy.load_plugins(settings, "grouper-ctl")
+    except PluginsDirectoryDoesNotExist as e:
+        logging.fatal("Plugin directory does not exist: {}".format(e))
+        sys.exit(1)
+    set_global_plugin_proxy(plugins)
+
+    # Set up factories.
+    usecase_factory = create_sql_usecase_factory(settings, plugins, session)
     command_factory = CtlCommandFactory(settings, usecase_factory)
 
     # Old-style subcommands store a func in callable when setting up their arguments.  New-style

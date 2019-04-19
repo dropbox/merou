@@ -8,8 +8,9 @@ from grouper.background.background_processor import BackgroundProcessor
 from grouper.background.settings import BackgroundSettings
 from grouper.error_reporting import get_sentry_client, setup_signal_handlers
 from grouper.models.base.session import get_db_engine, Session
-from grouper.plugin import initialize_plugins
+from grouper.plugin import set_global_plugin_proxy
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
+from grouper.plugin.proxy import PluginProxy
 from grouper.settings import default_settings_path
 from grouper.setup import setup_logging
 
@@ -48,9 +49,8 @@ def start_processor(args, settings, sentry_client):
     logging.info("begin. log_level={}".format(log_level))
 
     try:
-        initialize_plugins(
-            settings.plugin_dirs, settings.plugin_module_paths, "grouper-background"
-        )
+        plugins = PluginProxy.load_plugins(settings, "grouper-background")
+        set_global_plugin_proxy(plugins)
     except PluginsDirectoryDoesNotExist as e:
         logging.fatal("Plugin directory does not exist: {}".format(e))
         sys.exit(1)

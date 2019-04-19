@@ -19,6 +19,7 @@ from grouper.repositories.user import UserRepository
 
 if TYPE_CHECKING:
     from grouper.graph import GroupGraph
+    from grouper.plugin.proxy import PluginProxy
     from grouper.repositories.interfaces import (
         GroupEdgeRepository,
         PermissionRepository,
@@ -44,9 +45,10 @@ class GraphRepositoryFactory(RepositoryFactory):
     commands are instantiated.
     """
 
-    def __init__(self, settings, session=None, graph=None):
-        # type: (Settings, Optional[Session], Optional[GroupGraph]) -> None
+    def __init__(self, settings, plugins, session=None, graph=None):
+        # type: (Settings, PluginProxy, Optional[Session], Optional[GroupGraph]) -> None
         self.settings = settings
+        self.plugins = plugins
         self._session = session
         self._graph = graph
 
@@ -68,7 +70,7 @@ class GraphRepositoryFactory(RepositoryFactory):
 
     def create_audit_log_repository(self):
         # type: () -> AuditLogRepository
-        return AuditLogRepository(self.session)
+        return AuditLogRepository(self.session, self.plugins)
 
     def create_checkpoint_repository(self):
         # type: () -> CheckpointRepository
@@ -123,9 +125,10 @@ class SQLRepositoryFactory(RepositoryFactory):
     instantiated.
     """
 
-    def __init__(self, settings, session=None):
-        # type: (Settings, Optional[Session]) -> None
+    def __init__(self, settings, plugins, session=None):
+        # type: (Settings, PluginProxy, Optional[Session]) -> None
         self.settings = settings
+        self.plugins = plugins
         self._session = session
 
     @property
@@ -139,7 +142,7 @@ class SQLRepositoryFactory(RepositoryFactory):
 
     def create_audit_log_repository(self):
         # type: () -> AuditLogRepository
-        return AuditLogRepository(self.session)
+        return AuditLogRepository(self.session, self.plugins)
 
     def create_checkpoint_repository(self):
         # type: () -> CheckpointRepository

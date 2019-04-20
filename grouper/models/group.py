@@ -12,6 +12,7 @@ from sqlalchemy.orm.util import aliased
 from sqlalchemy.sql import label, literal
 
 from grouper.constants import MAX_NAME_LENGTH
+from grouper.entities.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.group_member import persist_group_member_changes
 from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog
@@ -20,7 +21,7 @@ from grouper.models.base.model_base import Model
 from grouper.models.base.session import flush_transaction
 from grouper.models.comment import CommentObjectMixin
 from grouper.models.counter import Counter
-from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge, OWNER_ROLE_INDICES
+from grouper.models.group_edge import GroupEdge
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User

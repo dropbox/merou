@@ -26,10 +26,11 @@ from datetime import datetime
 from time import time
 from typing import TYPE_CHECKING
 
+from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.graph import GroupGraph
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.group import Group
-from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
+from grouper.models.group_edge import GroupEdge
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.service_account import ServiceAccount

@@ -4,17 +4,13 @@ from typing import TYPE_CHECKING
 from sqlalchemy import or_
 from sqlalchemy.sql import label, literal
 
+from grouper.entities.group_edge import APPROVER_ROLE_INDICES, GROUP_EDGE_ROLES, OWNER_ROLE_INDICES
 from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
 from grouper.models.group import Group
-from grouper.models.group_edge import (
-    APPROVER_ROLE_INDICES,
-    GROUP_EDGE_ROLES,
-    GroupEdge,
-    OWNER_ROLE_INDICES,
-)
+from grouper.models.group_edge import GroupEdge
 from grouper.models.request import Request
 from grouper.models.request_status_change import RequestStatusChange
 from grouper.models.user import User

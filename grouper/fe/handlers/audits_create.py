@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from grouper.constants import AUDIT_MANAGER
 from grouper.email_util import send_async_email, send_email
+from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.fe.forms import AuditCreateForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
@@ -13,7 +14,6 @@ from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog, AuditLogCategory
 from grouper.models.audit_member import AuditMember
 from grouper.models.group import Group
-from grouper.models.group_edge import GROUP_EDGE_ROLES
 from grouper.user_permissions import user_has_permission
 
 if TYPE_CHECKING:

@@ -17,10 +17,11 @@ from grouper.email_util import (
     notify_nonauditor_promoted,
     process_async_emails,
 )
+from grouper.entities.group_edge import APPROVER_ROLE_INDICES
 from grouper.graph import Graph
 from grouper.models.base.session import Session
 from grouper.models.group import Group
-from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge
+from grouper.models.group_edge import GroupEdge
 from grouper.models.user import User
 from grouper.perf_profile import prune_old_traces
 

@@ -15,7 +15,7 @@ from wtforms.validators import ValidationError
 from wtforms_tornado import Form
 
 from grouper import constants
-from grouper.models.group_edge import GROUP_EDGE_ROLES
+from grouper.entities.group_edge import GROUP_EDGE_ROLES
 
 GROUP_CANJOIN_CHOICES = [("canjoin", "Anyone"), ("canask", "Must Ask"), ("nobody", "Nobody")]
 

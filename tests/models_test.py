@@ -1,5 +1,5 @@
+from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.models.group import Group
-from grouper.models.group_edge import GROUP_EDGE_ROLES
 from grouper.permissions import get_groups_by_permission, get_permission
 from tests.fixtures import (  # noqa: F401
     graph,

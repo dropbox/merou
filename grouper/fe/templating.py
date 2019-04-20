@@ -8,6 +8,30 @@ if TYPE_CHECKING:
 # An external web resource with SRI.
 ExternalResource = NamedTuple("ExternalResource", [("url", str), ("integrity", str)])
 
+# External CSS loaded on every Grouper page.  All URLs are relative to a CDNJS mirror.
+EXTERNAL_CSS = [
+    ExternalResource(
+        url="/ajax/libs/twitter-bootstrap/3.1.1/css/bootstrap.min.css",
+        integrity="sha256-6VA0SGkrc43SYPvX98q/LhHwm2APqX5us6Vuulsafps=",
+    ),
+    ExternalResource(
+        url="/ajax/libs/font-awesome/4.1.0/css/font-awesome.min.css",
+        integrity="sha256-t2kyTgkh+fZJYRET5l9Sjrrl4UDain5jxdbqe8ejO8A=",
+    ),
+    ExternalResource(
+        url="/ajax/libs/bootstrap-datetimepicker/3.0.0/css/bootstrap-datetimepicker.min.css",
+        integrity="sha256-Ov0GCM7wZ2/frH8veSLcBKbKthwLhC5WasvbBuJ2okc=",
+    ),
+    ExternalResource(
+        url="/ajax/libs/datatables/1.10.10/css/dataTables.bootstrap.min.css",
+        integrity="sha256-z84A8SU1XXNN76l7Y+r65zvMYxgGD4v5wqg90I24Prw=",
+    ),
+    ExternalResource(
+        url="/ajax/libs/chosen/1.4.2/chosen.min.css",
+        integrity="sha256-VGpryMO0mXR1A03airrHc3/J1YldD3xKadKpXXktWY8=",
+    ),
+]
+
 # External JavaScript loaded on every Grouper page.  All URLs are relative to a CDNJS mirror.
 EXTERNAL_JS = [
     ExternalResource(
@@ -50,6 +74,7 @@ class FrontendTemplateEngine(BaseTemplateEngine):
         template_globals = {
             "cdnjs_prefix": settings.cdnjs_prefix,
             "deployment_name": deployment_name,
+            "external_css": EXTERNAL_CSS,
             "external_js": EXTERNAL_JS,
         }
         self.environment.globals.update(template_globals)

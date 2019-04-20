@@ -4,10 +4,11 @@ from typing import TYPE_CHECKING
 
 from grouper import public_key
 from grouper.ctl.base import CtlCommand
-from grouper.ctl.util import ensure_valid_username, make_session
+from grouper.ctl.util import ensure_valid_username
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
 from grouper.plugin.exceptions import PluginRejectedDisablingUser
+from grouper.repositories.factory import SessionFactory
 from grouper.role_user import disable_role_user, enable_role_user
 from grouper.usecases.convert_user_to_service_account import ConvertUserToServiceAccountUI
 from grouper.user import disable_user, enable_user, get_all_users
@@ -20,9 +21,9 @@ if TYPE_CHECKING:
 
 
 @ensure_valid_username
-def user_command(args, settings):
-    # type: (Namespace, CtlSettings) -> None
-    session = make_session(settings)
+def user_command(args, settings, session_factory):
+    # type: (Namespace, CtlSettings, SessionFactory) -> None
+    session = session_factory.create_session()
 
     if args.subcommand == "create":
         for username in args.username:
@@ -213,7 +214,9 @@ class UserCommand(CtlCommand, ConvertUserToServiceAccountUI):
             usecase.convert_user_to_service_account(args.username, args.owner)
 
         elif args.subcommand == "list":
-            session = make_session(self.settings)
+            # Ugly temporary hack until this is converted to a usecase.
+            repository_factory = self.usecase_factory.service_factory.repository_factory
+            session = repository_factory.session_factory.create_session()
             all_users = get_all_users(session)
             for user in all_users:
                 user_enabled = "enabled" if user.enabled else "disabled"
@@ -221,4 +224,6 @@ class UserCommand(CtlCommand, ConvertUserToServiceAccountUI):
             return
 
         else:
-            user_command(args, self.settings)
+            # Ugly temporary hack until this is converted to a usecase.
+            repository_factory = self.usecase_factory.service_factory.repository_factory
+            user_command(args, self.settings, repository_factory.session_factory)

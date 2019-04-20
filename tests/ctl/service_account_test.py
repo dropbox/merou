@@ -1,5 +1,3 @@
-from mock import patch
-
 from grouper.group_service_account import get_service_accounts
 from grouper.models.group import Group
 from grouper.models.service_account import ServiceAccount
@@ -14,12 +12,7 @@ from tests.fixtures import (  # noqa: F401
 )
 
 
-@patch("grouper.ctl.service_account.make_session")
-def test_service_account_create(
-    make_session, groups, service_accounts, session, tmpdir, users  # noqa: F811
-):
-    make_session.return_value = session
-
+def test_service_account_create(groups, service_accounts, session, tmpdir, users):  # noqa: F811
     machine_set = "foo +bar -(org)"
     description = "this is a service account.\n\n it is for testing"
     security_team_group = Group.get(session, name="security-team")

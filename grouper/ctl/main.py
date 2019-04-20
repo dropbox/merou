@@ -11,6 +11,7 @@ from grouper.initialization import create_sql_usecase_factory
 from grouper.plugin import set_global_plugin_proxy
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
 from grouper.plugin.proxy import PluginProxy
+from grouper.repositories.factory import SessionFactory, SingletonSessionFactory
 from grouper.settings import default_settings_path
 from grouper.util import get_loglevel
 
@@ -62,6 +63,13 @@ def main(sys_argv=sys.argv, session=None):
     if args.database_url:
         settings.database = args.database_url
 
+    # Construct a session factory, which is passed into all the legacy commands that haven't been
+    # converted to usecases yet.
+    if session:
+        session_factory = SingletonSessionFactory(session)  # type: SessionFactory
+    else:
+        session_factory = SessionFactory(settings)
+
     log_level = get_loglevel(args, base=logging.INFO)
     logging.basicConfig(level=log_level, format=settings.log_format)
 
@@ -77,13 +85,13 @@ def main(sys_argv=sys.argv, session=None):
     set_global_plugin_proxy(plugins)
 
     # Set up factories.
-    usecase_factory = create_sql_usecase_factory(settings, plugins, session)
+    usecase_factory = create_sql_usecase_factory(settings, plugins, session_factory)
     command_factory = CtlCommandFactory(settings, usecase_factory)
 
     # Old-style subcommands store a func in callable when setting up their arguments.  New-style
     # subcommands are handled via a factory that constructs and calls the correct object.
     if getattr(args, "func", None):
-        args.func(args, settings)
+        args.func(args, settings, session_factory)
     else:
         command = command_factory.construct_command(args.command)
         command.run(args)

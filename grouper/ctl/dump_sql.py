@@ -10,10 +10,11 @@ from grouper.models.base.session import get_db_engine
 if TYPE_CHECKING:
     from argparse import _SubParsersAction, Namespace
     from grouper.ctl.settings import CtlSettings
+    from grouper.repositories.factory import SessionFactory
 
 
-def dump_sql_command(args, settings):
-    # type: (Namespace, CtlSettings) -> None
+def dump_sql_command(args, settings, session_factory):
+    # type: (Namespace, CtlSettings, SessionFactory) -> None
     db_engine = get_db_engine(settings.database_url)
     for table in Model.metadata.sorted_tables:
         print(CreateTable(table).compile(db_engine))

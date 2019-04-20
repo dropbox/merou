@@ -28,7 +28,6 @@ from typing import TYPE_CHECKING
 
 from grouper.graph import GroupGraph
 from grouper.models.base.constants import OBJ_TYPES
-from grouper.models.base.session import get_db_engine, Session
 from grouper.models.group import Group
 from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
 from grouper.models.permission import Permission
@@ -38,7 +37,11 @@ from grouper.models.service_account_permission_map import ServiceAccountPermissi
 from grouper.models.user import User
 from grouper.plugin import set_global_plugin_proxy
 from grouper.plugin.proxy import PluginProxy
-from grouper.repositories.factory import GraphRepositoryFactory
+from grouper.repositories.factory import (
+    GraphRepositoryFactory,
+    SessionFactory,
+    SingletonSessionFactory,
+)
 from grouper.repositories.schema import SchemaRepository
 from grouper.services.factory import ServiceFactory
 from grouper.settings import Settings
@@ -46,6 +49,7 @@ from grouper.usecases.factory import UseCaseFactory
 from tests.path_util import db_url
 
 if TYPE_CHECKING:
+    from grouper.models.base.session import Session
     from py.local import LocalPath
     from typing import Iterator, Optional
 
@@ -70,18 +74,20 @@ class SetupTest(object):
         # type: (LocalPath) -> None
         self.settings = Settings()
         self.settings.database = db_url(tmpdir)
-        self.session = self.create_session()
+
+        self.initialize_database()
+
+        self.session = SessionFactory(self.settings).create_session()
         self.graph = GroupGraph()
         self.repository_factory = GraphRepositoryFactory(
-            self.settings, PluginProxy([]), self.session, self.graph
+            self.settings, PluginProxy([]), SingletonSessionFactory(self.session), self.graph
         )
         self.service_factory = ServiceFactory(self.repository_factory)
         self.usecase_factory = UseCaseFactory(self.service_factory)
         self._transaction_service = self.service_factory.create_transaction_service()
 
-    def create_session(self):
+    def initialize_database(self):
         # type: () -> Session
-        db_engine = get_db_engine(self.settings.database_url)
         schema_repository = SchemaRepository(self.settings)
 
         # Reinitialize the global plugin proxy with an empty set of plugins in case a previous test
@@ -95,10 +101,6 @@ class SetupTest(object):
 
         # Create the database schema.
         schema_repository.initialize_schema()
-
-        # Configure and create the session.
-        Session.configure(bind=db_engine)
-        return Session()
 
     def close(self):
         # type: () -> None

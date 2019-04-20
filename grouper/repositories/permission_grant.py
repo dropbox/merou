@@ -35,9 +35,9 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
         self.graph = graph
         self.repository = repository
 
-    def grant_permission_to_group(self, group, permission, argument):
+    def grant_permission_to_group(self, permission, argument, group):
         # type: (str, str, str) -> None
-        self.repository.grant_permission_to_group(group, permission, argument)
+        self.repository.grant_permission_to_group(permission, argument, group)
 
     def group_grants_for_permission(self, name):
         # type: (str) -> List[GroupPermissionGrant]
@@ -73,7 +73,7 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         # type: (Session) -> None
         self.session = session
 
-    def grant_permission_to_group(self, group, permission, argument):
+    def grant_permission_to_group(self, permission, argument, group):
         # type: (str, str, str) -> None
         sql_group = Group.get(self.session, name=group)
         if not sql_group:

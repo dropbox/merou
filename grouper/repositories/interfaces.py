@@ -27,7 +27,7 @@ class GroupRepository(with_metaclass(ABCMeta, object)):
     """Abstract base class for group repositories."""
 
     @abstractmethod
-    def create_group(self, name, description, can_join):
+    def create_group(self, name, description, join_policy):
         # type: (str, str, GroupJoinPolicy) -> None
         pass
 
@@ -74,7 +74,7 @@ class PermissionGrantRepository(with_metaclass(ABCMeta, object)):
     """Abstract base class for permission grant repositories."""
 
     @abstractmethod
-    def grant_permission_to_group(self, group, permission, argument):
+    def grant_permission_to_group(self, permission, argument, group):
         # type: (str, str, str) -> None
         pass
 

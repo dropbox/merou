@@ -24,6 +24,14 @@ class GroupService(GroupInterface):
         self.group_repository = group_repository
         self.permission_grant_repository = permission_grant_repository
 
+    def create_group(self, name, description, join_policy):
+        # type: (str, str, GroupJoinPolicy) -> None
+        self.group_repository.create_group(name, description, join_policy)
+
+    def grant_permission_to_group(self, permission, argument, group):
+        # type: (str, str, str) -> None
+        self.permission_grant_repository.grant_permission_to_group(permission, argument, group)
+
     def group_exists(self, name):
         # type: (str) -> bool
         return True if self.group_repository.get_group(name) else False
@@ -31,24 +39,20 @@ class GroupService(GroupInterface):
     def initialize_administrator_group(self):
         # type: () -> None
         if not self.group_exists(DEFAULT_ADMIN_GROUP):
-            self.group_repository.create_group(
+            self.create_group(
                 DEFAULT_ADMIN_GROUP, "Administrators of the Grouper system", GroupJoinPolicy.NOBODY
             )
             for permission in (GROUP_ADMIN, PERMISSION_ADMIN, USER_ADMIN):
-                self.permission_grant_repository.grant_permission_to_group(
-                    DEFAULT_ADMIN_GROUP, permission, ""
-                )
+                self.grant_permission_to_group(permission, "", DEFAULT_ADMIN_GROUP)
 
     def initialize_auditors_group(self):
         # type: () -> None
         if not self.settings.auditors_group:
             return
         if not self.group_exists(self.settings.auditors_group):
-            self.group_repository.create_group(
+            self.create_group(
                 self.settings.auditors_group,
                 "Allows members to own groups with audited permissions",
                 GroupJoinPolicy.CAN_ASK,
             )
-            self.permission_grant_repository.grant_permission_to_group(
-                self.settings.auditors_group, PERMISSION_AUDITOR, ""
-            )
+            self.grant_permission_to_group(PERMISSION_AUDITOR, "", self.settings.auditors_group)

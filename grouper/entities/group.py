@@ -8,7 +8,9 @@ class GroupJoinPolicy(Enum):
     NOBODY = "nobody"
 
 
-Group = NamedTuple("Group", [("name", str), ("description", str), ("can_join", GroupJoinPolicy)])
+Group = NamedTuple(
+    "Group", [("name", str), ("description", str), ("join_policy", GroupJoinPolicy)]
+)
 
 
 class GroupNotFoundException(Exception):

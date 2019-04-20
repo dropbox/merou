@@ -1,10 +1,11 @@
+import itertools
 import logging
 from collections import OrderedDict
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 from six import iteritems
-from sqlalchemy import Boolean, Column, desc, Enum, Integer, Interval, or_, String, Text, union_all
+from sqlalchemy import Boolean, Column, desc, Enum, Integer, Interval, or_, String, Text
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.util import aliased
@@ -26,7 +27,7 @@ from grouper.models.user import User
 
 if TYPE_CHECKING:
     from grouper.models.request import Request
-    from typing import List, Optional, Union
+    from typing import Mapping, List, Optional, Tuple, Union
 
 GROUP_JOIN_CHOICES = {
     # Anyone can join with automatic approval
@@ -231,6 +232,7 @@ class Group(Model, CommentObjectMixin):
         return od
 
     def my_members(self):
+        # type: () -> Mapping[Tuple[str, str], str]
         """Returns a dictionary from ("User"|"Group", "name") tuples to records."""
 
         parent = aliased(Group)
@@ -258,8 +260,7 @@ class Group(Model, CommentObjectMixin):
                 or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
                 GroupEdge.member_type == 0,
             )
-            .group_by("type", "name")
-            .subquery()
+            .order_by(desc("role"), "name")
         )
 
         groups = (
@@ -281,16 +282,10 @@ class Group(Model, CommentObjectMixin):
                 or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
                 GroupEdge.member_type == 1,
             )
-            .subquery()
+            .order_by(desc("role"), "name")
         )
 
-        query = (
-            self.session.query("id", "type", "name", "role", "edge_id", "expiration")
-            .select_entity_from(union_all(users.select(), groups.select()))
-            .order_by(desc("role"), desc("type"))
-        )
-
-        return OrderedDict(((record.type, record.name), record) for record in query.all())
+        return OrderedDict(((r.type, r.name), r) for r in itertools.chain(users, groups))
 
     def my_groups(self):
         """Return the groups to which this group currently belongs."""

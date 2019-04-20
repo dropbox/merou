@@ -4,33 +4,45 @@ from typing import TYPE_CHECKING
 from dateutil.relativedelta import relativedelta
 from jinja2 import Environment, PackageLoader, select_autoescape
 from pytz import UTC
-from six import string_types
 
 from grouper.fe.settings import settings
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Dict, Optional, Union
+    from typing import Any, Callable, Dict, Optional
+
+# Components of a relativedelta, in order from longest interval to shortest.  microseconds are
+# intentionally ignored; a relativedelta with only microseconds is treated the same as zero.
+DELTA_COMPONENTS = ["year", "month", "day", "hour", "minute", "second"]
 
 
-def _make_date_obj(date_obj):
-    # type: (Union[datetime, float, str]) -> datetime
-    """Given either a datetime object, float date/time in UTC unix epoch, or
-    string date/time in the form '%Y-%m-%d %H:%M:%S.%f' return a datetime
-    object."""
-    if isinstance(date_obj, float):
-        date_obj = datetime.fromtimestamp(date_obj, UTC)
+def _highest_period_delta_str(delta):
+    # type: (relativedelta) -> Optional[str]
+    """Return a string version of the longest non-microsecond interval in a relativedelta.
 
-    if isinstance(date_obj, string_types):
-        date_obj = datetime.strptime(date_obj, "%Y-%m-%d %H:%M:%S.%f")
-        date_obj = date_obj.replace(tzinfo=UTC)
+    If relativedelta is negative or zero, return None.  The caller is responsible for mapping a
+    None response to a string representation that makes sense for the context.
 
-    assert isinstance(date_obj, datetime)
+    microseconds are ignored, and a relativedelta differing only in microseconds is treated the
+    same as one that's zero.
+    """
+    for component in DELTA_COMPONENTS:
+        value = getattr(delta, "{}s".format(component))
+        if value > 0:
+            return "{} {}{}".format(value, component, "s" if value > 1 else "")
 
-    if date_obj.tzinfo is None:
-        # naive dates are assumed UTC
-        date_obj = date_obj.replace(tzinfo=UTC)
+    # relativedelta is negative or zero.
+    return None
 
-    return date_obj
+
+def print_date(date):
+    # type: (Optional[datetime]) -> str
+    """Format a human readable datetime string, respecting configuration settings."""
+    if date is None:
+        return ""
+    if date.tzinfo is None:
+        date = date.replace(tzinfo=UTC)
+    date = date.astimezone(settings().timezone_object)
+    return date.strftime(settings().date_format)
 
 
 def _utcnow():
@@ -38,70 +50,42 @@ def _utcnow():
     return datetime.now(UTC)
 
 
-def print_date(date):
-    # type: (Optional[Union[datetime, float, str]]) -> str
-    """Print a human readable date/time string that respects system
-    configuration for time zone and date/time format.
-
-    Args:
-        date_obj(datetime, float, str): either a datetime object, float of
-        seconds since epoch, or a str in the form '%Y-%m-%d %H:%M:%S.%f'
-
-    Returns human readable date/time string.
-    """
+def expires_when_str(date, utcnow_fn=_utcnow):
+    # type: (Optional[datetime], Callable[[], datetime]) -> str
+    """Format an expiration datetime."""
     if date is None:
-        return ""
-
-    date_obj = _make_date_obj(date)
-    date_obj = date_obj.astimezone(settings().timezone_object)
-    return date_obj.strftime(settings().date_format)
-
-
-def expires_when_str(date_obj, utcnow_fn=_utcnow):
-    if date_obj is None:
         return "Never"
+    if date.tzinfo is None:
+        date = date.replace(tzinfo=UTC)
 
-    date_obj = _make_date_obj(date_obj)
     now = utcnow_fn()
-
-    if now > date_obj:
+    if now > date:
         return "Expired"
 
-    delta = relativedelta(date_obj, now)
-    str_ = highest_period_delta_str(delta)
-    if str_ is None:
+    delta = relativedelta(date, now)
+    delta_str = _highest_period_delta_str(delta)
+    if delta_str is None:
         return "Expired"
     else:
-        return str_
+        return delta_str
 
 
-def long_ago_str(date_obj, utcnow_fn=_utcnow):
-    date_obj = _make_date_obj(date_obj)
+def long_ago_str(date, utcnow_fn=_utcnow):
+    # type: (datetime, Callable[[], datetime]) -> str
+    """Format a datetime as an interval in the past."""
+    if date.tzinfo is None:
+        date = date.replace(tzinfo=UTC)
 
     now = utcnow_fn()
-    if date_obj > now:
+    if date > now:
         return "in the future"
 
-    delta = relativedelta(now, date_obj)
-    str_ = highest_period_delta_str(delta)
-    if str_ is None:
+    delta = relativedelta(now, date)
+    delta_str = _highest_period_delta_str(delta)
+    if delta_str is None:
         return "now"
     else:
-        return "{} ago".format(str_)
-
-
-_DELTA_COMPONENTS = ["year", "month", "day", "hour", "minute", "second"]
-
-
-def highest_period_delta_str(delta):
-    for name in _DELTA_COMPONENTS:
-        value = getattr(delta, "{}s".format(name))
-        if value > 0:
-            # Only want the highest period so return.
-            ret = "{} {}{}".format(value, name, "s" if value > 1 else "")
-            return ret
-
-    return None
+        return "{} ago".format(delta_str)
 
 
 def get_template_env(

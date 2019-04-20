@@ -8,7 +8,7 @@ visit the management page and process the audit:
 
     {{url}}/groups/{{group}}
 
-This is due by {{ ends_at }}.
+This is due by {{ ends_at|print_date }}.
 
 Thank you for your prompt attention!
 {% endblock %}

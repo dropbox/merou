@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from grouper.constants import USER_METADATA_SHELL_KEY
 from grouper.fe.util import Alert
 from grouper.graph import NoSuchGroup, NoSuchUser
@@ -37,6 +39,8 @@ def get_group_view_template_vars(session, actor, group, graph):
     ret["groups"] = group.my_groups()
     ret["service_accounts"] = get_service_accounts(session, group)
     ret["permissions"] = group_md.get("permissions", [])
+    for permission in ret["permissions"]:
+        permission["granted_on"] = datetime.fromtimestamp(permission["granted_on"])
 
     ret["permission_requests_pending"] = []
     for req in get_pending_request_by_group(session, group):
@@ -136,6 +140,8 @@ def get_user_view_template_vars(session, actor, user, graph):
         ret["permissions"] = service_account_permissions(session, service_account)
     else:
         ret["permissions"] = user_md.get("permissions", [])
+        for permission in ret["permissions"]:
+            permission["granted_on"] = datetime.fromtimestamp(permission["granted_on"])
 
     return ret
 

@@ -88,6 +88,7 @@ class Settings(object):
         self.service_account_email_domain = "svc.localhost"
         self.timezone = "UTC"
         self.url = "http://127.0.0.1:8888"
+        self.user_auth_header = "X-Grouper-User"
 
     @property
     def database(self):

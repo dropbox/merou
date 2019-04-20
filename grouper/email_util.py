@@ -3,46 +3,75 @@ import smtplib
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import TYPE_CHECKING
+from typing import cast, TYPE_CHECKING
 
 from six import itervalues, string_types
 
-from grouper.fe.template_util import get_template_env
 from grouper.models.async_notification import AsyncNotification
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.user import User
+from grouper.templating import BaseTemplateEngine
 
 if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from grouper.models.group import Group
+    from grouper.models.group_edge import GroupEdge
     from grouper.settings import Settings
-    from typing import List
+    from typing import Dict, Iterable, Optional, Set, Text, Union
+
+    Context = Dict[str, Union[bool, int, str, Optional[datetime]]]
 
 
-def send_email(session, recipients, subject, template, settings, context):
+class EmailTemplateEngine(BaseTemplateEngine):
+    """Email-specific template engine."""
+
+    def __init__(self, settings):
+        # type: (Settings) -> None
+        # TODO(rra): Move email templates out of the grouper.fe package into their own.
+        super(EmailTemplateEngine, self).__init__(settings, "grouper.fe")
+
+
+def send_email(
+    session,  # type: Session
+    recipients,  # type: Union[str, Iterable[str]]
+    subject,  # type: Text
+    template,  # type: str
+    settings,  # type: Settings
+    context,  # type: Context
+):
     return send_async_email(
         session, recipients, subject, template, settings, context, send_after=datetime.utcnow()
     )
 
 
 def send_async_email(
-    session, recipients, subject, template, settings, context, send_after, async_key=None
+    session,  # type: Session
+    recipients,  # type: Union[str, Iterable[str]]
+    subject,  # type: Text
+    template,  # type: str
+    settings,  # type: Settings
+    context,  # type: Context
+    send_after,  # type: datetime
+    async_key=None,  # type: Optional[str]
 ):
+    # type: (...) -> None
     """Construct a message object from a template and schedule it
 
     This is the main email sending method to send out a templated email. This is used to
     asynchronously queue up the email for sending.
 
     Args:
-        recipients (str or list(str)): Email addresses that will receive this mail. This
-            argument is either a string (which might include comma separated email addresses)
-            or it's a list of strings (email addresses).
-        subject (str): Subject of the email.
-        template (str): Name of the template to use.
-        context (dict(str: str)): Context for the template library.
-        settings (Settings): grouper.settings.Settings object grouper was run with
-        send_after (DateTime): Schedule the email to go out after this point in time.
-        async_key (str, optional): If you set this, it will be inserted into the db so that
-            you can find this email in the future.
+        recipients: Email addresses that will receive this mail. This argument is either a string
+           (which might include comma separated email addresses) or it's a list of strings (email
+           addresses).
+        subject: Subject of the email.
+        template: Name of the template to use.
+        context: Context for the template library.
+        settings: grouper.settings.Settings object grouper was run with
+        send_after: Schedule the email to go out after this point in time.
+        async_key: If you set this, it will be inserted into the db so that you can find this email
+            in the future.
 
     Returns:
         Nothing.
@@ -61,13 +90,14 @@ def send_async_email(
 
 
 def cancel_async_emails(session, async_key):
+    # type: (Session, str) -> None
     """Cancel pending async emails by key
 
     If you scheduled an asynchronous email with an async_key previously, this method can be
     used to cancel any unsent emails.
 
     Args:
-        async_key (str): The async_key previously provided for your emails.
+        async_key: The async_key previously provided for your emails.
     """
     session.query(AsyncNotification).filter(
         AsyncNotification.key == async_key, AsyncNotification.sent == False
@@ -75,20 +105,21 @@ def cancel_async_emails(session, async_key):
 
 
 def process_async_emails(settings, session, now_ts, dry_run=False):
+    # type: (Settings, Session, datetime, bool) -> int
     """Send emails due before now
 
     This method finds and immediately sends any emails that have been scheduled to be sent before
     the now_ts.  Meant to be called from the background processing thread.
 
     Args:
-        settings (Settings): The current Settings object for this application.
-        session (Session): Object for db session.
-        now_ts (datetime): The time to use as the cutoff (send emails before this point).
-        dry_run (boolean, Optional): If True, do not actually send any email, just generate
-            and return how many emails would have been sent.
+        settings: The current Settings object for this application.
+        session: Object for db session.
+        now_ts: The time to use as the cutoff (send emails before this point).
+        dry_run: If True, do not actually send any email, just generate and return how many emails
+            would have been sent.
 
     Returns:
-        int: Number of emails that were sent.
+        Number of emails that were sent.
     """
     emails = (
         session.query(AsyncNotification)
@@ -122,31 +153,31 @@ def process_async_emails(settings, session, now_ts, dry_run=False):
 
 
 def get_email_from_template(recipient_list, subject, template, settings, context):
+    # type: (Iterable[str], Text, str, Settings, Context) -> MIMEMultipart
     """Construct a message object from a template
 
     This creates the full MIME object that can be used to send an email with mixed HTML
     and text parts.
 
-    FIXME(herb): we depend on the FE settings object right now. Since we're only
-    getting called from the FE that's fine for now but we should clean this up.
-
     Args:
-        recipient_list (list(str)): Email addresses that will receive this mail.
-        subject (str): Subject of the email.
-        template (str): Name of the template to use.
-        settings (Settings): grouper.settings.Settings object grouper is run with
-        context (dict(str: str)): Context for the template library.
+        recipient_list: Email addresses that will receive this mail.
+        subject: Subject of the email.
+        template: Name of the template to use.
+        settings: grouper.settings.Settings object grouper is run with
+        context: Context for the template library.
 
     Returns:
-        MIMEMultipart: Constructed object for the email message.
+        Constructed object for the email message.
     """
-    template_env = get_template_env()
+    template_engine = EmailTemplateEngine(settings)
     sender = settings.from_addr
 
     context["url"] = settings.url
 
-    text_template = template_env.get_template("email/{}.txt".format(template)).render(**context)
-    html_template = template_env.get_template("email/{}.html".format(template)).render(**context)
+    text_template = template_engine.get_template("email/{}.txt".format(template)).render(**context)
+    html_template = template_engine.get_template("email/{}.html".format(template)).render(
+        **context
+    )
 
     text = MIMEText(text_template, "plain", "utf-8")
     html = MIMEText(html_template, "html", "utf-8")
@@ -159,26 +190,23 @@ def get_email_from_template(recipient_list, subject, template, settings, context
     msg.attach(html)
 
     if "references_header" in context:
-        msg["References"] = msg["In-Reply-To"] = context["references_header"]
+        msg["References"] = msg["In-Reply-To"] = cast(str, context["references_header"])
 
     return msg
 
 
 def send_email_raw(settings, recipient_list, msg_raw):
-    # type: (Settings, List[str], str) -> None
+    # type: (Settings, Iterable[str], str) -> None
     """Send raw email (from string)
 
     Given some recipients and the string version of a message, this sends it immediately
     through the SMTP library.
 
     Args:
-        settings (Settings): Grouper Settings object for current run.
-        recipient_list (list(str)): Email addresses to send this email to.
-        msg_raw (str): The message to send. This should be the output of one of the methods
-            that generates a MIMEMultipart object.
-
-    Returns:
-        Nothing.
+        settings: Grouper Settings object for current run.
+        recipient_list: Email addresses to send this email to.
+        msg_raw: The message to send. This should be the output of one of the methods that
+            generates a MIMEMultipart object.
     """
     if not settings.send_emails:
         logging.debug(msg_raw)
@@ -200,14 +228,15 @@ def send_email_raw(settings, recipient_list, msg_raw):
 
 
 def notify_edge_expiration(settings, session, edge):
+    # type: (Settings, Session, GroupEdge) -> None
     """Send notification that an edge has expired.
 
     Handles email notification and audit logging.
 
     Args:
-        settings (Settings): Grouper Settings object for current run.
-        session (Session): Object for db session.
-        edge (GroupEdge): The expiring edge.
+        settings: Grouper Settings object for current run.
+        session: Object for db session.
+        edge: The expiring edge.
     """
     # TODO(herb): get around circular depdendencies; long term remove call to
     # send_async_email() from grouper.models
@@ -222,6 +251,7 @@ def notify_edge_expiration(settings, session, edge):
     group_name = edge.group.name
     if OBJ_TYPES_IDX[edge.member_type] == "User":
         user = User.get(session, pk=edge.member_pk)
+        assert user
         member_name = user.username
         recipients = [member_name]
         member_is_user = True
@@ -239,6 +269,7 @@ def notify_edge_expiration(settings, session, edge):
         "description": "{} expired out of the group".format(member_name),
     }
     if member_is_user:
+        assert user
         AuditLog.log(session, on_user_id=user.id, on_group_id=edge.group_id, **audit_data)
     else:
         # Make an audit log entry for both the subgroup and the parent group so that it will show
@@ -262,54 +293,18 @@ def notify_edge_expiration(settings, session, edge):
     )
 
 
-def notify_nonauditor_flagged(settings, session, edge):
-    """Send notification that a nonauditor in an audited group has had their membership
-    set to expire.
-
-    Handles email notification and audit logging.
-
-    Args:
-        settings (Settings): Grouper Settings object for current run.
-        session (Session): Object for db session.
-        edge (GroupEdge): The expiring edge.
-    """
-    # Pull data about the edge and the affected user
-    group_name = edge.group.name
-    assert OBJ_TYPES_IDX[edge.member_type] == "User"
-    user = User.get(session, pk=edge.member_pk)
-    member_name = user.username
-    recipients = [member_name]
-
-    audit_data = {
-        "action": "nonauditor_flagged",
-        "actor_id": user.id,
-        "description": "Flagged {} as nonauditor approver in audited group".format(member_name),
-    }
-    AuditLog.log(session, on_user_id=user.id, on_group_id=edge.group_id, **audit_data)
-
-    email_context = {"group_name": group_name, "member_name": member_name}
-    send_email(
-        session=session,
-        recipients=recipients,
-        subject="Membership in {} set to expire".format(group_name),
-        template="nonauditor",
-        settings=settings,
-        context=email_context,
-    )
-
-
 def notify_nonauditor_promoted(settings, session, user, auditors_group, group_names):
-    """Send notification that a nonauditor has been promoted to be an auditor
+    # type: (Settings, Session, User, Group, Set[str]) -> None
+    """Send notification that a nonauditor has been promoted to be an auditor.
 
     Handles email notification and audit logging.
 
     Args:
-        settings (Settings): Grouper Settings object for current run.
-        session (Session): Object for db session.
-        user (User): The user that has been promoted.
-        auditors_group (Group): The auditors group
-        group_names (set of str): The audited groups in which the user was previsouly
-            a non-auditor approver.
+        settings: Grouper Settings object for current run.
+        session: Object for db session.
+        user: The user that has been promoted.
+        auditors_group: The auditors group
+        group_names: The audited groups in which the user was previously a non-auditor approver.
     """
     member_name = user.username
     recipients = [member_name]

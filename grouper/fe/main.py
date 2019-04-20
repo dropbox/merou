@@ -16,7 +16,7 @@ from grouper.database import DbRefreshThread
 from grouper.error_reporting import get_sentry_client, setup_signal_handlers
 from grouper.fe.routes import HANDLERS
 from grouper.fe.settings import FrontendSettings
-from grouper.fe.template_util import get_template_env
+from grouper.fe.templating import FrontendTemplateEngine
 from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import set_global_plugin_proxy
@@ -42,12 +42,9 @@ def create_fe_application(
         "static_path": os.path.join(os.path.dirname(grouper.fe.__file__), "static"),
         "xsrf_cookies": xsrf_cookies,
     }
-    extra_globals = {"cdnjs_prefix": settings.cdnjs_prefix}
     handler_settings = {
         "session": session if session else Session,
-        "template_env": get_template_env(
-            deployment_name=deployment_name, extra_globals=extra_globals
-        ),
+        "template_engine": FrontendTemplateEngine(settings, deployment_name),
     }
     handlers = [(route, handler_class, handler_settings) for (route, handler_class) in HANDLERS]
     return GrouperApplication(handlers, **tornado_settings)

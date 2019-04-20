@@ -120,6 +120,7 @@ class BackgroundProcessor(object):
                     ", ".join(group_names)
                 )
                 user = User.get(session, name=username)
+                assert user
                 auditors_group.add_member(user, user, reason, status="actioned")
                 notify_nonauditor_promoted(
                     self.settings, session, user, auditors_group, group_names

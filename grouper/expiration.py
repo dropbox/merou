@@ -10,6 +10,7 @@ from grouper.settings import settings
 
 if TYPE_CHECKING:
     from datetime import datetime
+    from grouper.email_util import Context
     from grouper.model.base.session import Session
     from typing import Iterable, List, Optional, Tuple
 
@@ -65,7 +66,7 @@ def add_expiration(
         "group_name": group_name,
         "member_name": member_name,
         "member_is_user": member_is_user,
-    }
+    }  # type: Context
 
     send_async_email(
         session=session,

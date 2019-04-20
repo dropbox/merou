@@ -27,7 +27,7 @@ from grouper.repositories.factory import SingletonSessionFactory
 from grouper.user_permissions import user_permissions
 
 if TYPE_CHECKING:
-    from jinja2 import Environment
+    from grouper.fe.templating import FrontendTemplateEngine
     from typing import Any, Callable, Dict, List, Optional, Text
 
 
@@ -67,7 +67,7 @@ class GrouperHandler(RequestHandler):
         # type: (*Any, **Any) -> None
         self.graph = Graph()
         self.session = kwargs["session"]()  # type: Session
-        self.template_env = kwargs["template_env"]  # type: Environment
+        self.template_engine = kwargs["template_engine"]  # type: FrontendTemplateEngine
         self.plugins = get_plugin_proxy()
         session_factory = SingletonSessionFactory(self.session)
         self.usecase_factory = create_graph_usecase_factory(
@@ -90,12 +90,12 @@ class GrouperHandler(RequestHandler):
     def write_error(self, status_code, **kwargs):
         """Override for custom error page."""
         if status_code >= 500 and status_code < 600:
-            template = self.template_env.get_template("errors/5xx.html")
+            template = self.template_engine.get_template("errors/5xx.html")
             self.write(
                 template.render({"is_active": self.is_active, "static_url": self.static_url})
             )
         else:
-            template = self.template_env.get_template("errors/generic.html")
+            template = self.template_engine.get_template("errors/generic.html")
             self.write(
                 template.render(
                     {
@@ -219,7 +219,7 @@ class GrouperHandler(RequestHandler):
         return namespace
 
     def render_template(self, template_name, **kwargs):
-        template = self.template_env.get_template(template_name)
+        template = self.template_engine.get_template(template_name)
         content = template.render(kwargs)
         return content
 

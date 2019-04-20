@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING
 
 from grouper.constants import PERMISSION_CREATE
 from grouper.entities.permission import Permission
-from grouper.fe.template_util import print_date
+from grouper.fe.settings import FrontendSettings
+from grouper.fe.templating import FrontendTemplateEngine
 from itests.pages.permissions import PermissionsPage
 from itests.setup import frontend_server
 from tests.url_util import url
@@ -61,7 +62,10 @@ def create_test_data(setup):
 def test_list(tmpdir, setup, browser):
     # type: (LocalPath, SetupTest, Chrome) -> None
     permissions = create_test_data(setup)
-    expected_permissions = [(p.name, p.description, print_date(p.created_on)) for p in permissions]
+    template_engine = FrontendTemplateEngine(FrontendSettings(), "")
+    expected_permissions = [
+        (p.name, p.description, template_engine.print_date(p.created_on)) for p in permissions
+    ]
 
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
         browser.get(url(frontend_url, "/permissions"))
@@ -87,7 +91,7 @@ def test_list(tmpdir, setup, browser):
         page.click_sort_by_date()
         seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
         expected_permissions_sorted_by_time = [
-            (p.name, p.description, print_date(p.created_on))
+            (p.name, p.description, template_engine.print_date(p.created_on))
             for p in sorted(permissions, key=lambda p: p.created_on, reverse=True)
         ]
         assert seen_permissions == expected_permissions_sorted_by_time
@@ -106,7 +110,11 @@ def test_list_pagination(tmpdir, setup, browser):
     don't create more than 100 permissions for testing.
     """
     permissions = create_test_data(setup)
-    expected_permissions = [(p.name, p.description, print_date(p.created_on)) for p in permissions]
+    template_engine = FrontendTemplateEngine(FrontendSettings(), "")
+    expected_permissions = [
+        (p.name, p.description, template_engine.print_date(p.created_on)) for p in permissions
+    ]
+
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
         browser.get(url(frontend_url, "/permissions?limit=1&offset=1"))
         page = PermissionsPage(browser)

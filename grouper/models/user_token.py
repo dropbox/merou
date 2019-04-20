@@ -1,13 +1,12 @@
 import hashlib
 import hmac
 import os
-from datetime import datetime
 
 from six import PY2
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
-from grouper.models.base.model_base import Model
+from grouper.models.base.model_base import Model, utcnow_without_ms
 from grouper.models.user import User
 
 
@@ -29,7 +28,7 @@ class UserToken(Model):
     user_id = Column(Integer, ForeignKey("users.id"))
     name = Column(String(length=16), nullable=False)
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utcnow_without_ms, nullable=False)
     disabled_at = Column(DateTime, default=None, nullable=True)
 
     hashed_secret = Column(String(length=64), unique=True, nullable=False)

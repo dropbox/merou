@@ -1,8 +1,6 @@
-from datetime import datetime
-
 from sqlalchemy import Column, DateTime, Index, LargeBinary, String
 
-from grouper.models.base.model_base import Model
+from grouper.models.base.model_base import Model, utcnow_without_ms
 
 
 class PerfProfile(Model):
@@ -12,4 +10,4 @@ class PerfProfile(Model):
     uuid = Column(String(length=36), primary_key=True)
     plop_input = Column(LargeBinary(length=1000000), nullable=False)
     flamegraph_input = Column(LargeBinary(length=1000000), nullable=False)
-    created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_on = Column(DateTime, default=utcnow_without_ms, nullable=False)

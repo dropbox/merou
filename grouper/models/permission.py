@@ -1,10 +1,9 @@
 from collections import namedtuple
-from datetime import datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 
 from grouper.constants import MAX_NAME_LENGTH
-from grouper.models.base.model_base import Model
+from grouper.models.base.model_base import Model, utcnow_without_ms
 
 MappedPermission = namedtuple(
     "MappedPermission", ["permission", "audited", "argument", "groupname", "granted_on", "alias"]
@@ -23,7 +22,7 @@ class Permission(Model):
 
     name = Column(String(length=MAX_NAME_LENGTH), unique=True, nullable=False)
     description = Column(Text, nullable=False)
-    created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_on = Column(DateTime, default=utcnow_without_ms, nullable=False)
     _audited = Column("audited", Boolean, default=False, nullable=False)
     enabled = Column("enabled", Boolean, default=True, nullable=False)
 

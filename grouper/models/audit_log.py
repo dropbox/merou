@@ -1,11 +1,10 @@
-from datetime import datetime
 from enum import IntEnum
 
 from sqlalchemy import Column, DateTime, desc, ForeignKey, Integer, or_, String, Text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import relationship
 
-from grouper.models.base.model_base import Model
+from grouper.models.base.model_base import Model, utcnow_without_ms
 from grouper.plugin import get_plugin_proxy
 
 
@@ -36,7 +35,7 @@ class AuditLog(Model):
     __tablename__ = "audit_log"
 
     id = Column(Integer, primary_key=True)
-    log_time = Column(DateTime, default=datetime.utcnow, nullable=False)
+    log_time = Column(DateTime, default=utcnow_without_ms, nullable=False)
 
     # The actor is the person who took an action.
     actor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -82,7 +81,6 @@ class AuditLog(Model):
         """
         entry = AuditLog(
             actor_id=actor_id,
-            log_time=datetime.utcnow(),
             action=action,
             description=description,
             on_user_id=on_user_id if on_user_id else None,

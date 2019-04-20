@@ -58,8 +58,6 @@ class AuditLogRepository(object):
         are ported to this service.
         """
         actor = self._id_for_user(authorization.actor)
-        if not date:
-            date = datetime.utcnow()
 
         # We currently have no way to log audit log entries for objects that no longer exist.  This
         # should eventually be fixed via a schema change to use strings for all fields of the audit
@@ -70,7 +68,6 @@ class AuditLogRepository(object):
 
         entry = AuditLog(
             actor_id=actor,
-            log_time=date,
             action=action,
             description=description,
             on_user_id=user,
@@ -78,6 +75,8 @@ class AuditLogRepository(object):
             on_permission_id=permission,
             category=int(category),
         )
+        if date:
+            entry.log_time = date
         entry.add(self.session)
 
         # This should happen at the service layer, not the repository layer, but the API for the

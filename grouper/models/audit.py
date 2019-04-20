@@ -1,11 +1,9 @@
-from datetime import datetime
-
 from six import itervalues
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 
 from grouper.models.audit_member import AuditMember
-from grouper.models.base.model_base import Model
+from grouper.models.base.model_base import Model, utcnow_without_ms
 
 
 class Audit(Model):
@@ -27,7 +25,7 @@ class Audit(Model):
 
     # If this audit is complete and when it started/ended
     complete = Column(Boolean, default=False, nullable=False)
-    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    started_at = Column(DateTime, default=utcnow_without_ms, nullable=False)
     ends_at = Column(DateTime, nullable=False)
 
     # Tracks the last time we emailed the responsible parties of this audit

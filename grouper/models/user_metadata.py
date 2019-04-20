@@ -1,9 +1,7 @@
-from datetime import datetime
-
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
-from grouper.models.base.model_base import Model
+from grouper.models.base.model_base import Model, utcnow_without_ms
 
 
 class UserMetadata(Model):
@@ -18,4 +16,4 @@ class UserMetadata(Model):
 
     data_key = Column(String(length=64), nullable=False)
     data_value = Column(String(length=64), nullable=False)
-    last_modified = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_modified = Column(DateTime, default=utcnow_without_ms, nullable=False)

@@ -1,9 +1,7 @@
-from datetime import datetime
-
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
-from grouper.models.base.model_base import Model
+from grouper.models.base.model_base import Model, utcnow_without_ms
 
 
 class PublicKey(Model):
@@ -20,5 +18,5 @@ class PublicKey(Model):
     public_key = Column(Text, nullable=False)
     fingerprint = Column(String(length=64), nullable=False, unique=True)
     fingerprint_sha256 = Column(String(length=64), nullable=False, unique=True)
-    created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_on = Column(DateTime, default=utcnow_without_ms, nullable=False)
     comment = Column(String(length=255))

@@ -1,11 +1,10 @@
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from grouper.constants import MAX_NAME_LENGTH
-from grouper.models.base.model_base import Model
+from grouper.models.base.model_base import Model, utcnow_without_ms
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
@@ -37,7 +36,7 @@ class ServiceAccountPermissionMap(Model):
     service_account = relationship("ServiceAccount", foreign_keys=[service_account_id])
 
     argument = Column(String(length=MAX_NAME_LENGTH), nullable=True)
-    granted_on = Column(DateTime, default=datetime.utcnow, nullable=False)
+    granted_on = Column(DateTime, default=utcnow_without_ms, nullable=False)
 
     @staticmethod
     def get(session, id=None):

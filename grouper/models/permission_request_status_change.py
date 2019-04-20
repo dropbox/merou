@@ -1,10 +1,8 @@
-from datetime import datetime
-
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 
 from grouper.models.base.constants import REQUEST_STATUS_CHOICES
-from grouper.models.base.model_base import Model
+from grouper.models.base.model_base import Model, utcnow_without_ms
 from grouper.models.comment import CommentObjectMixin
 
 
@@ -24,4 +22,4 @@ class PermissionRequestStatusChange(Model, CommentObjectMixin):
     from_status = Column(Enum(*REQUEST_STATUS_CHOICES))
     to_status = Column(Enum(*REQUEST_STATUS_CHOICES), nullable=False)
 
-    change_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    change_at = Column(DateTime, default=utcnow_without_ms, nullable=False)

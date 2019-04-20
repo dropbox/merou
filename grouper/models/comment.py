@@ -1,11 +1,8 @@
-from datetime import datetime
-
 from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, Text
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 
 from grouper.models.base.constants import OBJ_TYPES
-from grouper.models.base.model_base import Model
+from grouper.models.base.model_base import Model, utcnow_without_ms
 
 
 class CommentObjectMixin(object):
@@ -35,5 +32,5 @@ class Comment(Model):
     comment = Column(Text, nullable=False)
 
     created_on = Column(
-        DateTime, default=datetime.utcnow, onupdate=func.current_timestamp(), nullable=False
+        DateTime, default=utcnow_without_ms, onupdate=utcnow_without_ms, nullable=False
     )

@@ -1,5 +1,20 @@
+from datetime import datetime
+
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import object_session
+
+
+def utcnow_without_ms():
+    # type: () -> datetime
+    """Return the current time without microseconds.
+
+    This is used as a default value for creation dates for database rows.  Trying to store
+    microseconds in the database has varying results depending on the database backend (MySQL
+    strips them, SQLite stores them), which in turn can cause test failures because the
+    pre-committed object and the object read from the database don't match.  Grouper has no need of
+    sub-second timestamp accuracy, so simplify things by using this function.
+    """
+    return datetime.utcnow().replace(microsecond=0)
 
 
 class _Model(object):

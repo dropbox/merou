@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import label
 
 from grouper.models.base.constants import OBJ_TYPES_IDX, REQUEST_STATUS_CHOICES
-from grouper.models.base.model_base import Model
+from grouper.models.base.model_base import Model, utcnow_without_ms
 from grouper.models.base.session import flush_transaction
 from grouper.models.comment import Comment, CommentObjectMixin
 from grouper.models.counter import Counter
@@ -40,7 +40,7 @@ class Request(Model, CommentObjectMixin):
     edge_id = Column(Integer, ForeignKey("group_edges.id"), nullable=False)
     edge = relationship("GroupEdge", backref="requests")
 
-    requested_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    requested_at = Column(DateTime, default=utcnow_without_ms, nullable=False)
 
     status = Column(Enum(*REQUEST_STATUS_CHOICES), default="pending", nullable=False)
 

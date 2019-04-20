@@ -1,13 +1,12 @@
 import crypt
 import hmac
 import os
-from datetime import datetime
 
 from six import PY2
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
-from grouper.models.base.model_base import Model
+from grouper.models.base.model_base import Model, utcnow_without_ms
 
 
 def _make_salt():
@@ -28,7 +27,7 @@ class UserPassword(Model):
     user_id = Column(Integer, ForeignKey("users.id"))
     name = Column(String(length=16), nullable=False)
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utcnow_without_ms, nullable=False)
     disabled_at = Column(DateTime, default=None, nullable=True)
 
     _hashed_secret = Column(Text, nullable=False)

@@ -1,10 +1,8 @@
-from datetime import datetime
-
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from grouper.constants import MAX_NAME_LENGTH
-from grouper.models.base.model_base import Model
+from grouper.models.base.model_base import Model, utcnow_without_ms
 
 
 class PermissionMap(Model):
@@ -28,7 +26,7 @@ class PermissionMap(Model):
     group = relationship("Group", foreign_keys=[group_id])
 
     argument = Column(String(length=MAX_NAME_LENGTH), nullable=True)
-    granted_on = Column(DateTime, default=datetime.utcnow, nullable=False)
+    granted_on = Column(DateTime, default=utcnow_without_ms, nullable=False)
 
     @staticmethod
     def get(session, id=None):

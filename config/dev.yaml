@@ -196,7 +196,7 @@ fe:
     # prefer.
     #
     # Type: str
-    cdnjs_prefix: "//cdnjs.cloudflare.com"
+    cdnjs_prefix: "https://cdnjs.cloudflare.com"
 
     # Passing debug option down Tornado. Useful for development to automatically
     # reload code.

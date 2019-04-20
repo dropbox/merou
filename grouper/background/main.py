@@ -57,7 +57,7 @@ def start_processor(args, settings, sentry_client):
 
     # setup database
     logging.debug("configure database session")
-    Session.configure(bind=get_db_engine(settings.database_url))
+    Session.configure(bind=get_db_engine(settings.database))
 
     background = BackgroundProcessor(settings, sentry_client)
     background.run()

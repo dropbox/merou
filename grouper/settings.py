@@ -1,9 +1,7 @@
 import logging
 import os
 import subprocess
-import threading
 import time
-from random import SystemRandom
 from typing import TYPE_CHECKING
 
 import pytz
@@ -44,10 +42,6 @@ class Settings(object):
     Grouper application with its own settings will subclass this class and add additional default
     values and configuration of what sections of the settings file to load.
     """
-
-    # Special attributes that are synthesized from other settings and therefore cannot be set in a
-    # configuration file.
-    SPECIAL_SETTINGS = ["database_url", "timezone_object"]
 
     # If running the database_source command fails, retry up to DB_URL_RETRIES times, pausing
     # DB_URL_RETRY_DELAY seconds between attempt.
@@ -95,16 +89,8 @@ class Settings(object):
         self.timezone = "UTC"
         self.url = "http://127.0.0.1:8888"
 
-        # This is kept in sync with the str timezone attribute.
-        self._timezone_object = pytz.timezone("UTC")
-
-        # Cached information from running the database_source command.
-        self._database_url = ""
-        self._database_url_lock = threading.Lock()
-        self._random = SystemRandom()
-
     @property
-    def database_url(self):
+    def database(self):
         # type: () -> str
         """Return the configured database URL.
 
@@ -112,22 +98,30 @@ class Settings(object):
         URL.  Otherwise, database_source must be set and be the path to a program that will be run
         to determine the database URL.
 
-        The database_source program will be run every time the database_url attribute is accessed.
+        The database_source program will be run every time the database attribute is accessed.
         Caching doesn't seem worthwhile given that it is only accessed during process startup, on
         each loop of a periodic background thread, or after a database error.
         """
-        if self.database:
-            return self.database
-        if not self.database and not self.database_source:
+        if self._database:
+            return self._database
+        elif not self.database_source:
             raise InvalidSettingsError("Settings not initialized from a configuration file")
-        with self._database_url_lock:
-            self._refresh_database_url()
-            return self._database_url
+        return self._database_source_output()
+
+    @database.setter
+    def database(self, url):
+        # type: (str) -> None
+        self._database = url
 
     @property
-    def timezone_object(self):
+    def timezone(self):
         # type: () -> BaseTzInfo
-        return self._timezone_object
+        return self._timezone
+
+    @timezone.setter
+    def timezone(self, timezone):
+        # type: (str) -> None
+        self._timezone = pytz.timezone(timezone)
 
     def update_from_config(self, filename=None, section=None):
         # type: (Optional[str], Optional[str]) -> None
@@ -151,38 +145,36 @@ class Settings(object):
             settings.update(data.get(section, {}))
 
         # Update the stored attributes from the configuration file, skipping any setting that
-        # doesn't correspond to an attribute on the settings object.  Update the timezone object if
-        # needed.
+        # doesn't correspond to an attribute on the settings object.  The check special-cases the
+        # database key because hasattr appears to run the property method, which may throw an
+        # exception.
         for key, value in iteritems(settings):
             key = key.lower()
-            if key.startswith("_") or key in self.SPECIAL_SETTINGS:
+            if key.startswith("_"):
                 self._logger.warning("Ignoring invalid setting %s", key)
-                continue
-            if not hasattr(self, key):
+            elif not (key == "database" or hasattr(self, key)):
                 self._logger.debug("Ignoring unknown setting %s", key)
-                continue
-            setattr(self, key, value)
-            if key == "timezone":
-                self._timezone_object = pytz.timezone(self.timezone)
+            else:
+                setattr(self, key, value)
 
         # Ensure the settings are valid.
-        if not self.database and not self.database_source:
+        if not self._database and not self.database_source:
             msg = "Neither database nor database_source are set in {}".format(filename)
             raise InvalidSettingsError(msg)
 
-    def _refresh_database_url(self):
-        # type: () -> None
+    def _database_source_output(self):
+        # type: () -> str
         """Run the database_source command to get a new database URL."""
         retry = 0
         while True:
             try:
                 self._logger.debug("Getting database URL by running %s", self.database_source)
                 url = subprocess.check_output([self.database_source], stderr=subprocess.STDOUT)
-                self._database_url = url.strip()
-                if not self._database_url:
+                url = url.strip()
+                if not url:
                     raise DatabaseSourceException("Returned URL is empty")
-                self._logger.debug("New database URL is %s", self._database_url)
-                return
+                self._logger.debug("New database URL is %s", url)
+                return url
             except (DatabaseSourceException, subprocess.CalledProcessError) as e:
                 self._logger.exception("Running %s failed", self.database_source)
                 retry += 1

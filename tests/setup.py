@@ -77,6 +77,11 @@ class SetupTest(object):
 
         self.initialize_database()
 
+        # Reinitialize the global plugin proxy with an empty set of plugins in case a previous test
+        # initialized plugins.  This can go away once a plugin proxy is injected into everything
+        # that needs it instead of maintained as a global.
+        set_global_plugin_proxy(PluginProxy([]))
+
         self.session = SessionFactory(self.settings).create_session()
         self.graph = GroupGraph()
         self.repository_factory = GraphRepositoryFactory(
@@ -89,11 +94,6 @@ class SetupTest(object):
     def initialize_database(self):
         # type: () -> Session
         schema_repository = SchemaRepository(self.settings)
-
-        # Reinitialize the global plugin proxy with an empty set of plugins in case a previous test
-        # initialized plugins.  This can go away once a plugin proxy is injected into everything
-        # that needs it instead of maintained as a global.
-        set_global_plugin_proxy(PluginProxy([]))
 
         # If using a persistent database, clear the database first.
         if "MEROU_TEST_DATABASE" in os.environ:

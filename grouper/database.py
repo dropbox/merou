@@ -38,11 +38,11 @@ class DbRefreshThread(Thread):
 
     def run(self):
         # type () -> None
-        initial_url = self.settings.database_url
+        initial_url = self.settings.database
         while True:
             self.logger.debug("Updating Graph from Database.")
             try:
-                if self.settings.database_url != initial_url:
+                if self.settings.database != initial_url:
                     self.crash()
                 with closing(Session()) as session:
                     self.graph.update_from_db(session)

@@ -43,7 +43,7 @@ class SessionFactory(object):
 
     def create_session(self):
         # type: () -> Session
-        db_engine = get_db_engine(self.settings.database_url)
+        db_engine = get_db_engine(self.settings.database)
         Session.configure(bind=db_engine)
         return Session()
 

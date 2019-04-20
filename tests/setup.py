@@ -22,8 +22,6 @@ service and repository layers.
 
 import os
 from contextlib import contextmanager
-from datetime import datetime
-from time import time
 from typing import TYPE_CHECKING
 
 from grouper.entities.group import GroupJoinPolicy
@@ -52,6 +50,7 @@ from grouper.usecases.factory import UseCaseFactory
 from tests.path_util import db_url
 
 if TYPE_CHECKING:
+    from datetime import datetime
     from grouper.models.base.session import Session
     from py.local import LocalPath
     from typing import Iterator, Optional
@@ -127,23 +126,12 @@ class SetupTest(object):
         self, name, description="", audited=False, enabled=True, created_on=None
     ):
         # type: (str, str, bool, bool, Optional[datetime]) -> None
-        """Create a permission, does nothing if it already exists.
-
-        Avoid milliseconds in the creation timestamp since they behave differently in SQLite (which
-        preserves them) and MySQL (which drops them).
-        """
-        if Permission.get(self.session, name=name):
-            return
-        if not created_on:
-            created_on = datetime.utcfromtimestamp(int(time()))
-        permission = Permission(
-            name=name,
-            description=description,
-            _audited=audited,
-            enabled=enabled,
-            created_on=created_on,
-        )
-        permission.add(self.session)
+        """Create a permission, does nothing if it already exists."""
+        permission_repository = self.repository_factory.create_permission_repository()
+        if not permission_repository.get_permission(name):
+            permission_repository.create_permission(
+                name, description, audited, enabled, created_on
+            )
 
     def create_user(self, name):
         # type: (str) -> None

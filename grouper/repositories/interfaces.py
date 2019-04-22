@@ -80,8 +80,13 @@ class PermissionGrantRepository(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
-    def revoke_inactive_group_grants_for_permission(self, name):
+    def revoke_all_group_grants(self, permission):
         # type: (str) -> List[GroupPermissionGrant]
+        pass
+
+    @abstractmethod
+    def revoke_all_service_account_grants(self, permission):
+        # type: (str) -> List[ServiceAccountPermissionGrant]
         pass
 
     @abstractmethod

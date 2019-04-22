@@ -37,28 +37,27 @@ class PermissionService(PermissionInterface):
             if not self.permission_exists(name):
                 self.create_permission(name, description)
 
-    def disable_permission(self, name, authorization):
+    def disable_permission_and_revoke_grants(self, name, authorization):
         # type: (str, Authorization) -> None
         """Disable a permission.
 
         An invariant for permissions is that disabled permissions are not granted to anyone.  The
-        usecase is responsible for checking whether a permission is granted to any active groups or
-        service accounts before calling this service method, forcing the user disabling the
-        permission to remove those grants first.  However, grants to disabled groups are invisible
-        (by design) and retained only to be able to re-enable the group with its previous set of
-        permissions.  Semantically, it makes sense for those grants to quietly disappear without
-        explicit action.
-
-        Therefore, this service call first deletes all grants of the permission to disabled groups
-        before disabling the underlying permission.
-
-        All permission grants for a service account are deleted when that service account is
-        disabled, so this issue doesn't apply for service accounts.
+        service therefore deletes all existing grants of that permission when disabled.  The
+        usecase is responsible for checking if valid grants exist and rejecting the request or
+        showing more UI prompts if disabling a permission with active grants is inappropriate.
         """
-        grants = self.permission_grant_repository.revoke_inactive_group_grants_for_permission(name)
-        for grant in grants:
+        group_grants = self.permission_grant_repository.revoke_all_group_grants(name)
+        for group_grant in group_grants:
             self.audit_log.log_revoke_group_permission_grant(
-                grant.group, grant.permission, grant.argument, authorization
+                group_grant.group, group_grant.permission, group_grant.argument, authorization
+            )
+        service_grants = self.permission_grant_repository.revoke_all_service_account_grants(name)
+        for service_grant in service_grants:
+            self.audit_log.log_revoke_service_account_permission_grant(
+                service_grant.service_account,
+                service_grant.permission,
+                service_grant.argument,
+                authorization,
             )
         self.permission_repository.disable_permission(name)
         self.audit_log.log_disable_permission(name, authorization)

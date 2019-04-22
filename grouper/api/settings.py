@@ -23,7 +23,7 @@ class ApiSettings(Settings):
         super(ApiSettings, self).__init__()
 
         # Keep attributes here in the same order as in config/dev.yaml.
-        self.address = "127.0.0.1"
+        self.address = None  # type: Optional[str]
         self.debug = False
         self.num_processes = 1
         self.port = 8990

@@ -5,7 +5,9 @@ from dateutil.relativedelta import relativedelta
 from jinja2 import Environment, PackageLoader, select_autoescape
 from pytz import UTC
 
+from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.fe.settings import settings
+from grouper.models.base.constants import OBJ_TYPES_IDX
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Dict, Optional
@@ -95,11 +97,6 @@ def get_template_env(
     extra_globals=None,  # type: Optional[Dict[str, Any]]
 ):
     # type: (...) -> Environment
-    # TODO(herb): get around circular depdendencies; long term remove call to
-    # send_async_email() from grouper.models
-    from grouper.models.base.constants import OBJ_TYPES_IDX
-    from grouper.models.group_edge import GROUP_EDGE_ROLES
-
     filters = {
         "print_date": print_date,
         "expires_when_str": expires_when_str,

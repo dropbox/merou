@@ -3,10 +3,11 @@ from typing import TYPE_CHECKING
 
 from six import iteritems
 
+from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
-from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
+from grouper.models.group_edge import GroupEdge
 from grouper.models.request import Request
 from grouper.models.request_status_change import RequestStatusChange
 from grouper.plugin import get_plugin_proxy

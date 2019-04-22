@@ -5,6 +5,7 @@ from six import iteritems
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, SmallInteger
 from sqlalchemy.orm import relationship
 
+from grouper.entities.group_edge import GROUP_EDGE_ROLES, OWNER_ROLE_INDICES
 from grouper.expiration import add_expiration, cancel_expiration
 from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.base.model_base import Model
@@ -12,23 +13,6 @@ from grouper.models.user import User
 
 if TYPE_CHECKING:
     from typing import Any, Dict
-
-# Note: the order of the GROUP_EDGE_ROLES tuple matters! New roles must be
-# appended!  When adding a new role, be sure to update the regression test.
-GROUP_EDGE_ROLES = (
-    "member",  # Belongs to the group. Nothing more.
-    "manager",  # Make changes to the group / Approve requests.
-    "owner",  # Same as manager plus enable/disable group and make Users owner.
-    "np-owner",  # Same as owner but don't inherit permissions.
-)
-
-OWNER_ROLE_INDICES = {GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.index("np-owner")}
-
-APPROVER_ROLE_INDICES = {
-    GROUP_EDGE_ROLES.index("owner"),
-    GROUP_EDGE_ROLES.index("np-owner"),
-    GROUP_EDGE_ROLES.index("manager"),
-}
 
 
 class GroupEdge(Model):

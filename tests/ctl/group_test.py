@@ -3,9 +3,9 @@ from datetime import date, timedelta
 
 from mock import patch
 
+from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
-from grouper.models.group_edge import GROUP_EDGE_ROLES
 from grouper.plugin.proxy import PluginProxy
 from plugins.group_ownership_policy import GroupOwnershipPolicyPlugin
 from tests.ctl_util import call_main

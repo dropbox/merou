@@ -3,12 +3,12 @@ from typing import TYPE_CHECKING
 
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.email_util import send_email
+from grouper.entities.group_edge import APPROVER_ROLE_INDICES, GROUP_EDGE_ROLES
 from grouper.fe.forms import GroupJoinForm
 from grouper.fe.settings import settings
 from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group, GROUP_JOIN_CHOICES
-from grouper.models.group_edge import APPROVER_ROLE_INDICES, GROUP_EDGE_ROLES
 from grouper.models.user import User
 from grouper.user_group import get_groups_by_user
 

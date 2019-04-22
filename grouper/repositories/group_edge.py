@@ -3,9 +3,10 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import or_
 
+from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.group import Group
-from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
+from grouper.models.group_edge import GroupEdge
 from grouper.models.user import User
 from grouper.repositories.interfaces import GroupEdgeRepository
 

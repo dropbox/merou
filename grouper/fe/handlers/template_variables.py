@@ -1,12 +1,12 @@
 from datetime import datetime
 
 from grouper.constants import USER_METADATA_SHELL_KEY
+from grouper.entities.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.fe.util import Alert
 from grouper.graph import NoSuchGroup, NoSuchUser
 from grouper.group_requests import count_requests_by_group
 from grouper.group_service_account import get_service_accounts
 from grouper.models.audit_member import AUDIT_STATUS_CHOICES
-from grouper.models.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.permissions import get_owner_arg_list, get_pending_request_by_group, get_requests
 from grouper.public_key import get_public_keys_of_user
 from grouper.role_user import can_manage_role_user

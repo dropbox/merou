@@ -1,8 +1,8 @@
+from grouper.entities.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.fe.util import GrouperHandler
 from grouper.group_requests import get_requests_by_group
 from grouper.models.base.constants import REQUEST_STATUS_CHOICES
 from grouper.models.group import Group
-from grouper.models.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.models.request import Request
 from grouper.user import user_role, user_role_index
 

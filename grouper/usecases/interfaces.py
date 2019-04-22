@@ -96,13 +96,8 @@ class GroupInterface(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
-    def initialize_administrator_group(self):
-        # type: () -> None
-        pass
-
-    @abstractmethod
-    def initialize_auditors_group(self):
-        # type: () -> None
+    def is_valid_group_name(self, name):
+        # type: (str) -> bool
         pass
 
 

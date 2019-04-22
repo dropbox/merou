@@ -8,6 +8,7 @@ from grouper.usecases.view_permission import ViewPermission
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
+    from grouper.settings import Settings
     from grouper.usecases.convert_user_to_service_account import ConvertUserToServiceAccountUI
     from grouper.usecases.disable_permission import DisablePermissionUI
     from grouper.usecases.list_permissions import ListPermissionsUI
@@ -17,8 +18,9 @@ if TYPE_CHECKING:
 class UseCaseFactory(object):
     """Create use cases with dependency injection."""
 
-    def __init__(self, service_factory):
-        # type: (Session) -> None
+    def __init__(self, settings, service_factory):
+        # type: (Settings, Session) -> None
+        self.settings = settings
         self.service_factory = service_factory
 
     def create_convert_user_to_service_account_usecase(self, actor, ui):
@@ -56,7 +58,7 @@ class UseCaseFactory(object):
         permission_service = self.service_factory.create_permission_service()
         transaction_service = self.service_factory.create_transaction_service()
         return InitializeSchema(
-            schema_service, group_service, permission_service, transaction_service
+            self.settings, schema_service, group_service, permission_service, transaction_service
         )
 
     def create_view_permission_usecase(self, ui):

@@ -11,7 +11,6 @@ from grouper.services.user import UserService
 
 if TYPE_CHECKING:
     from grouper.repositories.interfaces import RepositoryFactory
-    from grouper.settings import Settings
     from grouper.usecases.interfaces import (
         AuditLogInterface,
         GroupInterface,
@@ -27,9 +26,8 @@ if TYPE_CHECKING:
 class ServiceFactory(object):
     """Construct backend services."""
 
-    def __init__(self, settings, repository_factory):
-        # type: (Settings, RepositoryFactory) -> None
-        self.settings = settings
+    def __init__(self, repository_factory):
+        # type: (RepositoryFactory) -> None
         self.repository_factory = repository_factory
 
     def create_audit_log_service(self):
@@ -47,7 +45,7 @@ class ServiceFactory(object):
         # type: () -> GroupInterface
         group_repository = self.repository_factory.create_group_repository()
         permission_grant_repository = self.repository_factory.create_permission_grant_repository()
-        return GroupService(self.settings, group_repository, permission_grant_repository)
+        return GroupService(group_repository, permission_grant_repository)
 
     def create_permission_service(self):
         # type: () -> PermissionInterface

@@ -23,7 +23,7 @@ class FrontendSettings(Settings):
         super(FrontendSettings, self).__init__()
 
         # Keep attributes here in the same order as in config/dev.yaml.
-        self.address = "127.0.0.1"
+        self.address = None  # type: Optional[str]
         self.port = 8989
         self.cdnjs_prefix = "//cdnjs.cloudflare.com"
         self.debug = False

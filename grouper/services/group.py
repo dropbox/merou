@@ -6,7 +6,8 @@ from grouper.entities.group import GroupJoinPolicy, InvalidGroupNameException
 from grouper.usecases.interfaces import GroupInterface
 
 if TYPE_CHECKING:
-    from grouper.repositories.interfaces import GroupRepository, PermissionGrantRepository
+    from grouper.repositories.group import GroupRepository
+    from grouper.repositories.interfaces import PermissionGrantRepository
 
 
 class GroupService(GroupInterface):

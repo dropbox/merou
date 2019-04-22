@@ -2,14 +2,13 @@ from typing import TYPE_CHECKING
 
 from grouper.entities.group import Group, GroupJoinPolicy
 from grouper.models.group import Group as SQLGroup
-from grouper.repositories.interfaces import GroupRepository
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
     from typing import Optional
 
 
-class SQLGroupRepository(GroupRepository):
+class GroupRepository(object):
     """Storage layer for groups."""
 
     def __init__(self, session):

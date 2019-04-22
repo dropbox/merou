@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 from six import with_metaclass
 
 if TYPE_CHECKING:
-    from grouper.entities.group import Group, GroupJoinPolicy
     from grouper.entities.pagination import PaginatedList, Pagination
     from grouper.entities.permission import Permission
     from grouper.entities.permission_grant import (
@@ -14,6 +13,7 @@ if TYPE_CHECKING:
     )
     from grouper.repositories.audit_log import AuditLogRepository
     from grouper.repositories.checkpoint import CheckpointRepository
+    from grouper.repositories.group import GroupRepository
     from grouper.repositories.group_request import GroupRequestRepository
     from grouper.repositories.schema import SchemaRepository
     from grouper.repositories.service_account import ServiceAccountRepository
@@ -21,20 +21,6 @@ if TYPE_CHECKING:
     from grouper.repositories.user import UserRepository
     from grouper.usecases.list_permissions import ListPermissionsSortKey
     from typing import List, Optional
-
-
-class GroupRepository(with_metaclass(ABCMeta, object)):
-    """Abstract base class for group repositories."""
-
-    @abstractmethod
-    def create_group(self, name, description, join_policy):
-        # type: (str, str, GroupJoinPolicy) -> None
-        pass
-
-    @abstractmethod
-    def get_group(self, name):
-        # type: (str) -> Optional[Group]
-        pass
 
 
 class GroupEdgeRepository(with_metaclass(ABCMeta, object)):

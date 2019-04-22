@@ -4,7 +4,7 @@ from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
 from grouper.repositories.audit_log import AuditLogRepository
 from grouper.repositories.checkpoint import CheckpointRepository
-from grouper.repositories.group import SQLGroupRepository
+from grouper.repositories.group import GroupRepository
 from grouper.repositories.group_edge import GraphGroupEdgeRepository, SQLGroupEdgeRepository
 from grouper.repositories.group_request import GroupRequestRepository
 from grouper.repositories.interfaces import RepositoryFactory
@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from grouper.plugin.proxy import PluginProxy
     from grouper.repositories.interfaces import (
         GroupEdgeRepository,
-        GroupRepository,
         PermissionRepository,
         PermissionGrantRepository,
     )
@@ -119,7 +118,7 @@ class GraphRepositoryFactory(RepositoryFactory):
 
     def create_group_repository(self):
         # type: () -> GroupRepository
-        return SQLGroupRepository(self.session)
+        return GroupRepository(self.session)
 
     def create_group_request_repository(self):
         # type: () -> GroupRequestRepository
@@ -194,7 +193,7 @@ class SQLRepositoryFactory(RepositoryFactory):
 
     def create_group_repository(self):
         # type: () -> GroupRepository
-        return SQLGroupRepository(self.session)
+        return GroupRepository(self.session)
 
     def create_group_request_repository(self):
         # type: () -> GroupRequestRepository

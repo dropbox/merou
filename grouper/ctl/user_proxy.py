@@ -12,6 +12,7 @@ from grouper.ctl.base import CtlCommand
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
+    from grouper.ctl.settings import CtlSettings
     from urllib.request import _HTTPResponse, _UrlopenRet
     from typing import Dict, Tuple, Type
 
@@ -36,12 +37,13 @@ class ProxyServer(HTTPServer, object):
     based on the implementation in mrproxy.
     """
 
-    def __init__(self, address, handler, backend_port, username):
-        # type: (Tuple[str, int], Type[BaseHTTPRequestHandler], int, str) -> None
+    def __init__(self, settings, address, handler_class, backend_port, username):
+        # type: (CtlSettings, Tuple[str, int], Type[BaseHTTPRequestHandler], int, str) -> None
         self.backend_port = backend_port
+        self.user_auth_header = settings.user_auth_header
         self.username = username
         self.opener = build_opener(NoRedirectHandler)
-        super(ProxyServer, self).__init__(address, handler)
+        super(ProxyServer, self).__init__(address, handler_class)
 
 
 class ProxyHandler(BaseHTTPRequestHandler):
@@ -83,7 +85,8 @@ class ProxyHandler(BaseHTTPRequestHandler):
     def updated_headers(self):
         # type: () -> Dict[str, str]
         headers = {h: str(v) for h, v in self.headers.items()}
-        headers["X-Grouper-User"] = cast(ProxyServer, self.server).username
+        user_auth_header = cast(ProxyServer, self.server).user_auth_header
+        headers[user_auth_header] = cast(ProxyServer, self.server).username
         return headers
 
     def do_GET(self):
@@ -116,6 +119,10 @@ class UserProxyCommand(CtlCommand):
         )
         parser.add_argument("username", nargs="?", default=None)
 
+    def __init__(self, settings):
+        # type: (CtlSettings) -> None
+        self.settings = settings
+
     def run(self, args):
         # type: (Namespace) -> None
         username = args.username
@@ -123,8 +130,13 @@ class UserProxyCommand(CtlCommand):
             username = getpass.getuser()
             logging.debug("No username provided, using (%s)", username)
 
-        listen_address = (args.listen_host, args.listen_port)
-        server = ProxyServer(listen_address, ProxyHandler, args.backend_port, args.username)
+        server = ProxyServer(
+            settings=self.settings,
+            address=(args.listen_host, args.listen_port),
+            handler_class=ProxyHandler,
+            backend_port=args.backend_port,
+            username=args.username,
+        )
 
         logging.info(
             "Starting user_proxy on %s:%d with user %s",

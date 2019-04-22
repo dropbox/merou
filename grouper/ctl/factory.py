@@ -72,4 +72,4 @@ class CtlCommandFactory(object):
 
     def construct_user_proxy_command(self):
         # type: () -> UserProxyCommand
-        return UserProxyCommand()
+        return UserProxyCommand(self.settings)

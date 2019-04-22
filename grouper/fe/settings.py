@@ -36,7 +36,6 @@ class FrontendSettings(Settings):
             [["/bin/false", "Shell support in Grouper has not been setup by the administrator"]],
         )
         self.site_docs = []  # type: List[Dict[str, str]]
-        self.user_auth_header = "X-Grouper-User"
 
     def update_from_config(self, filename=None, section="fe"):
         # type: (Optional[str], Optional[str]) -> None

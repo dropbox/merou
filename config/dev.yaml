@@ -111,6 +111,14 @@ common:
     # Type: str
     url: "http://127.0.0.1:8888"
 
+    # Header that contains the authenticated username of a Grouper user to
+    # the frontend server. This must be provided by an upstream web proxy
+    # that does authentication. Grouper itself has no mechanism to
+    # authenticate users.
+    #
+    # Type: str
+    user_auth_header: "X-Grouper-User"
+
 api:
     # The IP address to listen to requests on, or leave empty to listen to all
     # addresses.
@@ -242,10 +250,3 @@ fe:
     #
     # Type: List[Dict[str, str]]
     site_docs: []
-
-    # Header that contains the authenticated username of a Grouper user. This
-    # must be provided by an upstream web proxy that does authentication.
-    # Grouper itself has no mechanism to authenticate users.
-    #
-    # Type: str
-    user_auth_header: "X-Grouper-User"

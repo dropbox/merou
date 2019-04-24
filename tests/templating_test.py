@@ -2,8 +2,8 @@ from datetime import datetime
 
 from pytz import UTC
 
-from grouper.fe.template_util import expires_when_str, long_ago_str, print_date
-from grouper.settings import set_global_settings, Settings
+from grouper.settings import Settings
+from grouper.templating import BaseTemplateEngine
 
 
 def mock_utcnow():
@@ -13,7 +13,7 @@ def mock_utcnow():
 
 def test_expires_when_str():
     # type: () -> None
-    assert expires_when_str(None) == "Never", "no datetime means no expires"
+    assert BaseTemplateEngine.expires_when_str(None) == "Never", "no datetime means no expires"
 
     for date, expected, msg in [
         (datetime(2015, 8, 11, 11, 00, 00, 0), "Expired", "long before should expire"),
@@ -25,8 +25,11 @@ def test_expires_when_str():
         (datetime(2015, 8, 11, 12, 1, 2, 0), "1 minute", "ignore lower periods"),
         (datetime(2016, 8, 11, 12, 1, 2, 0), "1 year", "ignore lower periods"),
     ]:
-        assert expires_when_str(date.replace(tzinfo=UTC), utcnow_fn=mock_utcnow) == expected, msg
-        assert expires_when_str(date, utcnow_fn=mock_utcnow) == expected, msg + " (no tzinfo)"
+        utcdate = date.replace(tzinfo=UTC)
+        assert BaseTemplateEngine.expires_when_str(utcdate, utcnow_fn=mock_utcnow) == expected, msg
+        assert BaseTemplateEngine.expires_when_str(date, utcnow_fn=mock_utcnow) == expected, (
+            msg + " (no tzinfo)"
+        )
 
 
 def test_long_ago_str():
@@ -39,20 +42,23 @@ def test_long_ago_str():
         (datetime(2015, 8, 11, 11, 58, 0, 0), "2 minutes ago", "pural minutes"),
         (datetime(2015, 8, 11, 12, 0, 1, 0), "in the future", "in the future"),
     ]:
-        assert long_ago_str(date.replace(tzinfo=UTC), utcnow_fn=mock_utcnow) == expected, msg
-        assert long_ago_str(date, utcnow_fn=mock_utcnow) == expected, msg + " (no tzinfo)"
+        utcdate = date.replace(tzinfo=UTC)
+        assert BaseTemplateEngine.long_ago_str(utcdate, utcnow_fn=mock_utcnow) == expected, msg
+        assert BaseTemplateEngine.long_ago_str(date, utcnow_fn=mock_utcnow) == expected, (
+            msg + " (no tzinfo)"
+        )
 
 
 def test_print_date():
     # type: () -> None
     settings = Settings()
     settings.date_format = "%Y-%m-%d %I:%M %p"
-    settings.timezone = "US/Pacific"
-    set_global_settings(settings)
+    setattr(settings, "timezone", "US/Pacific")  # work around mypy confusion
+    template_engine = BaseTemplateEngine(settings, "grouper.fe")
 
     for date_, expected, msg in [
         (datetime(2015, 8, 11, 18, tzinfo=UTC), "2015-08-11 11:00 AM", "from datetime object"),
         (datetime(2015, 8, 11, 18, 0, 10, 10, tzinfo=UTC), "2015-08-11 11:00 AM", "ignore sec/ms"),
         (datetime(2015, 8, 11, 18, 0, 10, 10), "2015-08-11 11:00 AM", "add tzinfo if needed"),
     ]:
-        assert print_date(date_) == expected, msg
+        assert template_engine.print_date(date_) == expected, msg

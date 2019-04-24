@@ -14,9 +14,7 @@ from grouper.constants import (
     PERMISSION_GRANT,
     SYSTEM_PERMISSIONS,
 )
-from grouper.email_util import send_email
-from grouper.fe.settings import settings
-from grouper.fe.template_util import get_template_env
+from grouper.email_util import EmailTemplateEngine, send_email
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.comment import Comment
@@ -28,6 +26,7 @@ from grouper.models.permission_request import PermissionRequest
 from grouper.models.permission_request_status_change import PermissionRequestStatusChange
 from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.plugin import get_plugin_proxy
+from grouper.settings import settings
 from grouper.user_group import get_groups_by_user
 from grouper.util import matches_glob
 
@@ -608,13 +607,11 @@ def create_request(session, user, group, permission, argument, reason):
         else:
             mail_to.extend([u for t, u in owner.my_members() if t == "User"])
 
-    subj = (
-        get_template_env()
-        .get_template("email/pending_permission_request_subj.tmpl")
-        .render(permission=permission.name, group=group.name)
-    )
+    template_engine = EmailTemplateEngine(settings())
+    subject_template = template_engine.get_template("email/pending_permission_request_subj.tmpl")
+    subject = subject_template.render(permission=permission.name, group=group.name)
     send_email(
-        session, set(mail_to), subj, "pending_permission_request", settings(), email_context
+        session, set(mail_to), subject, "pending_permission_request", settings(), email_context
     )
 
     return request
@@ -841,8 +838,9 @@ def update_request(
 
     # send notification
 
-    subj_template = "email/pending_permission_request_subj.tmpl"
-    subject = "Re: " + get_template_env().get_template(subj_template).render(
+    template_engine = EmailTemplateEngine(settings())
+    subject_template = template_engine.get_template("email/pending_permission_request_subj.tmpl")
+    subject = "Re: " + subject_template.render(
         permission=request.permission.name, group=request.group.name
     )
 

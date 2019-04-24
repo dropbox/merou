@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import cast, TYPE_CHECKING
 
-from six import itervalues, string_types
+from six import itervalues
 
 from grouper.models.async_notification import AsyncNotification
 from grouper.models.audit_log import AuditLog
@@ -34,7 +34,7 @@ class EmailTemplateEngine(BaseTemplateEngine):
 
 def send_email(
     session,  # type: Session
-    recipients,  # type: Union[str, Iterable[str]]
+    recipients,  # type: Iterable[str]
     subject,  # type: Text
     template,  # type: str
     settings,  # type: Settings
@@ -47,7 +47,7 @@ def send_email(
 
 def send_async_email(
     session,  # type: Session
-    recipients,  # type: Union[str, Iterable[str]]
+    recipients,  # type: Iterable[str]
     subject,  # type: Text
     template,  # type: str
     settings,  # type: Settings
@@ -62,13 +62,11 @@ def send_async_email(
     asynchronously queue up the email for sending.
 
     Args:
-        recipients: Email addresses that will receive this mail. This argument is either a string
-           (which might include comma separated email addresses) or it's a list of strings (email
-           addresses).
+        recipients: Email addresses that will receive this mail
         subject: Subject of the email.
         template: Name of the template to use.
         context: Context for the template library.
-        settings: grouper.settings.Settings object grouper was run with
+        settings: Grouper settings
         send_after: Schedule the email to go out after this point in time.
         async_key: If you set this, it will be inserted into the db so that you can find this email
             in the future.
@@ -76,9 +74,6 @@ def send_async_email(
     Returns:
         Nothing.
     """
-    if isinstance(recipients, string_types):
-        recipients = recipients.split(",")
-
     msg = get_email_from_template(recipients, subject, template, settings, context)
 
     for rcpt in recipients:

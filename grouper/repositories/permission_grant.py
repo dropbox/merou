@@ -39,9 +39,13 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
         # type: (str, str, str) -> None
         self.repository.grant_permission_to_group(permission, argument, group)
 
-    def group_grants_for_permission(self, name):
-        # type: (str) -> List[GroupPermissionGrant]
+    def group_grants_for_permission(self, name, include_disabled_groups=False):
+        # type: (str, bool) -> List[GroupPermissionGrant]
         return self.repository.group_grants_for_permission(name)
+
+    def service_account_grants_for_permission(self, name):
+        # type: (str) -> List[ServiceAccountPermissionGrant]
+        return self.repository.service_account_grants_for_permission(name)
 
     def permission_grants_for_user(self, name):
         # type: (str) -> List[PermissionGrant]
@@ -54,9 +58,13 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
             permissions.append(permission)
         return permissions
 
-    def service_account_grants_for_permission(self, name):
+    def revoke_all_group_grants(self, permission):
+        # type: (str) -> List[GroupPermissionGrant]
+        return self.repository.revoke_all_group_grants(permission)
+
+    def revoke_all_service_account_grants(self, permission):
         # type: (str) -> List[ServiceAccountPermissionGrant]
-        return self.repository.service_account_grants_for_permission(name)
+        return self.repository.revoke_all_service_account_grants(permission)
 
     def user_has_permission(self, user, permission):
         # type: (str, str) -> bool
@@ -87,22 +95,37 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         )
         mapping.add(self.session)
 
-    def group_grants_for_permission(self, name):
-        # type: (str) -> List[GroupPermissionGrant]
+    def group_grants_for_permission(self, name, include_disabled_groups=False):
+        # type: (str, bool) -> List[GroupPermissionGrant]
         permission = Permission.get(self.session, name=name)
         if not permission or not permission.enabled:
             return []
         grants = (
             self.session.query(Group.groupname, PermissionMap.argument)
             .filter(
-                PermissionMap.permission_id == permission.id,
-                Group.id == PermissionMap.group_id,
-                Group.enabled == True,
+                PermissionMap.permission_id == permission.id, Group.id == PermissionMap.group_id
             )
             .order_by(Group.groupname, PermissionMap.argument)
-            .all()
         )
-        return [GroupPermissionGrant(g.groupname, name, g.argument) for g in grants]
+        if not include_disabled_groups:
+            grants = grants.filter(Group.enabled == True)
+        return [GroupPermissionGrant(g.groupname, name, g.argument) for g in grants.all()]
+
+    def service_account_grants_for_permission(self, name):
+        # type: (str) -> List[ServiceAccountPermissionGrant]
+        permission = Permission.get(self.session, name=name)
+        if not permission or not permission.enabled:
+            return []
+        grants = (
+            self.session.query(User.username, ServiceAccountPermissionMap.argument)
+            .filter(
+                ServiceAccountPermissionMap.permission_id == permission.id,
+                ServiceAccount.id == ServiceAccountPermissionMap.service_account_id,
+                User.id == ServiceAccount.user_id,
+            )
+            .order_by(User.username, ServiceAccountPermissionMap.argument)
+        )
+        return [ServiceAccountPermissionGrant(g.username, name, g.argument) for g in grants.all()]
 
     def permission_grants_for_user(self, name):
         # type: (str) -> List[PermissionGrant]
@@ -164,23 +187,46 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         )
         return [PermissionGrant(g.name, g.argument) for g in group_permission_grants]
 
-    def service_account_grants_for_permission(self, name):
-        # type: (str) -> List[ServiceAccountPermissionGrant]
-        permission = Permission.get(self.session, name=name)
-        if not permission or not permission.enabled:
+    def revoke_all_group_grants(self, permission):
+        # type: (str) -> List[GroupPermissionGrant]
+        sql_permission = Permission.get(self.session, name=permission)
+        if not sql_permission:
             return []
         grants = (
-            self.session.query(User.username, ServiceAccountPermissionMap.argument)
+            self.session.query(PermissionMap.id, Group.groupname, PermissionMap.argument)
             .filter(
-                ServiceAccountPermissionMap.permission_id == permission.id,
-                ServiceAccount.id == ServiceAccountPermissionMap.service_account_id,
-                User.id == ServiceAccount.user_id,
-                User.enabled == True,
+                Group.id == PermissionMap.group_id,
+                PermissionMap.permission_id == sql_permission.id,
             )
-            .order_by(User.username, ServiceAccountPermissionMap.argument)
             .all()
         )
-        return [ServiceAccountPermissionGrant(g.username, name, g.argument) for g in grants]
+        ids = [g.id for g in grants]
+        self.session.query(PermissionMap).filter(PermissionMap.id.in_(ids)).delete(
+            synchronize_session="fetch"
+        )
+        return [GroupPermissionGrant(g.groupname, permission, g.argument) for g in grants]
+
+    def revoke_all_service_account_grants(self, permission):
+        # type: (str) -> List[ServiceAccountPermissionGrant]
+        sql_permission = Permission.get(self.session, name=permission)
+        if not sql_permission:
+            return []
+        grants = (
+            self.session.query(
+                ServiceAccountPermissionMap.id, User.username, ServiceAccountPermissionMap.argument
+            )
+            .filter(
+                User.id == ServiceAccount.user_id,
+                ServiceAccount.id == ServiceAccountPermissionMap.service_account_id,
+                PermissionMap.permission_id == sql_permission.id,
+            )
+            .all()
+        )
+        ids = [g.id for g in grants]
+        self.session.query(ServiceAccountPermissionMap).filter(
+            ServiceAccountPermissionMap.id.in_(ids)
+        ).delete(synchronize_session="fetch")
+        return [ServiceAccountPermissionGrant(g.username, permission, g.argument) for g in grants]
 
     def user_has_permission(self, user, permission):
         # type: (str, str) -> bool

@@ -55,6 +55,14 @@ class BasePage(BaseFinder):
         button = self.find_element_by_xpath("//div[contains(@class, 'search-input')]//button[1]")
         button.click()
 
+    def has_alert(self, text):
+        # type: (str) -> bool
+        alerts = self.find_elements_by_class_name("alert")
+        for alert in alerts:
+            if text in alert.text:
+                return True
+        return False
+
     def has_text(self, text):
         return text in self.root.page_source
 

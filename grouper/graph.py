@@ -254,7 +254,6 @@ class GroupGraph(object):
             Permission.id == PermissionMap.permission_id,
             PermissionMap.group_id == Group.id,
             Group.enabled == True,
-            Permission.enabled == True,
         )
 
         for (permission, permission_map) in permissions:

@@ -32,7 +32,9 @@ from grouper.graph import GroupGraph
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
+from grouper.models.group_service_accounts import GroupServiceAccount
 from grouper.models.permission import Permission
+from grouper.models.permission_map import PermissionMap
 from grouper.models.service_account import ServiceAccount
 from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.models.user import User
@@ -192,6 +194,18 @@ class SetupTest(object):
         group_service = self.service_factory.create_group_service()
         group_service.grant_permission_to_group(permission, argument, group)
 
+    def revoke_permission_from_group(self, permission, argument, group):
+        # type: (str, str, str) -> None
+        permission_obj = Permission.get(self.session, name=permission)
+        assert permission_obj
+        group_obj = Group.get(self.session, name=group)
+        assert group_obj
+        self.session.query(PermissionMap).filter(
+            PermissionMap.permission_id == permission_obj.id,
+            PermissionMap.group_id == group_obj.id,
+            PermissionMap.argument == argument,
+        ).delete()
+
     def create_group_request(self, user, group, role="member"):
         # type: (str, str, str) -> None
         self.create_user(user)
@@ -211,6 +225,9 @@ class SetupTest(object):
     def create_service_account(self, service_account, owner, description="", machine_set=""):
         # type: (str, str, str, str) -> None
         self.create_group(owner)
+        group_obj = Group.get(self.session, name=owner)
+        assert group_obj
+
         if User.get(self.session, name=service_account):
             return
         user = User(username=service_account)
@@ -220,6 +237,12 @@ class SetupTest(object):
         )
         service_account_obj.add(self.session)
         user.is_service_account = True
+
+        self.session.flush()
+        owner_map = GroupServiceAccount(
+            group_id=group_obj.id, service_account_id=service_account_obj.id
+        )
+        owner_map.add(self.session)
 
     def grant_permission_to_service_account(self, permission, argument, service_account):
         # type: (str, str, str) -> None
@@ -235,3 +258,9 @@ class SetupTest(object):
             argument=argument,
         )
         grant.add(self.session)
+
+    def disable_group(self, group):
+        # type: (str) -> None
+        group_obj = Group.get(self.session, name=group)
+        assert group_obj
+        group_obj.enabled = False

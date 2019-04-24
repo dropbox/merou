@@ -67,6 +67,30 @@ class AuditLogInterface(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
+    def log_revoke_group_permission_grant(
+        self,
+        group,  # type: str
+        permission,  # type: str
+        argument,  # type: str
+        authorization,  # type: Authorization
+        date=None,  # type: Optional[datetime]
+    ):
+        # type: (...) -> None
+        pass
+
+    @abstractmethod
+    def log_revoke_service_account_permission_grant(
+        self,
+        service_account,  # type: str
+        permission,  # type: str
+        argument,  # type: str
+        authorization,  # type: Authorization
+        date=None,  # type: Optional[datetime]
+    ):
+        # type: (...) -> None
+        pass
+
+    @abstractmethod
     def log_user_group_request_status_change(self, request, status, authorization, date=None):
         # type: (UserGroupRequest, GroupRequestStatus, Authorization, Optional[datetime]) -> None
         pass
@@ -124,7 +148,7 @@ class PermissionInterface(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
-    def disable_permission(self, name, authorization):
+    def disable_permission_and_revoke_grants(self, name, authorization):
         # type: (str, Authorization) -> None
         pass
 

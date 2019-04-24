@@ -5,7 +5,7 @@ flake8==3.7.7
 groupy>=0.5.1
 mock==2.0.0
 py==1.5.2
-mypy==0.700
+mypy==0.701
 pytest-mock==1.10.3
 pytest-tornado==0.7.0
 pytest-xdist==1.28.0

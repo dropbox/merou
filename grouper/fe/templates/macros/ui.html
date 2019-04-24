@@ -206,7 +206,7 @@ enabled. Membership in this group is regularly reviewed.
                         <th class="col-sm-2">Name</th>
                         {% if show_role %}
                             <th class="col-sm-2">
-                                <span {{ help_for('role') }}>Role</span>
+                                {{ help_for("role", "Role") }}
                             </th>
                         {% endif %}
                     </tr>
@@ -336,7 +336,7 @@ enabled. Membership in this group is regularly reviewed.
                     <tr>
                         <th class="col-sm-1"></th>
                         <th class="col-sm-3">Member</th>
-                        <th class="col-sm-1"><span {{ help_for('role') }}>Role</span></th>
+                        <th class="col-sm-1">{{ help_for("role", "Role") }}</th>
                         <th class="col-sm-1">Expires</th>
                     </tr>
                 </thead>

@@ -3,7 +3,9 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import or_
 
+from grouper.entities.group import GroupNotFoundException
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
+from grouper.entities.permission import PermissionNotFoundException
 from grouper.entities.permission_grant import (
     GroupPermissionGrant,
     PermissionGrant,
@@ -32,6 +34,10 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
         # type: (GroupGraph, PermissionGrantRepository) -> None
         self.graph = graph
         self.repository = repository
+
+    def grant_permission_to_group(self, permission, argument, group):
+        # type: (str, str, str) -> None
+        self.repository.grant_permission_to_group(permission, argument, group)
 
     def group_grants_for_permission(self, name):
         # type: (str) -> List[GroupPermissionGrant]
@@ -66,6 +72,20 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
     def __init__(self, session):
         # type: (Session) -> None
         self.session = session
+
+    def grant_permission_to_group(self, permission, argument, group):
+        # type: (str, str, str) -> None
+        sql_group = Group.get(self.session, name=group)
+        if not sql_group:
+            raise GroupNotFoundException(group)
+        sql_permission = Permission.get(self.session, name=permission)
+        if not sql_permission:
+            raise PermissionNotFoundException(permission)
+
+        mapping = PermissionMap(
+            permission_id=sql_permission.id, group_id=sql_group.id, argument=argument
+        )
+        mapping.add(self.session)
 
     def group_grants_for_permission(self, name):
         # type: (str) -> List[GroupPermissionGrant]

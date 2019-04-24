@@ -27,6 +27,16 @@ class PermissionService(PermissionInterface):
         self.permission_repository = permission_repository
         self.permission_grant_repository = permission_grant_repository
 
+    def create_permission(self, name, description=""):
+        # type: (str, str) -> None
+        self.permission_repository.create_permission(name, description)
+
+    def create_system_permissions(self):
+        # type: () -> None
+        for name, description in SYSTEM_PERMISSIONS:
+            if not self.permission_exists(name):
+                self.create_permission(name, description)
+
     def disable_permission(self, name, authorization):
         # type: (str, Authorization) -> None
         self.permission_repository.disable_permission(name)

@@ -26,13 +26,13 @@ from datetime import datetime
 from time import time
 from typing import TYPE_CHECKING
 
+from grouper.entities.group import GroupJoinPolicy
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.graph import GroupGraph
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
 from grouper.models.permission import Permission
-from grouper.models.permission_map import PermissionMap
 from grouper.models.service_account import ServiceAccount
 from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.models.user import User
@@ -89,7 +89,7 @@ class SetupTest(object):
             self.settings, PluginProxy([]), SingletonSessionFactory(self.session), self.graph
         )
         self.service_factory = ServiceFactory(self.repository_factory)
-        self.usecase_factory = UseCaseFactory(self.service_factory)
+        self.usecase_factory = UseCaseFactory(self.settings, self.service_factory)
         self._transaction_service = self.service_factory.create_transaction_service()
 
     def initialize_database(self):
@@ -114,13 +114,12 @@ class SetupTest(object):
             yield
         self.graph.update_from_db(self.session)
 
-    def create_group(self, name):
-        # type: (str) -> None
+    def create_group(self, name, description="", join_policy=GroupJoinPolicy.CAN_ASK):
+        # type: (str, str, GroupJoinPolicy) -> None
         """Create a group, does nothing if it already exists."""
-        if Group.get(self.session, name=name):
-            return
-        group = Group(groupname=name)
-        group.add(self.session)
+        group_service = self.service_factory.create_group_service()
+        if not group_service.group_exists(name):
+            group_service.create_group(name, description, join_policy)
 
     def create_permission(
         self, name, description="", audited=False, enabled=True, created_on=None
@@ -190,14 +189,8 @@ class SetupTest(object):
         # type: (str, str, str) -> None
         self.create_group(group)
         self.create_permission(permission)
-        permission_obj = Permission.get(self.session, name=permission)
-        assert permission_obj
-        group_obj = Group.get(self.session, name=group)
-        assert group_obj
-        grant = PermissionMap(
-            permission_id=permission_obj.id, group_id=group_obj.id, argument=argument
-        )
-        grant.add(self.session)
+        group_service = self.service_factory.create_group_service()
+        group_service.grant_permission_to_group(permission, argument, group)
 
     def create_group_request(self, user, group, role="member"):
         # type: (str, str, str) -> None

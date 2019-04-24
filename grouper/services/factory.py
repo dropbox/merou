@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from grouper.services.audit_log import AuditLogService
+from grouper.services.group import GroupService
 from grouper.services.group_request import GroupRequestService
 from grouper.services.permission import PermissionService
 from grouper.services.schema import SchemaService
@@ -12,6 +13,7 @@ if TYPE_CHECKING:
     from grouper.repositories.interfaces import RepositoryFactory
     from grouper.usecases.interfaces import (
         AuditLogInterface,
+        GroupInterface,
         GroupRequestInterface,
         PermissionInterface,
         SchemaInterface,
@@ -38,6 +40,12 @@ class ServiceFactory(object):
         audit_log_service = self.create_audit_log_service()
         group_request_repository = self.repository_factory.create_group_request_repository()
         return GroupRequestService(group_request_repository, audit_log_service)
+
+    def create_group_service(self):
+        # type: () -> GroupInterface
+        group_repository = self.repository_factory.create_group_repository()
+        permission_grant_repository = self.repository_factory.create_permission_grant_repository()
+        return GroupService(group_repository, permission_grant_repository)
 
     def create_permission_service(self):
         # type: () -> PermissionInterface

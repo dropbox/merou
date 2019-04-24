@@ -19,6 +19,7 @@ from six import with_metaclass
 if TYPE_CHECKING:
     from datetime import datetime
     from grouper.entities.audit_log_entry import AuditLogEntry
+    from grouper.entities.group import GroupJoinPolicy
     from grouper.entities.group_request import GroupRequestStatus, UserGroupRequest
     from grouper.entities.pagination import PaginatedList, Pagination
     from grouper.entities.permission import Permission, PermissionAccess
@@ -76,6 +77,30 @@ class AuditLogInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
+class GroupInterface(with_metaclass(ABCMeta, object)):
+    """Abstract base class for group operations and queries."""
+
+    @abstractmethod
+    def create_group(self, name, description, join_policy):
+        # type: (str, str, GroupJoinPolicy) -> None
+        pass
+
+    @abstractmethod
+    def grant_permission_to_group(self, permission, argument, group):
+        # type: (str, str, str) -> None
+        pass
+
+    @abstractmethod
+    def group_exists(self, name):
+        # type: (str) -> bool
+        pass
+
+    @abstractmethod
+    def is_valid_group_name(self, name):
+        # type: (str) -> bool
+        pass
+
+
 class GroupRequestInterface(with_metaclass(ABCMeta, object)):
     """Abstract base class for requests for group membership."""
 
@@ -87,6 +112,16 @@ class GroupRequestInterface(with_metaclass(ABCMeta, object)):
 
 class PermissionInterface(with_metaclass(ABCMeta, object)):
     """Abstract base class for permission operations and queries."""
+
+    @abstractmethod
+    def create_permission(self, name, description=""):
+        # type: (str, str) -> None
+        pass
+
+    @abstractmethod
+    def create_system_permissions(self):
+        # type: () -> None
+        pass
 
     @abstractmethod
     def disable_permission(self, name, authorization):

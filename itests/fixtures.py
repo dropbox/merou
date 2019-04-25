@@ -1,17 +1,16 @@
-from __future__ import print_function
+"""Tiny fixture wrapper around the new functions in itests.setup.
 
-import errno
-import socket
-import subprocess
-import sys
-import time
-from contextlib import closing
+We want to move away from using fixtures and instead start the server we're testing using a context
+manager, but not all of the tests have been converted.  This is a thin wrapper around the new
+functions to provide them as fixtures for older tests until the refactoring is complete.
+"""
+
 from typing import TYPE_CHECKING
 
 import pytest
 from groupy.client import Groupy
 
-from tests.path_util import bin_env, db_url, src_path
+from itests.setup import api_server, frontend_server
 
 if TYPE_CHECKING:
     from grouper.graph import GroupGraph
@@ -19,110 +18,19 @@ if TYPE_CHECKING:
     from typing import Iterator
 
 
-def _get_unused_port():
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(("", 0))
-        return s.getsockname()[1]
-
-
 @pytest.yield_fixture
 def async_server(standard_graph, tmpdir):
     # type: (GroupGraph, LocalPath) -> Iterator[str]
-    proxy_port = _get_unused_port()
-    fe_port = _get_unused_port()
-
-    cmds = [
-        [
-            sys.executable,
-            src_path("bin", "grouper-ctl"),
-            "-vvc",
-            src_path("config", "dev.yaml"),
-            "user_proxy",
-            "-P",
-            str(fe_port),
-            "-p",
-            str(proxy_port),
-            "cbguder@a.co",
-        ],
-        [
-            sys.executable,
-            src_path("bin", "grouper-fe"),
-            "-c",
-            src_path("config", "dev.yaml"),
-            "-p",
-            str(fe_port),
-            "-d",
-            db_url(tmpdir),
-        ],
-    ]
-
-    subprocesses = []
-
-    for cmd in cmds:
-        print("Starting command: " + " ".join(cmd))
-        p = subprocess.Popen(cmd, env=bin_env())
-        subprocesses.append(p)
-
-    print("Waiting on server to come online")
-    wait_until_accept(proxy_port)
-
-    print("Connection established")
-    yield "http://localhost:{}".format(proxy_port)
-
-    for p in subprocesses:
-        p.kill()
+    with frontend_server(tmpdir, "cbguder@a.co") as frontend_url:
+        yield frontend_url
 
 
 @pytest.yield_fixture
 def async_api_server(standard_graph, tmpdir):
-    api_port = _get_unused_port()
-
-    cmd = [
-        sys.executable,
-        src_path("bin", "grouper-api"),
-        "-c",
-        src_path("config", "dev.yaml"),
-        "-p",
-        str(api_port),
-        "-d",
-        db_url(tmpdir),
-    ]
-
-    print("Starting server with command: " + " ".join(cmd))
-    p = subprocess.Popen(cmd, env=bin_env())
-
-    print("Waiting on server to come online")
-    wait_until_accept(api_port)
-
-    print("Connection established")
-    yield "localhost:{}".format(api_port)
-
-    p.kill()
+    with api_server(tmpdir) as api_url:
+        yield api_url
 
 
 @pytest.fixture
 def api_client(async_api_server):
     return Groupy(async_api_server)
-
-
-def wait_until_accept(port, timeout=3.0):
-    deadline = time.time() + timeout
-
-    while True:
-        try:
-            socket_timeout = deadline - time.time()
-            if socket_timeout < 0.0:
-                raise Exception("Deadline exceeded")
-
-            s = socket.socket()
-            s.settimeout(socket_timeout)
-            s.connect(("localhost", port))
-        except socket.timeout:
-            pass
-        except socket.error as e:
-            if e.errno not in [errno.ETIMEDOUT, errno.ECONNREFUSED]:
-                raise
-        else:
-            s.close()
-            return
-        time.sleep(0.1)

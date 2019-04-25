@@ -39,15 +39,12 @@ def create_fe_application(
     # type: (...) -> GrouperApplication
     tornado_settings = {
         "debug": settings.debug,
+        "session": session if session else Session,
         "static_path": os.path.join(os.path.dirname(grouper.fe.__file__), "static"),
+        "template_engine": FrontendTemplateEngine(settings, deployment_name),
         "xsrf_cookies": xsrf_cookies,
     }
-    handler_settings = {
-        "session": session if session else Session,
-        "template_engine": FrontendTemplateEngine(settings, deployment_name),
-    }
-    handlers = [(route, handler_class, handler_settings) for (route, handler_class) in HANDLERS]
-    return GrouperApplication(handlers, **tornado_settings)
+    return GrouperApplication(HANDLERS, **tornado_settings)
 
 
 def start_server(args, settings, sentry_client):

@@ -53,7 +53,8 @@ common:
     # exclude wildcard ownership if any non-wildcard owners are avaiable.
     #
     # Type: List[str]
-    restricted_ownership_permissions: []
+    restricted_ownership_permissions:
+      - "sample.permission"
 
     # Whether to send notification e-mails.
     #

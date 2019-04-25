@@ -225,15 +225,19 @@ $(function () {
             if (args.length == 1 && args[0] == "*") {
                 $argument_input.show();
                 $argument_input.prop('name', 'argument');
+                $argument_input.prop('required', true);
 
                 $argument_select.hide();
                 $argument_select.prop('name', 'ignore');
+                $argument_select.prop('required', false);
             } else {
                 $argument_input.hide();
                 $argument_input.prop('name', 'ignore');
+                $argument_input.prop('required', false);
 
                 $argument_select.show();
                 $argument_select.prop('name', 'argument');
+                $argument_select.prop('required', true);
 
                 $argument_select.empty();
                 $.each(args, function(index, arg) {

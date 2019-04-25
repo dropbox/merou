@@ -1,27 +1,35 @@
 from typing import TYPE_CHECKING
 
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
 
 from itests.pages.base import BasePage
 
 if TYPE_CHECKING:
+    from selenium.webdriver.remote.webelement import WebElement
     from typing import List
 
 
 class PermissionRequestPage(BasePage):
-    def get_option_values(self, id):
+    @property
+    def permission_request_form(self):
+        # type: () -> WebElement
+        return self.find_element_by_id("permission-request")
+
+    def get_option_values(self, name):
         # type: (str) -> List[str]
-        select = Select(self.find_element_by_id(id))
+        select = Select(self.permission_request_form.find_element_by_name(name))
         return [option.get_attribute("value") for option in select.options]
 
-    def set_select_value(self, id, value):
+    def set_select_value(self, name, value):
         # type: (str, str) -> None
-        select = Select(self.find_element_by_id(id))
+        select = Select(self.permission_request_form.find_element_by_name(name))
         select.select_by_value(value)
 
-    def fill_field(self, id, value):
-        self.find_element_by_id(id).send_keys(value)
+    def fill_field(self, name, value):
+        # type: (str, str) -> None
+        self.permission_request_form.find_element_by_name(name).send_keys(value)
 
     def submit_request(self):
-        self.find_element_by_id("argument").send_keys(Keys.ENTER)
+        # type: () -> None
+        button = self.permission_request_form.find_element_by_tag_name("button")
+        button.click()

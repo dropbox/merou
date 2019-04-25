@@ -4,29 +4,41 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
 if TYPE_CHECKING:
+    from selenium.webdriver import Chrome
     from selenium.webdriver.remote.webelement import WebElement
 
 
 class BaseFinder(object):
     def __init__(self, root):
+        # type: (Chrome) -> None
         self.root = root
 
     def find_element_by_class_name(self, name):
+        # type: (str) -> WebElement
         return self.root.find_element_by_class_name(name)
 
     def find_elements_by_class_name(self, name):
+        # type: (str) -> WebElement
         return self.root.find_elements_by_class_name(name)
 
     def find_element_by_id(self, id_):
+        # type: (str) -> WebElement
         return self.root.find_element_by_id(id_)
 
     def find_element_by_link_text(self, link_text):
+        # type: (str) -> WebElement
         return self.root.find_element_by_link_text(link_text)
 
+    def find_element_by_name(self, name):
+        # type: (str) -> WebElement
+        return self.root.find_element_by_name(name)
+
     def find_element_by_tag_name(self, name):
+        # type: (str) -> WebElement
         return self.root.find_element_by_tag_name(name)
 
     def find_element_by_xpath(self, path):
+        # type: (str) -> WebElement
         return self.root.find_element_by_xpath(path)
 
 

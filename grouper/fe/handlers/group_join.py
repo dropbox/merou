@@ -71,7 +71,7 @@ class GroupJoin(GrouperHandler):
             )
 
         if group.require_clickthru_tojoin:
-            if not form["clickthru_agreement"]:
+            if not form.data["clickthru_agreement"]:
                 return self.render(
                     "group-join.html",
                     form=form,

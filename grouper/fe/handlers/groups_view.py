@@ -64,6 +64,7 @@ class GroupsView(GrouperHandler):
             description=form.data["description"],
             canjoin=form.data["canjoin"],
             auto_expire=form.data["auto_expire"],
+            require_clickthru_tojoin=form.data["require_clickthru_tojoin"],
         )
         try:
             group.add(self.session)

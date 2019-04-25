@@ -271,6 +271,10 @@ span.disabled {
     white-space: nowrap;
 }
 
+.popover {
+    z-index: 2000;
+}
+
 .popover-content {
     font-weight: normal;
 }

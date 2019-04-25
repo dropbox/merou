@@ -32,26 +32,22 @@
                     {% include "forms/group-join.html" %}
                     {% if group.require_clickthru_tojoin %}
                     <input class="clickthru-checkbox" type="checkbox" name="clickthru_agreement"/>
-                    {% else %}
+                    {% endif %}
                     <div class="form-group">
                         <div class="col-sm-offset-3 col-sm-4">
-                            <button type="submit" class="btn btn-primary">Submit</button>
+                            {% if group.require_clickthru_tojoin %}
+                            <button id="join-btn" class="btn btn-primary" data-toggle="modal"
+                                    data-target="#clickthruModal" type="button">
+                                Submit
+                            </button>
+                            {% else %}
+                            <button id="join-btn" type="submit" class="btn btn-primary">
+                                Submit
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
-                    {% endif %}
-
                 </form>
-                {% if group.require_clickthru_tojoin %}
-                <div class="form-group">
-                    <div class="col-sm-offset-3 col-sm-4">
-                        <button id="join-clickthru-btn" class="btn btn-primary" data-toggle="modal"
-                                data-target="#clickthruModal">
-                            Join
-                        </button>
-                    </div>
-                </div>
-                {% else %}
-                {% endif %}
             </div>
         </div>
     </div>
@@ -89,7 +85,6 @@
                     Agree
                 </button>
             </div>
-                </form>
         </div>
     </div>
 </div>

@@ -187,6 +187,11 @@ class SchemaInterface(with_metaclass(ABCMeta, object)):
     """Abstract base class for low-level schema manipulation."""
 
     @abstractmethod
+    def dump_schema(self):
+        # type: () -> str
+        pass
+
+    @abstractmethod
     def initialize_schema(self):
         # type: () -> None
         pass

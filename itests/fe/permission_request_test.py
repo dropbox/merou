@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 def test_requesting_permission(tmpdir, setup, browser):
     # type: (LocalPath, SetupTest, Chrome) -> None
-
     with setup.transaction():
         setup.create_group("dev-infra")
         setup.create_group("front-end")
@@ -49,3 +48,23 @@ def test_requesting_permission(tmpdir, setup, browser):
             "Group: front-end Permission: git.repo.read Argument: server "
             "Reason: So they can do development Waiting for approval" in text
         )
+
+
+def test_limited_arguments(tmpdir, setup, browser):
+    # type: (LocalPath, SetupTest, Chrome) -> None
+    with setup.transaction():
+        setup.create_permission("sample.permission")
+        setup.create_group("grouper-administrators")
+        setup.add_user_to_group("gary@a.co", "grouper-administrators")
+        setup.add_user_to_group("rra@a.co", "test-group")
+
+    with frontend_server(tmpdir, "rra@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/permissions/request?permission=sample.permission"))
+        page = PermissionRequestPage(browser)
+
+        page.set_select_value("group_name", "test-group")
+        page.set_select_value("argument", "Option A")
+        page.fill_field("reason", "Some testing reason")
+        page.submit_request()
+
+        assert browser.current_url.endswith("/permissions/requests/1")

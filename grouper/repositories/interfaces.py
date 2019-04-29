@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from six import with_metaclass
 
 if TYPE_CHECKING:
+    from datetime import datetime
     from grouper.entities.pagination import PaginatedList, Pagination
     from grouper.entities.permission import Permission
     from grouper.entities.permission_grant import (
@@ -36,8 +37,10 @@ class PermissionRepository(with_metaclass(ABCMeta, object)):
     """Abstract base class for permission repositories."""
 
     @abstractmethod
-    def create_permission(self, name, description):
-        # type: (str, str) -> None
+    def create_permission(
+        self, name, description="", audited=False, enabled=True, created_on=None
+    ):
+        # type: (str, str, bool, bool, Optional[datetime]) -> None
         pass
 
     @abstractmethod

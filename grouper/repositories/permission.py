@@ -7,6 +7,7 @@ from grouper.repositories.interfaces import PermissionRepository
 from grouper.usecases.list_permissions import ListPermissionsSortKey
 
 if TYPE_CHECKING:
+    from datetime import datetime
     from grouper.entities.pagination import Pagination
     from grouper.graph import GroupGraph
     from grouper.models.base.session import Session
@@ -25,9 +26,11 @@ class GraphPermissionRepository(PermissionRepository):
         self.graph = graph
         self.repository = repository
 
-    def create_permission(self, name, description=""):
-        # type: (str, str) -> None
-        self.repository.create_permission(name, description)
+    def create_permission(
+        self, name, description="", audited=False, enabled=True, created_on=None
+    ):
+        # type: (str, str, bool, bool, Optional[datetime]) -> None
+        self.repository.create_permission(name, description, audited, enabled, created_on)
 
     def disable_permission(self, name):
         # type: (str) -> None
@@ -79,9 +82,15 @@ class SQLPermissionRepository(PermissionRepository):
         # type: (Session) -> None
         self.session = session
 
-    def create_permission(self, name, description=""):
-        # type: (str, str) -> None
-        permission = SQLPermission(name=name, description=description)
+    def create_permission(
+        self, name, description="", audited=False, enabled=True, created_on=None
+    ):
+        # type: (str, str, bool, bool, Optional[datetime]) -> None
+        permission = SQLPermission(
+            name=name, description=description, _audited=audited, enabled=enabled
+        )
+        if created_on:
+            permission.created_on = created_on
         permission.add(self.session)
 
     def disable_permission(self, name):

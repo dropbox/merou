@@ -31,8 +31,7 @@
                       method="post" action="/groups/{{group.name}}/join">
                     {% include "forms/group-join.html" %}
                     {% if group.require_clickthru_tojoin %}
-                    <input class="clickthru-checkbox" type="checkbox" name="clickthru_agreement",
-                            style="display:none"/>
+                    <input class="clickthru-checkbox" type="checkbox" name="clickthru_agreement"/>
                     {% else %}
                     <div class="form-group">
                         <div class="col-sm-offset-3 col-sm-4">

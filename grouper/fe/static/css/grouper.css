@@ -332,3 +332,7 @@ a.white {
     max-height: 390px;
     overflow-y: auto;
 }
+
+.clickthru-checkbox {
+    display: none;
+}

@@ -4,24 +4,14 @@
 
         <title>Grouper{% block subtitle %}{% endblock %}</title>
 
-        <link href="{{cdnjs_prefix}}/ajax/libs/twitter-bootstrap/3.1.1/css/bootstrap.min.css"
+        {% for resource in external_css %}
+        <link href="{{cdnjs_prefix}}{{resource.url}}"
+              integrity="{{resource.integrity}}"
+              crossorigin="anonymous"
               rel="stylesheet"
               media="screen">
-        <link href="{{cdnjs_prefix}}/ajax/libs/font-awesome/4.1.0/css/font-awesome.min.css"
-              rel="stylesheet"
-              media="screen">
-        <link href="{{cdnjs_prefix}}/ajax/libs/bootstrap-datetimepicker/3.0.0/css/bootstrap-datetimepicker.min.css"
-              rel="stylesheet"
-              media="screen">
-        <link href="/{{cdnjs_prefix}}/ajax/libs/datatables/1.10.10/css/dataTables.bootstrap.min.css"
-              rel="stylesheet"
-              media="screen">
-        {# chosen.css covers the basic Chosen UI; chosen.bootstrap.min.css adds the
-           extra classes to make it look compatible with Bootstrap. Both are required.  #}
-        <link href="{{cdnjs_prefix}}/ajax/libs/chosen/1.4.2/chosen.css"
-              rel="stylesheet"
-              media="screen">
-        <link href="/static/css/ext/chosen-bootstrap-1.0.4/chosen.bootstrap.min.css"
+        {% endfor %}
+        <link href="{{ static_url("css/ext/chosen-bootstrap-1.0.4/chosen.bootstrap.min.css") }}"
               rel="stylesheet"
               media="screen">
         <link href="{{ static_url("css/grouper.css") }}" rel="stylesheet" media="screen">
@@ -103,13 +93,11 @@
           </div>
         </footer>
 
-        <script src="{{cdnjs_prefix}}/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/twitter-bootstrap/3.1.1/js/bootstrap.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/moment.js/2.7.0/moment.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/datatables/1.10.10/js/jquery.dataTables.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/bootstrap-datetimepicker/3.0.0/js/bootstrap-datetimepicker.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/chosen/1.4.2/chosen.jquery.min.js"></script>
+        {% for resource in external_js %}
+        <script src="{{cdnjs_prefix}}{{resource.url}}"
+                integrity="{{resource.integrity}}"
+                crossorigin="anonymous"></script>
+        {% endfor %}
         <script src="{{ static_url("js/grouper.js") }}"></script>
     </body>
 </html>

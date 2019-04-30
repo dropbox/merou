@@ -225,19 +225,25 @@ def all_service_account_permissions(session):
     # type: (Session) -> Dict[str, List[ServiceAccountPermission]]
     """Return a dict of service account names to their permissions."""
     out = defaultdict(list)  # type: Dict[str, List[ServiceAccountPermission]]
-    permissions = session.query(Permission, ServiceAccountPermissionMap).filter(
+    permissions = session.query(
+        User.username,
+        Permission.name,
+        ServiceAccountPermissionMap.argument,
+        ServiceAccountPermissionMap.granted_on,
+        ServiceAccountPermissionMap.id,
+    ).filter(
         Permission.id == ServiceAccountPermissionMap.permission_id,
         ServiceAccountPermissionMap.service_account_id == ServiceAccount.id,
         ServiceAccount.user_id == User.id,
         User.enabled == True,
     )
     for permission in permissions:
-        out[permission[1].service_account.user.username].append(
+        out[permission.username].append(
             ServiceAccountPermission(
-                permission=permission[0].name,
-                argument=permission[1].argument,
-                granted_on=permission[1].granted_on,
-                mapping_id=permission[1].id,
+                permission=permission.name,
+                argument=permission.argument,
+                granted_on=permission.granted_on,
+                mapping_id=permission.id,
             )
         )
     return out

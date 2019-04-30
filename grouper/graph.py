@@ -23,11 +23,11 @@ from grouper.models.user import User
 from grouper.models.user_metadata import UserMetadata
 from grouper.models.user_password import UserPassword
 from grouper.plugin import get_plugin_proxy
-from grouper.role_user import is_role_user
 from grouper.service_account import all_service_account_permissions
 from grouper.util import singleton
 
 if TYPE_CHECKING:
+    from grouper.models.base.session import Session
     from grouper.service_account import ServiceAccountPermission
     from typing import Any, Dict, List, Optional, Set
 
@@ -340,14 +340,18 @@ class GroupGraph(object):
             out[group.groupname].append(account.user.username)
         return out
 
-    @staticmethod
-    def _get_group_tuples(session, enabled=True):
+    def _get_group_tuples(self, session, enabled=True):
+        # type: (Session, bool) -> Dict[str, GroupTuple]
         """
         Returns a dict of groupname: GroupTuple.
         """
         out = {}
         groups = (session.query(Group).order_by(Group.groupname)).filter(Group.enabled == enabled)
         for group in groups:
+            if group in self.user_metadata:
+                is_service_account = self.user_metadata[group]["role_user"]
+            else:
+                is_service_account = False
             out[group.groupname] = GroupTuple(
                 id=group.id,
                 groupname=group.groupname,
@@ -355,7 +359,7 @@ class GroupGraph(object):
                 description=group.description,
                 canjoin=group.canjoin,
                 enabled=group.enabled,
-                service_account=is_role_user(session, group=group),
+                service_account=is_service_account,
                 type="Group",
             )
         return out

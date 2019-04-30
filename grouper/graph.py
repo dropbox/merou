@@ -244,25 +244,26 @@ class GroupGraph(object):
     # metadata for a permission.
     @staticmethod
     def _get_permission_metadata(session):
+        # type: (Session) -> Dict[str, List[MappedPermission]]
         """
         Returns a dict of groupname: { list of permissions }. Note
         that disabled permissions are not included.
         """
-        out = defaultdict(list)  # groupid -> [ ... ]
+        out = defaultdict(list)  # type: Dict[str, List[MappedPermission]]
 
-        permissions = session.query(Permission, PermissionMap).filter(
+        permissions = session.query(Permission, PermissionMap, Group.groupname).filter(
             Permission.id == PermissionMap.permission_id,
             PermissionMap.group_id == Group.id,
             Group.enabled == True,
         )
 
-        for (permission, permission_map) in permissions:
-            out[permission_map.group.name].append(
+        for (permission, permission_map, groupname) in permissions:
+            out[groupname].append(
                 MappedPermission(
                     permission=permission.name,
                     audited=permission.audited,
                     argument=permission_map.argument,
-                    groupname=permission_map.group.name,
+                    groupname=groupname,
                     granted_on=permission_map.granted_on,
                     alias=False,
                 )
@@ -273,12 +274,12 @@ class GroupGraph(object):
             )
 
             for (name, arg) in aliases:
-                out[permission_map.group.name].append(
+                out[groupname].append(
                     MappedPermission(
                         permission=name,
                         audited=permission.audited,
                         argument=arg,
-                        groupname=permission_map.group.name,
+                        groupname=groupname,
                         granted_on=permission_map.granted_on,
                         alias=True,
                     )

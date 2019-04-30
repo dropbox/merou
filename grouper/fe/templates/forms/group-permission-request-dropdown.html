@@ -1,7 +1,8 @@
 {% from 'macros/ui.html' import form_field -%}
 
 {{ form_field(dropdown_form.permission_name, 3, 8, class_="form-control input-permission_name") }}
-{{ form_field(dropdown_form.argument, 3, 8, class_="form-control", help=dropdown_help) }}
+{{ form_field(dropdown_form.argument, 3, 8, class_="form-control",
+              help=dropdown_help, help_title="restricted argument set") }}
 {{ form_field(dropdown_form.reason, 3, 8, class_="form-control input-reason") }}
 {{ dropdown_form.argument_type() }}
 {{ xsrf_form()|safe }}

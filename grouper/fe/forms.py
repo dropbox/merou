@@ -194,6 +194,7 @@ class GroupJoinForm(Form):
     clickthru_agreement = BooleanField(
         "Acknowledge reading and accepting the terms of this group's membership",
         [validators.Optional()],
+        default=False,
     )
 
 

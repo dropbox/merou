@@ -1,8 +1,14 @@
+from typing import TYPE_CHECKING
+
 from selenium.webdriver.support.select import Select
 
+from grouper.entities.group import GroupJoinPolicy
 from itests.pages.base import BaseElement, BaseModal, BasePage
 from itests.pages.exceptions import NoSuchElementException
 from itests.pages.permissions import PermissionGrantRow
+
+if TYPE_CHECKING:
+    from selenium.webdriver.remote.webelement import WebElement
 
 
 class GroupEditMemberPage(BasePage):
@@ -32,6 +38,17 @@ class GroupsViewPage(BasePage):
                 return group_row
 
         raise NoSuchElementException("Can't find group with name {}".format(name))
+
+    def click_create_group_button(self):
+        # type: () -> None
+        button = self.find_element_by_id("create-group")
+        button.click()
+
+    def get_create_group_modal(self):
+        # type: () -> CreateGroupModal
+        element = self.find_element_by_id("createModal")
+        self.wait_until_visible(element)
+        return CreateGroupModal(element)
 
 
 class GroupViewPage(BasePage):
@@ -69,22 +86,33 @@ class GroupViewPage(BasePage):
 
 
 class GroupJoinPage(BasePage):
-    def _get_join_group_form(self):
+    @property
+    def form(self):
         return self.find_element_by_class_name("join-group-form")
 
+    def get_clickthru_modal(self):
+        # type: () -> GroupJoinClickthruModal
+        element = self.find_element_by_id("clickthruModal")
+        self.wait_until_visible(element)
+        return GroupJoinClickthruModal(element)
+
     def set_expiration(self, expiration):
-        form = self._get_join_group_form()
-        field = form.find_element_by_name("expiration")
+        # type: (str) -> None
+        field = self.form.find_element_by_name("expiration")
         field.send_keys(expiration)
 
+        # This will have popped up a date picker.  We need to click outside of the picker to
+        # dismiss it so that it doesn't hide the form submit button.
+        self.form.find_element_by_id("reason").click()
+
     def set_reason(self, reason):
-        form = self._get_join_group_form()
-        field = form.find_element_by_name("reason")
+        # type: (str) -> None
+        field = self.form.find_element_by_id("reason")
         field.send_keys(reason)
 
     def submit(self):
-        form = self._get_join_group_form()
-        form.submit()
+        # type: () -> None
+        self.form.find_element_by_id("join-btn").click()
 
 
 class GroupRequestsPage(BasePage):
@@ -107,6 +135,33 @@ class AuditModal(BaseModal):
                 return member_row
 
         raise NoSuchElementException("Can't find audit member with name {}".format(name))
+
+
+class CreateGroupModal(BaseModal):
+    @property
+    def form(self):
+        # type: () -> WebElement
+        return self.find_element_by_tag_name("form")
+
+    def click_require_clickthru_checkbox(self):
+        # type: () -> None
+        self.form.find_element_by_name("require_clickthru_tojoin").click()
+
+    def set_group_name(self, name):
+        # type: (str) -> None
+        field = self.form.find_element_by_name("groupname")
+        field.send_keys(name)
+
+    def set_join_policy(self, join_policy):
+        # type: (GroupJoinPolicy) -> None
+        field = Select(self.form.find_element_by_name("canjoin"))
+        field.select_by_value(join_policy.value)
+
+
+class GroupJoinClickthruModal(BaseModal):
+    def confirm(self):
+        # type: () -> None
+        self.find_element_by_id("agree-clickthru-btn").click()
 
 
 class RemoveMemberModal(BaseModal):

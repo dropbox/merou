@@ -66,8 +66,8 @@ class GrouperHandler(RequestHandler):
     def initialize(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         self.graph = Graph()
-        self.session = kwargs["session"]()  # type: Session
-        self.template_engine = kwargs["template_engine"]  # type: FrontendTemplateEngine
+        self.session = self.settings["session"]()  # type: Session
+        self.template_engine = self.settings["template_engine"]  # type: FrontendTemplateEngine
         self.plugins = get_plugin_proxy()
         session_factory = SingletonSessionFactory(self.session)
         self.usecase_factory = create_graph_usecase_factory(
@@ -86,6 +86,13 @@ class GrouperHandler(RequestHandler):
 
         stats.log_rate("requests", 1)
         stats.log_rate("requests_{}".format(self.__class__.__name__), 1)
+        logging.error("initialized")
+
+    def set_default_headers(self):
+        # type: () -> None
+        logging.error(self)
+        self.set_header("Content-Security-Policy", self.settings["template_engine"].csp_header())
+        self.set_header("Referrer-Policy", "same-origin")
 
     def write_error(self, status_code, **kwargs):
         """Override for custom error page."""

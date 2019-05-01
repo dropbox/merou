@@ -1,9 +1,10 @@
-from typing import NamedTuple, TYPE_CHECKING
+from typing import cast, NamedTuple, TYPE_CHECKING
 
+from grouper.fe.settings import FrontendSettings
 from grouper.templating import BaseTemplateEngine
 
 if TYPE_CHECKING:
-    from grouper.fe.settings import FrontendSettings
+    from typing import Iterable, List
 
 # An external web resource with SRI.
 ExternalResource = NamedTuple("ExternalResource", [("url", str), ("integrity", str)])
@@ -30,6 +31,49 @@ EXTERNAL_CSS = [
         url="/ajax/libs/chosen/1.4.2/chosen.min.css",
         integrity="sha256-VGpryMO0mXR1A03airrHc3/J1YldD3xKadKpXXktWY8=",
     ),
+]
+
+# External fonts.  These are all loaded indirectly via CSS, not directly by Grouper, and the
+# integrity attribute isn't used.  They're included here to assist with generating the CSP header.
+# All URLs are relative to a CDNJS mirror.
+EXTERNAL_FONTS = [
+    ExternalResource(
+        url="/ajax/libs/twitter-bootstrap/3.1.1/fonts/glyphicons-halflings-regular.eot",
+        integrity="",
+    ),
+    ExternalResource(
+        url="/ajax/libs/twitter-bootstrap/3.1.1/fonts/glyphicons-halflings-regular.svg",
+        integrity="",
+    ),
+    ExternalResource(
+        url="/ajax/libs/twitter-bootstrap/3.1.1/fonts/glyphicons-halflings-regular.ttf",
+        integrity="",
+    ),
+    ExternalResource(
+        url="/ajax/libs/twitter-bootstrap/3.1.1/fonts/glyphicons-halflings-regular.woff",
+        integrity="",
+    ),
+    ExternalResource(
+        url="/ajax/libs/font-awesome/4.1.0/fonts/fontawesome-webfont.eot", integrity=""
+    ),
+    ExternalResource(
+        url="/ajax/libs/font-awesome/4.1.0/fonts/fontawesome-webfont.svg", integrity=""
+    ),
+    ExternalResource(
+        url="/ajax/libs/font-awesome/4.1.0/fonts/fontawesome-webfont.ttf", integrity=""
+    ),
+    ExternalResource(
+        url="/ajax/libs/font-awesome/4.1.0/fonts/fontawesome-webfont.woff", integrity=""
+    ),
+    ExternalResource(url="/ajax/libs/font-awesome/4.1.0/fonts/FontAwesome.ttf", integrity=""),
+]
+
+# External images.  These are all loaded indirectly via CSS, not directly by Grouper, and the
+# integrity attribute isn't used.  They're included here to assist with generating the CSP header.
+# All URLs are relative to a CDNJS mirror.
+EXTERNAL_IMG = [
+    ExternalResource(url="/ajax/libs/chosen/1.4.2/chosen-sprite.png", integrity=""),
+    ExternalResource(url="/ajax/libs/chosen/1.4.2/chosen-sprite@2x.png", integrity=""),
 ]
 
 # External JavaScript loaded on every Grouper page.  All URLs are relative to a CDNJS mirror.
@@ -78,3 +122,19 @@ class FrontendTemplateEngine(BaseTemplateEngine):
             "external_js": EXTERNAL_JS,
         }
         self.environment.globals.update(template_globals)
+
+    def csp_header(self):
+        # type: () -> str
+        """Return the value for the Content-Security-Policy header."""
+        policy = "frame-ancestors 'none'; form-action 'self'; default-src 'none'"
+        policy += "; img-src 'self' " + " ".join(self._cdnjs_urls(EXTERNAL_IMG))
+        policy += "; script-src 'self' " + " ".join(self._cdnjs_urls(EXTERNAL_JS))
+        policy += "; style-src 'self' " + " ".join(self._cdnjs_urls(EXTERNAL_CSS))
+        policy += "; font-src " + " ".join(self._cdnjs_urls(EXTERNAL_FONTS))
+        return policy
+
+    def _cdnjs_urls(self, resources):
+        # type: (Iterable[ExternalResource]) -> List[str]
+        """Return the URLs on the preferred CDNJS mirror for the given resources."""
+        cdnjs_prefix = cast(FrontendSettings, self.settings).cdnjs_prefix
+        return ["{}{}".format(cdnjs_prefix, r.url) for r in resources]

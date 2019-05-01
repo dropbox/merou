@@ -1,6 +1,10 @@
+from typing import TYPE_CHECKING
+
+from groupy.client import Groupy
 from six import iteritems
 
 from itests.fixtures import api_client, async_api_server  # noqa: F401
+from itests.setup import api_server
 from tests.fixtures import (  # noqa: F401
     graph,
     groups,
@@ -10,6 +14,10 @@ from tests.fixtures import (  # noqa: F401
     standard_graph,
     users,
 )
+
+if TYPE_CHECKING:
+    from py.local import LocalPath
+    from tests.setup import SetupTest
 
 
 def test_get_service_accounts(api_client, users, service_accounts):  # noqa: F811
@@ -46,3 +54,24 @@ def test_get_role_user(api_client):  # noqa: F811
     assert role_user.service_account is None
     assert role_user.permissions == []
     assert role_user.metadata == {}
+
+
+def test_includes_disabled_service_accounts(tmpdir, setup):
+    # type: (LocalPath, SetupTest) -> None
+    with setup.transaction():
+        setup.create_service_account("service@a.co", "some-group", "an account", "some machines")
+    with setup.transaction():
+        setup.disable_service_account("service@a.co")
+
+    with api_server(tmpdir) as api_url:
+        api_client = Groupy(api_url)  # noqa: F811
+        assert list(api_client.service_accounts) == ["service@a.co"]
+
+        service_account = api_client.service_accounts.get("service@a.co")
+        assert service_account.groups == {}
+        assert not service_account.enabled
+        assert service_account.service_account == {
+            "description": "an account",
+            "machine_set": "some machines",
+        }
+        assert service_account.permissions == []

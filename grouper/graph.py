@@ -23,13 +23,13 @@ from grouper.models.user import User
 from grouper.models.user_metadata import UserMetadata
 from grouper.models.user_password import UserPassword
 from grouper.plugin import get_plugin_proxy
-from grouper.role_user import is_role_user
 from grouper.service_account import all_service_account_permissions
 from grouper.util import singleton
 
 if TYPE_CHECKING:
+    from grouper.models.base.session import Session
     from grouper.service_account import ServiceAccountPermission
-    from typing import Any, Dict, List, Optional, Set
+    from typing import Any, Dict, Iterable, List, Optional, Set
 
 MEMBER_TYPE_MAP = {"User": "users", "Group": "subgroups"}
 EPOCH = datetime(1970, 1, 1)
@@ -181,21 +181,37 @@ class GroupGraph(object):
 
     @staticmethod
     def _get_user_metadata(session):
+        # type: (Session) -> Dict[str, Any]
         """
         Returns a dict of username: { dict of metadata }.
         """
 
         def user_indexify(data):
-            ret = defaultdict(list)
+            # type: (Iterable[Any]) -> Dict[int, List[Any]]
+            ret = defaultdict(list)  # type: Dict[int, List[Any]]
             for item in data:
                 ret[item.user_id].append(item)
             return ret
 
-        users = session.query(User)
-
         passwords = user_indexify(session.query(UserPassword).all())
         public_keys = user_indexify(session.query(PublicKey).all())
         user_metadata = user_indexify(session.query(UserMetadata).all())
+
+        service_account_data = (
+            session.query(
+                ServiceAccount.user_id,
+                ServiceAccount.description,
+                ServiceAccount.machine_set,
+                label("owner", Group.groupname),
+            )
+            .outerjoin(
+                GroupServiceAccount, ServiceAccount.id == GroupServiceAccount.service_account_id
+            )
+            .outerjoin(Group, GroupServiceAccount.group_id == Group.id)
+        )
+        service_accounts = {r.user_id: r for r in service_account_data}
+
+        users = session.query(User)
 
         out = {}
         for user in users:
@@ -231,38 +247,45 @@ class GroupGraph(object):
                 ],
             }
             if user.is_service_account:
-                account = user.service_account
-                out[user.username]["service_account"] = {
-                    "description": account.description,
-                    "machine_set": account.machine_set,
-                }
-                if account.owner:
-                    out[user.username]["service_account"]["owner"] = account.owner.group.name
+                if user.id in service_accounts:
+                    account = service_accounts[user.id]
+                    out[user.username]["service_account"] = {
+                        "description": account.description,
+                        "machine_set": account.machine_set,
+                    }
+                    if account.owner:
+                        out[user.username]["service_account"]["owner"] = account.owner
+                else:
+                    logging.error(
+                        "User %s marked as service account but has no service account row",
+                        user.username,
+                    )
         return out
 
     # This describes how permissions are assigned to groups, NOT the intrinsic
     # metadata for a permission.
     @staticmethod
     def _get_permission_metadata(session):
+        # type: (Session) -> Dict[str, List[MappedPermission]]
         """
         Returns a dict of groupname: { list of permissions }. Note
         that disabled permissions are not included.
         """
-        out = defaultdict(list)  # groupid -> [ ... ]
+        out = defaultdict(list)  # type: Dict[str, List[MappedPermission]]
 
-        permissions = session.query(Permission, PermissionMap).filter(
+        permissions = session.query(Permission, PermissionMap, Group.groupname).filter(
             Permission.id == PermissionMap.permission_id,
             PermissionMap.group_id == Group.id,
             Group.enabled == True,
         )
 
-        for (permission, permission_map) in permissions:
-            out[permission_map.group.name].append(
+        for (permission, permission_map, groupname) in permissions:
+            out[groupname].append(
                 MappedPermission(
                     permission=permission.name,
                     audited=permission.audited,
                     argument=permission_map.argument,
-                    groupname=permission_map.group.name,
+                    groupname=groupname,
                     granted_on=permission_map.granted_on,
                     alias=False,
                 )
@@ -273,12 +296,12 @@ class GroupGraph(object):
             )
 
             for (name, arg) in aliases:
-                out[permission_map.group.name].append(
+                out[groupname].append(
                     MappedPermission(
                         permission=name,
                         audited=permission.audited,
                         argument=arg,
-                        groupname=permission_map.group.name,
+                        groupname=groupname,
                         granted_on=permission_map.granted_on,
                         alias=True,
                     )
@@ -328,26 +351,32 @@ class GroupGraph(object):
 
     @staticmethod
     def _get_group_service_accounts(session):
+        # type: (Session) -> Dict[str, List[str]]
         """
         Returns a dict of groupname: { list of service account names }.
         """
-        out = defaultdict(list)
-        tuples = session.query(Group, ServiceAccount).filter(
+        out = defaultdict(list)  # type: Dict[str, List[str]]
+        tuples = session.query(Group.groupname, User.username).filter(
             GroupServiceAccount.group_id == Group.id,
             GroupServiceAccount.service_account_id == ServiceAccount.id,
+            ServiceAccount.user_id == User.id,
         )
         for group, account in tuples:
-            out[group.groupname].append(account.user.username)
+            out[group].append(account)
         return out
 
-    @staticmethod
-    def _get_group_tuples(session, enabled=True):
+    def _get_group_tuples(self, session, enabled=True):
+        # type: (Session, bool) -> Dict[str, GroupTuple]
         """
         Returns a dict of groupname: GroupTuple.
         """
         out = {}
         groups = (session.query(Group).order_by(Group.groupname)).filter(Group.enabled == enabled)
         for group in groups:
+            if group in self.user_metadata:
+                is_service_account = self.user_metadata[group]["role_user"]
+            else:
+                is_service_account = False
             out[group.groupname] = GroupTuple(
                 id=group.id,
                 groupname=group.groupname,
@@ -355,7 +384,7 @@ class GroupGraph(object):
                 description=group.description,
                 canjoin=group.canjoin,
                 enabled=group.enabled,
-                service_account=is_role_user(session, group=group),
+                service_account=is_service_account,
                 type="Group",
             )
         return out

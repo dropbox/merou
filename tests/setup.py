@@ -252,3 +252,15 @@ class SetupTest(object):
         group_obj = Group.get(self.session, name=group)
         assert group_obj
         group_obj.enabled = False
+
+    def disable_service_account(self, service_account):
+        # type: (str) -> None
+        service_obj = ServiceAccount.get(self.session, name=service_account)
+        assert service_obj
+        service_obj.user.enabled = False
+        service_obj.owner.delete(self.session)
+        permissions = self.session.query(ServiceAccountPermissionMap).filter_by(
+            service_account_id=service_obj.id
+        )
+        for permission in permissions:
+            permission.delete(self.session)

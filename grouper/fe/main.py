@@ -2,12 +2,14 @@ from __future__ import print_function
 
 import logging
 import os
+import socket
 import sys
 from contextlib import closing
 from typing import TYPE_CHECKING
 
-import tornado.httpserver
-import tornado.ioloop
+from six import PY2
+from tornado.httpserver import HTTPServer
+from tornado.ioloop import IOLoop
 
 import grouper.fe
 from grouper import stats
@@ -73,17 +75,34 @@ def start_server(args, settings, sentry_client):
     Session.configure(bind=get_db_engine(settings.database))
 
     application = create_fe_application(settings, args.deployment_name)
-
-    address = args.address or settings.address
-    port = args.port or settings.port
-
     ssl_context = plugins.get_ssl_context()
 
-    logging.info(
-        "Starting application server with %d processes on port %d", settings.num_processes, port
-    )
-    server = tornado.httpserver.HTTPServer(application, ssl_options=ssl_context)
-    server.bind(port, address=address)
+    if args.listen_stdin:
+        logging.info(
+            "Starting application server with %d processes on stdin", settings.num_processes
+        )
+        server = HTTPServer(application, ssl_options=ssl_context)
+        if PY2:
+            s = socket.fromfd(sys.stdin.fileno(), socket.AF_INET, socket.SOCK_STREAM)
+            s.setblocking(False)
+            s.listen(5)
+        else:
+            s = socket.socket(fileno=sys.stdin.fileno())
+            s.setblocking(False)
+            s.listen()
+        server.add_sockets([s])
+    else:
+        address = args.address or settings.address
+        port = args.port or settings.port
+        logging.info(
+            "Starting application server with %d processes on %s:%d",
+            settings.num_processes,
+            address,
+            port,
+        )
+        server = HTTPServer(application, ssl_options=ssl_context)
+        server.bind(port, address=address)
+
     # When using multiple processes, the forking happens here
     server.start(settings.num_processes)
 
@@ -100,9 +119,9 @@ def start_server(args, settings, sentry_client):
     refresher.start()
 
     try:
-        tornado.ioloop.IOLoop.instance().start()
+        IOLoop.current().start()
     except KeyboardInterrupt:
-        tornado.ioloop.IOLoop.instance().stop()
+        IOLoop.current().stop()
     finally:
         print("Bye")
 

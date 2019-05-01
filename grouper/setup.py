@@ -40,6 +40,11 @@ def build_arg_parser(description):
     parser.add_argument(
         "-d", "--database-url", type=str, default=None, help="Override database URL in config."
     )
+    parser.add_argument(
+        "--listen-stdin",
+        action="store_true",
+        help="Ignore address and port and expect connections on standard input",
+    )
 
     return parser
 

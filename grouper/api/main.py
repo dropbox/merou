@@ -1,12 +1,14 @@
 from __future__ import print_function
 
 import logging
+import socket
 import sys
 from contextlib import closing
 from typing import TYPE_CHECKING
 
-import tornado.httpserver
-import tornado.ioloop
+from six import PY2
+from tornado.httpserver import HTTPServer
+from tornado.ioloop import IOLoop
 
 from grouper import stats
 from grouper.api.routes import HANDLERS
@@ -71,20 +73,33 @@ def start_server(args, settings, sentry_client):
     usecase_factory = create_graph_usecase_factory(settings, plugins, graph=graph)
     application = create_api_application(graph, settings, usecase_factory)
 
-    address = args.address or settings.address
-    port = args.port or settings.port
+    if args.listen_stdin:
+        logging.info("Starting application server on stdin")
+        server = HTTPServer(application)
+        if PY2:
+            s = socket.fromfd(sys.stdin.fileno(), socket.AF_INET, socket.SOCK_STREAM)
+            s.setblocking(False)
+            s.listen(5)
+        else:
+            s = socket.socket(fileno=sys.stdin.fileno())
+            s.setblocking(False)
+            s.listen()
+        server.add_sockets([s])
+    else:
+        address = args.address or settings.address
+        port = args.port or settings.port
+        logging.info("Starting application server on %s:%d", address, port)
+        server = HTTPServer(application)
+        server.bind(port, address=address)
 
-    logging.info("Starting application server on port %d", port)
-    server = tornado.httpserver.HTTPServer(application)
-    server.bind(port, address=address)
     server.start(settings.num_processes)
 
     stats.set_defaults()
 
     try:
-        tornado.ioloop.IOLoop.instance().start()
+        IOLoop.current().start()
     except KeyboardInterrupt:
-        tornado.ioloop.IOLoop.instance().stop()
+        IOLoop.current().stop()
     finally:
         print("Bye")
 
@@ -94,7 +109,7 @@ def main(sys_argv=sys.argv):
     setup_signal_handlers()
 
     # get arguments
-    parser = build_arg_parser("Grouper API Server.")
+    parser = build_arg_parser("Grouper API Server")
     args = parser.parse_args(sys_argv[1:])
 
     try:

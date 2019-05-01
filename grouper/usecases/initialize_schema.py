@@ -57,6 +57,6 @@ class InitializeSchema(object):
                         "Allows members to own groups with audited permissions",
                         GroupJoinPolicy.CAN_ASK,
                     )
-                self.group_service.grant_permission_to_group(
-                    PERMISSION_AUDITOR, "", self.settings.auditors_group
-                )
+                    self.group_service.grant_permission_to_group(
+                        PERMISSION_AUDITOR, "", self.settings.auditors_group
+                    )

@@ -31,6 +31,8 @@ def test_csp(tmpdir, setup):
     assert csp_directive["default-src"] == "'none'"
     assert "unsafe-inline" not in csp_directive["script-src"]
     assert "unsafe-inline" not in csp_directive["style-src"]
+    assert "script" in csp_directive["require-sri-for"]
+    assert "style" in csp_directive["require-sri-for"]
 
     # Make sure the cdnjs_prefix setting was honored.
     settings = FrontendSettings()

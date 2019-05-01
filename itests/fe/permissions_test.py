@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from grouper.constants import PERMISSION_CREATE
 from grouper.entities.permission import Permission
-from grouper.fe.settings import FrontendSettings
-from grouper.fe.templating import FrontendTemplateEngine
+from grouper.settings import Settings
+from grouper.templating import BaseTemplateEngine
 from itests.pages.permissions import PermissionsPage
 from itests.setup import frontend_server
 from tests.url_util import url
@@ -62,7 +62,7 @@ def create_test_data(setup):
 def test_list(tmpdir, setup, browser):
     # type: (LocalPath, SetupTest, Chrome) -> None
     permissions = create_test_data(setup)
-    template_engine = FrontendTemplateEngine(FrontendSettings(), "")
+    template_engine = BaseTemplateEngine(Settings(), "grouper.fe")
     expected_permissions = [
         (p.name, p.description, template_engine.print_date(p.created_on)) for p in permissions
     ]
@@ -110,7 +110,7 @@ def test_list_pagination(tmpdir, setup, browser):
     don't create more than 100 permissions for testing.
     """
     permissions = create_test_data(setup)
-    template_engine = FrontendTemplateEngine(FrontendSettings(), "")
+    template_engine = BaseTemplateEngine(Settings(), "grouper.fe")
     expected_permissions = [
         (p.name, p.description, template_engine.print_date(p.created_on)) for p in permissions
     ]

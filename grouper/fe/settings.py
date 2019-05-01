@@ -25,7 +25,7 @@ class FrontendSettings(Settings):
         # Keep attributes here in the same order as in config/dev.yaml.
         self.address = None  # type: Optional[str]
         self.port = 8989
-        self.cdnjs_prefix = "//cdnjs.cloudflare.com"
+        self.cdnjs_prefix = "https://cdnjs.cloudflare.com"
         self.debug = False
         self.how_to_get_help = "if this is prod, ask someone to fix the how_to_get_help setting"
         self.num_processes = 1

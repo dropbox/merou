@@ -36,3 +36,11 @@ def test_initialize_schema(setup):
     assert auditors_group
     auditors_group_permissions = [p.name for p in auditors_group.my_permissions()]
     assert PERMISSION_AUDITOR in auditors_group_permissions
+
+
+def test_initialize_schema_twice(setup):
+    # type: (SetupTest) -> None
+    setup.settings.auditors_group = "auditors"
+    usecase = setup.usecase_factory.create_initialize_schema_usecase()
+    usecase.initialize_schema()
+    usecase.initialize_schema()

@@ -14,7 +14,7 @@ def test_included_resources():
     settings = FrontendSettings()
     static_path = os.path.join(os.path.dirname(grouper.fe.__file__), "static")
     engine = FrontendTemplateEngine(settings, "", static_path, package="tests.fe")
-    template = engine.get_template("base.json")
+    template = engine.get_template("base.json.tmpl")
     content = json.loads(template.render())
 
     # Check that all external JavaScript and CSS have integrity attributes.

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import pytz
 import yaml
 from six import iteritems
+from six.moves.urllib.parse import urlparse
 
 if TYPE_CHECKING:
     from pytz import BaseTzInfo
@@ -174,7 +175,7 @@ class Settings(object):
                 url = url.strip()
                 if not url:
                     raise DatabaseSourceException("Returned URL is empty")
-                self._logger.debug("New database URL is %s", url)
+                self._logger.debug("New database URL is %s", self._url_without_password(url))
                 return url
             except (DatabaseSourceException, subprocess.CalledProcessError) as e:
                 self._logger.exception("Running %s failed", self.database_source)
@@ -187,6 +188,17 @@ class Settings(object):
                         self.database_source, self.DB_URL_RETRIES, str(e)
                     )
                     raise DatabaseSourceException(msg)
+
+    def _url_without_password(self, url):
+        # type: (str) -> str
+        """Parse a URL and remove any password, returning a version suitable for logging."""
+        parsed_url = urlparse(url)
+        if parsed_url.password is None:
+            return url
+        else:
+            host = parsed_url.netloc.rsplit("@", 1)[-1]
+            masked_url = parsed_url._replace(netloc="{}:???@{}".format(parsed_url.username, host))
+            return masked_url.geturl()
 
 
 def settings():

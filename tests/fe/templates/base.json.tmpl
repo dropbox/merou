@@ -1,0 +1,34 @@
+{
+    "external_css": [
+        {% for resource in external_css %}
+        {
+            "url": "{{resource.url}}",
+            "integrity": "{{resource.integrity}}"
+        }{{ "," if not loop.last }}
+        {% endfor %}
+    ],
+    "external_js": [
+        {% for resource in external_js %}
+        {
+            "url": "{{resource.url}}",
+            "integrity": "{{resource.integrity}}"
+        }{{ "," if not loop.last }}
+        {% endfor %}
+    ],
+    "internal_css": [
+        {% for resource in internal_css %}
+        {
+            "url": "{{resource.url}}",
+            "integrity": "{{resource.integrity}}"
+        }{{ "," if not loop.last }}
+        {% endfor %}
+    ],
+    "internal_js": [
+        {% for resource in internal_js %}
+        {
+            "url": "{{resource.url}}",
+            "integrity": "{{resource.integrity}}"
+        }{{ "," if not loop.last }}
+        {% endfor %}
+    ]
+}

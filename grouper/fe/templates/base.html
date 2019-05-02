@@ -11,10 +11,12 @@
               rel="stylesheet"
               media="screen">
         {% endfor %}
-        <link href="{{ static_url("css/ext/chosen-bootstrap-1.0.4/chosen.bootstrap.min.css") }}"
+        {% for resource in internal_css %}
+        <link href="{{ static_url(resource.url) }}"
+              integrity="{{resource.integrity}}"
               rel="stylesheet"
               media="screen">
-        <link href="{{ static_url("css/grouper.css") }}" rel="stylesheet" media="screen">
+        {% endfor %}
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
     </head>
@@ -98,7 +100,9 @@
                 integrity="{{resource.integrity}}"
                 crossorigin="anonymous"></script>
         {% endfor %}
-        <script src="{{ static_url("js/grouper.js") }}"></script>
+        {% for resource in internal_js %}
+        <script src="{{ static_url(resource.url) }}" integrity="{{resource.integrity}}"></script>
+        {% endfor %}
     </body>
 </html>
 

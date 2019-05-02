@@ -39,11 +39,12 @@ def create_fe_application(
     session=None,  # type: Callable[[], Session]
 ):
     # type: (...) -> GrouperApplication
+    static_path = os.path.join(os.path.dirname(grouper.fe.__file__), "static")
     tornado_settings = {
         "debug": settings.debug,
         "session": session if session else Session,
-        "static_path": os.path.join(os.path.dirname(grouper.fe.__file__), "static"),
-        "template_engine": FrontendTemplateEngine(settings, deployment_name),
+        "static_path": static_path,
+        "template_engine": FrontendTemplateEngine(settings, deployment_name, static_path),
         "xsrf_cookies": xsrf_cookies,
     }
     return GrouperApplication(HANDLERS, **tornado_settings)

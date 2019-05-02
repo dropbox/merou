@@ -2,12 +2,14 @@ from datetime import datetime
 from time import time
 from typing import TYPE_CHECKING
 
+from pytz import UTC
+
 from grouper.constants import PERMISSION_CREATE
 from grouper.entities.permission import Permission
 from grouper.fe.settings import FrontendSettings
-from grouper.fe.templating import FrontendTemplateEngine
 from itests.pages.permissions import PermissionsPage
 from itests.setup import frontend_server
+from tests.path_util import src_path
 from tests.url_util import url
 
 if TYPE_CHECKING:
@@ -15,6 +17,11 @@ if TYPE_CHECKING:
     from selenium.webdriver import Chrome
     from tests.setup import SetupTest
     from typing import List
+
+
+def format_date(settings, date):
+    # type: (FrontendSettings, datetime) -> str
+    return date.replace(tzinfo=UTC).astimezone(settings.timezone).strftime(settings.date_format)
 
 
 def create_test_data(setup):
@@ -62,9 +69,10 @@ def create_test_data(setup):
 def test_list(tmpdir, setup, browser):
     # type: (LocalPath, SetupTest, Chrome) -> None
     permissions = create_test_data(setup)
-    template_engine = FrontendTemplateEngine(FrontendSettings(), "")
+    settings = FrontendSettings()
+    settings.update_from_config(src_path("config", "dev.yaml"))
     expected_permissions = [
-        (p.name, p.description, template_engine.print_date(p.created_on)) for p in permissions
+        (p.name, p.description, format_date(settings, p.created_on)) for p in permissions
     ]
 
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
@@ -91,7 +99,7 @@ def test_list(tmpdir, setup, browser):
         page.click_sort_by_date()
         seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
         expected_permissions_sorted_by_time = [
-            (p.name, p.description, template_engine.print_date(p.created_on))
+            (p.name, p.description, format_date(settings, p.created_on))
             for p in sorted(permissions, key=lambda p: p.created_on, reverse=True)
         ]
         assert seen_permissions == expected_permissions_sorted_by_time
@@ -110,9 +118,10 @@ def test_list_pagination(tmpdir, setup, browser):
     don't create more than 100 permissions for testing.
     """
     permissions = create_test_data(setup)
-    template_engine = FrontendTemplateEngine(FrontendSettings(), "")
+    settings = FrontendSettings()
+    settings.update_from_config(src_path("config", "dev.yaml"))
     expected_permissions = [
-        (p.name, p.description, template_engine.print_date(p.created_on)) for p in permissions
+        (p.name, p.description, format_date(settings, p.created_on)) for p in permissions
     ]
 
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:

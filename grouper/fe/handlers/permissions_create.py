@@ -15,7 +15,7 @@ class PermissionsCreate(GrouperHandler):
             return self.forbidden()
 
         return self.render(
-            "permission-create.html", form=PermissionCreateForm(), can_create=can_create
+            "permission-create.html", form=PermissionCreateForm(), can_create=sorted(can_create)
         )
 
     def post(self):
@@ -59,7 +59,7 @@ class PermissionsCreate(GrouperHandler):
             return self.render(
                 "permission-create.html",
                 form=form,
-                can_create=can_create,
+                can_create=sorted(can_create),
                 alerts=self.get_form_alerts(form.errors),
             )
 

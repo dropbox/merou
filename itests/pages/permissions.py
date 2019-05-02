@@ -23,6 +23,11 @@ class PermissionsPage(BasePage):
         # type: () -> str
         return self.find_element_by_class_name("dropdown-toggle").text.strip()
 
+    def click_create_permission_button(self):
+        # type: () -> None
+        button = self.find_element_by_class_name("create-permission")
+        button.click()
+
     def click_show_all_button(self):
         # type: () -> None
         button = self.find_element_by_class_name("show-all")

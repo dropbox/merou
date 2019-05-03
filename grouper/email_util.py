@@ -23,6 +23,17 @@ if TYPE_CHECKING:
     Context = Dict[str, Union[bool, int, str, Optional[datetime]]]
 
 
+class UnknownActorDuringExpirationException(Exception):
+    """Cannot find actor for audit log entry for an expiring edge.
+
+    When expiring an edge from a group, the edge represets a group rather than a user and neither
+    the parent group nor the child group have owners, so the logic to try to find an actor for the
+    audit log failed.
+    """
+
+    pass
+
+
 class EmailTemplateEngine(BaseTemplateEngine):
     """Email-specific template engine."""
 
@@ -237,21 +248,36 @@ def notify_edge_expiration(settings, session, edge):
     # send_async_email() from grouper.models
     from grouper.models.group import Group
 
-    # TODO(rra): Arbitrarily use the first listed owner of the group from which membership expired
-    # as the actor, since we have to provide an actor and we didn't record who set the expiration
-    # on the edge originally.
-    actor_id = next(itervalues(edge.group.my_owners())).id
-
     # Pull data about the edge and the affected user or group.
+    #
+    # TODO(rra): The audit log currently has no way of representing a system action.  Everything
+    # must be attributed to a user.  When expiring a user, use the user themselves as the actor for
+    # the audit log entry.  When expiring a group, use an arbitrary owner of the group from which
+    # they are expiring or, if that fails, an arbitrary owner of the group whose membership is
+    # expiring.  If neither group has an owner, raise an exception.  This can all go away once the
+    # audit log has a mechanism for recording system actions.
     group_name = edge.group.name
     if OBJ_TYPES_IDX[edge.member_type] == "User":
         user = User.get(session, pk=edge.member_pk)
         assert user
+        actor_id = user.id
         member_name = user.username
         recipients = [member_name]
         member_is_user = True
     else:
         subgroup = Group.get(session, pk=edge.member_pk)
+        parent_owners = edge.group.my_owners()
+        if parent_owners:
+            actor_id = next(itervalues(parent_owners)).id
+        else:
+            child_owners = subgroup.my_owners()
+            if child_owners:
+                actor_id = next(itervalues(child_owners)).id
+            else:
+                msg = "{} and {} both have no owners during expiration of {}'s membership".format(
+                    group_name, subgroup.groupname, subgroup.groupname
+                )
+                raise UnknownActorDuringExpirationException(msg)
         member_name = subgroup.groupname
         recipients = subgroup.my_owners_as_strings()
         member_is_user = False

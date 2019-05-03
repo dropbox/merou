@@ -42,6 +42,21 @@ class AuditLogInterface(with_metaclass(ABCMeta, object)):
     """
 
     @abstractmethod
+    def entries_affecting_group(self, group, limit):
+        # type: (str, int) -> List[AuditLogEntry]
+        pass
+
+    @abstractmethod
+    def entries_affecting_permission(self, permission, limit):
+        # type: (str, int) -> List[AuditLogEntry]
+        pass
+
+    @abstractmethod
+    def entries_affecting_user(self, user, limit):
+        # type: (str, int) -> List[AuditLogEntry]
+        pass
+
+    @abstractmethod
     def log_create_service_account_from_disabled_user(self, user, authorization, date=None):
         # type: (str, Authorization, Optional[datetime]) -> None
         pass
@@ -93,11 +108,6 @@ class AuditLogInterface(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def log_user_group_request_status_change(self, request, status, authorization, date=None):
         # type: (UserGroupRequest, GroupRequestStatus, Authorization, Optional[datetime]) -> None
-        pass
-
-    @abstractmethod
-    def entries_affecting_permission(self, permission, limit):
-        # type: (str, int) -> List[AuditLogEntry]
         pass
 
 

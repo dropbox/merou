@@ -23,6 +23,18 @@ class AuditLogService(AuditLogInterface):
         # type: (AuditLogRepository) -> None
         self.audit_log_repository = audit_log_repository
 
+    def entries_affecting_group(self, group, limit):
+        # type: (str, int) -> List[AuditLogEntry]
+        return self.audit_log_repository.entries_affecting_group(group, limit)
+
+    def entries_affecting_permission(self, permission, limit):
+        # type: (str, int) -> List[AuditLogEntry]
+        return self.audit_log_repository.entries_affecting_permission(permission, limit)
+
+    def entries_affecting_user(self, user, limit):
+        # type: (str, int) -> List[AuditLogEntry]
+        return self.audit_log_repository.entries_affecting_user(user, limit)
+
     def log_create_service_account_from_disabled_user(self, user, authorization, date=None):
         # type: (str, Authorization, Optional[datetime]) -> None
         self.audit_log_repository.log(
@@ -118,7 +130,3 @@ class AuditLogService(AuditLogInterface):
             on_user=request.requester,
             date=date,
         )
-
-    def entries_affecting_permission(self, permission, limit):
-        # type: (str, int) -> List[AuditLogEntry]
-        return self.audit_log_repository.entries_affecting_permission(permission, limit)

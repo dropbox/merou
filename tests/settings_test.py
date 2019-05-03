@@ -141,9 +141,11 @@ def test_mask_passsword_in_logs():
     settings._logger.addHandler(log_handler)
     settings._logger.setLevel(logging.DEBUG)
 
+    # Reading settings.database will run the external program and trigger the logging.
     with patch("subprocess.check_output") as mock_subprocess:
         mock_subprocess.return_value = "mysql://user:password@example.com:8888/merou"
         assert settings.database == test_url
-        output = log_output.getvalue()
-        assert test_url not in output
-        assert expected_url in output
+
+    output = log_output.getvalue()
+    assert test_url not in output
+    assert expected_url in output

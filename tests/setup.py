@@ -141,8 +141,8 @@ class SetupTest(object):
         user = User(username=name)
         user.add(self.session)
 
-    def add_group_to_group(self, member, group):
-        # type: (str, str) -> None
+    def add_group_to_group(self, member, group, expiration=None):
+        # type: (str, str, Optional[datetime]) -> None
         self.create_group(member)
         self.create_group(group)
         member_obj = Group.get(self.session, name=member)
@@ -153,13 +153,14 @@ class SetupTest(object):
             group_id=group_obj.id,
             member_type=OBJ_TYPES["Group"],
             member_pk=member_obj.id,
+            expiration=expiration,
             active=True,
             _role=GROUP_EDGE_ROLES.index("member"),
         )
         edge.add(self.session)
 
-    def add_user_to_group(self, user, group, role="member"):
-        # type: (str, str, str) -> None
+    def add_user_to_group(self, user, group, role="member", expiration=None):
+        # type: (str, str, str, Optional[datetime]) -> None
         self.create_user(user)
         self.create_group(group)
         user_obj = User.get(self.session, name=user)
@@ -170,6 +171,7 @@ class SetupTest(object):
             group_id=group_obj.id,
             member_type=OBJ_TYPES["User"],
             member_pk=user_obj.id,
+            expiration=expiration,
             active=True,
             _role=GROUP_EDGE_ROLES.index(role),
         )

@@ -27,6 +27,19 @@ class AuditLogRepository(object):
         self.session = session
         self.plugins = plugins
 
+    def entries_affecting_group(self, group, limit):
+        # type: (str, int) -> List[AuditLogEntry]
+        group_obj = Group.get(self.session, name=group)
+        if not group_obj:
+            return []
+        results = (
+            self.session.query(AuditLog)
+            .filter(AuditLog.on_group_id == group_obj.id)
+            .order_by(desc(AuditLog.log_time))
+            .limit(limit)
+        )
+        return [self._to_audit_log_entry(e) for e in results]
+
     def entries_affecting_permission(self, permission, limit):
         # type: (str, int) -> List[AuditLogEntry]
         permission_obj = Permission.get(self.session, name=permission)
@@ -35,6 +48,19 @@ class AuditLogRepository(object):
         results = (
             self.session.query(AuditLog)
             .filter(AuditLog.on_permission_id == permission_obj.id)
+            .order_by(desc(AuditLog.log_time))
+            .limit(limit)
+        )
+        return [self._to_audit_log_entry(e) for e in results]
+
+    def entries_affecting_user(self, user, limit):
+        # type: (str, int) -> List[AuditLogEntry]
+        user_obj = User.get(self.session, name=user)
+        if not user_obj:
+            return []
+        results = (
+            self.session.query(AuditLog)
+            .filter(AuditLog.on_user_id == user_obj.id)
             .order_by(desc(AuditLog.log_time))
             .limit(limit)
         )

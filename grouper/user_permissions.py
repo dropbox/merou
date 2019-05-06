@@ -19,7 +19,7 @@ from grouper.models.permission_map import PermissionMap
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
     from grouper.models.user import User
-    from typing import Optional
+    from typing import List, Optional
 
 
 def user_has_permission(session, user, permission, argument=None):
@@ -93,6 +93,7 @@ def user_grantable_permissions(session, user):
 
 
 def user_creatable_permissions(session, user):
+    # type: (Session, User) -> List[str]
     """
     Returns a list of permissions this user is allowed to create. Presently, this only counts
     permissions that a user has directly -- in other words, the 'create' permissions are not
@@ -105,7 +106,7 @@ def user_creatable_permissions(session, user):
     util function matches_glob.
     """
     if user_is_permission_admin(session, user):
-        return "*"
+        return ["*"]
 
     # Someone can create a permission if they are a member of a group that has a permission
     # of PERMISSION_CREATE with an argument that matches the name of a permission.

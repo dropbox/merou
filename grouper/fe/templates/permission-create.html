@@ -17,15 +17,18 @@
             <h3 class="panel-title">Create Permission</h3>
        </div>
         <div class="panel-body">
-            <form class="form-horizontal" role="form"
+            <form class="form-horizontal" id="permission-create-form" role="form"
                   method="post" action="/permissions/create">
                 {% include "forms/permission.html" %}
                 <div class="form-permission">
                     <div class="col-sm-offset-3 col-sm-9">
-                        <p>You are only allowed to create permissions that match the following
-                        list of patterns: <strong>
-                            {{ can_create|sort|join("</strong>, <strong>") }}
-                        </strong></p>
+                        <p id="allowed-patterns">
+                            You are only allowed to create permissions that match the following
+                            list of patterns:
+                            {% for permission in can_create %}
+                            <strong>{{permission}}</strong>{{ "," if not loop.last }}
+                            {% endfor %}
+                        </p>
                         <button type="submit" class="btn btn-primary">Submit</button>
                     </div>
                 </div>

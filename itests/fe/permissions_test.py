@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 from pytz import UTC
 
-from grouper.constants import PERMISSION_CREATE
 from grouper.entities.permission import Permission
 from grouper.fe.settings import FrontendSettings
 from itests.pages.permissions import PermissionsPage
@@ -138,20 +137,3 @@ def test_list_pagination(tmpdir, setup, browser):
         seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
         assert seen_permissions == sorted(expected_permissions)[2:]
         assert page.limit_label == "Limit: 10"
-
-
-def test_list_create_button(tmpdir, setup, browser):
-    # type: (LocalPath, SetupTest, Chrome) -> None
-    with setup.transaction():
-        setup.create_user("gary@a.co")
-
-    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
-        browser.get(url(frontend_url, "/permissions"))
-        page = PermissionsPage(browser)
-        assert not page.has_create_permission_button
-
-        with setup.transaction():
-            setup.grant_permission_to_group(PERMISSION_CREATE, "*", "admins")
-            setup.add_user_to_group("gary@a.co", "admins")
-        browser.get(url(frontend_url, "/permissions?refresh=yes"))
-        assert page.has_create_permission_button

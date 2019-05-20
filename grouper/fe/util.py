@@ -12,10 +12,10 @@ import tornado.web
 from plop.collector import Collector
 from six import iteritems
 from six.moves.urllib.parse import quote, unquote, urlencode, urljoin
-from tornado.web import RequestHandler
 
 from grouper import stats
 from grouper.constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATION
+from grouper.error_reporting import SentryHandler
 from grouper.fe.settings import settings
 from grouper.graph import Graph
 from grouper.initialization import create_graph_usecase_factory
@@ -49,20 +49,7 @@ class InvalidUser(Exception):
     pass
 
 
-# if raven library around, pull in SentryMixin
-try:
-    from raven.contrib.tornado import SentryMixin
-except ImportError:
-    pass
-else:
-
-    class SentryHandler(SentryMixin, RequestHandler):
-        pass
-
-    RequestHandler = SentryHandler  # type: ignore # no support for conditional declarations #1152
-
-
-class GrouperHandler(RequestHandler):
+class GrouperHandler(SentryHandler):
     def initialize(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         self.graph = Graph()

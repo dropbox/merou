@@ -7,10 +7,11 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from six import iteritems, StringIO
-from tornado.web import HTTPError, RequestHandler
+from tornado.web import HTTPError
 
 from grouper import stats
 from grouper.constants import TOKEN_FORMAT
+from grouper.error_reporting import SentryHandler
 from grouper.graph import NoSuchUser
 from grouper.models.base.session import Session
 from grouper.models.public_key import PublicKey
@@ -25,18 +26,6 @@ if TYPE_CHECKING:
     from grouper.graph import GroupGraph
     from grouper.usecases.factory import UseCaseFactory
     from typing import Any, Dict, Optional
-
-# if raven library around, pull in SentryMixin
-try:
-    from raven.contrib.tornado import SentryMixin
-except ImportError:
-    pass
-else:
-
-    class SentryHandler(SentryMixin, RequestHandler):
-        pass
-
-    RequestHandler = SentryHandler  # type: ignore # no support for conditional declarations #1152
 
 
 def get_individual_user_info(handler, name, cutoff, service_account):
@@ -75,7 +64,7 @@ def get_individual_user_info(handler, name, cutoff, service_account):
         return out
 
 
-class GraphHandler(RequestHandler):
+class GraphHandler(SentryHandler):
     def initialize(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         self.graph = kwargs["graph"]  # type: GroupGraph

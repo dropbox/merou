@@ -7,13 +7,16 @@ import traceback
 from typing import TYPE_CHECKING
 
 from six import iteritems
+from tornado.web import RequestHandler
 
 try:
-    from raven.contrib.tornado import AsyncSentryClient
+    from raven.contrib.tornado import AsyncSentryClient, SentryMixin
 
     raven_installed = True
 except ImportError:
+    SentryMixin = object
     raven_installed = False
+
 
 if TYPE_CHECKING:
     from types import FrameType
@@ -23,6 +26,12 @@ if TYPE_CHECKING:
 signame_by_signum = {
     v: k for k, v in iteritems(signal.__dict__) if k.startswith("SIG") and not k.startswith("SIG_")
 }
+
+
+class SentryHandler(RequestHandler, SentryMixin):
+    """Tornado request handler that mixes in SentryMixin if available."""
+
+    pass
 
 
 class SentryProxy(object):

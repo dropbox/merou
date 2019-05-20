@@ -26,7 +26,7 @@ class GraphGroupEdgeRepository(GroupEdgeRepository):
     def groups_of_user(self, username):
         # type: (str) -> List[str]
         user_details = self.graph.get_user_details(username)
-        return [group for group in user_details["groups"]]
+        return list(user_details["groups"].keys())
 
 
 class SQLGroupEdgeRepository(GroupEdgeRepository):

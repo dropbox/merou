@@ -162,7 +162,6 @@ def test_get_disabled_groups(setup):
     disabled_groups = setup.graph.get_disabled_groups()
     assert len(disabled_groups) == 1
     disabled_group = disabled_groups[0]
-    assert disabled_group.groupname == "sad-team"
     assert disabled_group.name == "sad-team"
     assert disabled_group.description == "Some group"
     assert disabled_group.canjoin == GroupJoinPolicy.CAN_JOIN.value
@@ -185,7 +184,6 @@ def test_get_groups(setup):
         "tech-ops",
     ]
     for group in groups:
-        assert group.groupname == group.name
         assert group.description == ""
         assert group.canjoin == GroupJoinPolicy.CAN_ASK.value
         assert group.enabled

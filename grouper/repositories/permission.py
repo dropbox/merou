@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 class GraphPermissionRepository(PermissionRepository):
     """Graph-aware storage layer for permissions."""
 
-    # Mapping from ListPermissionsSortKey to the name of an attribute on the PermissionTuple
-    # returned by get_permissions() on the graph.
+    # Mapping from ListPermissionsSortKey to the name of an attribute on the Permission returned by
+    # get_permissions() on the graph.
     SORT_FIELD = {ListPermissionsSortKey.NAME: "name", ListPermissionsSortKey.DATE: "created_on"}
 
     def __init__(self, graph, repository):
@@ -42,34 +42,24 @@ class GraphPermissionRepository(PermissionRepository):
 
     def list_permissions(self, pagination, audited_only):
         # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]
-        perm_tuples = self.graph.get_permissions(audited=audited_only)
+        permissions = self.graph.get_permissions(audited=audited_only)
 
         # Optionally sort.
         if pagination.sort_key != ListPermissionsSortKey.NONE:
-            perm_tuples = sorted(
-                perm_tuples,
+            permissions = sorted(
+                permissions,
                 key=lambda p: getattr(p, self.SORT_FIELD[pagination.sort_key]),
                 reverse=pagination.reverse_sort,
             )
 
         # Find the total length and then optionally slice.
-        total = len(perm_tuples)
+        total = len(permissions)
         if pagination.limit:
-            perm_tuples = perm_tuples[pagination.offset : pagination.offset + pagination.limit]
+            permissions = permissions[pagination.offset : pagination.offset + pagination.limit]
         elif pagination.offset > 0:
-            perm_tuples = perm_tuples[pagination.offset :]
+            permissions = permissions[pagination.offset :]
 
-        # Convert to the correct data transfer object.
-        permissions = [
-            Permission(
-                name=p.name,
-                description=p.description,
-                created_on=p.created_on,
-                audited=p.audited,
-                enabled=True,
-            )
-            for p in perm_tuples
-        ]
+        # Convert to the correct data transfer object and return.
         return PaginatedList[Permission](
             values=permissions, total=total, offset=pagination.offset, limit=pagination.limit
         )

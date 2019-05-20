@@ -32,6 +32,7 @@ class GroupEditMemberPage(BasePage):
 
 class GroupsViewPage(BasePage):
     def find_group_row(self, name):
+        # type: (str) -> GroupRow
         for row in self.find_elements_by_class_name("group-row"):
             group_row = GroupRow(row)
             if group_row.name == name:
@@ -42,6 +43,11 @@ class GroupsViewPage(BasePage):
     def click_create_group_button(self):
         # type: () -> None
         button = self.find_element_by_id("create-group")
+        button.click()
+
+    def click_show_audited_button(self):
+        # type: () -> None
+        button = self.find_element_by_id("show-audited")
         button.click()
 
     def get_create_group_modal(self):
@@ -181,11 +187,18 @@ class AuditMemberRow(BaseElement):
 
 class GroupRow(BaseElement):
     @property
+    def audited_reason(self):
+        # type: () -> str
+        return self.find_element_by_class_name("group-why-audited").text
+
+    @property
     def name(self):
+        # type: () -> str
         return self.find_element_by_class_name("group-name").text
 
     @property
     def href(self):
+        # type: () -> str
         name = self.find_element_by_class_name("group-name")
         link = name.find_element_by_tag_name("a")
         return link.get_attribute("href")

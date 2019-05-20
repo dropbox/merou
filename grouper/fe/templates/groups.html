@@ -30,7 +30,7 @@
               data-target="#createModal">
           <i class="fa fa-plus"></i> Create
       </button>
-      <a class="btn btn-warning" href="/groups?limit={{limit}}&audited=1">
+      <a id="show-audited" class="btn btn-warning" href="/groups?limit={{limit}}&audited=1">
           <i class="fa"></i> Show audited groups
       </a>
       {% endif %}
@@ -49,7 +49,7 @@
         <table class="table table-elist">
             <thead>
                 <tr>
-                    <th class="col-sm-2">Groupname</th>
+                    <th class="col-sm-2">Group name</th>
                     <th class="col-sm-4">Description</th>
                     <th class="col-sm-1">Can join?</th>
 		    {% if audited_groups %}
@@ -73,7 +73,7 @@
                     </td>
 		    {% if audited_groups %}
 		    <td class="group-why-audited">
-		      {% if group.groupname in directly_audited_groups %}
+		      {% if group.name in directly_audited_groups %}
 		      Direct
 		      {% else %}
 		      Inherited

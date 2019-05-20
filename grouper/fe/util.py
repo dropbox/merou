@@ -73,11 +73,9 @@ class GrouperHandler(SentryHandler):
 
         stats.log_rate("requests", 1)
         stats.log_rate("requests_{}".format(self.__class__.__name__), 1)
-        logging.error("initialized")
 
     def set_default_headers(self):
         # type: () -> None
-        logging.error(self)
         self.set_header("Content-Security-Policy", self.settings["template_engine"].csp_header())
         self.set_header("Referrer-Policy", "same-origin")
 

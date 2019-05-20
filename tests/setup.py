@@ -67,6 +67,7 @@ class SetupTest(object):
         settings: Settings object for tests (only the database is configured)
         graph: Underlying graph (not refreshed from the database automatically!)
         session: The underlying database session
+        plugin_proxy: The plugin proxy used for the tests
         repository_factory: Factory for repository objects
         service_factory: Factory for service objects
         usecase_factory: Factory for usecase objects
@@ -76,18 +77,18 @@ class SetupTest(object):
         # type: (LocalPath) -> None
         self.settings = Settings()
         self.settings.database = db_url(tmpdir)
-
-        self.initialize_database()
+        self.plugin_proxy = PluginProxy([])
 
         # Reinitialize the global plugin proxy with an empty set of plugins in case a previous test
         # initialized plugins.  This can go away once a plugin proxy is injected into everything
         # that needs it instead of maintained as a global.
-        set_global_plugin_proxy(PluginProxy([]))
+        set_global_plugin_proxy(self.plugin_proxy)
 
+        self.initialize_database()
         self.session = SessionFactory(self.settings).create_session()
         self.graph = GroupGraph()
         self.repository_factory = GraphRepositoryFactory(
-            self.settings, PluginProxy([]), SingletonSessionFactory(self.session), self.graph
+            self.settings, self.plugin_proxy, SingletonSessionFactory(self.session), self.graph
         )
         self.service_factory = ServiceFactory(self.repository_factory)
         self.usecase_factory = UseCaseFactory(self.settings, self.service_factory)

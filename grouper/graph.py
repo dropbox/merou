@@ -10,6 +10,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import label, literal
 
+from grouper import stats
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.models.counter import Counter
 from grouper.models.group import Group
@@ -129,6 +130,8 @@ class GroupGraph(object):
                 return
             self.logger.debug("Checkpoint changed; updating!")
 
+            start_time = datetime.utcnow()
+
             new_graph = DiGraph()
             new_graph.add_nodes_from(self._get_nodes_from_db(session))
             new_graph.add_edges_from(self._get_edges_from_db(session))
@@ -171,6 +174,9 @@ class GroupGraph(object):
                 self.permission_tuples = permission_tuples
                 self.group_tuples = group_tuples
                 self.disabled_group_tuples = disabled_group_tuples
+
+            duration = datetime.utcnow() - start_time
+            stats.log_rate("graph_update_ms", int(duration.total_seconds() * 1000))
 
     @staticmethod
     def _get_checkpoint(session):

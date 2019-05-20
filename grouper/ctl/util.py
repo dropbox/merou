@@ -1,10 +1,8 @@
 import logging
 import re
 from argparse import ArgumentTypeError
-from contextlib import contextmanager
 from datetime import datetime
 from functools import wraps
-from sys import stdout
 from typing import TYPE_CHECKING
 
 from grouper.constants import NAME_VALIDATION, SERVICE_ACCOUNT_VALIDATION, USERNAME_VALIDATION
@@ -14,7 +12,7 @@ if TYPE_CHECKING:
     from datetime import date
     from grouper.ctl.settings import CtlSettings
     from grouper.repositories.factory import SessionFactory
-    from typing import Callable, Generator
+    from typing import Callable
 
     CommandFunction = Callable[[Namespace, CtlSettings, SessionFactory], None]
 
@@ -76,20 +74,3 @@ def argparse_validate_date(s):
         return datetime.strptime(s, DATE_FORMAT).date()
     except ValueError:
         raise ArgumentTypeError("not a valid date: '{}'".format(s))
-
-
-@contextmanager
-def open_file(fn, mode):
-    # type: (str, str) -> Generator
-    """mimic standard library `open` function to support stdout if None is
-    specified as the filename."""
-    if fn and fn != "--":
-        fh = open(fn, mode)
-    else:
-        fh = stdout  # type: ignore
-
-    try:
-        yield fh
-    finally:
-        if fh is not stdout:
-            fh.close()

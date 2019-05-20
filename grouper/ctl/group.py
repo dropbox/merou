@@ -1,13 +1,10 @@
 import csv
 import logging
+import sys
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
-from grouper.ctl.util import (
-    argparse_validate_date,
-    ensure_valid_groupname,
-    ensure_valid_username,
-    open_file,
-)
+from grouper.ctl.util import argparse_validate_date, ensure_valid_groupname, ensure_valid_username
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
 from grouper.models.user import User
@@ -18,6 +15,7 @@ if TYPE_CHECKING:
     from grouper.ctl.settings import CtlSettings
     from grouper.models.base.session import Session
     from grouper.repositories.factory import SessionFactory
+    from typing import Iterator, IO
 
 
 @ensure_valid_groupname
@@ -91,6 +89,23 @@ def mutate_group_command(session, group, args):
                 logging.error("%s", e)
 
 
+@contextmanager
+def open_file_or_stdout_for_write(fn):
+    # type: (str) -> Iterator[IO[str]]
+    """mimic standard library `open` function to support stdout if None is
+    specified as the filename."""
+    if not fn or fn == "--":
+        fh = sys.stdout
+    else:
+        fh = open(fn, "w")
+
+    try:
+        yield fh
+    finally:
+        if fh is not sys.stdout:
+            fh.close()
+
+
 def logdump_group_command(session, group, args):
     # type: (Session, Group, Namespace) -> None
     log_entries = session.query(AuditLog).filter(
@@ -100,7 +115,7 @@ def logdump_group_command(session, group, args):
     if args.end_date:
         log_entries = log_entries.filter(AuditLog.log_time <= args.end_date)
 
-    with open_file(args.outfile, "w") as fh:
+    with open_file_or_stdout_for_write(args.outfile) as fh:
         csv_w = csv.writer(fh)
         for log_entry in log_entries:
             if log_entry.on_user:

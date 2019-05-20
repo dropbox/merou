@@ -30,6 +30,10 @@ class PluginProxy(object):
         # type: (List[BasePlugin]) -> None
         self._plugins = plugins
 
+    def add_plugin(self, plugin):
+        # type: (BasePlugin) -> None
+        self._plugins.append(plugin)
+
     def check_machine_set(self, name, machine_set):
         # type: (str, str) -> None
         for plugin in self._plugins:

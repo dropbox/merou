@@ -39,14 +39,13 @@ else:
     RequestHandler = SentryHandler  # type: ignore # no support for conditional declarations #1152
 
 
-def get_individual_user_info(handler, name, cutoff, service_account):
-    # type: (GraphHandler, str, int, Optional[bool]) -> Dict[str, Any]
+def get_individual_user_info(handler, name, service_account):
+    # type: (GraphHandler, str, Optional[bool]) -> Dict[str, Any]
     """This is a helper function to retrieve all information about a user.
 
     Args:
         handler: the GraphHandler for this request
         name: the name of the user whose data is being retrieved
-        cutoff: the maximum distance of groups to use for permission checking
         service_account: a boolean indicating if this request is for a service account or not. This
             can be None if you want to support users and service accounts (deprecated)
 
@@ -66,7 +65,7 @@ def get_individual_user_info(handler, name, cutoff, service_account):
             if service_account != is_service_account:
                 raise NoSuchUser
 
-        details = handler.graph.get_user_details(name, cutoff, expose_aliases=False)
+        details = handler.graph.get_user_details(name, expose_aliases=False)
         out = {"user": {"name": name}}
         # Updates the output with the user's metadata
         try_update(out["user"], md)
@@ -148,8 +147,10 @@ class GraphHandler(RequestHandler):
 
 
 class Users(GraphHandler):
-    def get(self, name=None):
-        cutoff = int(self.get_argument("cutoff", 100))
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        name = kwargs.get("name")  # type: Optional[str]
+
         # Deprecated 2016-08-10, use the ServiceAccounts endpoint to lookup service accounts
         include_service_accounts = self.get_argument("include_role_users", "no") == "yes"
 
@@ -158,9 +159,7 @@ class Users(GraphHandler):
             # because there are too many existing integrations that expect the
             # /users/foo@example.com endpoint to work for both. :(
             try:
-                return self.success(
-                    get_individual_user_info(self, name, cutoff, service_account=None)
-                )
+                return self.success(get_individual_user_info(self, name, service_account=None))
             except NoSuchUser:
                 return self.notfound("User ({}) not found.".format(name))
 
@@ -188,20 +187,17 @@ class MultiUsers(GraphHandler):
     multiple returning the data of multiple users to save on API call overhead.
     """
 
-    def get(self):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
         usernames = self.get_arguments("username")
         if not usernames:
             usernames = iter(self.graph.user_metadata)
-
-        cutoff = int(self.get_argument("cutoff", 100))
 
         with self.graph.lock:
             data = {}
             for username in usernames:
                 try:
-                    data[username] = get_individual_user_info(
-                        self, username, cutoff, service_account=None
-                    )
+                    data[username] = get_individual_user_info(self, username, service_account=None)
                 except NoSuchUser:
                     continue
             self.success(data)
@@ -246,8 +242,6 @@ class UsersPublicKeys(GraphHandler):
 
 class Groups(GraphHandler):
     def get(self, name=None):
-        cutoff = int(self.get_argument("cutoff", 100))
-
         with self.graph.lock:
             if not name:
                 return self.success({"groups": [group for group in self.graph.groups]})
@@ -255,7 +249,7 @@ class Groups(GraphHandler):
             if name not in self.graph.groups:
                 return self.notfound("Group (%s) not found." % name)
 
-            details = self.graph.get_group_details(name, cutoff, expose_aliases=False)
+            details = self.graph.get_group_details(name, expose_aliases=False)
 
             out = {"group": {"name": name}}
             try_update(out["group"], self.graph.group_metadata.get(name, {}))
@@ -312,13 +306,12 @@ class TokenValidate(GraphHandler):
 
 
 class ServiceAccounts(GraphHandler):
-    def get(self, name=None):
-        cutoff = int(self.get_argument("cutoff", 100))
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        name = kwargs.get("name")  # type: Optional[str]
         if name is not None:
             try:
-                return self.success(
-                    get_individual_user_info(self, name, cutoff, service_account=True)
-                )
+                return self.success(get_individual_user_info(self, name, service_account=True))
             except NoSuchUser:
                 return self.notfound("User ({}) not found.".format(name))
 

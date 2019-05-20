@@ -56,8 +56,6 @@ def test_users(users, http_client, base_url):  # noqa: F811
     assert body["status"] == "ok"
     assert sorted(body["data"]["users"]) == all_users
 
-    # TODO: test cutoff
-
 
 @pytest.mark.gen_test
 def test_multi_users(users, http_client, base_url):  # noqa: F811
@@ -120,8 +118,6 @@ def test_service_accounts(session, standard_graph, users, http_client, base_url)
     assert sorted(body["data"]["service_accounts"]) == sorted(
         [u.name for u in itervalues(users) if u.role_user] + ["service@a.co"]
     )
-
-    # TODO: test cutoff
 
     # Retrieve a single service account and check its metadata.
     api_url = url(base_url, "/service_accounts/service@a.co")
@@ -273,8 +269,6 @@ def test_groups(groups, http_client, base_url):  # noqa: F811
     assert resp.code == 200
     assert body["status"] == "ok"
     assert sorted(body["data"]["groups"]) == sorted(groups)
-
-    # TODO: test cutoff
 
 
 @pytest.mark.gen_test

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from mock import call, MagicMock
+from mock import ANY, call, MagicMock
 
 from grouper.constants import PERMISSION_ADMIN, PERMISSION_CREATE
 from grouper.entities.permission_grant import GroupPermissionGrant, ServiceAccountPermissionGrant
@@ -80,8 +80,12 @@ def test_permission_disable_existing_grants(setup):
     assert mock_ui.mock_calls == [
         call.disable_permission_failed_existing_grants(
             "some-permission",
-            [GroupPermissionGrant("some-group", "some-permission", "argument")],
-            [ServiceAccountPermissionGrant("service@svc.localhost", "some-permission", "")],
+            [GroupPermissionGrant("some-group", "some-permission", "argument", ANY, ANY)],
+            [
+                ServiceAccountPermissionGrant(
+                    "service@svc.localhost", "some-permission", "", ANY, ANY
+                )
+            ],
         )
     ]
 

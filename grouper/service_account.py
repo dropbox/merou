@@ -10,11 +10,12 @@ Account abstraction.  A User that's just the account of a ServiceAccount is flag
 service_account boolean field.
 """
 
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from sqlalchemy.exc import IntegrityError
 
+from grouper.entities.permission_grant import PermissionGrant, ServiceAccountPermissionGrant
 from grouper.group_service_account import add_service_account
 from grouper.models.audit_log import AuditLog
 from grouper.models.counter import Counter
@@ -30,11 +31,6 @@ if TYPE_CHECKING:
     from grouper.models.base.session import Session
     from grouper.models.group import Group
     from typing import Dict, List, Union
-
-# A single service account permission.
-ServiceAccountPermission = namedtuple(
-    "ServiceAccountPermission", ["permission", "argument", "granted_on", "mapping_id"]
-)
 
 
 class BadMachineSet(Exception):
@@ -63,6 +59,7 @@ def _check_machine_set(service_account, machine_set):
 
 
 def can_create_service_account(session, actor, group):
+    # type: (Session, User, Group) -> bool
     return actor.is_member(group.my_members())
 
 
@@ -199,33 +196,13 @@ def enable_service_account(session, actor, service_account, owner):
 
 
 def service_account_permissions(session, service_account):
-    # type: (Session, ServiceAccount) -> List[ServiceAccountPermission]
-    """Return the permissions of a service account."""
-    permissions = session.query(Permission, ServiceAccountPermissionMap).filter(
-        Permission.id == ServiceAccountPermissionMap.permission_id,
-        ServiceAccountPermissionMap.service_account_id == service_account.id,
-        ServiceAccountPermissionMap.service_account_id == ServiceAccount.id,
-        ServiceAccount.user_id == User.id,
-        User.enabled == True,
-    )
-    out = []
-    for permission in permissions:
-        out.append(
-            ServiceAccountPermission(
-                permission=permission[0].name,
-                argument=permission[1].argument,
-                granted_on=permission[1].granted_on,
-                mapping_id=permission[1].id,
-            )
-        )
-    return out
+    # type: (Session, ServiceAccount) -> List[ServiceAccountPermissionGrant]
+    """Return the permissions of a service account, including mapping IDs.
 
-
-def all_service_account_permissions(session):
-    # type: (Session) -> Dict[str, List[ServiceAccountPermission]]
-    """Return a dict of service account names to their permissions."""
-    out = defaultdict(list)  # type: Dict[str, List[ServiceAccountPermission]]
-    permissions = session.query(
+    This is used to display the permission grants on a service account page, which has to generate
+    revocation links, so return ServiceAccountPermissionGrant objects that include the mapping ID.
+    """
+    grants = session.query(
         User.username,
         Permission.name,
         ServiceAccountPermissionMap.argument,
@@ -233,17 +210,47 @@ def all_service_account_permissions(session):
         ServiceAccountPermissionMap.id,
     ).filter(
         Permission.id == ServiceAccountPermissionMap.permission_id,
+        ServiceAccountPermissionMap.service_account_id == service_account.id,
         ServiceAccountPermissionMap.service_account_id == ServiceAccount.id,
         ServiceAccount.user_id == User.id,
         User.enabled == True,
     )
-    for permission in permissions:
-        out[permission.username].append(
-            ServiceAccountPermission(
-                permission=permission.name,
-                argument=permission.argument,
-                granted_on=permission.granted_on,
-                mapping_id=permission.id,
+    out = []
+    for grant in grants:
+        out.append(
+            ServiceAccountPermissionGrant(
+                service_account=grant.username,
+                permission=grant.name,
+                argument=grant.argument,
+                granted_on=grant.granted_on,
+                mapping_id=grant.id,
+            )
+        )
+    return out
+
+
+def all_service_account_permissions(session):
+    # type: (Session) -> Dict[str, List[PermissionGrant]]
+    """Return a dict of service account names to their permissions."""
+    grants = session.query(
+        User.username,
+        Permission.name,
+        ServiceAccountPermissionMap.argument,
+        ServiceAccountPermissionMap.granted_on,
+    ).filter(
+        Permission.id == ServiceAccountPermissionMap.permission_id,
+        ServiceAccountPermissionMap.service_account_id == ServiceAccount.id,
+        ServiceAccount.user_id == User.id,
+        User.enabled == True,
+    )
+    out = defaultdict(list)  # type: Dict[str, List[PermissionGrant]]
+    for grant in grants:
+        out[grant.username].append(
+            PermissionGrant(
+                permission=grant.name,
+                argument=grant.argument,
+                granted_on=grant.granted_on,
+                is_alias=False,
             )
         )
     return out

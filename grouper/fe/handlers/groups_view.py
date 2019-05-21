@@ -8,7 +8,7 @@ from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, Set
 
 
 class GroupsView(GrouperHandler):
@@ -24,14 +24,14 @@ class GroupsView(GrouperHandler):
 
         if not enabled:
             groups = self.graph.get_disabled_groups()
-            directly_audited_groups = None
+            directly_audited_groups = set()  # type: Set[str]
         elif audited_only:
-            groups = self.graph.get_groups(audited=True, directly_audited=False)
+            groups = self.graph.get_groups(audited=True)
             directly_audited_groups = set(
-                [g.groupname for g in self.graph.get_groups(audited=True, directly_audited=True)]
+                [g.name for g in self.graph.get_groups(directly_audited=True)]
             )
         else:
-            groups = self.graph.get_groups(audited=False)
+            groups = self.graph.get_groups()
             directly_audited_groups = set()
         groups = [group for group in groups if not group.service_account]
         total = len(groups)

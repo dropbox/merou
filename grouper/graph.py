@@ -12,11 +12,12 @@ from sqlalchemy.sql import label, literal
 
 from grouper import stats
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
+from grouper.entities.permission import Permission
 from grouper.models.counter import Counter
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
 from grouper.models.group_service_accounts import GroupServiceAccount
-from grouper.models.permission import MappedPermission, Permission
+from grouper.models.permission import MappedPermission, Permission as SQLPermission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.public_key import PublicKey
 from grouper.models.service_account import ServiceAccount
@@ -32,6 +33,9 @@ if TYPE_CHECKING:
     from grouper.service_account import ServiceAccountPermission
     from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
+    Node = Tuple[str, str]
+    Edge = Tuple[Node, Node, Dict[str, str]]
+
 MEMBER_TYPE_MAP = {"User": "users", "Group": "subgroups"}
 EPOCH = datetime(1970, 1, 1)
 
@@ -42,15 +46,10 @@ def Graph():
     return GroupGraph()
 
 
-# A GroupGraph caches users, permissions, and groups as objects which are intended
-# to behave like the corresponding models but without any connection to SQL
-# backend.
-PermissionTuple = namedtuple(
-    "PermissionTuple", ["id", "name", "description", "created_on", "audited"]
-)
+# A GroupGraph caches users, permissions, and groups as objects which are intended to behave like
+# the corresponding models but without any connection to SQL backend.
 GroupTuple = namedtuple(
-    "GroupTuple",
-    ["id", "groupname", "name", "description", "canjoin", "enabled", "service_account", "type"],
+    "GroupTuple", ["name", "description", "canjoin", "enabled", "service_account", "type"]
 )
 
 
@@ -101,27 +100,19 @@ class GroupGraph(object):
         self.group_service_accounts = {}  # type: Dict[str, List[str]]
         self.permission_metadata = {}  # type: Dict[str, List[MappedPermission]]
         self.service_account_permissions = {}  # type: Dict[str, List[ServiceAccountPermission]]
-        self.permission_tuples = set()  # type: Set[PermissionTuple]
+        self.permission_tuples = set()  # type: Set[Permission]
         self.group_tuples = {}  # type: Dict[str, GroupTuple]
         self.disabled_group_tuples = {}  # type: Dict[str, GroupTuple]
 
-    @property
-    def nodes(self):
-        with self.lock:
-            return self._graph.nodes()
-
-    @property
-    def edges(self):
-        with self.lock:
-            return self._graph.edges()
-
     @classmethod
     def from_db(cls, session):
+        # type: (Session) -> GroupGraph
         inst = cls()
         inst.update_from_db(session)
         return inst
 
     def update_from_db(self, session):
+        # type: (Session) -> None
         # Only allow one thread at a time to construct a fresh graph.
         with self.update_lock:
             checkpoint, checkpoint_time = self._get_checkpoint(session)
@@ -148,7 +139,7 @@ class GroupGraph(object):
             user_metadata = self._get_user_metadata(session)
             permission_metadata = self._get_permission_metadata(session)
             service_account_permissions = all_service_account_permissions(session)
-            group_metadata = self._get_group_metadata(session, permission_metadata)
+            group_metadata = self._get_group_metadata(session)
             group_service_accounts = self._get_group_service_accounts(session)
             permission_tuples = self._get_permission_tuples(session)
             group_tuples = self._get_group_tuples(session)
@@ -180,6 +171,7 @@ class GroupGraph(object):
 
     @staticmethod
     def _get_checkpoint(session):
+        # type: (Session) -> Tuple[int, int]
         counter = session.query(Counter).filter_by(name="updates").scalar()
         if counter is None:
             return 0, 0
@@ -188,9 +180,7 @@ class GroupGraph(object):
     @staticmethod
     def _get_user_metadata(session):
         # type: (Session) -> Dict[str, Any]
-        """
-        Returns a dict of username: { dict of metadata }.
-        """
+        """Returns a dict of username: { dict of metadata }."""
 
         def user_indexify(data):
             # type: (Iterable[Any]) -> Dict[int, List[Any]]
@@ -273,14 +263,14 @@ class GroupGraph(object):
     @staticmethod
     def _get_permission_metadata(session):
         # type: (Session) -> Dict[str, List[MappedPermission]]
-        """
-        Returns a dict of groupname: { list of permissions }. Note
-        that disabled permissions are not included.
+        """Returns a dict of groupname: { list of permissions }.
+
+        Disabled permissions are not included.
         """
         out = defaultdict(list)  # type: Dict[str, List[MappedPermission]]
 
-        permissions = session.query(Permission, PermissionMap, Group.groupname).filter(
-            Permission.id == PermissionMap.permission_id,
+        permissions = session.query(SQLPermission, PermissionMap, Group.groupname).filter(
+            SQLPermission.id == PermissionMap.permission_id,
             PermissionMap.group_id == Group.id,
             Group.enabled == True,
         )
@@ -317,9 +307,8 @@ class GroupGraph(object):
 
     @staticmethod
     def _get_permission_tuples(session):
-        """
-        Returns a set of PermissionTuple instances.
-        """
+        # type: (Session) -> Set[Permission]
+        """Returns all permissions in the graph."""
         # TODO: import here to avoid circular dependency
         from grouper.permissions import get_all_permissions
 
@@ -327,40 +316,31 @@ class GroupGraph(object):
         permissions = get_all_permissions(session)
         for permission in permissions:
             out.add(
-                PermissionTuple(
-                    id=permission.id,
+                Permission(
                     name=permission.name,
                     description=permission.description,
                     created_on=permission.created_on,
                     audited=permission.audited,
+                    enabled=permission.enabled,
                 )
             )
         return out
 
     @staticmethod
-    def _get_group_metadata(session, permission_metadata):
-        """
-        Returns a dict of groupname: { dict of metadata }.
-        """
+    def _get_group_metadata(session):
+        # type: (Session) -> Dict[str, Dict[str, Dict[str, str]]]
+        """Returns a dict of groupname: { dict of metadata }."""
         groups = session.query(Group).filter(Group.enabled == True)
 
         out = {}
         for group in groups:
-            out[group.groupname] = {
-                "permissions": [
-                    {"permission": permission.permission, "argument": permission.argument}
-                    for permission in permission_metadata[group.id]
-                ],
-                "contacts": {"email": group.email_address},
-            }
+            out[group.groupname] = {"contacts": {"email": group.email_address}}
         return out
 
     @staticmethod
     def _get_group_service_accounts(session):
         # type: (Session) -> Dict[str, List[str]]
-        """
-        Returns a dict of groupname: { list of service account names }.
-        """
+        """Returns a dict of groupname: { list of service account names }."""
         out = defaultdict(list)  # type: Dict[str, List[str]]
         tuples = session.query(Group.groupname, User.username).filter(
             GroupServiceAccount.group_id == Group.id,
@@ -373,9 +353,7 @@ class GroupGraph(object):
 
     def _get_group_tuples(self, session, enabled=True):
         # type: (Session, bool) -> Dict[str, GroupTuple]
-        """
-        Returns a dict of groupname: GroupTuple.
-        """
+        """Returns a dict of groupname: GroupTuple."""
         out = {}
         groups = (session.query(Group).order_by(Group.groupname)).filter(Group.enabled == enabled)
         for group in groups:
@@ -384,8 +362,6 @@ class GroupGraph(object):
             else:
                 is_service_account = False
             out[group.groupname] = GroupTuple(
-                id=group.id,
-                groupname=group.groupname,
                 name=group.groupname,
                 description=group.description,
                 canjoin=group.canjoin,
@@ -397,6 +373,7 @@ class GroupGraph(object):
 
     @staticmethod
     def _get_nodes_from_db(session):
+        # type: (Session) -> List[Node]
         return (
             session.query(label("type", literal("User")), label("name", User.username))
             .filter(User.enabled == True)
@@ -410,11 +387,10 @@ class GroupGraph(object):
 
     @staticmethod
     def _get_edges_from_db(session):
-
+        # type: (Session) -> List[Edge]
         parent = aliased(Group)
         group_member = aliased(Group)
         user_member = aliased(User)
-        edges = []
 
         now = datetime.utcnow()
 
@@ -452,6 +428,7 @@ class GroupGraph(object):
             )
         )
 
+        edges = []
         for record in query.all():
             edges.append(
                 (("Group", record.groupname), (record.type, record.name), {"role": record.role})
@@ -460,8 +437,8 @@ class GroupGraph(object):
         return edges
 
     def get_permissions(self, audited=False):
-        # type: (bool) -> List[PermissionTuple]
-        """Get the list of permissions as PermissionTuple instances."""
+        # type: (bool) -> List[Permission]
+        """Get the list of permissions as Permission instances."""
         with self.lock:
             if audited:
                 permissions = [p for p in self.permission_tuples if p.audited]
@@ -470,10 +447,10 @@ class GroupGraph(object):
         return permissions
 
     def get_permission_details(self, name, expose_aliases=True):
+        # type: (str, bool) -> Dict[str, Dict[str, Any]]
         """ Get a permission and what groups and service accounts it's assigned to. """
-
         with self.lock:
-            data = {"groups": {}, "service_accounts": {}}
+            data = {"groups": {}, "service_accounts": {}}  # type: Dict[str, Dict[str, Any]]
 
             # Get all mapped versions of the permission. This is only direct relationships.
             direct_groups = set()
@@ -486,7 +463,7 @@ class GroupGraph(object):
                         direct_groups.add(groupname)
 
             # Now find all members of these groups going down the tree.
-            checked_groups = set()
+            checked_groups = set()  # type: Set[str]
             for groupname in direct_groups:
                 group = ("Group", groupname)
                 paths = single_source_shortest_path(self._graph, group, None)
@@ -504,13 +481,13 @@ class GroupGraph(object):
                     )
 
             # Finally, add all service accounts.
-            for account, permissions in iteritems(self.service_account_permissions):
-                for permission in permissions:
-                    if permission.permission == name:
+            for account, service_permissions in iteritems(self.service_account_permissions):
+                for service_permission in service_permissions:
+                    if service_permission.permission == name:
                         details = {
-                            "permission": permission.permission,
-                            "argument": permission.argument,
-                            "granted_on": (permission.granted_on - EPOCH).total_seconds(),
+                            "permission": service_permission.permission,
+                            "argument": service_permission.argument,
+                            "granted_on": (service_permission.granted_on - EPOCH).total_seconds(),
                         }
                         if account in data["service_accounts"]:
                             data["service_accounts"][account]["permissions"].append(details)
@@ -520,12 +497,14 @@ class GroupGraph(object):
             return data
 
     def get_disabled_groups(self):
+        # type: () -> List[GroupTuple]
         """ Get the list of disabled groups as GroupTuple instances sorted by groupname. """
         with self.lock:
-            return sorted(self.disabled_group_tuples.values(), key=lambda g: g.groupname)
+            return sorted(self.disabled_group_tuples.values(), key=lambda g: g.name)
 
     def get_groups(self, audited=False, directly_audited=False):
-        """Get the list of groups as GroupTuple instances sorted by groupname.
+        # type: (bool, bool) -> List[GroupTuple]
+        """Get the list of groups as GroupTuple instances sorted by group name.
 
         Arg(s):
             audited (bool): true to get only audited groups
@@ -538,11 +517,12 @@ class GroupGraph(object):
         if directly_audited:
             audited = True
         with self.lock:
-            groups = sorted(self.group_tuples.values(), key=lambda g: g.groupname)
+            groups = sorted(self.group_tuples.values(), key=lambda g: g.name)
             if audited:
 
                 def is_directly_audited(group):
-                    for mp in self.permission_metadata[group.groupname]:
+                    # type: (GroupTuple) -> bool
+                    for mp in self.permission_metadata[group.name]:
                         if mp.audited:
                             return True
                     return False
@@ -550,8 +530,8 @@ class GroupGraph(object):
                 directly_audited_groups = list(filter(is_directly_audited, groups))
                 if directly_audited:
                     return directly_audited_groups
-                queue = [("Group", group.groupname) for group in directly_audited_groups]
-                audited_group_nodes = set()
+                queue = [("Group", group.name) for group in directly_audited_groups]
+                audited_group_nodes = set()  # type: Set[Node]
                 while len(queue):
                     g = queue.pop()
                     if g not in audited_group_nodes:
@@ -561,7 +541,7 @@ class GroupGraph(object):
                                 queue.append(nhbr)
                 groups = sorted(
                     [self.group_tuples[group[1]] for group in audited_group_nodes],
-                    key=lambda g: g.groupname,
+                    key=lambda g: g.name,
                 )
         return groups
 
@@ -678,12 +658,13 @@ class GroupGraph(object):
             # account and we don't do any graph walking.
             if "service_account" in self.user_metadata[username]:
                 if username in self.service_account_permissions:
-                    for permission in self.service_account_permissions[username]:
+                    for service_permission in self.service_account_permissions[username]:
+                        granted_on = (service_permission.granted_on - EPOCH).total_seconds()
                         permissions.append(
                             {
-                                "permission": permission.permission,
-                                "argument": permission.argument,
-                                "granted_on": (permission.granted_on - EPOCH).total_seconds(),
+                                "permission": service_permission.permission,
+                                "argument": service_permission.argument,
+                                "granted_on": granted_on,
                             }
                         )
                 return user_details
@@ -724,17 +705,17 @@ class GroupGraph(object):
                     "rolename": GROUP_EDGE_ROLES[role],
                 }
 
-                for service_permission in self.permission_metadata[parent_name]:
+                for permission in self.permission_metadata[parent_name]:
                     perm_data = {
-                        "permission": service_permission.permission,
-                        "argument": service_permission.argument,
-                        "granted_on": (service_permission.granted_on - EPOCH).total_seconds(),
+                        "permission": permission.permission,
+                        "argument": permission.argument,
+                        "granted_on": (permission.granted_on - EPOCH).total_seconds(),
                         "path": [elem[1] for elem in path],
                         "distance": len(path) - 1,
                     }
 
                     if expose_aliases:
-                        perm_data["alias"] = service_permission.alias
+                        perm_data["alias"] = permission.alias
 
                     permissions.append(perm_data)
 

@@ -99,7 +99,7 @@ class BackgroundProcessor(object):
         nonauditor_approver_to_groups = defaultdict(set)  # type: Dict[User, Set[str]]
         user_is_auditor = {}  # type: Dict[str, bool]
         for group_tuple in graph.get_groups(audited=True, directly_audited=False):
-            group_md = graph.get_group_details(group_tuple.groupname, expose_aliases=False)
+            group_md = graph.get_group_details(group_tuple.name, expose_aliases=False)
             for username, user_md in iteritems(group_md["users"]):
                 if username not in user_is_auditor:
                     user_perms = graph.get_user_details(username)["permissions"]
@@ -111,7 +111,7 @@ class BackgroundProcessor(object):
                     continue
                 if user_md["role"] in APPROVER_ROLE_INDICES:
                     # non-auditor approver. BAD!
-                    nonauditor_approver_to_groups[username].add(group_tuple.groupname)
+                    nonauditor_approver_to_groups[username].add(group_tuple.name)
 
         if nonauditor_approver_to_groups:
             auditors_group = get_auditors_group(self.settings, session)

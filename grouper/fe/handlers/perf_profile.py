@@ -1,15 +1,21 @@
+from typing import TYPE_CHECKING
+
 from tornado.web import RequestHandler
 
 from grouper.models.base.session import Session
 from grouper.perf_profile import FLAMEGRAPH_SUPPORTED, get_flamegraph_svg, InvalidUUID
 
+if TYPE_CHECKING:
+    from typing import Any
 
-# Don't use GraphHandler here as we don't want to count
-# these as requests.
+
+# Don't use GrouperHandler here as we don't want to count these as requests.
 class PerfProfile(RequestHandler):
-    def get(self, trace_uuid):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        trace_uuid = kwargs["trace_uuid"]  # type: str
         if not FLAMEGRAPH_SUPPORTED:
-            return self.self_error(
+            return self.send_error(
                 status_code=404,
                 reason="Performance profiles not supported (plop or pyflamegraph not installed)",
             )

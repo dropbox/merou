@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from grouper.entities.permission import Permission
     from grouper.graph import GroupGraph
     from grouper.usecases.factory import UseCaseFactory
-    from typing import Any, Dict, Optional
+    from typing import Any, Dict, Iterable, Optional, Tuple
 
 
 def get_individual_user_info(handler, name, service_account):
@@ -75,6 +75,7 @@ class GraphHandler(SentryHandler):
         stats.log_rate("requests_{}".format(self.__class__.__name__), 1)
 
     def on_finish(self):
+        # type: () -> None
         # log request duration
         duration = datetime.utcnow() - self._request_start_time
         duration_ms = int(duration.total_seconds() * 1000)
@@ -89,20 +90,22 @@ class GraphHandler(SentryHandler):
         stats.log_rate("response_status_{}_{}".format(self.__class__.__name__, response_status), 1)
 
     def error(self, errors):
-        errors = [{"code": code, "message": message} for code, message in errors]
+        # type: (Iterable[Tuple[int, Any]]) -> None
+        out = [{"code": code, "message": message} for code, message in errors]
         with self.graph.lock:
             checkpoint = self.graph.checkpoint
             checkpoint_time = self.graph.checkpoint_time
             self.write(
                 {
                     "status": "error",
-                    "errors": errors,
+                    "errors": out,
                     "checkpoint": checkpoint,
                     "checkpoint_time": checkpoint_time,
                 }
             )
 
     def success(self, data):
+        # type: (Any) -> None
         with self.graph.lock:
             checkpoint = self.graph.checkpoint
             checkpoint_time = self.graph.checkpoint_time
@@ -116,17 +119,20 @@ class GraphHandler(SentryHandler):
             )
 
     def raise_and_log_exception(self, exc):
+        # type: (Exception) -> None
         try:
             raise exc
         except Exception:
             self.log_exception(*sys.exc_info())
 
     def notfound(self, message):
+        # type: (str) -> None
         self.set_status(404)
         self.raise_and_log_exception(HTTPError(404))
         self.error([(404, message)])
 
     def write_error(self, status_code, **kwargs):
+        # type: (int, **Any) -> None
         """Overrides tornado's uncaught exception handler to return JSON results."""
         if "exc_info" in kwargs:
             typ, value, _ = kwargs["exc_info"]
@@ -193,7 +199,8 @@ class MultiUsers(GraphHandler):
 
 
 class UsersPublicKeys(GraphHandler):
-    def get(self):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
         fh = StringIO()
         w_csv = csv.writer(fh, lineterminator="\n")
 
@@ -230,7 +237,9 @@ class UsersPublicKeys(GraphHandler):
 
 
 class Groups(GraphHandler):
-    def get(self, name=None):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        name = kwargs.get("name")  # type: Optional[str]
         with self.graph.lock:
             if not name:
                 return self.success({"groups": [group for group in self.graph.groups]})
@@ -251,7 +260,9 @@ class Permissions(GraphHandler, ListPermissionsUI):
         # type: (PaginatedList[Permission], bool) -> None
         self.success({"permissions": [p.name for p in permissions.values]})
 
-    def get(self, name=None):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        name = kwargs.get("name")  # type: Optional[str]
         if not name:
             usecase = self.usecase_factory.create_list_permissions_usecase(self)
             usecase.simple_list_permissions()
@@ -271,7 +282,8 @@ class Permissions(GraphHandler, ListPermissionsUI):
 class TokenValidate(GraphHandler):
     validator = re.compile(TOKEN_FORMAT)
 
-    def post(self):
+    def post(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
         supplied_token = self.get_body_argument("token")
         match = TokenValidate.validator.match(supplied_token)
         if not match:
@@ -319,5 +331,6 @@ class ServiceAccounts(GraphHandler):
 
 
 class NotFound(GraphHandler):
-    def get(self):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
         return self.notfound("Endpoint not found")

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from grouper.constants import USER_METADATA_SHELL_KEY
 from grouper.entities.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
@@ -23,8 +24,16 @@ from grouper.user_metadata import get_user_metadata_by_key
 from grouper.user_password import user_passwords
 from grouper.user_permissions import user_grantable_permissions, user_is_user_admin
 
+if TYPE_CHECKING:
+    from grouper.graph import GroupGraph
+    from grouper.models.base.session import Session
+    from grouper.models.group import Group
+    from grouper.models.user import User
+    from typing import Any, Dict
+
 
 def get_group_view_template_vars(session, actor, group, graph):
+    # type: (Session, User, Group, GroupGraph) -> Dict[str, Any]
     ret = {}
     ret["grantable"] = user_grantable_permissions(session, actor)
 
@@ -84,11 +93,12 @@ def get_group_view_template_vars(session, actor, group, graph):
 
 
 def get_user_view_template_vars(session, actor, user, graph):
+    # type: (Session, User, User, GroupGraph) -> Dict[str, Any]
     # TODO(cbguder): get around circular dependencies
     from grouper.fe.handlers.user_disable import UserDisable
     from grouper.fe.handlers.user_enable import UserEnable
 
-    ret = {}
+    ret = {}  # type: Dict[str, Any]
     if user.is_service_account:
         ret["can_control"] = can_manage_service_account(
             session, user.service_account, actor
@@ -147,6 +157,7 @@ def get_user_view_template_vars(session, actor, user, graph):
 
 
 def get_role_user_view_template_vars(session, actor, user, group, graph):
+    # type: (Session, User, User, Group, GroupGraph) -> Dict[str, Any]
     ret = get_user_view_template_vars(session, actor, user, graph)
     ret.update(get_group_view_template_vars(session, actor, group, graph))
     ret["can_control"] = can_manage_role_user(session, user=actor, tuser=user)

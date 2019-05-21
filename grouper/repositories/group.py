@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from grouper.entities.group import Group, GroupJoinPolicy
 from grouper.models.group import Group as SQLGroup
+from grouper.models.user import User as SQLUser
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
@@ -25,8 +26,12 @@ class GroupRepository(object):
         group = SQLGroup.get(self.session, name=name)
         if not group:
             return None
+        user = SQLUser.get(self.session, name=name)
+        is_role_user = user.role_user if user else False
         return Group(
             name=group.groupname,
             description=group.description,
             join_policy=GroupJoinPolicy(group.canjoin),
+            enabled=group.enabled,
+            is_role_user=is_role_user,
         )

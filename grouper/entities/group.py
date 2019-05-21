@@ -11,7 +11,14 @@ class GroupJoinPolicy(Enum):
 
 
 Group = NamedTuple(
-    "Group", [("name", str), ("description", str), ("join_policy", GroupJoinPolicy)]
+    "Group",
+    [
+        ("name", str),
+        ("description", str),
+        ("join_policy", GroupJoinPolicy),
+        ("enabled", bool),
+        ("is_role_user", bool),
+    ],
 )
 
 

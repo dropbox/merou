@@ -199,7 +199,7 @@ def enable_permission_auditing(session, permission_name, actor_user_id):
     if not permission:
         raise NoSuchPermission(name=permission_name)
 
-    permission._audited = True
+    permission.audited = True
 
     AuditLog.log(
         session,
@@ -226,7 +226,7 @@ def disable_permission_auditing(session, permission_name, actor_user_id):
     if not permission:
         raise NoSuchPermission(name=permission_name)
 
-    permission._audited = False
+    permission.audited = False
 
     AuditLog.log(
         session,

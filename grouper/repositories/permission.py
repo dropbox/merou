@@ -87,7 +87,7 @@ class SQLPermissionRepository(PermissionRepository):
     ):
         # type: (str, str, bool, bool, Optional[datetime]) -> None
         permission = SQLPermission(
-            name=name, description=description, _audited=audited, enabled=enabled
+            name=name, description=description, audited=audited, enabled=enabled
         )
         if created_on:
             permission.created_on = created_on

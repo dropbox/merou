@@ -32,7 +32,7 @@ def test_permission_grants_for_user(setup):
 
     # Check the returned permissions.
     permission_grants = permission_grant_repository.permission_grants_for_user("gary@a.co")
-    assert sorted([(p.name, p.argument) for p in permission_grants]) == [
+    assert sorted([(p.permission, p.argument) for p in permission_grants]) == [
         ("other-perm", "*"),
         ("other-perm", "arg"),
         ("other-perm", "arg"),

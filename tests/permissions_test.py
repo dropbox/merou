@@ -1,5 +1,6 @@
 import unittest
 from collections import namedtuple
+from typing import TYPE_CHECKING
 
 import pytest
 from six.moves.urllib.parse import urlencode
@@ -45,6 +46,9 @@ from tests.fixtures import (  # noqa: F401
 )
 from tests.url_util import url
 from tests.util import get_group_permissions, get_user_permissions, grant_permission
+
+if TYPE_CHECKING:
+    from grouper.graph import GroupGraph
 
 
 @pytest.fixture
@@ -559,9 +563,8 @@ def test_grant_and_revoke(
     user_name = "oliver@a.co"
 
     def _check_graph_for_perm(graph):
-        return any(
-            [x.permission == permission_name for x in graph.permission_metadata[group_name]]
-        )
+        # type: (GroupGraph) -> bool
+        return any([g.permission == permission_name for g in graph.permission_grants[group_name]])
 
     # make some permission admins
     grant_permission(groups["security-team"], permissions[PERMISSION_ADMIN])

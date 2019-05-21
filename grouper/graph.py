@@ -30,7 +30,7 @@ from grouper.util import singleton
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
     from grouper.service_account import ServiceAccountPermission
-    from typing import Any, Dict, Iterable, List, Optional, Set
+    from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 MEMBER_TYPE_MAP = {"User": "users", "Group": "subgroups"}
 EPOCH = datetime(1970, 1, 1)
@@ -87,8 +87,8 @@ class GroupGraph(object):
     def __init__(self):
         # type: () -> None
         self.logger = logging.getLogger(__name__)
-        self._graph = None  # type: Optional[DiGraph]
-        self._rgraph = None  # type: Optional[DiGraph]
+        self._graph = DiGraph()
+        self._rgraph = DiGraph()
         self.lock = RLock()
         self.update_lock = RLock()
         self.users = set()  # type: Set[str]
@@ -565,7 +565,8 @@ class GroupGraph(object):
                 )
         return groups
 
-    def get_group_details(self, groupname, cutoff=None, show_permission=None, expose_aliases=True):
+    def get_group_details(self, groupname, show_permission=None, expose_aliases=True):
+        # type: (str, Optional[str], bool) -> Dict[str, Any]
         """ Get users and permissions that belong to a group. Raise NoSuchGroup
         for missing groups. """
 
@@ -579,15 +580,15 @@ class GroupGraph(object):
                 "subgroups": {},
                 "permissions": [],
                 "audited": group_audited,
-            }
+            }  # type: Dict[str, Any]
             if groupname in self.group_service_accounts:
                 data["service_accounts"] = self.group_service_accounts[groupname]
 
             group = ("Group", groupname)
             if not self._graph.has_node(group):
                 raise NoSuchGroup("Group %s is either missing or disabled." % groupname)
-            paths = single_source_shortest_path(self._graph, group, cutoff)
-            rpaths = single_source_shortest_path(self._rgraph, group, cutoff)
+            paths = single_source_shortest_path(self._graph, group)
+            rpaths = single_source_shortest_path(self._rgraph, group)
 
             for member, path in iteritems(paths):
                 if member == group:
@@ -655,12 +656,11 @@ class GroupGraph(object):
             data["audited"] = group_audited
             return data
 
-    def get_user_details(self, username, cutoff=None, expose_aliases=True):
+    def get_user_details(self, username, expose_aliases=True):
+        # type: (str, bool) -> Dict[str, Any]
         """ Get a user's groups and permissions.  Raise NoSuchUser for missing users."""
-        max_dist = cutoff - 1 if (cutoff is not None) else None
-
-        groups = {}
-        permissions = []
+        groups = {}  # type: Dict[str, Dict[str, Any]]
+        permissions = []  # type: List[Dict[str, Any]]
         user_details = {"groups": groups, "permissions": permissions}
 
         with self.lock:
@@ -693,7 +693,7 @@ class GroupGraph(object):
             # user is a member by inheritance, except for ancestors of groups
             # where their role is "np-owner", unless the user is a member of
             # such an ancestor via a non-"np-owner" role in another group.
-            rpaths = {}
+            rpaths = {}  # type: Dict[str, List[Tuple[str, str]]]
             for group in self._rgraph.neighbors(user):
                 role = self._rgraph[user][group]["role"]
                 if GROUP_EDGE_ROLES[role] == "np-owner":
@@ -706,7 +706,7 @@ class GroupGraph(object):
                         "rolename": GROUP_EDGE_ROLES[role],
                     }
                     continue
-                new_rpaths = single_source_shortest_path(self._rgraph, group, max_dist)
+                new_rpaths = single_source_shortest_path(self._rgraph, group)
                 for parent, path in iteritems(new_rpaths):
                     if parent not in rpaths or 1 + len(path) < len(rpaths[parent]):
                         rpaths[parent] = [user] + path
@@ -724,17 +724,17 @@ class GroupGraph(object):
                     "rolename": GROUP_EDGE_ROLES[role],
                 }
 
-                for permission in self.permission_metadata[parent_name]:
+                for service_permission in self.permission_metadata[parent_name]:
                     perm_data = {
-                        "permission": permission.permission,
-                        "argument": permission.argument,
-                        "granted_on": (permission.granted_on - EPOCH).total_seconds(),
+                        "permission": service_permission.permission,
+                        "argument": service_permission.argument,
+                        "granted_on": (service_permission.granted_on - EPOCH).total_seconds(),
                         "path": [elem[1] for elem in path],
                         "distance": len(path) - 1,
                     }
 
                     if expose_aliases:
-                        perm_data["alias"] = permission.alias
+                        perm_data["alias"] = service_permission.alias
 
                     permissions.append(perm_data)
 

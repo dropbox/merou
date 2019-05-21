@@ -24,7 +24,7 @@ class Permission(Model):
     name = Column(String(length=MAX_NAME_LENGTH), unique=True, nullable=False)
     description = Column(Text, nullable=False)
     created_on = Column(DateTime, default=datetime.utcnow, nullable=False)
-    _audited = Column("audited", Boolean, default=False, nullable=False)
+    audited = Column("audited", Boolean, default=False, nullable=False)
     enabled = Column("enabled", Boolean, default=True, nullable=False)
 
     @staticmethod
@@ -32,7 +32,3 @@ class Permission(Model):
         if name is not None:
             return session.query(Permission).filter_by(name=name).scalar()
         return None
-
-    @property
-    def audited(self):
-        return self._audited

@@ -332,7 +332,7 @@ class GroupGraph(object):
                     name=permission.name,
                     description=permission.description,
                     created_on=permission.created_on,
-                    audited=permission._audited,
+                    audited=permission.audited,
                 )
             )
         return out

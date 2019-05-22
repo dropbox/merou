@@ -60,7 +60,7 @@
             <tbody>
             {% for group in groups %}
                 <tr class="group-row">
-                    <td class="group-name">{{ account(group) }}</td>
+                    <td class="group-name">{{ account(group.name, "group") }}</td>
                     <td class="group-description">{{group.description|default("", True)}}</td>
                     <td class="group-can-join">
                         {% if group.canjoin == "canjoin" %}

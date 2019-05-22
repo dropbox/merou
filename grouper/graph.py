@@ -1,5 +1,5 @@
 import logging
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from datetime import datetime
 from threading import RLock
 from typing import TYPE_CHECKING
@@ -11,10 +11,11 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.sql import label, literal
 
 from grouper import stats
+from grouper.entities.group import Group, GroupJoinPolicy
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.entities.permission import Permission
 from grouper.models.counter import Counter
-from grouper.models.group import Group
+from grouper.models.group import Group as SQLGroup
 from grouper.models.group_edge import GroupEdge
 from grouper.models.group_service_accounts import GroupServiceAccount
 from grouper.models.permission import MappedPermission, Permission as SQLPermission
@@ -44,13 +45,6 @@ EPOCH = datetime(1970, 1, 1)
 def Graph():
     # type: () -> GroupGraph
     return GroupGraph()
-
-
-# A GroupGraph caches users, permissions, and groups as objects which are intended to behave like
-# the corresponding models but without any connection to SQL backend.
-GroupTuple = namedtuple(
-    "GroupTuple", ["name", "description", "canjoin", "enabled", "service_account", "type"]
-)
 
 
 # Raise these exceptions when asking about users or groups that are not cached.
@@ -101,8 +95,8 @@ class GroupGraph(object):
         self.permission_metadata = {}  # type: Dict[str, List[MappedPermission]]
         self.service_account_permissions = {}  # type: Dict[str, List[ServiceAccountPermission]]
         self.permission_tuples = set()  # type: Set[Permission]
-        self.group_tuples = {}  # type: Dict[str, GroupTuple]
-        self.disabled_group_tuples = {}  # type: Dict[str, GroupTuple]
+        self.group_tuples = {}  # type: Dict[str, Group]
+        self.disabled_group_tuples = {}  # type: Dict[str, Group]
 
     @classmethod
     def from_db(cls, session):
@@ -198,12 +192,12 @@ class GroupGraph(object):
                 ServiceAccount.user_id,
                 ServiceAccount.description,
                 ServiceAccount.machine_set,
-                label("owner", Group.groupname),
+                label("owner", SQLGroup.groupname),
             )
             .outerjoin(
                 GroupServiceAccount, ServiceAccount.id == GroupServiceAccount.service_account_id
             )
-            .outerjoin(Group, GroupServiceAccount.group_id == Group.id)
+            .outerjoin(SQLGroup, GroupServiceAccount.group_id == SQLGroup.id)
         )
         service_accounts = {r.user_id: r for r in service_account_data}
 
@@ -269,10 +263,10 @@ class GroupGraph(object):
         """
         out = defaultdict(list)  # type: Dict[str, List[MappedPermission]]
 
-        permissions = session.query(SQLPermission, PermissionMap, Group.groupname).filter(
+        permissions = session.query(SQLPermission, PermissionMap, SQLGroup.groupname).filter(
             SQLPermission.id == PermissionMap.permission_id,
-            PermissionMap.group_id == Group.id,
-            Group.enabled == True,
+            PermissionMap.group_id == SQLGroup.id,
+            SQLGroup.enabled == True,
         )
 
         for (permission, permission_map, groupname) in permissions:
@@ -330,7 +324,7 @@ class GroupGraph(object):
     def _get_group_metadata(session):
         # type: (Session) -> Dict[str, Dict[str, Dict[str, str]]]
         """Returns a dict of groupname: { dict of metadata }."""
-        groups = session.query(Group).filter(Group.enabled == True)
+        groups = session.query(SQLGroup).filter(SQLGroup.enabled == True)
 
         out = {}
         for group in groups:
@@ -342,8 +336,8 @@ class GroupGraph(object):
         # type: (Session) -> Dict[str, List[str]]
         """Returns a dict of groupname: { list of service account names }."""
         out = defaultdict(list)  # type: Dict[str, List[str]]
-        tuples = session.query(Group.groupname, User.username).filter(
-            GroupServiceAccount.group_id == Group.id,
+        tuples = session.query(SQLGroup.groupname, User.username).filter(
+            GroupServiceAccount.group_id == SQLGroup.id,
             GroupServiceAccount.service_account_id == ServiceAccount.id,
             ServiceAccount.user_id == User.id,
         )
@@ -352,22 +346,23 @@ class GroupGraph(object):
         return out
 
     def _get_group_tuples(self, session, enabled=True):
-        # type: (Session, bool) -> Dict[str, GroupTuple]
-        """Returns a dict of groupname: GroupTuple."""
+        # type: (Session, bool) -> Dict[str, Group]
+        """Returns a dict of groupname: Group."""
         out = {}
-        groups = (session.query(Group).order_by(Group.groupname)).filter(Group.enabled == enabled)
+        groups = (session.query(SQLGroup).order_by(SQLGroup.groupname)).filter(
+            SQLGroup.enabled == enabled
+        )
         for group in groups:
             if group in self.user_metadata:
-                is_service_account = self.user_metadata[group]["role_user"]
+                is_role_user = self.user_metadata[group]["role_user"]
             else:
-                is_service_account = False
-            out[group.groupname] = GroupTuple(
+                is_role_user = False
+            out[group.groupname] = Group(
                 name=group.groupname,
                 description=group.description,
-                canjoin=group.canjoin,
+                join_policy=GroupJoinPolicy(group.canjoin),
                 enabled=group.enabled,
-                service_account=is_service_account,
-                type="Group",
+                is_role_user=is_role_user,
             )
         return out
 
@@ -379,8 +374,8 @@ class GroupGraph(object):
             .filter(User.enabled == True)
             .union(
                 session.query(
-                    label("type", literal("Group")), label("name", Group.groupname)
-                ).filter(Group.enabled == True)
+                    label("type", literal("Group")), label("name", SQLGroup.groupname)
+                ).filter(SQLGroup.enabled == True)
             )
             .all()
         )
@@ -388,8 +383,8 @@ class GroupGraph(object):
     @staticmethod
     def _get_edges_from_db(session):
         # type: (Session) -> List[Edge]
-        parent = aliased(Group)
-        group_member = aliased(Group)
+        parent = aliased(SQLGroup)
+        group_member = aliased(SQLGroup)
         user_member = aliased(User)
 
         now = datetime.utcnow()
@@ -497,22 +492,19 @@ class GroupGraph(object):
             return data
 
     def get_disabled_groups(self):
-        # type: () -> List[GroupTuple]
-        """ Get the list of disabled groups as GroupTuple instances sorted by groupname. """
+        # type: () -> List[Group]
+        """ Get the list of disabled groups as Group instances sorted by groupname. """
         with self.lock:
             return sorted(self.disabled_group_tuples.values(), key=lambda g: g.name)
 
     def get_groups(self, audited=False, directly_audited=False):
-        # type: (bool, bool) -> List[GroupTuple]
-        """Get the list of groups as GroupTuple instances sorted by group name.
+        # type: (bool, bool) -> List[Group]
+        """Get the list of groups as Group instances sorted by group name.
 
         Arg(s):
             audited (bool): true to get only audited groups
             directly_audited (bool): true to get only directly audited
                 groups (implies `audited` is true)
-
-        Return:
-            List of GroupTuple
         """
         if directly_audited:
             audited = True
@@ -521,7 +513,7 @@ class GroupGraph(object):
             if audited:
 
                 def is_directly_audited(group):
-                    # type: (GroupTuple) -> bool
+                    # type: (Group) -> bool
                     for mp in self.permission_metadata[group.name]:
                         if mp.audited:
                             return True

@@ -33,7 +33,7 @@ class GroupsView(GrouperHandler):
         else:
             groups = self.graph.get_groups()
             directly_audited_groups = set()
-        groups = [group for group in groups if not group.service_account]
+        groups = [group for group in groups if not group.is_role_user]
         total = len(groups)
         groups = groups[offset : offset + limit]
 

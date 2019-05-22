@@ -132,6 +132,11 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
 
     def permission_grants_for_user(self, name):
         # type: (str) -> List[PermissionGrant]
+        """Return all permission grants a user has from whatever source.
+
+        TODO(rra): Currently does not expand permission aliases, and therefore doesn't match the
+        graph behavior.  Use with caution until that is fixed.
+        """
         now = datetime.utcnow()
         user = User.get(self.session, name=name)
         if not user or user.role_user or user.is_service_account or not user.enabled:

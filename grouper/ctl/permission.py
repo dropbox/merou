@@ -60,7 +60,7 @@ class PermissionCommand(CtlCommand, DisablePermissionUI):
             if message:
                 message += " and "
             message += "service accounts " + ", ".join(service_accounts)
-        logging.critical("permission %s still granted to %s", message)
+        logging.critical("permission %s still granted to %s", name, message)
         sys.exit(1)
 
     def disable_permission_failed_not_found(self, name):

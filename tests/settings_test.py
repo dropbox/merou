@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING
 import pytest
 import pytz
 from mock import call, patch
-from six.moves import StringIO
 
 from grouper.settings import DatabaseSourceException, InvalidSettingsError, Settings
 
 if TYPE_CHECKING:
     from py.path import LocalPath
+    from pytest.logging import LogCaptureFixture
 
 # Data to test loading settings from different sections.
 CONFIG_SECTIONS = """
@@ -129,23 +129,18 @@ def test_database():
                 assert settings.database
 
 
-def test_mask_passsword_in_logs():
-    # type: () -> None
+def test_mask_passsword_in_logs(caplog):
+    # type: (LogCaptureFixture) -> None
     settings = Settings()
+    settings._logger.setLevel(logging.DEBUG)
     settings.database_source = "/path/to/program"
     test_url = "mysql://user:password@example.com:8888/merou"
     expected_url = "mysql://user:???@example.com:8888/merou"
-
-    log_output = StringIO()
-    log_handler = logging.StreamHandler(log_output)
-    settings._logger.addHandler(log_handler)
-    settings._logger.setLevel(logging.DEBUG)
 
     # Reading settings.database will run the external program and trigger the logging.
     with patch("subprocess.check_output") as mock_subprocess:
         mock_subprocess.return_value = "mysql://user:password@example.com:8888/merou"
         assert settings.database == test_url
 
-    output = log_output.getvalue()
-    assert test_url not in output
-    assert expected_url in output
+    assert test_url not in caplog.text
+    assert expected_url in caplog.text

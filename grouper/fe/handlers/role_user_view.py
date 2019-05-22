@@ -1,11 +1,20 @@
+from typing import TYPE_CHECKING
+
 from grouper.fe.handlers.template_variables import get_role_user_view_template_vars
 from grouper.fe.util import GrouperHandler
 from grouper.models.group import Group
 from grouper.models.user import User
 
+if TYPE_CHECKING:
+    from typing import Any, Optional
+
 
 class RoleUserView(GrouperHandler):
-    def get(self, user_id=None, name=None):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        user_id = kwargs.get("user_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+
         self.handle_refresh()
         user = User.get(self.session, user_id, name)
 

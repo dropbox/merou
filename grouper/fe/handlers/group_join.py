@@ -13,7 +13,7 @@ from grouper.models.user import User
 from grouper.user_group import get_groups_by_user
 
 if TYPE_CHECKING:
-    from typing import Any, Optional
+    from typing import Any, List, Optional, Tuple, Union
 
 
 class GroupJoin(GrouperHandler):
@@ -49,6 +49,13 @@ class GroupJoin(GrouperHandler):
             )
 
         member = self._get_member(form.data["member"])
+        if not member:
+            return self.render(
+                "group-join.html",
+                form=form,
+                group=group,
+                alerts=[Alert("danger", "Unknown user or group: {}".format(form.data["member"]))],
+            )
 
         fail_message = "This join is denied with this role at this time."
         try:
@@ -152,6 +159,7 @@ class GroupJoin(GrouperHandler):
         return self.redirect("/groups/{}?refresh=yes".format(group.name))
 
     def _get_member(self, member_choice):
+        # type: (str) -> Optional[Union[User, Group]]
         member_type, member_name = member_choice.split(": ", 1)
         resource = None
 
@@ -161,11 +169,13 @@ class GroupJoin(GrouperHandler):
             resource = Group
 
         if resource is None:
-            return
+            return None
 
         return self.session.query(resource).filter_by(name=member_name, enabled=True).one()
 
     def _get_choices(self, group):
+        # type: (Group) -> List[Tuple[str, ...]]
+        # This returns List[Tuple[str, str]], but mypy is confused by the * 2 syntax.
         choices = []
 
         members = group.my_members()

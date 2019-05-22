@@ -80,7 +80,9 @@ class GrouperHandler(SentryHandler):
         self.set_header("Referrer-Policy", "same-origin")
 
     def write_error(self, status_code, **kwargs):
+        # type: (int, **Any) -> None
         """Override for custom error page."""
+        message = kwargs.get("message", "Unknown error")
         if status_code >= 500 and status_code < 600:
             template = self.template_engine.get_template("errors/5xx.html")
             self.write(
@@ -92,7 +94,7 @@ class GrouperHandler(SentryHandler):
                 template.render(
                     {
                         "status_code": status_code,
-                        "message": self._reason,
+                        "message": message,
                         "is_active": self.is_active,
                         "trace_uuid": self.perf_trace_uuid,
                         "static_url": self.static_url,
@@ -116,6 +118,7 @@ class GrouperHandler(SentryHandler):
     # route calls this function, it will sync its graph from the database if
     # requested.
     def handle_refresh(self):
+        # type: () -> None
         if self.is_refresh():
             self.graph.update_from_db(self.session)
 
@@ -187,17 +190,20 @@ class GrouperHandler(SentryHandler):
         stats.log_rate("response_status_{}_{}".format(self.__class__.__name__, response_status), 1)
 
     def update_qs(self, **kwargs):
+        # type: (**Any) -> str
         qs = self.request.arguments.copy()
         qs.update(kwargs)
         return "?" + urlencode(sorted(qs.items()), True)
 
     def is_active(self, test_path):
+        # type: (str) -> str
         path = self.request.path
         if path == test_path:
             return "active"
         return ""
 
     def get_template_namespace(self):
+        # type: () -> Dict[str, Any]
         namespace = super(GrouperHandler, self).get_template_namespace()
         namespace.update(
             {
@@ -212,11 +218,13 @@ class GrouperHandler(SentryHandler):
         return namespace
 
     def render_template(self, template_name, **kwargs):
+        # type: (str, **Any) -> Text
         template = self.template_engine.get_template(template_name)
         content = template.render(kwargs)
         return content
 
     def render(self, template_name, **kwargs):
+        # type: (str, **Any) -> None
         defaults = self.get_template_namespace()
 
         context = {}
@@ -245,6 +253,7 @@ class GrouperHandler(SentryHandler):
         return alerts
 
     def get_form_alerts(self, errors):
+        # type: (Dict[str, List[str]]) -> List[Alert]
         alerts = []
         for field, field_errors in iteritems(errors):
             for error in field_errors:
@@ -252,12 +261,14 @@ class GrouperHandler(SentryHandler):
         return alerts
 
     def raise_and_log_exception(self, exc):
+        # type: (Exception) -> None
         try:
             raise exc
         except Exception:
             self.log_exception(*sys.exc_info())
 
     def log_message(self, message, **kwargs):
+        # type: (str, **Any) -> None
         if getattr(self, "captureMessage", None):
             self.captureMessage(message, **kwargs)
         else:
@@ -290,6 +301,7 @@ class GrouperHandler(SentryHandler):
 
 
 def test_reserved_names(permission_name):
+    # type: (str) -> List[str]
     """Returns a list of strings explaining which reserved regexes match a
     proposed permission name.
     """

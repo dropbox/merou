@@ -9,16 +9,11 @@ if TYPE_CHECKING:
 
 
 def get_all_groups(session):
+    # type: (Session) -> List[Group]
     """Returns all enabled groups.
 
-    At present, this is not cached at all and returns the full list of
-    groups from the database each time it's called.
-
-    Args:
-        session (Session): Session to load data on.
-
-    Returns:
-        a list of all Group objects in the database
+    At present, this is not cached at all and returns the full list of groups from the database
+    each time it's called.
     """
     return session.query(Group).filter(Group.enabled == True)
 
@@ -27,14 +22,8 @@ def get_audited_groups(session):
     # type: (Session) -> List[Group]
     """Returns all audited enabled groups.
 
-    At present, this is not cached at all and returns the full list of
-    groups from the database each time it's called.
-
-    Args:
-        session (Session): Session to load data on.
-
-    Returns:
-        a list of all enabled and audited Group objects in the database
+    At present, this is not cached at all and returns the full list of groups from the database
+    each time it's called.
     """
     audited_groups = []
     graph = Graph()

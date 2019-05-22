@@ -28,7 +28,7 @@ from grouper.perf_profile import prune_old_traces
 if TYPE_CHECKING:
     from grouper.background.settings import BackgroundSettings
     from grouper.error_reporting import SentryProxy
-    from typing import Dict, Set
+    from typing import Dict, NoReturn, Set
 
 
 class BackgroundProcessor(object):
@@ -46,10 +46,12 @@ class BackgroundProcessor(object):
         self.logger = logging.getLogger(__name__)
 
     def _capture_exception(self):
+        # type: () -> None
         if self.sentry_client:
             self.sentry_client.captureException()
 
     def crash(self):
+        # type: () -> NoReturn
         os._exit(1)
 
     def expire_edges(self, session):

@@ -7,6 +7,7 @@ from grouper.permissions import get_permission
 from tests.ctl_util import run_ctl
 
 if TYPE_CHECKING:
+    from pytest.logging import LogCaptureFixture
     from tests.setup import SetupTest
 
 
@@ -29,3 +30,16 @@ def test_permission_disable_failed(setup):
         setup.create_user("gary@a.co")
     with pytest.raises(SystemExit):
         run_ctl(setup, "permission", "-a", "gary@a.co", "disable", "some-permission")
+
+
+def test_permission_disable_existing_grants(setup, caplog):
+    # type: (SetupTest, LogCaptureFixture) -> None
+    with setup.transaction():
+        setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
+        setup.add_user_to_group("gary@a.co", "admins")
+        setup.grant_permission_to_group("some-permission", "", "some-group")
+
+    with pytest.raises(SystemExit):
+        run_ctl(setup, "permission", "-a", "gary@a.co", "disable", "some-permission")
+
+    assert "permission some-permission still granted to groups some-group" in caplog.text

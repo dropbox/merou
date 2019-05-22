@@ -198,6 +198,20 @@ def test_get_groups(setup):
     assert sorted(group_names) == ["serving-team"]
 
 
+def test_get_groups_role_user(setup):
+    # type: (SetupTest) -> None
+    with setup.transaction():
+        setup.create_group("some-group", "")
+        setup.create_role_user("role-user@a.co")
+        setup.create_group("not-role-user@a.co")
+        setup.create_user("not-role-user@a.co")
+
+    groups = {g.name: g for g in setup.graph.get_groups()}
+    assert not groups["some-group"].is_role_user
+    assert groups["role-user@a.co"].is_role_user
+    assert not groups["not-role-user@a.co"].is_role_user
+
+
 def test_get_group_details(setup):
     # type: (SetupTest) -> None
     build_test_graph(setup)

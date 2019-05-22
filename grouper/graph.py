@@ -136,8 +136,8 @@ class GroupGraph(object):
             group_metadata = self._get_group_metadata(session)
             group_service_accounts = self._get_group_service_accounts(session)
             permission_tuples = self._get_permission_tuples(session)
-            group_tuples = self._get_group_tuples(session)
-            disabled_group_tuples = self._get_group_tuples(session, enabled=False)
+            group_tuples = self._get_group_tuples(session, user_metadata)
+            disabled_group_tuples = self._get_group_tuples(session, user_metadata, enabled=False)
 
             with self.lock:
                 self._graph = new_graph
@@ -345,16 +345,17 @@ class GroupGraph(object):
             out[group].append(account)
         return out
 
-    def _get_group_tuples(self, session, enabled=True):
-        # type: (Session, bool) -> Dict[str, Group]
+    @staticmethod
+    def _get_group_tuples(session, user_metadata, enabled=True):
+        # type: (Session, Dict[str, Dict[str, Any]], bool) -> Dict[str, Group]
         """Returns a dict of groupname: Group."""
         out = {}
         groups = (session.query(SQLGroup).order_by(SQLGroup.groupname)).filter(
             SQLGroup.enabled == enabled
         )
         for group in groups:
-            if group in self.user_metadata:
-                is_role_user = self.user_metadata[group]["role_user"]
+            if group.groupname in user_metadata:
+                is_role_user = user_metadata[group.groupname]["role_user"]
             else:
                 is_role_user = False
             out[group.groupname] = Group(

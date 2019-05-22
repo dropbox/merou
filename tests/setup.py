@@ -267,3 +267,16 @@ class SetupTest(object):
         )
         for permission in permissions:
             permission.delete(self.session)
+
+    def create_role_user(self, role_user, description="", join_policy=GroupJoinPolicy.CAN_ASK):
+        # type: (str, str, GroupJoinPolicy) -> None
+        """Create an old-style role user.
+
+        This concept is obsolete and all code related to it will be deleted once all remaining
+        legacy role users have been converted to service accounts.  This method should be used only
+        for tests to maintain backward compatibility until that happens.
+        """
+        user = User(username=role_user, role_user=True)
+        user.add(self.session)
+        self.create_group(role_user, description, join_policy)
+        self.add_user_to_group(role_user, role_user)

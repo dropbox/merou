@@ -171,23 +171,19 @@ class GrouperHandler(SentryHandler):
     def prepare(self):
         # type: () -> None
         username = self.request.headers.get(settings().user_auth_header)
+
         try:
             user = self.get_or_create_user(username)
         except InvalidUser as e:
-            self.set_status(403)
-            self.raise_and_log_exception(tornado.web.HTTPError(403))
-            self.render(
-                "errors/baduser.html", message=str(e), how_to_get_help=settings().how_to_get_help
-            )
+            self.baduser(str(e))
             self.finish()
             return
 
-        if not user or not user.enabled:
-            self.forbidden()
+        if user and user.enabled:
+            self.current_user = user
+        else:
+            self.baduser("{} is not an active account".format(username))
             self.finish()
-            return
-
-        self.current_user = user
 
     def on_finish(self):
         # type: () -> None
@@ -300,6 +296,13 @@ class GrouperHandler(SentryHandler):
         self.set_status(400)
         self.raise_and_log_exception(tornado.web.HTTPError(400))
         self.render("errors/badrequest.html")
+
+    def baduser(self, message):
+        # type: (str) -> None
+        self.set_status(403)
+        self.raise_and_log_exception(tornado.web.HTTPError(403))
+        how_to_get_help = settings().how_to_get_help
+        self.render("errors/baduser.html", message=message, how_to_get_help=how_to_get_help)
 
     def forbidden(self):
         # type: () -> None

@@ -45,4 +45,4 @@ def test_disabled_user(tmpdir, setup, browser):
         page = ErrorPage(browser)
         assert page.heading == "Error"
         assert page.subheading == "403 Forbidden"
-        assert "The operation you tried to complete is unauthorized" in page.content
+        assert "disabled@a.co is not an active account" in page.content

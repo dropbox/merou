@@ -252,9 +252,8 @@ class SetupTest(object):
 
     def disable_user(self, user):
         # type: (str) -> None
-        user_obj = User.get(self.session, name=user)
-        assert user_obj
-        user_obj.enabled = False
+        user_repository = self.repository_factory.create_user_repository()
+        user_repository.disable_user(user)
 
     def disable_group(self, group):
         # type: (str) -> None

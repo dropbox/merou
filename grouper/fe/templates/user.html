@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% from 'macros/ui.html' import group_panel, permission_panel, log_entry_panel, tokens_panel,
-                                shell_panel, passwords_panel %}
+                                shell_panel, passwords_panel, github_panel %}
 {% from 'macros/ui.html' import public_key_panel with context %}
 
 {% block subtitle %} user {{user.username}}{% endblock %}
@@ -116,6 +116,12 @@
         </div>
     </div>
 {% endif %}
+
+<div class="row">
+    <div class="col-md-4">
+        {{ github_panel(user, github_username, can_control) }}
+    </div>
+</div>
 
 <div class="row">
     <div class="col-md-12">

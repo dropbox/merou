@@ -80,3 +80,4 @@ MAX_NAME_LENGTH = 128
 
 # Grouper used UserMetadata data_keys
 USER_METADATA_SHELL_KEY = "shell"
+USER_METADATA_GITHUB_USERNAME_KEY = "github_username"

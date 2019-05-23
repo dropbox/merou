@@ -1,14 +1,9 @@
-from collections import namedtuple
 from datetime import datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 
 from grouper.constants import MAX_NAME_LENGTH
 from grouper.models.base.model_base import Model
-
-MappedPermission = namedtuple(
-    "MappedPermission", ["permission", "audited", "argument", "groupname", "granted_on", "alias"]
-)
 
 
 class Permission(Model):

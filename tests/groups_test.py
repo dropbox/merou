@@ -260,7 +260,7 @@ def test_graph_disable(session, graph, groups, http_client, base_url):  # noqa: 
     graph.update_from_db(session)
     old_groups = graph.groups
     assert sorted(old_groups) == sorted(groups.keys())
-    assert groupname in graph.permission_metadata
+    assert groupname in graph.permission_grants
 
     # disable a group
     fe_url = url(base_url, "/groups/{}/disable".format(groupname))
@@ -275,7 +275,7 @@ def test_graph_disable(session, graph, groups, http_client, base_url):  # noqa: 
     graph.update_from_db(session)
     assert len(graph.groups) == (len(old_groups) - 1), "disabled group removed from graph"
     assert groupname not in graph.groups
-    assert groupname not in graph.permission_metadata
+    assert groupname not in graph.permission_grants
 
 
 @pytest.mark.gen_test

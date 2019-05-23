@@ -53,7 +53,10 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
         permissions = []
         for permission_data in user_details["permissions"]:
             permission = PermissionGrant(
-                name=permission_data["permission"], argument=permission_data["argument"]
+                permission=permission_data["permission"],
+                argument=permission_data["argument"],
+                granted_on=datetime.utcfromtimestamp(permission_data["granted_on"]),
+                is_alias=permission_data["alias"],
             )
             permissions.append(permission)
         return permissions
@@ -68,8 +71,8 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
 
     def user_has_permission(self, user, permission):
         # type: (str, str) -> bool
-        for user_permission in self.permission_grants_for_user(user):
-            if permission == user_permission.name:
+        for grant in self.permission_grants_for_user(user):
+            if permission == grant.permission:
                 return True
         return False
 
@@ -129,6 +132,11 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
 
     def permission_grants_for_user(self, name):
         # type: (str) -> List[PermissionGrant]
+        """Return all permission grants a user has from whatever source.
+
+        TODO(rra): Currently does not expand permission aliases, and therefore doesn't match the
+        graph behavior.  Use with caution until that is fixed.
+        """
         now = datetime.utcnow()
         user = User.get(self.session, name=name)
         if not user or user.role_user or user.is_service_account or not user.enabled:
@@ -178,14 +186,17 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
 
         # Return the permission grants.
         group_permission_grants = (
-            self.session.query(Permission.name, PermissionMap.argument)
+            self.session.query(Permission.name, PermissionMap.argument, PermissionMap.granted_on)
             .filter(
                 Permission.id == PermissionMap.permission_id,
                 PermissionMap.group_id.in_(seen_group_ids),
             )
             .all()
         )
-        return [PermissionGrant(g.name, g.argument) for g in group_permission_grants]
+        return [
+            PermissionGrant(g.name, g.argument, g.granted_on, is_alias=False)
+            for g in group_permission_grants
+        ]
 
     def revoke_all_group_grants(self, permission):
         # type: (str) -> List[GroupPermissionGrant]
@@ -230,7 +241,7 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
 
     def user_has_permission(self, user, permission):
         # type: (str, str) -> bool
-        for user_permission in self.permission_grants_for_user(user):
-            if permission == user_permission.name:
+        for grant in self.permission_grants_for_user(user):
+            if permission == grant.permission:
                 return True
         return False

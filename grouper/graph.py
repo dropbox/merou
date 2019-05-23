@@ -5,7 +5,7 @@ from threading import RLock
 from typing import TYPE_CHECKING
 
 from networkx import DiGraph, single_source_shortest_path
-from six import iteritems, itervalues
+from six import iteritems
 from sqlalchemy import or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import label, literal
@@ -14,11 +14,12 @@ from grouper import stats
 from grouper.entities.group import Group, GroupJoinPolicy
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.entities.permission import Permission
+from grouper.entities.permission_grant import PermissionGrant
 from grouper.models.counter import Counter
 from grouper.models.group import Group as SQLGroup
 from grouper.models.group_edge import GroupEdge
 from grouper.models.group_service_accounts import GroupServiceAccount
-from grouper.models.permission import MappedPermission, Permission as SQLPermission
+from grouper.models.permission import Permission as SQLPermission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.public_key import PublicKey
 from grouper.models.service_account import ServiceAccount
@@ -92,7 +93,7 @@ class GroupGraph(object):
         self.user_metadata = {}  # type: Dict[str, Dict[str, Any]]
         self.group_metadata = {}  # type: Dict[str, Dict[str, Any]]
         self.group_service_accounts = {}  # type: Dict[str, List[str]]
-        self.permission_metadata = {}  # type: Dict[str, List[MappedPermission]]
+        self.permission_grants = {}  # type: Dict[str, List[PermissionGrant]]
         self.service_account_permissions = {}  # type: Dict[str, List[ServiceAccountPermission]]
         self.permission_tuples = set()  # type: Set[Permission]
         self.group_tuples = {}  # type: Dict[str, Group]
@@ -132,6 +133,7 @@ class GroupGraph(object):
 
             user_metadata = self._get_user_metadata(session)
             permission_metadata = self._get_permission_metadata(session)
+            permission_grants = self._get_permission_grants(session)
             service_account_permissions = all_service_account_permissions(session)
             group_metadata = self._get_group_metadata(session)
             group_service_accounts = self._get_group_service_accounts(session)
@@ -146,15 +148,12 @@ class GroupGraph(object):
                 self.checkpoint_time = checkpoint_time
                 self.users = users
                 self.groups = groups
-                self.permissions = {
-                    perm.permission
-                    for perm_list in itervalues(permission_metadata)
-                    for perm in perm_list
-                }
+                self.permissions = set(permission_metadata.keys())
                 self.user_metadata = user_metadata
                 self.group_metadata = group_metadata
                 self.group_service_accounts = group_service_accounts
                 self.permission_metadata = permission_metadata
+                self.permission_grants = permission_grants
                 self.service_account_permissions = service_account_permissions
                 self.permission_tuples = permission_tuples
                 self.group_tuples = group_tuples
@@ -252,32 +251,24 @@ class GroupGraph(object):
                     )
         return out
 
-    # This describes how permissions are assigned to groups, NOT the intrinsic
-    # metadata for a permission.
     @staticmethod
-    def _get_permission_metadata(session):
-        # type: (Session) -> Dict[str, List[MappedPermission]]
-        """Returns a dict of groupname: { list of permissions }.
-
-        Disabled permissions are not included.
-        """
-        out = defaultdict(list)  # type: Dict[str, List[MappedPermission]]
-
+    def _get_permission_grants(session):
+        # type: (Session) -> Dict[str, List[PermissionGrant]]
+        """Returns a dict of group names to lists of permission grants."""
         permissions = session.query(SQLPermission, PermissionMap, SQLGroup.groupname).filter(
             SQLPermission.id == PermissionMap.permission_id,
             PermissionMap.group_id == SQLGroup.id,
             SQLGroup.enabled == True,
         )
 
+        out = defaultdict(list)  # type: Dict[str, List[PermissionGrant]]
         for (permission, permission_map, groupname) in permissions:
             out[groupname].append(
-                MappedPermission(
+                PermissionGrant(
                     permission=permission.name,
-                    audited=permission.audited,
                     argument=permission_map.argument,
-                    groupname=groupname,
                     granted_on=permission_map.granted_on,
-                    alias=False,
+                    is_alias=False,
                 )
             )
 
@@ -287,16 +278,30 @@ class GroupGraph(object):
 
             for (name, arg) in aliases:
                 out[groupname].append(
-                    MappedPermission(
+                    PermissionGrant(
                         permission=name,
-                        audited=permission.audited,
                         argument=arg,
-                        groupname=groupname,
                         granted_on=permission_map.granted_on,
-                        alias=True,
+                        is_alias=True,
                     )
                 )
 
+        return out
+
+    @staticmethod
+    def _get_permission_metadata(session):
+        # type: (Session) -> Dict[str, Permission]
+        """Returns all permissions in the graph."""
+        permissions = session.query(SQLPermission).all()
+        out = {}
+        for permission in permissions:
+            out[permission.name] = Permission(
+                name=permission.name,
+                description=permission.description,
+                created_on=permission.created_on,
+                audited=permission.audited,
+                enabled=permission.enabled,
+            )
         return out
 
     @staticmethod
@@ -450,13 +455,14 @@ class GroupGraph(object):
 
             # Get all mapped versions of the permission. This is only direct relationships.
             direct_groups = set()
-            for groupname, permissions in iteritems(self.permission_metadata):
-                for permission in permissions:
-                    if permission.permission == name:
+            for groupname, grants in iteritems(self.permission_grants):
+                for grant in grants:
+                    if grant.permission == name:
                         data["groups"][groupname] = self.get_group_details(
                             groupname, show_permission=name, expose_aliases=expose_aliases
                         )
                         direct_groups.add(groupname)
+                        break
 
             # Now find all members of these groups going down the tree.
             checked_groups = set()  # type: Set[str]
@@ -515,8 +521,8 @@ class GroupGraph(object):
 
                 def is_directly_audited(group):
                     # type: (Group) -> bool
-                    for mp in self.permission_metadata[group.name]:
-                        if mp.audited:
+                    for grant in self.permission_grants[group.name]:
+                        if self.permission_metadata[grant.permission].audited:
                             return True
                     return False
 
@@ -588,41 +594,41 @@ class GroupGraph(object):
                     "role": role,
                     "rolename": GROUP_EDGE_ROLES[role],
                 }
-                for permission in self.permission_metadata.get(parent_name, []):
-                    if show_permission is not None and permission.permission != show_permission:
+                for grant in self.permission_grants.get(parent_name, []):
+                    if show_permission is not None and grant.permission != show_permission:
                         continue
-                    if permission.audited:
+                    if self.permission_metadata[grant.permission].audited:
                         group_audited = True
 
                     perm_data = {
-                        "permission": permission.permission,
-                        "argument": permission.argument,
-                        "granted_on": (permission.granted_on - EPOCH).total_seconds(),
+                        "permission": grant.permission,
+                        "argument": grant.argument,
+                        "granted_on": (grant.granted_on - EPOCH).total_seconds(),
                         "distance": len(path) - 1,
                         "path": [elem[1] for elem in path],
                     }
 
                     if expose_aliases:
-                        perm_data["alias"] = permission.alias
+                        perm_data["alias"] = grant.is_alias
 
                     data["permissions"].append(perm_data)
 
-            for permission in self.permission_metadata.get(groupname, []):
-                if show_permission is not None and permission.permission != show_permission:
+            for grant in self.permission_grants.get(groupname, []):
+                if show_permission is not None and grant.permission != show_permission:
                     continue
-                if permission.audited:
+                if self.permission_metadata[grant.permission].audited:
                     group_audited = True
 
                 perm_data = {
-                    "permission": permission.permission,
-                    "argument": permission.argument,
-                    "granted_on": (permission.granted_on - EPOCH).total_seconds(),
+                    "permission": grant.permission,
+                    "argument": grant.argument,
+                    "granted_on": (grant.granted_on - EPOCH).total_seconds(),
                     "distance": 0,
                     "path": [groupname],
                 }
 
                 if expose_aliases:
-                    perm_data["alias"] = permission.alias
+                    perm_data["alias"] = grant.is_alias
 
                 data["permissions"].append(perm_data)
 
@@ -698,17 +704,17 @@ class GroupGraph(object):
                     "rolename": GROUP_EDGE_ROLES[role],
                 }
 
-                for permission in self.permission_metadata[parent_name]:
+                for grant in self.permission_grants[parent_name]:
                     perm_data = {
-                        "permission": permission.permission,
-                        "argument": permission.argument,
-                        "granted_on": (permission.granted_on - EPOCH).total_seconds(),
+                        "permission": grant.permission,
+                        "argument": grant.argument,
+                        "granted_on": (grant.granted_on - EPOCH).total_seconds(),
                         "path": [elem[1] for elem in path],
                         "distance": len(path) - 1,
                     }
 
                     if expose_aliases:
-                        perm_data["alias"] = permission.alias
+                        perm_data["alias"] = grant.is_alias
 
                     permissions.append(perm_data)
 

@@ -50,12 +50,12 @@ class BasePage(BaseFinder):
     @property
     def heading(self):
         # type: () -> str
-        return self.find_element_by_xpath("//div[@class='header']/h2[1]").text
+        return self.find_element_by_id("heading").text
 
     @property
     def subheading(self):
         # type: () -> str
-        return self.find_element_by_xpath("//div[@class='header']/h3[1]/small[1]").text
+        return self.find_element_by_id("subheading").text
 
     @property
     def search_input(self):

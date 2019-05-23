@@ -13,9 +13,6 @@ if TYPE_CHECKING:
 
 def test_require_clickthru(tmpdir, setup, browser):
     # type: (LocalPath, SetupTest, Chrome) -> None
-    with setup.transaction():
-        setup.create_user("gary@a.co")
-
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
         browser.get(url(frontend_url, "/groups"))
         groups_page = GroupsViewPage(browser)

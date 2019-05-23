@@ -250,6 +250,12 @@ class SetupTest(object):
         )
         grant.add(self.session)
 
+    def disable_user(self, user):
+        # type: (str) -> None
+        user_obj = User.get(self.session, name=user)
+        assert user_obj
+        user_obj.enabled = False
+
     def disable_group(self, group):
         # type: (str) -> None
         group_obj = Group.get(self.session, name=group)

@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 def test_view(tmpdir, setup, browser):
     # type: (LocalPath, SetupTest, Chrome) -> None
     with setup.transaction():
-        setup.create_user("gary@a.co")
         setup.create_permission("audited-permission", "", audited=True)
         setup.create_permission("some-permission", "Some permission")
         setup.create_permission("disabled-permission", "", enabled=False)

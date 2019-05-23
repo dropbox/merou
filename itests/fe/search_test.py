@@ -19,7 +19,6 @@ def test_search(tmpdir, setup, browser):
     with setup.transaction():
         setup.create_group("group-some")
         setup.create_permission("awesome-permission")
-        setup.create_user("gary@a.co")
         setup.create_user("some@a.co")
 
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
@@ -41,9 +40,6 @@ def test_search(tmpdir, setup, browser):
 
 def test_search_escaping(tmpdir, setup, browser):
     # type: (LocalPath, SetupTest, Chrome) -> None
-    with setup.transaction():
-        setup.create_user("gary@a.co")
-
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
         browser.get(url(frontend_url, "/"))
 

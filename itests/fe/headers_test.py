@@ -13,9 +13,6 @@ if TYPE_CHECKING:
 
 def test_csp(tmpdir, setup):
     # type: (LocalPath, SetupTest) -> None
-    with setup.transaction():
-        setup.create_user("gary@a.co")
-
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
         r = urlopen(url(frontend_url, "/"))
         assert r.getcode() == 200
@@ -41,9 +38,6 @@ def test_csp(tmpdir, setup):
 
 def test_referrer_policy(tmpdir, setup):
     # type: (LocalPath, SetupTest) -> None
-    with setup.transaction():
-        setup.create_user("gary@a.co")
-
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
         r = urlopen(url(frontend_url, "/"))
         assert r.getcode() == 200

@@ -50,7 +50,6 @@ def test_list_audited_groups(tmpdir, setup, browser):
         setup.create_permission("audited", "", audited=True)
         setup.grant_permission_to_group("audited", "", "audited-group")
         setup.add_group_to_group("child-audited", "audited-group")
-        setup.create_user("gary@a.co")
 
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
         browser.get(url(frontend_url, "/groups"))

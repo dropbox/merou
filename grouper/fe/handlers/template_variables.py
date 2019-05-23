@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from grouper.constants import USER_METADATA_SHELL_KEY
+from grouper.constants import USER_METADATA_GITHUB_USERNAME_KEY, USER_METADATA_SHELL_KEY
 from grouper.entities.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.fe.util import Alert
 from grouper.graph import NoSuchGroup, NoSuchUser
@@ -135,6 +135,8 @@ def get_user_view_template_vars(session, actor, user, graph):
         else "No shell configured"
     )
     ret["shell"] = shell
+    github_username = get_user_metadata_by_key(session, user.id, USER_METADATA_GITHUB_USERNAME_KEY)
+    ret["github_username"] = github_username.data_value if github_username else "(Unset)"
     ret["open_audits"] = user_open_audits(session, user)
     group_edge_list = get_groups_by_user(session, user) if user.enabled else []
     ret["groups"] = [

@@ -59,6 +59,7 @@ from grouper.fe.handlers.service_account_permission_revoke import ServiceAccount
 from grouper.fe.handlers.service_account_view import ServiceAccountView
 from grouper.fe.handlers.user_disable import UserDisable
 from grouper.fe.handlers.user_enable import UserEnable
+from grouper.fe.handlers.user_github import UserGitHub
 from grouper.fe.handlers.user_password_add import UserPasswordAdd
 from grouper.fe.handlers.user_password_delete import UserPasswordDelete
 from grouper.fe.handlers.user_requests import UserRequests
@@ -109,6 +110,7 @@ for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
             (r"/users/{}".format(regex), UserView),
             (r"/users/{}/disable".format(regex), UserDisable),
             (r"/users/{}/enable".format(regex), UserEnable),
+            (r"/users/{}/github".format(regex), UserGitHub),
             (r"/users/{}/shell".format(regex), UserShell),
             (r"/users/{}/public-key/add".format(regex), PublicKeyAdd),
             (r"/users/{}/public-key/(?P<key_id>[0-9]+)/delete".format(regex), PublicKeyDelete),

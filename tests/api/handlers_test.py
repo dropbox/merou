@@ -7,7 +7,7 @@ import pytest
 from six import iteritems, itervalues
 from six.moves.urllib.parse import urlencode
 
-from grouper.constants import USER_METADATA_SHELL_KEY
+from grouper.constants import USER_METADATA_GITHUB_USERNAME_KEY, USER_METADATA_SHELL_KEY
 from grouper.models.counter import Counter
 from grouper.models.service_account import ServiceAccount
 from grouper.models.user_token import UserToken
@@ -323,6 +323,30 @@ def test_shell(session, users, http_client, base_url, graph):  # noqa: F811
         body["data"]["user"]["metadata"][0]["data_value"] == "/bin/zsh"
     ), "The shell should be set to the correct value"
     assert len(body["data"]["user"]["metadata"]) == 1, "There should only be 1 metadata!"
+
+
+@pytest.mark.gen_test
+def test_github_username(session, users, http_client, base_url, graph):  # noqa: F811
+    user = users["zorkian@a.co"]
+    assert get_user_metadata_by_key(session, user.id, USER_METADATA_GITHUB_USERNAME_KEY) is None
+
+    set_user_metadata(session, user.id, USER_METADATA_GITHUB_USERNAME_KEY, "zorkian-on-gh")
+    graph.update_from_db(session)
+    fe_url = url(base_url, "/users/{}".format(user.username))
+    resp = yield http_client.fetch(fe_url)
+    assert resp.code == 200
+    body = json.loads(resp.body)
+    [metadata] = body["data"]["user"]["metadata"]
+    assert metadata["data_key"] == "github_username"
+    assert metadata["data_value"] == "zorkian-on-gh"
+
+    set_user_metadata(session, user.id, USER_METADATA_GITHUB_USERNAME_KEY, None)
+    graph.update_from_db(session)
+    fe_url = url(base_url, "/users/{}".format(user.username))
+    resp = yield http_client.fetch(fe_url)
+    assert resp.code == 200
+    body = json.loads(resp.body)
+    assert body["data"]["user"]["metadata"] == []
 
 
 @pytest.mark.gen_test

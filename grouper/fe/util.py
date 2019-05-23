@@ -130,16 +130,23 @@ class GrouperHandler(SentryHandler):
         self.set_alerts(alerts)
         super(GrouperHandler, self).redirect(url, *args, **kwargs)
 
-    def get_current_user(self):
-        # type: () -> Optional[User]
-        username = self.request.headers.get(settings().user_auth_header)
+    def get_or_create_user(self, username):
+        # type: (str) -> Optional[User]
+        """Retrieve or create the User object for the authenticated user.
+
+        This is done in a separate method called by prepare instead of in the magic Tornado
+        get_current_user method because exceptions thrown by the latter are caught by Tornado and
+        not propagated to the caller, and we want to use exceptions to handle invalid users and
+        then return an error page in prepare.
+        """
         if not username:
             return None
 
         # Users must be fully qualified
         if not re.match("^{}$".format(USERNAME_VALIDATION), username):
-            raise InvalidUser()
+            raise InvalidUser("{} does not match {}".format(username, USERNAME_VALIDATION))
 
+        # User must exist in the database and be active
         try:
             user, created = User.get_or_create(self.session, username=username)
             if created:
@@ -157,16 +164,26 @@ class GrouperHandler(SentryHandler):
 
         # service accounts are, by definition, not interactive users
         if user.is_service_account:
-            raise InvalidUser()
+            raise InvalidUser("{} is a service account".format(username))
 
         return user
 
     def prepare(self):
         # type: () -> None
-        if not self.current_user or not self.current_user.enabled:
-            self.forbidden()
+        username = self.request.headers.get(settings().user_auth_header)
+
+        try:
+            user = self.get_or_create_user(username)
+        except InvalidUser as e:
+            self.baduser(str(e))
             self.finish()
             return
+
+        if user and user.enabled:
+            self.current_user = user
+        else:
+            self.baduser("{} is not an active account".format(username))
+            self.finish()
 
     def on_finish(self):
         # type: () -> None
@@ -279,6 +296,13 @@ class GrouperHandler(SentryHandler):
         self.set_status(400)
         self.raise_and_log_exception(tornado.web.HTTPError(400))
         self.render("errors/badrequest.html")
+
+    def baduser(self, message):
+        # type: (str) -> None
+        self.set_status(403)
+        self.raise_and_log_exception(tornado.web.HTTPError(403))
+        how_to_get_help = settings().how_to_get_help
+        self.render("errors/baduser.html", message=message, how_to_get_help=how_to_get_help)
 
     def forbidden(self):
         # type: () -> None

@@ -250,6 +250,11 @@ class SetupTest(object):
         )
         grant.add(self.session)
 
+    def disable_user(self, user):
+        # type: (str) -> None
+        user_repository = self.repository_factory.create_user_repository()
+        user_repository.disable_user(user)
+
     def disable_group(self, group):
         # type: (str) -> None
         group_obj = Group.get(self.session, name=group)

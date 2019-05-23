@@ -61,7 +61,6 @@ def create_test_data(setup):
                 audited=permission.audited,
             )
         setup.create_permission("disabled", enabled=False)
-        setup.create_user("gary@a.co")
     return permissions
 
 

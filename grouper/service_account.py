@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy.exc import IntegrityError
 
-from grouper.entities.permission_grant import PermissionGrant, ServiceAccountPermissionGrant
+from grouper.entities.permission_grant import ServiceAccountPermissionGrant
 from grouper.group_service_account import add_service_account
 from grouper.models.audit_log import AuditLog
 from grouper.models.counter import Counter
@@ -223,34 +223,38 @@ def service_account_permissions(session, service_account):
                 permission=grant.name,
                 argument=grant.argument,
                 granted_on=grant.granted_on,
-                mapping_id=grant.id,
+                is_alias=False,
+                grant_id=grant.id,
             )
         )
     return out
 
 
 def all_service_account_permissions(session):
-    # type: (Session) -> Dict[str, List[PermissionGrant]]
+    # type: (Session) -> Dict[str, List[ServiceAccountPermissionGrant]]
     """Return a dict of service account names to their permissions."""
     grants = session.query(
         User.username,
         Permission.name,
         ServiceAccountPermissionMap.argument,
         ServiceAccountPermissionMap.granted_on,
+        ServiceAccountPermissionMap.id,
     ).filter(
         Permission.id == ServiceAccountPermissionMap.permission_id,
         ServiceAccountPermissionMap.service_account_id == ServiceAccount.id,
         ServiceAccount.user_id == User.id,
         User.enabled == True,
     )
-    out = defaultdict(list)  # type: Dict[str, List[PermissionGrant]]
+    out = defaultdict(list)  # type: Dict[str, List[ServiceAccountPermissionGrant]]
     for grant in grants:
         out[grant.username].append(
-            PermissionGrant(
+            ServiceAccountPermissionGrant(
+                service_account=grant.username,
                 permission=grant.name,
                 argument=grant.argument,
                 granted_on=grant.granted_on,
                 is_alias=False,
+                grant_id=grant.id,
             )
         )
     return out

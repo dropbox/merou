@@ -5,7 +5,7 @@ from grouper.entities.permission import PermissionAccess
 from grouper.usecases.interfaces import UserInterface
 
 if TYPE_CHECKING:
-    from grouper.entities.permission_grant import PermissionGrant
+    from grouper.entities.permission_grant import GroupPermissionGrant
     from grouper.repositories.group_edge import GroupEdgeRepository
     from grouper.repositories.interfaces import PermissionGrantRepository
     from grouper.repositories.user import UserRepository
@@ -47,7 +47,7 @@ class UserService(UserInterface):
         return PermissionAccess(can_disable, can_change_audited_status)
 
     def permission_grants_for_user(self, user):
-        # type: (str) -> List[PermissionGrant]
+        # type: (str) -> List[GroupPermissionGrant]
         return self.permission_grant_repository.permission_grants_for_user(user)
 
     def user_is_audit_manager(self, user):

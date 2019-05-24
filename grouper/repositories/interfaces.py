@@ -9,7 +9,6 @@ if TYPE_CHECKING:
     from grouper.entities.permission import Permission
     from grouper.entities.permission_grant import (
         GroupPermissionGrant,
-        PermissionGrant,
         ServiceAccountPermissionGrant,
     )
     from grouper.repositories.audit_log import AuditLogRepository
@@ -79,7 +78,7 @@ class PermissionGrantRepository(with_metaclass(ABCMeta, object)):
 
     @abstractmethod
     def permission_grants_for_user(self, user):
-        # type: (str) -> List[PermissionGrant]
+        # type: (str) -> List[GroupPermissionGrant]
         pass
 
     @abstractmethod

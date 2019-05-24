@@ -6,11 +6,7 @@ from sqlalchemy import or_
 from grouper.entities.group import GroupNotFoundException
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.entities.permission import PermissionNotFoundException
-from grouper.entities.permission_grant import (
-    GroupPermissionGrant,
-    PermissionGrant,
-    ServiceAccountPermissionGrant,
-)
+from grouper.entities.permission_grant import GroupPermissionGrant, ServiceAccountPermissionGrant
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
@@ -48,15 +44,17 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
         return self.repository.service_account_grants_for_permission(name)
 
     def permission_grants_for_user(self, name):
-        # type: (str) -> List[PermissionGrant]
+        # type: (str) -> List[GroupPermissionGrant]
         user_details = self.graph.get_user_details(name)
         permissions = []
         for permission_data in user_details["permissions"]:
-            permission = PermissionGrant(
+            permission = GroupPermissionGrant(
+                group=permission_data["path"][-1],
                 permission=permission_data["permission"],
                 argument=permission_data["argument"],
                 granted_on=datetime.utcfromtimestamp(permission_data["granted_on"]),
                 is_alias=permission_data["alias"],
+                grant_id=None,
             )
             permissions.append(permission)
         return permissions
@@ -120,7 +118,8 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
                 permission=name,
                 argument=g.argument,
                 granted_on=g.granted_on,
-                mapping_id=g.id,
+                is_alias=False,
+                grant_id=g.id,
             )
             for g in grants.all()
         ]
@@ -150,13 +149,14 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
                 permission=name,
                 argument=g.argument,
                 granted_on=g.granted_on,
-                mapping_id=g.id,
+                is_alias=False,
+                grant_id=g.id,
             )
             for g in grants.all()
         ]
 
     def permission_grants_for_user(self, name):
-        # type: (str) -> List[PermissionGrant]
+        # type: (str) -> List[GroupPermissionGrant]
         """Return all permission grants a user has from whatever source.
 
         TODO(rra): Currently does not expand permission aliases, and therefore doesn't match the
@@ -211,15 +211,29 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
 
         # Return the permission grants.
         group_permission_grants = (
-            self.session.query(Permission.name, PermissionMap.argument, PermissionMap.granted_on)
+            self.session.query(
+                Group.groupname,
+                Permission.name,
+                PermissionMap.argument,
+                PermissionMap.granted_on,
+                PermissionMap.id,
+            )
             .filter(
                 Permission.id == PermissionMap.permission_id,
                 PermissionMap.group_id.in_(seen_group_ids),
+                Group.id == PermissionMap.group_id,
             )
             .all()
         )
         return [
-            PermissionGrant(g.name, g.argument, g.granted_on, is_alias=False)
+            GroupPermissionGrant(
+                group=g.groupname,
+                permission=g.name,
+                argument=g.argument,
+                granted_on=g.granted_on,
+                is_alias=False,
+                grant_id=g.id,
+            )
             for g in group_permission_grants
         ]
 
@@ -248,7 +262,8 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
                 permission=permission,
                 argument=g.argument,
                 granted_on=g.granted_on,
-                mapping_id=g.id,
+                is_alias=False,
+                grant_id=g.id,
             )
             for g in grants
         ]
@@ -282,7 +297,8 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
                 permission=permission,
                 argument=g.argument,
                 granted_on=g.granted_on,
-                mapping_id=g.id,
+                is_alias=False,
+                grant_id=g.id,
             )
             for g in grants
         ]

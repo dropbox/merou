@@ -80,10 +80,24 @@ def test_permission_disable_existing_grants(setup):
     assert mock_ui.mock_calls == [
         call.disable_permission_failed_existing_grants(
             "some-permission",
-            [GroupPermissionGrant("some-group", "some-permission", "argument", ANY, ANY)],
+            [
+                GroupPermissionGrant(
+                    group="some-group",
+                    permission="some-permission",
+                    argument="argument",
+                    granted_on=ANY,
+                    is_alias=False,
+                    grant_id=ANY,
+                )
+            ],
             [
                 ServiceAccountPermissionGrant(
-                    "service@svc.localhost", "some-permission", "", ANY, ANY
+                    service_account="service@svc.localhost",
+                    permission="some-permission",
+                    argument="",
+                    granted_on=ANY,
+                    is_alias=False,
+                    grant_id=ANY,
                 )
             ],
         )

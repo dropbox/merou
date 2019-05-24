@@ -37,10 +37,6 @@ class BaseFinder(object):
         # type: (str) -> WebElement
         return self.root.find_element_by_tag_name(name)
 
-    def find_element_by_xpath(self, path):
-        # type: (str) -> WebElement
-        return self.root.find_element_by_xpath(path)
-
 
 class BasePage(BaseFinder):
     @property

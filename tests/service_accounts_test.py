@@ -296,7 +296,7 @@ def test_service_account_fe_perms(
 
     # Unrelated people cannot revoke a permission.
     fe_url = url(
-        base_url, "/groups/team-sre/service/service@a.co/revoke/{}".format(perms[0].mapping_id)
+        base_url, "/groups/team-sre/service/service@a.co/revoke/{}".format(perms[0].grant_id)
     )
     with pytest.raises(HTTPError):
         yield http_client.fetch(
@@ -309,7 +309,7 @@ def test_service_account_fe_perms(
     )
     assert resp.code == 200
     fe_url = url(
-        base_url, "/groups/team-sre/service/service@a.co/revoke/{}".format(perms[1].mapping_id)
+        base_url, "/groups/team-sre/service/service@a.co/revoke/{}".format(perms[1].grant_id)
     )
     resp = yield http_client.fetch(
         fe_url, method="POST", headers={"X-Grouper-User": owner}, body=urlencode({})

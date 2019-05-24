@@ -1,15 +1,25 @@
 from datetime import datetime
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
-# Represents a grant of a permission to either a group or a service account.
-PermissionGrant = NamedTuple(
-    "PermissionGrant",
-    [("permission", str), ("argument", str), ("granted_on", datetime), ("is_alias", bool)],
-)
 GroupPermissionGrant = NamedTuple(
-    "GroupPermissionGrant", [("group", str), ("permission", str), ("argument", str)]
+    "GroupPermissionGrant",
+    [
+        ("group", str),
+        ("permission", str),
+        ("argument", str),
+        ("granted_on", datetime),
+        ("is_alias", bool),
+        ("grant_id", Optional[int]),
+    ],
 )
 ServiceAccountPermissionGrant = NamedTuple(
     "ServiceAccountPermissionGrant",
-    [("service_account", str), ("permission", str), ("argument", str)],
+    [
+        ("service_account", str),
+        ("permission", str),
+        ("argument", str),
+        ("granted_on", datetime),
+        ("is_alias", bool),
+        ("grant_id", Optional[int]),
+    ],
 )

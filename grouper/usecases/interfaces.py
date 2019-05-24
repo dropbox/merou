@@ -25,7 +25,6 @@ if TYPE_CHECKING:
     from grouper.entities.permission import Permission, PermissionAccess
     from grouper.entities.permission_grant import (
         GroupPermissionGrant,
-        PermissionGrant,
         ServiceAccountPermissionGrant,
     )
     from grouper.usecases.authorization import Authorization
@@ -249,7 +248,7 @@ class UserInterface(with_metaclass(ABCMeta, object)):
 
     @abstractmethod
     def permission_grants_for_user(self, user):
-        # type: (str) -> List[PermissionGrant]
+        # type: (str) -> List[GroupPermissionGrant]
         pass
 
     @abstractmethod

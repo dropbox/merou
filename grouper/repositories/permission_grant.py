@@ -6,11 +6,7 @@ from sqlalchemy import or_
 from grouper.entities.group import GroupNotFoundException
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.entities.permission import PermissionNotFoundException
-from grouper.entities.permission_grant import (
-    GroupPermissionGrant,
-    PermissionGrant,
-    ServiceAccountPermissionGrant,
-)
+from grouper.entities.permission_grant import GroupPermissionGrant, ServiceAccountPermissionGrant
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
@@ -48,15 +44,17 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
         return self.repository.service_account_grants_for_permission(name)
 
     def permission_grants_for_user(self, name):
-        # type: (str) -> List[PermissionGrant]
+        # type: (str) -> List[GroupPermissionGrant]
         user_details = self.graph.get_user_details(name)
         permissions = []
         for permission_data in user_details["permissions"]:
-            permission = PermissionGrant(
+            permission = GroupPermissionGrant(
+                group=permission_data["path"][-1],
                 permission=permission_data["permission"],
                 argument=permission_data["argument"],
                 granted_on=datetime.utcfromtimestamp(permission_data["granted_on"]),
                 is_alias=permission_data["alias"],
+                grant_id=None,
             )
             permissions.append(permission)
         return permissions
@@ -104,7 +102,9 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         if not permission or not permission.enabled:
             return []
         grants = (
-            self.session.query(Group.groupname, PermissionMap.argument)
+            self.session.query(
+                Group.groupname, PermissionMap.argument, PermissionMap.id, PermissionMap.granted_on
+            )
             .filter(
                 PermissionMap.permission_id == permission.id, Group.id == PermissionMap.group_id
             )
@@ -112,7 +112,17 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         )
         if not include_disabled_groups:
             grants = grants.filter(Group.enabled == True)
-        return [GroupPermissionGrant(g.groupname, name, g.argument) for g in grants.all()]
+        return [
+            GroupPermissionGrant(
+                group=g.groupname,
+                permission=name,
+                argument=g.argument,
+                granted_on=g.granted_on,
+                is_alias=False,
+                grant_id=g.id,
+            )
+            for g in grants.all()
+        ]
 
     def service_account_grants_for_permission(self, name):
         # type: (str) -> List[ServiceAccountPermissionGrant]
@@ -120,7 +130,12 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         if not permission or not permission.enabled:
             return []
         grants = (
-            self.session.query(User.username, ServiceAccountPermissionMap.argument)
+            self.session.query(
+                User.username,
+                ServiceAccountPermissionMap.argument,
+                ServiceAccountPermissionMap.granted_on,
+                ServiceAccountPermissionMap.id,
+            )
             .filter(
                 ServiceAccountPermissionMap.permission_id == permission.id,
                 ServiceAccount.id == ServiceAccountPermissionMap.service_account_id,
@@ -128,10 +143,20 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
             )
             .order_by(User.username, ServiceAccountPermissionMap.argument)
         )
-        return [ServiceAccountPermissionGrant(g.username, name, g.argument) for g in grants.all()]
+        return [
+            ServiceAccountPermissionGrant(
+                service_account=g.username,
+                permission=name,
+                argument=g.argument,
+                granted_on=g.granted_on,
+                is_alias=False,
+                grant_id=g.id,
+            )
+            for g in grants.all()
+        ]
 
     def permission_grants_for_user(self, name):
-        # type: (str) -> List[PermissionGrant]
+        # type: (str) -> List[GroupPermissionGrant]
         """Return all permission grants a user has from whatever source.
 
         TODO(rra): Currently does not expand permission aliases, and therefore doesn't match the
@@ -186,15 +211,29 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
 
         # Return the permission grants.
         group_permission_grants = (
-            self.session.query(Permission.name, PermissionMap.argument, PermissionMap.granted_on)
+            self.session.query(
+                Group.groupname,
+                Permission.name,
+                PermissionMap.argument,
+                PermissionMap.granted_on,
+                PermissionMap.id,
+            )
             .filter(
                 Permission.id == PermissionMap.permission_id,
                 PermissionMap.group_id.in_(seen_group_ids),
+                Group.id == PermissionMap.group_id,
             )
             .all()
         )
         return [
-            PermissionGrant(g.name, g.argument, g.granted_on, is_alias=False)
+            GroupPermissionGrant(
+                group=g.groupname,
+                permission=g.name,
+                argument=g.argument,
+                granted_on=g.granted_on,
+                is_alias=False,
+                grant_id=g.id,
+            )
             for g in group_permission_grants
         ]
 
@@ -204,7 +243,9 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         if not sql_permission:
             return []
         grants = (
-            self.session.query(PermissionMap.id, Group.groupname, PermissionMap.argument)
+            self.session.query(
+                PermissionMap.id, Group.groupname, PermissionMap.argument, PermissionMap.granted_on
+            )
             .filter(
                 Group.id == PermissionMap.group_id,
                 PermissionMap.permission_id == sql_permission.id,
@@ -215,7 +256,17 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         self.session.query(PermissionMap).filter(PermissionMap.id.in_(ids)).delete(
             synchronize_session="fetch"
         )
-        return [GroupPermissionGrant(g.groupname, permission, g.argument) for g in grants]
+        return [
+            GroupPermissionGrant(
+                group=g.groupname,
+                permission=permission,
+                argument=g.argument,
+                granted_on=g.granted_on,
+                is_alias=False,
+                grant_id=g.id,
+            )
+            for g in grants
+        ]
 
     def revoke_all_service_account_grants(self, permission):
         # type: (str) -> List[ServiceAccountPermissionGrant]
@@ -224,7 +275,10 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
             return []
         grants = (
             self.session.query(
-                ServiceAccountPermissionMap.id, User.username, ServiceAccountPermissionMap.argument
+                ServiceAccountPermissionMap.id,
+                User.username,
+                ServiceAccountPermissionMap.argument,
+                ServiceAccountPermissionMap.granted_on,
             )
             .filter(
                 User.id == ServiceAccount.user_id,
@@ -237,7 +291,17 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         self.session.query(ServiceAccountPermissionMap).filter(
             ServiceAccountPermissionMap.id.in_(ids)
         ).delete(synchronize_session="fetch")
-        return [ServiceAccountPermissionGrant(g.username, permission, g.argument) for g in grants]
+        return [
+            ServiceAccountPermissionGrant(
+                service_account=g.username,
+                permission=permission,
+                argument=g.argument,
+                granted_on=g.granted_on,
+                is_alias=False,
+                grant_id=g.id,
+            )
+            for g in grants
+        ]
 
     def user_has_permission(self, user, permission):
         # type: (str, str) -> bool

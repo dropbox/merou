@@ -14,7 +14,7 @@ from grouper import stats
 from grouper.entities.group import Group, GroupJoinPolicy
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.entities.permission import Permission
-from grouper.entities.permission_grant import PermissionGrant
+from grouper.entities.permission_grant import GroupPermissionGrant
 from grouper.models.counter import Counter
 from grouper.models.group import Group as SQLGroup
 from grouper.models.group_edge import GroupEdge
@@ -31,8 +31,8 @@ from grouper.service_account import all_service_account_permissions
 from grouper.util import singleton
 
 if TYPE_CHECKING:
+    from grouper.entities.permission_grant import ServiceAccountPermissionGrant
     from grouper.models.base.session import Session
-    from grouper.service_account import ServiceAccountPermission
     from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
     Node = Tuple[str, str]
@@ -72,7 +72,7 @@ class GroupGraph(object):
         group_metadata: Full information about each group
         group_service_accounts: Service accounts owned by groups
         permission_metadata: Permission grant information for users
-        service_account_permissions: Permission grant information for service accounts
+        service_account_permission_grants: Permission grant information for service accounts
         permission_tuples: Metadata for all enabled permissions
         group_tuples: Metadata for all enabled groups
         disabled_group_tuples: Metadata for all disabled groups
@@ -93,8 +93,10 @@ class GroupGraph(object):
         self.user_metadata = {}  # type: Dict[str, Dict[str, Any]]
         self.group_metadata = {}  # type: Dict[str, Dict[str, Any]]
         self.group_service_accounts = {}  # type: Dict[str, List[str]]
-        self.permission_grants = {}  # type: Dict[str, List[PermissionGrant]]
-        self.service_account_permissions = {}  # type: Dict[str, List[ServiceAccountPermission]]
+        self.permission_grants = {}  # type: Dict[str, List[GroupPermissionGrant]]
+        self.service_account_permission_grants = (
+            {}
+        )  # type: Dict[str, List[ServiceAccountPermissionGrant]]
         self.permission_tuples = set()  # type: Set[Permission]
         self.group_tuples = {}  # type: Dict[str, Group]
         self.disabled_group_tuples = {}  # type: Dict[str, Group]
@@ -134,7 +136,7 @@ class GroupGraph(object):
             user_metadata = self._get_user_metadata(session)
             permission_metadata = self._get_permission_metadata(session)
             permission_grants = self._get_permission_grants(session)
-            service_account_permissions = all_service_account_permissions(session)
+            service_account_permission_grants = all_service_account_permissions(session)
             group_metadata = self._get_group_metadata(session)
             group_service_accounts = self._get_group_service_accounts(session)
             permission_tuples = self._get_permission_tuples(session)
@@ -154,7 +156,7 @@ class GroupGraph(object):
                 self.group_service_accounts = group_service_accounts
                 self.permission_metadata = permission_metadata
                 self.permission_grants = permission_grants
-                self.service_account_permissions = service_account_permissions
+                self.service_account_permission_grants = service_account_permission_grants
                 self.permission_tuples = permission_tuples
                 self.group_tuples = group_tuples
                 self.disabled_group_tuples = disabled_group_tuples
@@ -253,7 +255,7 @@ class GroupGraph(object):
 
     @staticmethod
     def _get_permission_grants(session):
-        # type: (Session) -> Dict[str, List[PermissionGrant]]
+        # type: (Session) -> Dict[str, List[GroupPermissionGrant]]
         """Returns a dict of group names to lists of permission grants."""
         permissions = session.query(SQLPermission, PermissionMap, SQLGroup.groupname).filter(
             SQLPermission.id == PermissionMap.permission_id,
@@ -261,14 +263,16 @@ class GroupGraph(object):
             SQLGroup.enabled == True,
         )
 
-        out = defaultdict(list)  # type: Dict[str, List[PermissionGrant]]
+        out = defaultdict(list)  # type: Dict[str, List[GroupPermissionGrant]]
         for (permission, permission_map, groupname) in permissions:
             out[groupname].append(
-                PermissionGrant(
+                GroupPermissionGrant(
+                    group=groupname,
                     permission=permission.name,
                     argument=permission_map.argument,
                     granted_on=permission_map.granted_on,
                     is_alias=False,
+                    grant_id=permission_map.id,
                 )
             )
 
@@ -278,11 +282,13 @@ class GroupGraph(object):
 
             for (name, arg) in aliases:
                 out[groupname].append(
-                    PermissionGrant(
+                    GroupPermissionGrant(
+                        group=groupname,
                         permission=name,
                         argument=arg,
                         granted_on=permission_map.granted_on,
                         is_alias=True,
+                        grant_id=None,
                     )
                 )
 
@@ -483,13 +489,13 @@ class GroupGraph(object):
                     )
 
             # Finally, add all service accounts.
-            for account, service_permissions in iteritems(self.service_account_permissions):
-                for service_permission in service_permissions:
-                    if service_permission.permission == name:
+            for account, service_grants in iteritems(self.service_account_permission_grants):
+                for service_grant in service_grants:
+                    if service_grant.permission == name:
                         details = {
-                            "permission": service_permission.permission,
-                            "argument": service_permission.argument,
-                            "granted_on": (service_permission.granted_on - EPOCH).total_seconds(),
+                            "permission": service_grant.permission,
+                            "argument": service_grant.argument,
+                            "granted_on": (service_grant.granted_on - EPOCH).total_seconds(),
                         }
                         if account in data["service_accounts"]:
                             data["service_accounts"][account]["permissions"].append(details)
@@ -656,14 +662,13 @@ class GroupGraph(object):
             # If the user is a service account, its permissions are only those of the service
             # account and we don't do any graph walking.
             if "service_account" in self.user_metadata[username]:
-                if username in self.service_account_permissions:
-                    for service_permission in self.service_account_permissions[username]:
-                        granted_on = (service_permission.granted_on - EPOCH).total_seconds()
+                if username in self.service_account_permission_grants:
+                    for service_grant in self.service_account_permission_grants[username]:
                         permissions.append(
                             {
-                                "permission": service_permission.permission,
-                                "argument": service_permission.argument,
-                                "granted_on": granted_on,
+                                "permission": service_grant.permission,
+                                "argument": service_grant.argument,
+                                "granted_on": (service_grant.granted_on - EPOCH).total_seconds(),
                             }
                         )
                 return user_details

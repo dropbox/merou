@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from typing import Iterator
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def setup(tmpdir):
     # type: (LocalPath) -> Iterator[SetupTest]
     with closing(SetupTest(tmpdir)) as test_setup:

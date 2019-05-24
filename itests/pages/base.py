@@ -37,10 +37,6 @@ class BaseFinder(object):
         # type: (str) -> WebElement
         return self.root.find_element_by_tag_name(name)
 
-    def find_element_by_xpath(self, path):
-        # type: (str) -> WebElement
-        return self.root.find_element_by_xpath(path)
-
 
 class BasePage(BaseFinder):
     @property
@@ -60,11 +56,11 @@ class BasePage(BaseFinder):
     @property
     def search_input(self):
         # type: () -> WebElement
-        return self.find_element_by_xpath("//div[contains(@class, 'search-input')]/input[1]")
+        return self.find_element_by_id("query")
 
     def click_search_button(self):
         # type: () -> None
-        button = self.find_element_by_xpath("//div[contains(@class, 'search-input')]//button[1]")
+        button = self.find_element_by_id("search")
         button.click()
 
     def has_alert(self, text):

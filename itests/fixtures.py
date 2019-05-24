@@ -18,14 +18,14 @@ if TYPE_CHECKING:
     from typing import Iterator
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def async_server(standard_graph, tmpdir):
     # type: (GroupGraph, LocalPath) -> Iterator[str]
     with frontend_server(tmpdir, "cbguder@a.co") as frontend_url:
         yield frontend_url
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def async_api_server(standard_graph, tmpdir):
     with api_server(tmpdir) as api_url:
         yield api_url

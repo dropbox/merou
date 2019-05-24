@@ -593,7 +593,7 @@ enabled. Membership in this group is regularly reviewed.
 
 {% macro dropdown(key, current, values, allow_none=False) -%}
     <div class="btn-group">
-        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+        <button id="dropdown-{{key}}" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
             {% if current %}
                 {{key|title}}: {{current}}
             {% else %}

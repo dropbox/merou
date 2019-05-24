@@ -23,16 +23,16 @@
     {{ dropdown("limit", limit, [100, 250, 500]) }}
     {{ paginator(offset, limit, total) }}
     {% if audited_permissions %}
-    <a class="btn btn-warning show-all" href="{{update_qs(audited='0', offset='0')}}">
+    <a id="show-all" class="btn btn-warning" href="{{update_qs(audited='0', offset='0')}}">
         <i class="fa"></i> Show all permissions
     </a>
     {% else %}
     {% if can_create %}
-    <a class="btn btn-success create-permission" href="/permissions/create">
+    <a id="create-permission" class="btn btn-success" href="/permissions/create">
         <i class="fa fa-plus"></i> Create
     </a>
     {% endif %}
-    <a class="btn btn-warning show-audited" href="{{update_qs(audited='1', offset='0')}}">
+    <a id="show-audited" class="btn btn-warning" href="{{update_qs(audited='1', offset='0')}}">
         <i class="fa"></i> Show audited permissions only
     </a>
     {% endif %}

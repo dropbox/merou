@@ -8,6 +8,8 @@ if TYPE_CHECKING:
     from grouper.entities.pagination import PaginatedList, Pagination
     from grouper.entities.permission import Permission
     from grouper.entities.permission_grant import (
+        AllGrants,
+        AllGrantsOfPermission,
         GroupPermissionGrant,
         ServiceAccountPermissionGrant,
     )
@@ -60,6 +62,16 @@ class PermissionRepository(with_metaclass(ABCMeta, object)):
 
 class PermissionGrantRepository(with_metaclass(ABCMeta, object)):
     """Abstract base class for permission grant repositories."""
+
+    @abstractmethod
+    def all_grants(self):
+        # type: () -> AllGrants
+        pass
+
+    @abstractmethod
+    def all_grants_of_permission(self, permission):
+        # type: (str) -> AllGrantsOfPermission
+        pass
 
     @abstractmethod
     def grant_permission_to_group(self, permission, argument, group):

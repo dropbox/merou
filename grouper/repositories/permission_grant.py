@@ -6,7 +6,12 @@ from sqlalchemy import or_
 from grouper.entities.group import GroupNotFoundException
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.entities.permission import PermissionNotFoundException
-from grouper.entities.permission_grant import GroupPermissionGrant, ServiceAccountPermissionGrant
+from grouper.entities.permission_grant import (
+    AllGrants,
+    AllGrantsOfPermission,
+    GroupPermissionGrant,
+    ServiceAccountPermissionGrant,
+)
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
@@ -30,6 +35,14 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
         # type: (GroupGraph, PermissionGrantRepository) -> None
         self.graph = graph
         self.repository = repository
+
+    def all_grants(self):
+        # type: () -> AllGrants
+        return self.graph.all_grants()
+
+    def all_grants_of_permission(self, permission):
+        # type: (str) -> AllGrantsOfPermission
+        return self.graph.all_grants_of_permission(permission)
 
     def grant_permission_to_group(self, permission, argument, group):
         # type: (str, str, str) -> None
@@ -81,6 +94,14 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
     def __init__(self, session):
         # type: (Session) -> None
         self.session = session
+
+    def all_grants(self):
+        # type: () -> AllGrants
+        raise NotImplementedError()
+
+    def all_grants_of_permission(self, permission):
+        # type: (str) -> AllGrantsOfPermission
+        raise NotImplementedError()
 
     def grant_permission_to_group(self, permission, argument, group):
         # type: (str, str, str) -> None

@@ -14,7 +14,7 @@ from grouper import stats
 from grouper.entities.group import Group, GroupJoinPolicy
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.entities.permission import Permission
-from grouper.entities.permission_grant import GroupPermissionGrant
+from grouper.entities.permission_grant import AllGrantsOfPermission, GroupPermissionGrant
 from grouper.models.counter import Counter
 from grouper.models.group import Group as SQLGroup
 from grouper.models.group_edge import GroupEdge
@@ -31,7 +31,7 @@ from grouper.service_account import all_service_account_permissions
 from grouper.util import singleton
 
 if TYPE_CHECKING:
-    from grouper.entities.permission_grant import ServiceAccountPermissionGrant
+    from grouper.entities.permission_grant import AllGrants, ServiceAccountPermissionGrant
     from grouper.models.base.session import Session
     from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
@@ -123,6 +123,9 @@ class GroupGraph(object):
         # Map of groups to their permission grants.
         self.permission_grants = {}  # type: Dict[str, List[GroupPermissionGrant]]
 
+        # Map of permissions to users and service accounts with that grant.
+        self._grants_by_permission = {}  # type: AllGrants
+
         # Map of groups to the service accounts they own, and from service accounts to their
         # permission grants.
         self._group_service_accounts = {}  # type: Dict[str, List[str]]
@@ -174,13 +177,17 @@ class GroupGraph(object):
             permission_grants = self._get_permission_grants(session)
             service_account_permission_grants = all_service_account_permissions(session)
 
-            new_graph = DiGraph()
-            new_graph.add_nodes_from(self._get_nodes(groups, user_metadata))
-            new_graph.add_edges_from(self._get_edges(session))
-            rgraph = new_graph.reverse()
+            graph = DiGraph()
+            graph.add_nodes_from(self._get_nodes(groups, user_metadata))
+            graph.add_edges_from(self._get_edges(session))
+            rgraph = graph.reverse()
+
+            grants_by_permission = self._get_grants_by_permission(
+                graph, permission_grants, service_account_permission_grants
+            )
 
             with self.lock:
-                self._graph = new_graph
+                self._graph = graph
                 self._rgraph = rgraph
                 self.checkpoint = checkpoint
                 self.checkpoint_time = checkpoint_time
@@ -191,6 +198,7 @@ class GroupGraph(object):
                 self._group_service_accounts = group_service_accounts
                 self.permission_grants = permission_grants
                 self._service_account_permission_grants = service_account_permission_grants
+                self._grants_by_permission = grants_by_permission
 
             duration = datetime.utcnow() - start_time
             stats.log_rate("graph_update_ms", int(duration.total_seconds() * 1000))
@@ -435,6 +443,62 @@ class GroupGraph(object):
             )
 
         return edges
+
+    def _get_grants_by_permission(
+        self,
+        graph,  # type: DiGraph
+        group_grants,  # type: Dict[str, List[GroupPermissionGrant]]
+        service_account_grants,  # type: Dict[str, List[ServiceAccountPermissionGrant]]
+    ):
+        # type: (...) -> AllGrants
+        """Build a map of permissions to users and service accounts with grants."""
+        service_grants = defaultdict(
+            lambda: defaultdict(set)
+        )  # type: Dict[str, Dict[str, Set[str]]]
+        for account, service_grant_list in iteritems(service_account_grants):
+            for service_grant in service_grant_list:
+                service_grants[service_grant.permission][account].add(service_grant.argument)
+
+        # For each group that has a permission grant, determine all of its users from the graph,
+        # and then record each permission grant of that group as a grant to all of those users.
+        # This ensures that each permission grant is recorded for all affected users exactly once.
+        user_grants = defaultdict(lambda: defaultdict(set))  # type: Dict[str, Dict[str, Set[str]]]
+        for group, grant_list in iteritems(group_grants):
+            members = set()  # type: Set[str]
+            paths = single_source_shortest_path(graph, ("Group", group))
+            for member, path in iteritems(paths):
+                member_type, member_name = member
+                if member_type != "User":
+                    continue
+                role = graph[("Group", group)][path[1]]["role"]
+                if GROUP_EDGE_ROLES[role] == "np-owner":
+                    continue
+                members.add(member_name)
+            for grant in grant_list:
+                for member in members:
+                    user_grants[grant.permission][member].add(grant.argument)
+
+        # Now, assemble the service_grants and user_grants dicts into a single dictionary of
+        # permission names to AllGrantsOfPermission named tuples.  defaultdicts don't compare
+        # easily to dicts and the API server wants to return lists, so convert to a regular dict
+        # with list values for ease of testing.  (The performance loss should be insignificant.)
+        all_grants = {}  # type: AllGrants
+        for permission in set(user_grants.keys()) | set(service_grants.keys()):
+            grants = AllGrantsOfPermission(
+                users={k: sorted(v) for k, v in iteritems(user_grants[permission])},
+                service_accounts={k: sorted(v) for k, v in iteritems(service_grants[permission])},
+            )
+            all_grants[permission] = grants
+
+        return all_grants
+
+    def all_grants(self):
+        # type: () -> AllGrants
+        return self._grants_by_permission
+
+    def all_grants_of_permission(self, permission):
+        # type: (str) -> AllGrantsOfPermission
+        return self._grants_by_permission.get(permission, AllGrantsOfPermission({}, {}))
 
     def get_permissions(self, audited=False):
         # type: (bool) -> List[Permission]

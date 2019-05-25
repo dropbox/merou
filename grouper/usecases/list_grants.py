@@ -1,0 +1,41 @@
+from abc import ABCMeta, abstractmethod
+from typing import TYPE_CHECKING
+
+from six import with_metaclass
+
+if TYPE_CHECKING:
+    from grouper.entities.permission_grant import AllGrants, AllGrantsOfPermission
+    from grouper.usecases.interfaces import PermissionInterface
+
+
+class ListGrantsUI(with_metaclass(ABCMeta, object)):
+    """Abstract base class for UI for ListGrants."""
+
+    @abstractmethod
+    def listed_grants(self, grants):
+        # type: (AllGrants) -> None
+        pass
+
+    @abstractmethod
+    def listed_grants_of_permission(self, permission, grants):
+        # type: (str, AllGrantsOfPermission) -> None
+        pass
+
+
+class ListGrants(object):
+    """List all permission grants by permission, expanding the graph."""
+
+    def __init__(self, ui, permission_service):
+        # type: (ListGrantsUI, PermissionInterface) -> None
+        self.ui = ui
+        self.permission_service = permission_service
+
+    def list_grants(self):
+        # type: () -> None
+        grants = self.permission_service.all_grants()
+        self.ui.listed_grants(grants)
+
+    def list_grants_of_permission(self, permission):
+        # type: (str) -> None
+        grants = self.permission_service.all_grants_of_permission(permission)
+        self.ui.listed_grants_of_permission(permission, grants)

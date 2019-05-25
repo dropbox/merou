@@ -7,6 +7,8 @@ if TYPE_CHECKING:
     from grouper.entities.pagination import PaginatedList, Pagination
     from grouper.entities.permission import Permission
     from grouper.entities.permission_grant import (
+        AllGrants,
+        AllGrantsOfPermission,
         GroupPermissionGrant,
         ServiceAccountPermissionGrant,
     )
@@ -26,6 +28,14 @@ class PermissionService(PermissionInterface):
         self.audit_log = audit_log
         self.permission_repository = permission_repository
         self.permission_grant_repository = permission_grant_repository
+
+    def all_grants(self):
+        # type: () -> AllGrants
+        return self.permission_grant_repository.all_grants()
+
+    def all_grants_of_permission(self, permission):
+        # type: (str) -> AllGrantsOfPermission
+        return self.permission_grant_repository.all_grants_of_permission(permission)
 
     def create_permission(self, name, description=""):
         # type: (str, str) -> None

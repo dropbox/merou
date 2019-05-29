@@ -68,6 +68,10 @@ class GroupGraph(object):
     groups and service accounts to the permission grants they have, and the internal graph and
     rgraph directed graphs.
 
+    The cached user metadata includes metadata for disabled users, and the disabled_groups internal
+    attribute holds a dictionary of group names to Group named tuples for disabled groups.  Other
+    than those exceptions, stored graph metadata includes only enabled objects.
+
     The directed graphs are used to calculate inherited membership and permissions.  _graph is a
     directed graph with all users and groups as nodes, and with directed edges from groups to their
     members (whether users or other groups).  _rgraph is the same graph reversed, so the edges
@@ -84,6 +88,7 @@ class GroupGraph(object):
         permissions: Names of all enabled permissions
         user_metadata: Full information about each user
         permission_grants: Permission grant information for users
+
     """
 
     def __init__(self):
@@ -107,15 +112,13 @@ class GroupGraph(object):
 
         # Collection of all groups and permissions.
         self._groups = {}  # type: Dict[str, Group]
+        self._disabled_groups = {}  # type: Dict[str, Group]
         self._permissions = {}  # type: Dict[str, Permission]
 
         # Collection of all users and their data.  For now, this is represented as a dict rather
         # than as a data transfer object.  Users have a lot of structure, so require a more
         # complicated object, which hasn't been written yet.
         self.user_metadata = {}  # type: Dict[str, Dict[str, Any]]
-
-        # Collection of all disabled groups.
-        self._disabled_groups = set()  # type: Set[Group]
 
         # Map of groups to their permission grants.
         self.permission_grants = {}  # type: Dict[str, List[GroupPermissionGrant]]
@@ -340,10 +343,10 @@ class GroupGraph(object):
 
     @staticmethod
     def _get_groups(session, user_metadata):
-        # type: (Session, Dict[str, Dict[str, Any]]) -> Tuple[Dict[str, Group], Set[Group]]
+        # type: (Session, Dict[str, Dict[str, Any]]) -> Tuple[Dict[str, Group], Dict[str, Group]]
         sql_groups = session.query(SQLGroup)
         groups = {}  # type: Dict[str, Group]
-        disabled_groups = set()
+        disabled_groups = {}  # type: Dict[str, Group]
         for sql_group in sql_groups:
             if sql_group.groupname in user_metadata:
                 is_role_user = user_metadata[sql_group.groupname]["role_user"]
@@ -360,7 +363,7 @@ class GroupGraph(object):
             if group.enabled:
                 groups[group.name] = group
             else:
-                disabled_groups.add(group)
+                disabled_groups[group.name] = group
         return groups, disabled_groups
 
     @staticmethod
@@ -498,7 +501,7 @@ class GroupGraph(object):
         # type: () -> List[Group]
         """ Get the list of disabled groups as Group instances sorted by groupname. """
         with self.lock:
-            return sorted(self._disabled_groups, key=lambda g: g.name)
+            return sorted(self._disabled_groups.values(), key=lambda g: g.name)
 
     def get_groups(self, audited=False, directly_audited=False):
         # type: (bool, bool) -> List[Group]

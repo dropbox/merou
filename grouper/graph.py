@@ -5,7 +5,7 @@ from threading import RLock
 from typing import TYPE_CHECKING
 
 from networkx import DiGraph, single_source_shortest_path
-from six import iteritems
+from six import iteritems, itervalues
 from sqlalchemy import or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import label, literal
@@ -60,46 +60,75 @@ class NoSuchGroup(Exception):
 class GroupGraph(object):
     """The cached permission graph.
 
+    The graph is internally represented by four major components: the users, groups, and
+    permissions dictionaries, which map names of those objects to named tuples (or, in the case of
+    users, dictionaries for now) containing the metadata for those objects; the
+    group_service_accounts dictionary that maps group names to the service accounts that group
+    owns; the group_permission_grants and service_account_permission_grants dictionaries that map
+    groups and service accounts to the permission grants they have, and the internal graph and
+    rgraph directed graphs.
+
+    The cached user metadata includes metadata for disabled users, and the disabled_groups internal
+    attribute holds a dictionary of group names to Group named tuples for disabled groups.  Other
+    than those exceptions, stored graph metadata includes only enabled objects.
+
+    The directed graphs are used to calculate inherited membership and permissions.  _graph is a
+    directed graph with all users and groups as nodes, and with directed edges from groups to their
+    members (whether users or other groups).  _rgraph is the same graph reversed, so the edges
+    point from users and groups to the groups of which they are a member.
+
+    Finally, disabled_groups is a sorted list of Group named tuples for all disabled groups.
+
     Attributes:
         lock: Read lock on the data
-        update_lock: Write lock on the data
+        checkpoint: Revision of Grouper data
+        checkpoint_time: Last update time of Grouper data
         users: Names of all enabled users
         groups: Names of all enabled groups
         permissions: Names of all enabled permissions
-        checkpoint: Revision of Grouper data
-        checkpoint_time: Last update time of Grouper data
         user_metadata: Full information about each user
-        group_metadata: Full information about each group
-        group_service_accounts: Service accounts owned by groups
-        permission_metadata: Permission grant information for users
-        service_account_permission_grants: Permission grant information for service accounts
-        permission_tuples: Metadata for all enabled permissions
-        group_tuples: Metadata for all enabled groups
-        disabled_group_tuples: Metadata for all disabled groups
+        permission_grants: Permission grant information for users
+
     """
 
     def __init__(self):
         # type: () -> None
-        self.logger = logging.getLogger(__name__)
+        self._logger = logging.getLogger(__name__)
+
+        # lock is a read lock to ensure consistency while iterating through data.  update_lock is
+        # the write lock, held to prevent two updates from the database from running at the same
+        # time.  lock has to be public for now because some API code takes the lock and looks at
+        # data elements directly.  :(
+        self.lock = RLock()
+        self._update_lock = RLock()
+
+        # Initialized by update_from_db.
         self._graph = DiGraph()
         self._rgraph = DiGraph()
-        self.lock = RLock()
-        self.update_lock = RLock()
-        self.users = set()  # type: Set[str]
-        self.groups = set()  # type: Set[str]
-        self.permissions = set()  # type: Set[str]
+
+        # The last update sequence number and timestamp of the database underlying the graph.
         self.checkpoint = 0
         self.checkpoint_time = 0
+
+        # Collection of all groups and permissions.
+        self._groups = {}  # type: Dict[str, Group]
+        self._disabled_groups = {}  # type: Dict[str, Group]
+        self._permissions = {}  # type: Dict[str, Permission]
+
+        # Collection of all users and their data.  For now, this is represented as a dict rather
+        # than as a data transfer object.  Users have a lot of structure, so require a more
+        # complicated object, which hasn't been written yet.
         self.user_metadata = {}  # type: Dict[str, Dict[str, Any]]
-        self.group_metadata = {}  # type: Dict[str, Dict[str, Any]]
-        self.group_service_accounts = {}  # type: Dict[str, List[str]]
+
+        # Map of groups to their permission grants.
         self.permission_grants = {}  # type: Dict[str, List[GroupPermissionGrant]]
-        self.service_account_permission_grants = (
+
+        # Map of groups to the service accounts they own, and from service accounts to their
+        # permission grants.
+        self._group_service_accounts = {}  # type: Dict[str, List[str]]
+        self._service_account_permission_grants = (
             {}
         )  # type: Dict[str, List[ServiceAccountPermissionGrant]]
-        self.permission_tuples = set()  # type: Set[Permission]
-        self.group_tuples = {}  # type: Dict[str, Group]
-        self.disabled_group_tuples = {}  # type: Dict[str, Group]
 
     @classmethod
     def from_db(cls, session):
@@ -108,58 +137,60 @@ class GroupGraph(object):
         inst.update_from_db(session)
         return inst
 
+    @property
+    def groups(self):
+        # type: () -> List[str]
+        with self.lock:
+            return list(self._groups.keys())
+
+    @property
+    def permissions(self):
+        # type: () -> List[str]
+        with self.lock:
+            return list(self._permissions.keys())
+
+    @property
+    def users(self):
+        # type: () -> List[str]
+        with self.lock:
+            return [u for u, d in iteritems(self.user_metadata) if d["enabled"]]
+
     def update_from_db(self, session):
         # type: (Session) -> None
         # Only allow one thread at a time to construct a fresh graph.
-        with self.update_lock:
+        with self._update_lock:
             checkpoint, checkpoint_time = self._get_checkpoint(session)
             if checkpoint == self.checkpoint:
-                self.logger.debug("Checkpoint hasn't changed. Not Updating.")
+                self._logger.debug("Checkpoint hasn't changed. Not Updating.")
                 return
-            self.logger.debug("Checkpoint changed; updating!")
+            self._logger.debug("Checkpoint changed; updating!")
 
             start_time = datetime.utcnow()
 
-            new_graph = DiGraph()
-            new_graph.add_nodes_from(self._get_nodes_from_db(session))
-            new_graph.add_edges_from(self._get_edges_from_db(session))
-            rgraph = new_graph.reverse()
-
-            users = set()
-            groups = set()
-            for (node_type, node_name) in new_graph.nodes():
-                if node_type == "User":
-                    users.add(node_name)
-                elif node_type == "Group":
-                    groups.add(node_name)
-
             user_metadata = self._get_user_metadata(session)
-            permission_metadata = self._get_permission_metadata(session)
+            groups, disabled_groups = self._get_groups(session, user_metadata)
+            permissions = self._get_permissions(session)
+            group_service_accounts = self._get_group_service_accounts(session)
             permission_grants = self._get_permission_grants(session)
             service_account_permission_grants = all_service_account_permissions(session)
-            group_metadata = self._get_group_metadata(session)
-            group_service_accounts = self._get_group_service_accounts(session)
-            permission_tuples = self._get_permission_tuples(session)
-            group_tuples = self._get_group_tuples(session, user_metadata)
-            disabled_group_tuples = self._get_group_tuples(session, user_metadata, enabled=False)
+
+            new_graph = DiGraph()
+            new_graph.add_nodes_from(self._get_nodes(groups, user_metadata))
+            new_graph.add_edges_from(self._get_edges(session))
+            rgraph = new_graph.reverse()
 
             with self.lock:
                 self._graph = new_graph
                 self._rgraph = rgraph
                 self.checkpoint = checkpoint
                 self.checkpoint_time = checkpoint_time
-                self.users = users
-                self.groups = groups
-                self.permissions = set(permission_metadata.keys())
                 self.user_metadata = user_metadata
-                self.group_metadata = group_metadata
-                self.group_service_accounts = group_service_accounts
-                self.permission_metadata = permission_metadata
+                self._groups = groups
+                self._disabled_groups = disabled_groups
+                self._permissions = permissions
+                self._group_service_accounts = group_service_accounts
                 self.permission_grants = permission_grants
-                self.service_account_permission_grants = service_account_permission_grants
-                self.permission_tuples = permission_tuples
-                self.group_tuples = group_tuples
-                self.disabled_group_tuples = disabled_group_tuples
+                self._service_account_permission_grants = service_account_permission_grants
 
             duration = datetime.utcnow() - start_time
             stats.log_rate("graph_update_ms", int(duration.total_seconds() * 1000))
@@ -295,10 +326,10 @@ class GroupGraph(object):
         return out
 
     @staticmethod
-    def _get_permission_metadata(session):
+    def _get_permissions(session):
         # type: (Session) -> Dict[str, Permission]
         """Returns all permissions in the graph."""
-        permissions = session.query(SQLPermission).all()
+        permissions = session.query(SQLPermission).filter(SQLPermission.enabled == True)
         out = {}
         for permission in permissions:
             out[permission.name] = Permission(
@@ -311,36 +342,29 @@ class GroupGraph(object):
         return out
 
     @staticmethod
-    def _get_permission_tuples(session):
-        # type: (Session) -> Set[Permission]
-        """Returns all permissions in the graph."""
-        # TODO: import here to avoid circular dependency
-        from grouper.permissions import get_all_permissions
-
-        out = set()
-        permissions = get_all_permissions(session)
-        for permission in permissions:
-            out.add(
-                Permission(
-                    name=permission.name,
-                    description=permission.description,
-                    created_on=permission.created_on,
-                    audited=permission.audited,
-                    enabled=permission.enabled,
-                )
+    def _get_groups(session, user_metadata):
+        # type: (Session, Dict[str, Dict[str, Any]]) -> Tuple[Dict[str, Group], Dict[str, Group]]
+        sql_groups = session.query(SQLGroup)
+        groups = {}  # type: Dict[str, Group]
+        disabled_groups = {}  # type: Dict[str, Group]
+        for sql_group in sql_groups:
+            if sql_group.groupname in user_metadata:
+                is_role_user = user_metadata[sql_group.groupname]["role_user"]
+            else:
+                is_role_user = False
+            group = Group(
+                name=sql_group.groupname,
+                description=sql_group.description,
+                email_address=sql_group.email_address,
+                join_policy=GroupJoinPolicy(sql_group.canjoin),
+                enabled=sql_group.enabled,
+                is_role_user=is_role_user,
             )
-        return out
-
-    @staticmethod
-    def _get_group_metadata(session):
-        # type: (Session) -> Dict[str, Dict[str, Dict[str, str]]]
-        """Returns a dict of groupname: { dict of metadata }."""
-        groups = session.query(SQLGroup).filter(SQLGroup.enabled == True)
-
-        out = {}
-        for group in groups:
-            out[group.groupname] = {"contacts": {"email": group.email_address}}
-        return out
+            if group.enabled:
+                groups[group.name] = group
+            else:
+                disabled_groups[group.name] = group
+        return groups, disabled_groups
 
     @staticmethod
     def _get_group_service_accounts(session):
@@ -357,43 +381,12 @@ class GroupGraph(object):
         return out
 
     @staticmethod
-    def _get_group_tuples(session, user_metadata, enabled=True):
-        # type: (Session, Dict[str, Dict[str, Any]], bool) -> Dict[str, Group]
-        """Returns a dict of groupname: Group."""
-        out = {}
-        groups = (session.query(SQLGroup).order_by(SQLGroup.groupname)).filter(
-            SQLGroup.enabled == enabled
-        )
-        for group in groups:
-            if group.groupname in user_metadata:
-                is_role_user = user_metadata[group.groupname]["role_user"]
-            else:
-                is_role_user = False
-            out[group.groupname] = Group(
-                name=group.groupname,
-                description=group.description,
-                join_policy=GroupJoinPolicy(group.canjoin),
-                enabled=group.enabled,
-                is_role_user=is_role_user,
-            )
-        return out
+    def _get_nodes(groups, user_metadata):
+        # type: (Dict[str, Group], Dict[str, Dict[str, Any]]) -> List[Node]
+        return [("User", u) for u in user_metadata.keys()] + [("Group", g) for g in groups]
 
     @staticmethod
-    def _get_nodes_from_db(session):
-        # type: (Session) -> List[Node]
-        return (
-            session.query(label("type", literal("User")), label("name", User.username))
-            .filter(User.enabled == True)
-            .union(
-                session.query(
-                    label("type", literal("Group")), label("name", SQLGroup.groupname)
-                ).filter(SQLGroup.enabled == True)
-            )
-            .all()
-        )
-
-    @staticmethod
-    def _get_edges_from_db(session):
+    def _get_edges(session):
         # type: (Session) -> List[Edge]
         parent = aliased(SQLGroup)
         group_member = aliased(SQLGroup)
@@ -448,10 +441,10 @@ class GroupGraph(object):
         """Get the list of permissions as Permission instances."""
         with self.lock:
             if audited:
-                permissions = [p for p in self.permission_tuples if p.audited]
+                permissions = [p for p in itervalues(self._permissions) if p.audited]
             else:
-                permissions = list(self.permission_tuples)
-        return permissions
+                permissions = list(self._permissions.values())
+        return sorted(permissions, key=lambda p: p.name)
 
     def get_permission_details(self, name, expose_aliases=True):
         # type: (str, bool) -> Dict[str, Dict[str, Any]]
@@ -489,7 +482,7 @@ class GroupGraph(object):
                     )
 
             # Finally, add all service accounts.
-            for account, service_grants in iteritems(self.service_account_permission_grants):
+            for account, service_grants in iteritems(self._service_account_permission_grants):
                 for service_grant in service_grants:
                     if service_grant.permission == name:
                         details = {
@@ -508,7 +501,7 @@ class GroupGraph(object):
         # type: () -> List[Group]
         """ Get the list of disabled groups as Group instances sorted by groupname. """
         with self.lock:
-            return sorted(self.disabled_group_tuples.values(), key=lambda g: g.name)
+            return sorted(self._disabled_groups.values(), key=lambda g: g.name)
 
     def get_groups(self, audited=False, directly_audited=False):
         # type: (bool, bool) -> List[Group]
@@ -522,13 +515,13 @@ class GroupGraph(object):
         if directly_audited:
             audited = True
         with self.lock:
-            groups = sorted(self.group_tuples.values(), key=lambda g: g.name)
+            groups = sorted(self._groups.values(), key=lambda g: g.name)
             if audited:
 
                 def is_directly_audited(group):
                     # type: (Group) -> bool
                     for grant in self.permission_grants[group.name]:
-                        if self.permission_metadata[grant.permission].audited:
+                        if self._permissions[grant.permission].audited:
                             return True
                     return False
 
@@ -545,8 +538,7 @@ class GroupGraph(object):
                             if nhbr[0] == "Group":
                                 queue.append(nhbr)
                 groups = sorted(
-                    [self.group_tuples[group[1]] for group in audited_group_nodes],
-                    key=lambda g: g.name,
+                    [self._groups[group[1]] for group in audited_group_nodes], key=lambda g: g.name
                 )
         return groups
 
@@ -556,18 +548,21 @@ class GroupGraph(object):
         for missing groups. """
 
         with self.lock:
-            # This is calculated based on all the permissions that apply to this group. Since this
-            # is a graph walk, we calculate it here when we're getting this data.
-            group_audited = False
             data = {
+                "group": {"name": groupname},
                 "users": {},
                 "groups": {},
                 "subgroups": {},
                 "permissions": [],
-                "audited": group_audited,
             }  # type: Dict[str, Any]
-            if groupname in self.group_service_accounts:
-                data["service_accounts"] = self.group_service_accounts[groupname]
+            if groupname in self._group_service_accounts:
+                data["service_accounts"] = self._group_service_accounts[groupname]
+            if groupname in self._groups and self._groups[groupname].email_address:
+                data["group"]["contacts"] = {"email": self._groups[groupname].email_address}
+
+            # This is calculated based on all the permissions that apply to this group. Since this
+            # is a graph walk, we calculate it here when we're getting this data.
+            group_audited = False
 
             group = ("Group", groupname)
             if not self._graph.has_node(group):
@@ -603,7 +598,7 @@ class GroupGraph(object):
                 for grant in self.permission_grants.get(parent_name, []):
                     if show_permission is not None and grant.permission != show_permission:
                         continue
-                    if self.permission_metadata[grant.permission].audited:
+                    if self._permissions[grant.permission].audited:
                         group_audited = True
 
                     perm_data = {
@@ -622,7 +617,7 @@ class GroupGraph(object):
             for grant in self.permission_grants.get(groupname, []):
                 if show_permission is not None and grant.permission != show_permission:
                     continue
-                if self.permission_metadata[grant.permission].audited:
+                if self._permissions[grant.permission].audited:
                     group_audited = True
 
                 perm_data = {
@@ -662,8 +657,8 @@ class GroupGraph(object):
             # If the user is a service account, its permissions are only those of the service
             # account and we don't do any graph walking.
             if "service_account" in self.user_metadata[username]:
-                if username in self.service_account_permission_grants:
-                    for service_grant in self.service_account_permission_grants[username]:
+                if username in self._service_account_permission_grants:
+                    for service_grant in self._service_account_permission_grants[username]:
                         permissions.append(
                             {
                                 "permission": service_grant.permission,

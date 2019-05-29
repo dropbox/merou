@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 from grouper.constants import NAME_VALIDATION
 
@@ -15,6 +15,7 @@ Group = NamedTuple(
     [
         ("name", str),
         ("description", str),
+        ("email_address", Optional[str]),
         ("join_policy", GroupJoinPolicy),
         ("enabled", bool),
         ("is_role_user", bool),

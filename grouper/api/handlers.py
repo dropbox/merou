@@ -12,7 +12,7 @@ from tornado.web import HTTPError
 from grouper import stats
 from grouper.constants import TOKEN_FORMAT
 from grouper.error_reporting import SentryHandler
-from grouper.graph import NoSuchUser
+from grouper.graph import NoSuchGroup, NoSuchUser
 from grouper.models.base.session import Session
 from grouper.models.public_key import PublicKey
 from grouper.models.user import User
@@ -242,17 +242,14 @@ class Groups(GraphHandler):
         name = kwargs.get("name")  # type: Optional[str]
         with self.graph.lock:
             if not name:
-                return self.success({"groups": [group for group in self.graph.groups]})
+                return self.success({"groups": self.graph.groups})
 
-            if name not in self.graph.groups:
+            try:
+                details = self.graph.get_group_details(name, expose_aliases=False)
+            except NoSuchGroup:
                 return self.notfound("Group (%s) not found." % name)
 
-            details = self.graph.get_group_details(name, expose_aliases=False)
-
-            out = {"group": {"name": name}}
-            try_update(out["group"], self.graph.group_metadata.get(name, {}))
-            try_update(out, details)
-            return self.success(out)
+            return self.success(details)
 
 
 class Permissions(GraphHandler, ListPermissionsUI):

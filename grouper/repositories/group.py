@@ -31,6 +31,7 @@ class GroupRepository(object):
         return Group(
             name=group.groupname,
             description=group.description,
+            email_address=group.email_address,
             join_policy=GroupJoinPolicy(group.canjoin),
             enabled=group.enabled,
             is_role_user=is_role_user,

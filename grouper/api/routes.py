@@ -33,6 +33,6 @@ HANDLERS = [
     (r"/users", Users),
     (r"/users/{}".format(NAME_VALIDATION), Users),
     (r"/multi/users", MultiUsers),
-    (r"/token/validate".format(NAME_VALIDATION), TokenValidate),
+    (r"/token/validate", TokenValidate),
     (r"/.*", NotFound),
 ]

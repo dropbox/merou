@@ -8,10 +8,9 @@ if TYPE_CHECKING:
     from grouper.entities.pagination import PaginatedList, Pagination
     from grouper.entities.permission import Permission
     from grouper.entities.permission_grant import (
-        AllGrants,
-        AllGrantsOfPermission,
         GroupPermissionGrant,
         ServiceAccountPermissionGrant,
+        UniqueGrantsOfPermission,
     )
     from grouper.repositories.audit_log import AuditLogRepository
     from grouper.repositories.checkpoint import CheckpointRepository
@@ -22,7 +21,7 @@ if TYPE_CHECKING:
     from grouper.repositories.transaction import TransactionRepository
     from grouper.repositories.user import UserRepository
     from grouper.usecases.list_permissions import ListPermissionsSortKey
-    from typing import List, Optional
+    from typing import Dict, List, Optional
 
 
 class GroupEdgeRepository(with_metaclass(ABCMeta, object)):
@@ -65,12 +64,12 @@ class PermissionGrantRepository(with_metaclass(ABCMeta, object)):
 
     @abstractmethod
     def all_grants(self):
-        # type: () -> AllGrants
+        # type: () -> Dict[str, UniqueGrantsOfPermission]
         pass
 
     @abstractmethod
     def all_grants_of_permission(self, permission):
-        # type: (str) -> AllGrantsOfPermission
+        # type: (str) -> UniqueGrantsOfPermission
         pass
 
     @abstractmethod

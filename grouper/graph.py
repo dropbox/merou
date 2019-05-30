@@ -14,7 +14,7 @@ from grouper import stats
 from grouper.entities.group import Group, GroupJoinPolicy
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.entities.permission import Permission
-from grouper.entities.permission_grant import AllGrantsOfPermission, GroupPermissionGrant
+from grouper.entities.permission_grant import GroupPermissionGrant, UniqueGrantsOfPermission
 from grouper.models.counter import Counter
 from grouper.models.group import Group as SQLGroup
 from grouper.models.group_edge import GroupEdge
@@ -31,7 +31,7 @@ from grouper.service_account import all_service_account_permissions
 from grouper.util import singleton
 
 if TYPE_CHECKING:
-    from grouper.entities.permission_grant import AllGrants, ServiceAccountPermissionGrant
+    from grouper.entities.permission_grant import ServiceAccountPermissionGrant
     from grouper.models.base.session import Session
     from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
@@ -124,7 +124,7 @@ class GroupGraph(object):
         self.permission_grants = {}  # type: Dict[str, List[GroupPermissionGrant]]
 
         # Map of permissions to users and service accounts with that grant.
-        self._grants_by_permission = {}  # type: AllGrants
+        self._grants_by_permission = {}  # type: Dict[str, UniqueGrantsOfPermission]
 
         # Map of groups to the service accounts they own, and from service accounts to their
         # permission grants.
@@ -450,7 +450,7 @@ class GroupGraph(object):
         group_grants,  # type: Dict[str, List[GroupPermissionGrant]]
         service_account_grants,  # type: Dict[str, List[ServiceAccountPermissionGrant]]
     ):
-        # type: (...) -> AllGrants
+        # type: (...) -> Dict[str, UniqueGrantsOfPermission]
         """Build a map of permissions to users and service accounts with grants."""
         service_grants = defaultdict(
             lambda: defaultdict(set)
@@ -479,12 +479,12 @@ class GroupGraph(object):
                     user_grants[grant.permission][member].add(grant.argument)
 
         # Now, assemble the service_grants and user_grants dicts into a single dictionary of
-        # permission names to AllGrantsOfPermission named tuples.  defaultdicts don't compare
+        # permission names to UniqueGrantsOfPermission named tuples.  defaultdicts don't compare
         # easily to dicts and the API server wants to return lists, so convert to a regular dict
         # with list values for ease of testing.  (The performance loss should be insignificant.)
-        all_grants = {}  # type: AllGrants
+        all_grants = {}  # type: Dict[str, UniqueGrantsOfPermission]
         for permission in set(user_grants.keys()) | set(service_grants.keys()):
-            grants = AllGrantsOfPermission(
+            grants = UniqueGrantsOfPermission(
                 users={k: sorted(v) for k, v in iteritems(user_grants[permission])},
                 service_accounts={k: sorted(v) for k, v in iteritems(service_grants[permission])},
             )
@@ -493,12 +493,12 @@ class GroupGraph(object):
         return all_grants
 
     def all_grants(self):
-        # type: () -> AllGrants
+        # type: () -> Dict[str, UniqueGrantsOfPermission]
         return self._grants_by_permission
 
     def all_grants_of_permission(self, permission):
-        # type: (str) -> AllGrantsOfPermission
-        return self._grants_by_permission.get(permission, AllGrantsOfPermission({}, {}))
+        # type: (str) -> UniqueGrantsOfPermission
+        return self._grants_by_permission.get(permission, UniqueGrantsOfPermission({}, {}))
 
     def get_permissions(self, audited=False):
         # type: (bool) -> List[Permission]

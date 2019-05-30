@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from grouper.entities.permission_grant import AllGrants, AllGrantsOfPermission
+from grouper.entities.permission_grant import UniqueGrantsOfPermission
 from grouper.usecases.list_grants import ListGrantsUI
 
 if TYPE_CHECKING:
@@ -11,15 +11,15 @@ if TYPE_CHECKING:
 class MockUI(ListGrantsUI):
     def __init__(self):
         # type: () -> None
-        self.grants = {}  # type: AllGrants
-        self.grants_of_permission = {}  # type: Dict[str, AllGrantsOfPermission]
+        self.grants = {}  # type: Dict[str, UniqueGrantsOfPermission]
+        self.grants_of_permission = {}  # type: Dict[str, UniqueGrantsOfPermission]
 
     def listed_grants(self, grants):
-        # type: (AllGrants) -> None
+        # type: (Dict[str, UniqueGrantsOfPermission]) -> None
         self.grants = grants
 
     def listed_grants_of_permission(self, permission, grants):
-        # type: (str, AllGrantsOfPermission) -> None
+        # type: (str, UniqueGrantsOfPermission) -> None
         self.grants_of_permission[permission] = grants
 
 
@@ -55,13 +55,15 @@ def test_list_grants(setup):
     usecase.list_grants()
 
     expected = {
-        "not-gary": AllGrantsOfPermission(users={"zorkian@a.co": ["foo"]}, service_accounts={}),
-        "other-permission": AllGrantsOfPermission(users={"gary@a.co": [""]}, service_accounts={}),
-        "some-permission": AllGrantsOfPermission(
+        "not-gary": UniqueGrantsOfPermission(users={"zorkian@a.co": ["foo"]}, service_accounts={}),
+        "other-permission": UniqueGrantsOfPermission(
+            users={"gary@a.co": [""]}, service_accounts={}
+        ),
+        "some-permission": UniqueGrantsOfPermission(
             users={"gary@a.co": ["bar", "foo"], "zorkian@a.co": ["*"]},
             service_accounts={"service@svc.localhost": ["*"]},
         ),
-        "twice": AllGrantsOfPermission(users={"gary@a.co": ["*"]}, service_accounts={}),
+        "twice": UniqueGrantsOfPermission(users={"gary@a.co": ["*"]}, service_accounts={}),
     }
     assert mock_ui.grants == expected
     assert mock_ui.grants_of_permission == {}
@@ -77,7 +79,7 @@ def test_list_grants_of_permission(setup):
     usecase.list_grants_of_permission("some-permission")
     assert mock_ui.grants == {}
     assert mock_ui.grants_of_permission == {
-        "some-permission": AllGrantsOfPermission(
+        "some-permission": UniqueGrantsOfPermission(
             users={"gary@a.co": ["bar", "foo"], "zorkian@a.co": ["*"]},
             service_accounts={"service@svc.localhost": ["*"]},
         )
@@ -90,4 +92,4 @@ def test_unknown_permission(setup):
     usecase = setup.usecase_factory.create_list_grants_usecase(mock_ui)
     usecase.list_grants_of_permission("unknown-permission")
     assert mock_ui.grants == {}
-    assert mock_ui.grants_of_permission == {"unknown-permission": AllGrantsOfPermission({}, {})}
+    assert mock_ui.grants_of_permission == {"unknown-permission": UniqueGrantsOfPermission({}, {})}

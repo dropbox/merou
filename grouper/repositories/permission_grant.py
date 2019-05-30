@@ -7,10 +7,9 @@ from grouper.entities.group import GroupNotFoundException
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.entities.permission import PermissionNotFoundException
 from grouper.entities.permission_grant import (
-    AllGrants,
-    AllGrantsOfPermission,
     GroupPermissionGrant,
     ServiceAccountPermissionGrant,
+    UniqueGrantsOfPermission,
 )
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.group import Group
@@ -25,7 +24,7 @@ from grouper.repositories.interfaces import PermissionGrantRepository
 if TYPE_CHECKING:
     from grouper.graph import GroupGraph
     from grouper.models.base.session import Session
-    from typing import List
+    from typing import Dict, List
 
 
 class GraphPermissionGrantRepository(PermissionGrantRepository):
@@ -37,11 +36,11 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
         self.repository = repository
 
     def all_grants(self):
-        # type: () -> AllGrants
+        # type: () -> Dict[str, UniqueGrantsOfPermission]
         return self.graph.all_grants()
 
     def all_grants_of_permission(self, permission):
-        # type: (str) -> AllGrantsOfPermission
+        # type: (str) -> UniqueGrantsOfPermission
         return self.graph.all_grants_of_permission(permission)
 
     def grant_permission_to_group(self, permission, argument, group):
@@ -96,11 +95,11 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         self.session = session
 
     def all_grants(self):
-        # type: () -> AllGrants
+        # type: () -> Dict[str, UniqueGrantsOfPermission]
         raise NotImplementedError()
 
     def all_grants_of_permission(self, permission):
-        # type: (str) -> AllGrantsOfPermission
+        # type: (str) -> UniqueGrantsOfPermission
         raise NotImplementedError()
 
     def grant_permission_to_group(self, permission, argument, group):

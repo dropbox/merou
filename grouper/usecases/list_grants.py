@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING
 from six import with_metaclass
 
 if TYPE_CHECKING:
-    from grouper.entities.permission_grant import AllGrants, AllGrantsOfPermission
+    from grouper.entities.permission_grant import UniqueGrantsOfPermission
     from grouper.usecases.interfaces import PermissionInterface
+    from typing import Dict
 
 
 class ListGrantsUI(with_metaclass(ABCMeta, object)):
@@ -13,12 +14,12 @@ class ListGrantsUI(with_metaclass(ABCMeta, object)):
 
     @abstractmethod
     def listed_grants(self, grants):
-        # type: (AllGrants) -> None
+        # type: (Dict[str, UniqueGrantsOfPermission]) -> None
         pass
 
     @abstractmethod
     def listed_grants_of_permission(self, permission, grants):
-        # type: (str, AllGrantsOfPermission) -> None
+        # type: (str, UniqueGrantsOfPermission) -> None
         pass
 
 

@@ -24,14 +24,11 @@ ServiceAccountPermissionGrant = NamedTuple(
     ],
 )
 
-# Represents all grants of a specific permission, as a dictionary of users and service accounts who
-# have been granted that permission to lists of all the arguments to that permission that they have
-# been granted.
-AllGrantsOfPermission = NamedTuple(
-    "AllGrantsOfPermission",
+# Represents all unique grants of a specific permission (meaning that if a user has the same
+# permission and argument granted from multiple groups, it's represented only once).  Contains a
+# dictionary of users and service accounts who have been granted that permission, the values in
+# which are lists of all the arguments to that permission that they have been granted.
+UniqueGrantsOfPermission = NamedTuple(
+    "UniqueGrantsOfPermission",
     [("users", Dict[str, List[str]]), ("service_accounts", Dict[str, List[str]])],
 )
-
-# The same, but for every permission, stored in a dictionary mapping permission names to those
-# grants.
-AllGrants = Dict[str, AllGrantsOfPermission]

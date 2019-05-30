@@ -23,7 +23,7 @@ from grouper.util import try_update
 if TYPE_CHECKING:
     from grouper.entities.pagination import PaginatedList
     from grouper.entities.permission import Permission
-    from grouper.entities.permission_grant import AllGrants, AllGrantsOfPermission
+    from grouper.entities.permission_grant import UniqueGrantsOfPermission
     from grouper.graph import GroupGraph
     from grouper.usecases.factory import UseCaseFactory
     from typing import Any, Dict, Iterable, Optional, Tuple
@@ -239,7 +239,7 @@ class UsersPublicKeys(GraphHandler):
 
 class Grants(GraphHandler):
     def listed_grants(self, grants):
-        # type: (AllGrants) -> None
+        # type: (Dict[str, UniqueGrantsOfPermission]) -> None
         grants_dict = {
             k: {"users": v.users, "service_accounts": v.service_accounts}
             for k, v in iteritems(grants)
@@ -247,7 +247,7 @@ class Grants(GraphHandler):
         self.success({"permissions": grants_dict})
 
     def listed_grants_of_permission(self, permission, grants):
-        # type: (str, AllGrantsOfPermission) -> None
+        # type: (str, UniqueGrantsOfPermission) -> None
         grants_dict = {"users": grants.users, "service_accounts": grants.service_accounts}
         self.success({"permission": permission, "grants": grants_dict})
 

@@ -24,14 +24,13 @@ if TYPE_CHECKING:
     from grouper.entities.pagination import PaginatedList, Pagination
     from grouper.entities.permission import Permission, PermissionAccess
     from grouper.entities.permission_grant import (
-        AllGrants,
-        AllGrantsOfPermission,
         GroupPermissionGrant,
         ServiceAccountPermissionGrant,
+        UniqueGrantsOfPermission,
     )
     from grouper.usecases.authorization import Authorization
     from grouper.usecases.list_permissions import ListPermissionsSortKey
-    from typing import ContextManager, List, Optional
+    from typing import ContextManager, Dict, List, Optional
 
 
 class AuditLogInterface(with_metaclass(ABCMeta, object)):
@@ -150,12 +149,12 @@ class PermissionInterface(with_metaclass(ABCMeta, object)):
 
     @abstractmethod
     def all_grants(self):
-        # type: () -> AllGrants
+        # type: () -> Dict[str, UniqueGrantsOfPermission]
         pass
 
     @abstractmethod
     def all_grants_of_permission(self, permission):
-        # type: (str) -> AllGrantsOfPermission
+        # type: (str) -> UniqueGrantsOfPermission
         pass
 
     @abstractmethod

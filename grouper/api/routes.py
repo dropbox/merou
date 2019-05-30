@@ -6,6 +6,7 @@ additional arguments will be injected when the Tornado Application object is cre
 """
 
 from grouper.api.handlers import (
+    Grants,
     Groups,
     MultiUsers,
     NotFound,
@@ -19,17 +20,19 @@ from grouper.constants import NAME_VALIDATION, PERMISSION_VALIDATION
 from grouper.handlers.health_check import HealthCheck
 
 HANDLERS = [
-    (r"/users", Users),
-    (r"/users/{}".format(NAME_VALIDATION), Users),
-    (r"/token/validate".format(NAME_VALIDATION), TokenValidate),
-    (r"/public-keys", UsersPublicKeys),
+    (r"/debug/health", HealthCheck),
+    (r"/grants", Grants),
+    (r"/grants/{}".format(PERMISSION_VALIDATION), Grants),
     (r"/groups", Groups),
     (r"/groups/{}".format(NAME_VALIDATION), Groups),
     (r"/permissions", Permissions),
     (r"/permissions/{}".format(PERMISSION_VALIDATION), Permissions),
+    (r"/public-keys", UsersPublicKeys),
     (r"/service_accounts", ServiceAccounts),
     (r"/service_accounts/{}".format(NAME_VALIDATION), ServiceAccounts),
+    (r"/users", Users),
+    (r"/users/{}".format(NAME_VALIDATION), Users),
     (r"/multi/users", MultiUsers),
-    (r"/debug/health", HealthCheck),
+    (r"/token/validate", TokenValidate),
     (r"/.*", NotFound),
 ]

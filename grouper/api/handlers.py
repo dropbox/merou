@@ -23,6 +23,7 @@ from grouper.util import try_update
 if TYPE_CHECKING:
     from grouper.entities.pagination import PaginatedList
     from grouper.entities.permission import Permission
+    from grouper.entities.permission_grant import UniqueGrantsOfPermission
     from grouper.graph import GroupGraph
     from grouper.usecases.factory import UseCaseFactory
     from typing import Any, Dict, Iterable, Optional, Tuple
@@ -95,28 +96,28 @@ class GraphHandler(SentryHandler):
         with self.graph.lock:
             checkpoint = self.graph.checkpoint
             checkpoint_time = self.graph.checkpoint_time
-            self.write(
-                {
-                    "status": "error",
-                    "errors": out,
-                    "checkpoint": checkpoint,
-                    "checkpoint_time": checkpoint_time,
-                }
-            )
+        self.write(
+            {
+                "status": "error",
+                "errors": out,
+                "checkpoint": checkpoint,
+                "checkpoint_time": checkpoint_time,
+            }
+        )
 
     def success(self, data):
         # type: (Any) -> None
         with self.graph.lock:
             checkpoint = self.graph.checkpoint
             checkpoint_time = self.graph.checkpoint_time
-            self.write(
-                {
-                    "status": "ok",
-                    "data": data,
-                    "checkpoint": checkpoint,
-                    "checkpoint_time": checkpoint_time,
-                }
-            )
+        self.write(
+            {
+                "status": "ok",
+                "data": data,
+                "checkpoint": checkpoint,
+                "checkpoint_time": checkpoint_time,
+            }
+        )
 
     def raise_and_log_exception(self, exc):
         # type: (Exception) -> None
@@ -234,6 +235,30 @@ class UsersPublicKeys(GraphHandler):
 
         self.set_header("Content-Type", "text/csv")
         self.write(fh.getvalue())
+
+
+class Grants(GraphHandler):
+    def listed_grants(self, grants):
+        # type: (Dict[str, UniqueGrantsOfPermission]) -> None
+        grants_dict = {
+            k: {"users": v.users, "service_accounts": v.service_accounts}
+            for k, v in iteritems(grants)
+        }
+        self.success({"permissions": grants_dict})
+
+    def listed_grants_of_permission(self, permission, grants):
+        # type: (str, UniqueGrantsOfPermission) -> None
+        grants_dict = {"users": grants.users, "service_accounts": grants.service_accounts}
+        self.success({"permission": permission, "grants": grants_dict})
+
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        permission = kwargs.get("name")  # type: Optional[str]
+        usecase = self.usecase_factory.create_list_grants_usecase(self)
+        if permission:
+            usecase.list_grants_of_permission(permission)
+        else:
+            usecase.list_grants()
 
 
 class Groups(GraphHandler):

@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from grouper.entities.permission_grant import (
         GroupPermissionGrant,
         ServiceAccountPermissionGrant,
+        UniqueGrantsOfPermission,
     )
     from grouper.repositories.audit_log import AuditLogRepository
     from grouper.repositories.checkpoint import CheckpointRepository
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
     from grouper.repositories.transaction import TransactionRepository
     from grouper.repositories.user import UserRepository
     from grouper.usecases.list_permissions import ListPermissionsSortKey
-    from typing import List, Optional
+    from typing import Dict, List, Optional
 
 
 class GroupEdgeRepository(with_metaclass(ABCMeta, object)):
@@ -60,6 +61,16 @@ class PermissionRepository(with_metaclass(ABCMeta, object)):
 
 class PermissionGrantRepository(with_metaclass(ABCMeta, object)):
     """Abstract base class for permission grant repositories."""
+
+    @abstractmethod
+    def all_grants(self):
+        # type: () -> Dict[str, UniqueGrantsOfPermission]
+        pass
+
+    @abstractmethod
+    def all_grants_of_permission(self, permission):
+        # type: (str) -> UniqueGrantsOfPermission
+        pass
 
     @abstractmethod
     def grant_permission_to_group(self, permission, argument, group):

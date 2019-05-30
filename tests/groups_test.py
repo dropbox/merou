@@ -4,6 +4,7 @@ import pytest
 from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 
+from grouper.graph import NoSuchGroup
 from grouper.models.group import Group
 from tests.fixtures import (  # noqa: F401
     fe_app as app,
@@ -260,7 +261,7 @@ def test_graph_disable(session, graph, groups, http_client, base_url):  # noqa: 
     graph.update_from_db(session)
     old_groups = graph.groups
     assert sorted(old_groups) == sorted(groups.keys())
-    assert groupname in graph.permission_grants
+    assert "permissions" in graph.get_group_details(groupname)
 
     # disable a group
     fe_url = url(base_url, "/groups/{}/disable".format(groupname))
@@ -275,7 +276,8 @@ def test_graph_disable(session, graph, groups, http_client, base_url):  # noqa: 
     graph.update_from_db(session)
     assert len(graph.groups) == (len(old_groups) - 1), "disabled group removed from graph"
     assert groupname not in graph.groups
-    assert groupname not in graph.permission_grants
+    with pytest.raises(NoSuchGroup):
+        graph.get_group_details(groupname)
 
 
 @pytest.mark.gen_test

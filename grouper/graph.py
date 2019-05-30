@@ -64,9 +64,8 @@ class GroupGraph(object):
     permissions dictionaries, which map names of those objects to named tuples (or, in the case of
     users, dictionaries for now) containing the metadata for those objects; the
     group_service_accounts dictionary that maps group names to the service accounts that group
-    owns; the group_permission_grants and service_account_permission_grants dictionaries that map
-    groups and service accounts to the permission grants they have, and the internal graph and
-    rgraph directed graphs.
+    owns; the group_grants and service_account_grants dictionaries that map groups and service
+    accounts to the permission grants they have, and the internal graph and rgraph directed graphs.
 
     The cached user metadata includes metadata for disabled users, and the disabled_groups internal
     attribute holds a dictionary of group names to Group named tuples for disabled groups.  Other
@@ -87,8 +86,6 @@ class GroupGraph(object):
         groups: Names of all enabled groups
         permissions: Names of all enabled permissions
         user_metadata: Full information about each user
-        permission_grants: Permission grant information for users
-
     """
 
     def __init__(self):
@@ -121,7 +118,7 @@ class GroupGraph(object):
         self.user_metadata = {}  # type: Dict[str, Dict[str, Any]]
 
         # Map of groups to their permission grants.
-        self.permission_grants = {}  # type: Dict[str, List[GroupPermissionGrant]]
+        self._group_grants = {}  # type: Dict[str, List[GroupPermissionGrant]]
 
         # Map of permissions to users and service accounts with that grant.
         self._grants_by_permission = {}  # type: Dict[str, UniqueGrantsOfPermission]
@@ -129,9 +126,7 @@ class GroupGraph(object):
         # Map of groups to the service accounts they own, and from service accounts to their
         # permission grants.
         self._group_service_accounts = {}  # type: Dict[str, List[str]]
-        self._service_account_permission_grants = (
-            {}
-        )  # type: Dict[str, List[ServiceAccountPermissionGrant]]
+        self._service_account_grants = {}  # type: Dict[str, List[ServiceAccountPermissionGrant]]
 
     @classmethod
     def from_db(cls, session):
@@ -173,9 +168,9 @@ class GroupGraph(object):
             user_metadata = self._get_user_metadata(session)
             groups, disabled_groups = self._get_groups(session, user_metadata)
             permissions = self._get_permissions(session)
+            group_grants = self._get_group_grants(session)
             group_service_accounts = self._get_group_service_accounts(session)
-            permission_grants = self._get_permission_grants(session)
-            service_account_permission_grants = all_service_account_permissions(session)
+            service_account_grants = all_service_account_permissions(session)
 
             graph = DiGraph()
             graph.add_nodes_from(self._get_nodes(groups, user_metadata))
@@ -183,7 +178,7 @@ class GroupGraph(object):
             rgraph = graph.reverse()
 
             grants_by_permission = self._get_grants_by_permission(
-                graph, permission_grants, service_account_permission_grants
+                graph, group_grants, service_account_grants
             )
 
             with self.lock:
@@ -195,9 +190,9 @@ class GroupGraph(object):
                 self._groups = groups
                 self._disabled_groups = disabled_groups
                 self._permissions = permissions
+                self._group_grants = group_grants
                 self._group_service_accounts = group_service_accounts
-                self.permission_grants = permission_grants
-                self._service_account_permission_grants = service_account_permission_grants
+                self._service_account_grants = service_account_grants
                 self._grants_by_permission = grants_by_permission
 
             duration = datetime.utcnow() - start_time
@@ -293,7 +288,7 @@ class GroupGraph(object):
         return out
 
     @staticmethod
-    def _get_permission_grants(session):
+    def _get_group_grants(session):
         # type: (Session) -> Dict[str, List[GroupPermissionGrant]]
         """Returns a dict of group names to lists of permission grants."""
         permissions = session.query(SQLPermission, PermissionMap, SQLGroup.groupname).filter(
@@ -518,7 +513,7 @@ class GroupGraph(object):
 
             # Get all mapped versions of the permission. This is only direct relationships.
             direct_groups = set()
-            for groupname, grants in iteritems(self.permission_grants):
+            for groupname, grants in iteritems(self._group_grants):
                 for grant in grants:
                     if grant.permission == name:
                         data["groups"][groupname] = self.get_group_details(
@@ -546,7 +541,7 @@ class GroupGraph(object):
                     )
 
             # Finally, add all service accounts.
-            for account, service_grants in iteritems(self._service_account_permission_grants):
+            for account, service_grants in iteritems(self._service_account_grants):
                 for service_grant in service_grants:
                     if service_grant.permission == name:
                         details = {
@@ -584,7 +579,7 @@ class GroupGraph(object):
 
                 def is_directly_audited(group):
                     # type: (Group) -> bool
-                    for grant in self.permission_grants[group.name]:
+                    for grant in self._group_grants[group.name]:
                         if self._permissions[grant.permission].audited:
                             return True
                     return False
@@ -659,7 +654,7 @@ class GroupGraph(object):
                     "role": role,
                     "rolename": GROUP_EDGE_ROLES[role],
                 }
-                for grant in self.permission_grants.get(parent_name, []):
+                for grant in self._group_grants.get(parent_name, []):
                     if show_permission is not None and grant.permission != show_permission:
                         continue
                     if self._permissions[grant.permission].audited:
@@ -678,7 +673,7 @@ class GroupGraph(object):
 
                     data["permissions"].append(perm_data)
 
-            for grant in self.permission_grants.get(groupname, []):
+            for grant in self._group_grants.get(groupname, []):
                 if show_permission is not None and grant.permission != show_permission:
                     continue
                 if self._permissions[grant.permission].audited:
@@ -721,8 +716,8 @@ class GroupGraph(object):
             # If the user is a service account, its permissions are only those of the service
             # account and we don't do any graph walking.
             if "service_account" in self.user_metadata[username]:
-                if username in self._service_account_permission_grants:
-                    for service_grant in self._service_account_permission_grants[username]:
+                if username in self._service_account_grants:
+                    for service_grant in self._service_account_grants[username]:
                         permissions.append(
                             {
                                 "permission": service_grant.permission,
@@ -768,7 +763,7 @@ class GroupGraph(object):
                     "rolename": GROUP_EDGE_ROLES[role],
                 }
 
-                for grant in self.permission_grants[parent_name]:
+                for grant in self._group_grants[parent_name]:
                     perm_data = {
                         "permission": grant.permission,
                         "argument": grant.argument,

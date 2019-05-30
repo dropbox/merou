@@ -564,7 +564,12 @@ def test_grant_and_revoke(
 
     def _check_graph_for_perm(graph):
         # type: (GroupGraph) -> bool
-        return any([g.permission == permission_name for g in graph.permission_grants[group_name]])
+        return any(
+            [
+                g["permission"] == permission_name and g["distance"] == 0
+                for g in graph.get_group_details(group_name)["permissions"]
+            ]
+        )
 
     # make some permission admins
     grant_permission(groups["security-team"], permissions[PERMISSION_ADMIN])

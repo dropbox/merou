@@ -456,7 +456,7 @@ class GroupGraph(object):
 
         # For each group that has a permission grant, determine all of its users from the graph,
         # and then record each permission grant of that group as a grant to all of those users.
-        # This ensures that each permission grant is recorded for all affected users exactly once.
+        # Use a set for the arguments in our intermediate data structure to handle uniqueness.
         user_grants = defaultdict(lambda: defaultdict(set))  # type: Dict[str, Dict[str, Set[str]]]
         for group, grant_list in iteritems(group_grants):
             members = set()  # type: Set[str]

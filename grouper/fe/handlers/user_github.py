@@ -61,7 +61,7 @@ class UserGitHub(GrouperHandler):
             self.session,
             self.current_user.id,
             "changed_github_username",
-            "Changed GitHub username: {!r}".format(form.data["username"]),
+            "Changed GitHub username: {}".format(form.data["username"]),
             on_user_id=user.id,
         )
 

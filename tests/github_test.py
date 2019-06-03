@@ -2,6 +2,7 @@ import pytest
 from six.moves.urllib.parse import urlencode
 
 from grouper.constants import USER_METADATA_GITHUB_USERNAME_KEY
+from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
 from grouper.user_metadata import get_user_metadata_by_key
 from tests.fixtures import (  # noqa: F401
@@ -39,6 +40,12 @@ def test_github(session, users, http_client, base_url):  # noqa: F811
         get_user_metadata_by_key(session, user.id, USER_METADATA_GITHUB_USERNAME_KEY).data_value
         == "joe-on-github"
     )
+
+    audit_entries = AuditLog.get_entries(
+        session, on_user_id=user.id, action="changed_github_username"
+    )
+    assert len(audit_entries) == 1
+    assert audit_entries[0].description == "Changed GitHub username: joe-on-github"
 
     fe_url = url(base_url, "/users/{}/github".format(user.username))
     resp = yield http_client.fetch(

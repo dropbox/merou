@@ -1,3 +1,26 @@
+from datetime import datetime
+from typing import List, NamedTuple
+
+from grouper.entities.public_key import PublicKey
+
+# A single key/value pair stored as user metadata.
+UserMetadata = NamedTuple(
+    "UserMetadata", [("key", str), ("value", str), ("modified_on", datetime)]
+)
+
+# Details for a single non-service-account user.
+User = NamedTuple(
+    "User",
+    [
+        ("name", str),
+        ("enabled", bool),
+        ("role_user", bool),
+        ("metadata", List[UserMetadata]),
+        ("public_keys", List[PublicKey]),
+    ],
+)
+
+
 class UserNotFoundException(Exception):
     """Attempt to operate on a user not found in the storage layer."""
 

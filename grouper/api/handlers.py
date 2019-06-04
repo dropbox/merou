@@ -15,15 +15,17 @@ from grouper.error_reporting import SentryHandler
 from grouper.graph import NoSuchGroup, NoSuchUser
 from grouper.models.base.session import Session
 from grouper.models.public_key import PublicKey
-from grouper.models.user import User
+from grouper.models.user import User as SQLUser
 from grouper.models.user_token import UserToken
 from grouper.usecases.list_permissions import ListPermissionsUI
+from grouper.usecases.list_users import ListUsersUI
 from grouper.util import try_update
 
 if TYPE_CHECKING:
     from grouper.entities.pagination import PaginatedList
     from grouper.entities.permission import Permission
     from grouper.entities.permission_grant import UniqueGrantsOfPermission
+    from grouper.entities.user import User
     from grouper.graph import GroupGraph
     from grouper.usecases.factory import UseCaseFactory
     from typing import Any, Dict, Iterable, Optional, Tuple
@@ -176,6 +178,33 @@ class Users(GraphHandler):
             )
 
 
+class UserMetadata(GraphHandler, ListUsersUI):
+    def listed_users(self, users):
+        # type: (Dict[str, User]) -> None
+        users_dict = {}  # type: Dict[str, Dict[str, Any]]
+        for user, data in iteritems(users):
+            metadata = [{"key": m.key, "value": m.value} for m in data.metadata]
+            public_keys = [
+                {
+                    "public_key": k.public_key,
+                    "fingerprint": k.fingerprint,
+                    "fingerprint_sha256": k.fingerprint_sha256,
+                }
+                for k in data.public_keys
+            ]
+            users_dict[user] = {
+                "role_user": data.role_user,
+                "metadata": metadata,
+                "public_keys": public_keys,
+            }
+        self.success({"users": users_dict})
+
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        usecase = self.usecase_factory.create_list_users_usecase(self)
+        usecase.list_users()
+
+
 class MultiUsers(GraphHandler):
     """API endpoint for bulk retrieval of user data.
 
@@ -219,7 +248,9 @@ class UsersPublicKeys(GraphHandler):
         )
 
         with closing(Session()) as session:
-            user_key_list = session.query(PublicKey, User).filter(User.id == PublicKey.user_id)
+            user_key_list = session.query(PublicKey, SQLUser).filter(
+                SQLUser.id == PublicKey.user_id
+            )
             for key, user in user_key_list:
                 w_csv.writerow(
                     [

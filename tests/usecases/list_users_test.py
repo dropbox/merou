@@ -34,6 +34,7 @@ def test_list_users(setup):
         setup.session.flush()
         setup.disable_user("disabled@a.co")
         setup.create_role_user("role-user@a.co", "Some role user")
+        setup.create_service_account("service@svc.localhost", "some-group")
 
     mock_ui = MockUI()
     usecase = setup.usecase_factory.create_list_users_usecase(mock_ui)

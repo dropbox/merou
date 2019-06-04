@@ -15,8 +15,7 @@ from grouper.entities.group import Group, GroupJoinPolicy
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.entities.permission import Permission
 from grouper.entities.permission_grant import GroupPermissionGrant, UniqueGrantsOfPermission
-from grouper.entities.public_key import PublicKey
-from grouper.entities.user import User, UserMetadata
+from grouper.entities.user import PublicKey, User, UserMetadata
 from grouper.models.counter import Counter
 from grouper.models.group import Group as SQLGroup
 from grouper.models.group_edge import GroupEdge

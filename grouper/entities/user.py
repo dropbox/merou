@@ -1,6 +1,9 @@
 from typing import List, NamedTuple
 
-from grouper.entities.public_key import PublicKey
+# A single public key for a user.
+PublicKey = NamedTuple(
+    "PublicKey", [("public_key", str), ("fingerprint", str), ("fingerprint_sha256", str)]
+)
 
 # A single key/value pair stored as user metadata.
 UserMetadata = NamedTuple("UserMetadata", [("key", str), ("value", str)])

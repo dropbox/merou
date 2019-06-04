@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from sshpubkeys import SSHKey
 
 import grouper.permissions
-from grouper.entities.public_key import PublicKey
+from grouper.entities.user import PublicKey
 
 if TYPE_CHECKING:
     from datetime import datetime

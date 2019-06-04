@@ -1,8 +1,7 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
-from grouper.entities.public_key import PublicKey
-from grouper.entities.user import User, UserMetadata, UserNotFoundException
+from grouper.entities.user import PublicKey, User, UserMetadata, UserNotFoundException
 from grouper.models.public_key import PublicKey as SQLPublicKey
 from grouper.models.user import User as SQLUser
 from grouper.models.user_metadata import UserMetadata as SQLUserMetadata

@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-from mock import ANY
 from sshpubkeys import SSHKey
 
 import grouper.permissions
@@ -91,5 +90,4 @@ def key_to_public_key(key):
         public_key=pubkey.keydata.strip(),
         fingerprint=pubkey.hash_md5().replace("MD5:", ""),
         fingerprint_sha256=pubkey.hash_sha256().replace("SHA256:", ""),
-        created_on=ANY,
     )

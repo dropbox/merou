@@ -6,14 +6,46 @@ from grouper.entities.user import User, UserMetadata, UserNotFoundException
 from grouper.models.public_key import PublicKey as SQLPublicKey
 from grouper.models.user import User as SQLUser
 from grouper.models.user_metadata import UserMetadata as SQLUserMetadata
+from grouper.repositories.interfaces import UserRepository
 
 if TYPE_CHECKING:
+    from grouper.graph import GroupGraph
     from grouper.models.base.session import Session
     from typing import Dict, List
 
 
-class UserRepository(object):
-    """Storage layer for users."""
+class GraphUserRepository(UserRepository):
+    """Graph-aware storage layer for users."""
+
+    def __init__(self, graph, repository):
+        # type: (GroupGraph, UserRepository) -> None
+        self.graph = graph
+        self.repository = repository
+
+    def all_enabled_users(self):
+        # type: () -> Dict[str, User]
+        return self.graph.all_user_metadata()
+
+    def disable_user(self, user):
+        # type: (str) -> None
+        self.repository.disable_user(user)
+
+    def user_is_enabled(self, name):
+        # type: (str) -> bool
+        """Return whether a user is enabled.
+
+        TODO(rra): This checks the underlying data store, not the graph, even though this
+        information is in the graph, because the convert_user_to_service_account usecase disables a
+        user and then immediately checks whether the user is disabled, and we don't want to force a
+        graph refresh in the middle of that usecase.  This indicates a deeper underlying problem
+        where some usecases need to use SQL repositories rather than the graph, which we're
+        deferring for future work when we significantly reorganize how Grouper uses the graph.
+        """
+        return self.repository.user_is_enabled(name)
+
+
+class SQLUserRepository(UserRepository):
+    """SQL storage layer for users."""
 
     def __init__(self, session):
         # type: (Session) -> None
@@ -24,11 +56,7 @@ class UserRepository(object):
         metadata = defaultdict(list)  # type: Dict[int, List[UserMetadata]]
         for user_metadata in self.session.query(SQLUserMetadata):
             metadata[user_metadata.user_id].append(
-                UserMetadata(
-                    key=user_metadata.data_key,
-                    value=user_metadata.data_value,
-                    modified_on=user_metadata.last_modified,
-                )
+                UserMetadata(key=user_metadata.data_key, value=user_metadata.data_value)
             )
 
         public_keys = defaultdict(list)  # type: Dict[int, List[PublicKey]]
@@ -38,7 +66,6 @@ class UserRepository(object):
                     public_key=public_key.public_key,
                     fingerprint=public_key.fingerprint,
                     fingerprint_sha256=public_key.fingerprint_sha256,
-                    created_on=public_key.created_on,
                 )
             )
 

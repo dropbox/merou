@@ -16,7 +16,7 @@ from grouper.repositories.permission_grant import (
 from grouper.repositories.schema import SchemaRepository
 from grouper.repositories.service_account import ServiceAccountRepository
 from grouper.repositories.transaction import TransactionRepository
-from grouper.repositories.user import UserRepository
+from grouper.repositories.user import GraphUserRepository, SQLUserRepository
 
 if TYPE_CHECKING:
     from grouper.graph import GroupGraph
@@ -25,6 +25,7 @@ if TYPE_CHECKING:
         GroupEdgeRepository,
         PermissionRepository,
         PermissionGrantRepository,
+        UserRepository,
     )
     from grouper.settings import Settings
     from typing import Optional
@@ -148,7 +149,8 @@ class GraphRepositoryFactory(RepositoryFactory):
 
     def create_user_repository(self):
         # type: () -> UserRepository
-        return UserRepository(self.session)
+        sql_user_repository = SQLUserRepository(self.session)
+        return GraphUserRepository(self.graph, sql_user_repository)
 
 
 class SQLRepositoryFactory(RepositoryFactory):
@@ -221,4 +223,4 @@ class SQLRepositoryFactory(RepositoryFactory):
 
     def create_user_repository(self):
         # type: () -> UserRepository
-        return UserRepository(self.session)
+        return SQLUserRepository(self.session)

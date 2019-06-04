@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING
 
-from mock import ANY
-
 from grouper.entities.user import User, UserMetadata
 from grouper.usecases.list_users import ListUsersUI
 from tests.constants import SSH_KEY_1, SSH_KEY_2
@@ -46,7 +44,7 @@ def test_list_users(setup):
             name="gary@a.co",
             enabled=True,
             role_user=False,
-            metadata=[UserMetadata(key="some-key", value="some-value", modified_on=ANY)],
+            metadata=[UserMetadata(key="some-key", value="some-value")],
             public_keys=[key_to_public_key(SSH_KEY_1), key_to_public_key(SSH_KEY_2)],
         ),
         "role-user@a.co": User(
@@ -57,8 +55,8 @@ def test_list_users(setup):
             enabled=True,
             role_user=False,
             metadata=[
-                UserMetadata(key="github_username", value="zorkian", modified_on=ANY),
-                UserMetadata(key="shell", value="/usr/bin/fish", modified_on=ANY),
+                UserMetadata(key="github_username", value="zorkian"),
+                UserMetadata(key="shell", value="/usr/bin/fish"),
             ],
             public_keys=[],
         ),

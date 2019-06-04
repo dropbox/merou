@@ -15,16 +15,18 @@ from grouper.entities.group import Group, GroupJoinPolicy
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.entities.permission import Permission
 from grouper.entities.permission_grant import GroupPermissionGrant, UniqueGrantsOfPermission
+from grouper.entities.public_key import PublicKey
+from grouper.entities.user import User, UserMetadata
 from grouper.models.counter import Counter
 from grouper.models.group import Group as SQLGroup
 from grouper.models.group_edge import GroupEdge
 from grouper.models.group_service_accounts import GroupServiceAccount
 from grouper.models.permission import Permission as SQLPermission
 from grouper.models.permission_map import PermissionMap
-from grouper.models.public_key import PublicKey
+from grouper.models.public_key import PublicKey as SQLPublicKey
 from grouper.models.service_account import ServiceAccount
-from grouper.models.user import User
-from grouper.models.user_metadata import UserMetadata
+from grouper.models.user import User as SQLUser
+from grouper.models.user_metadata import UserMetadata as SQLUserMetadata
 from grouper.models.user_password import UserPassword
 from grouper.plugin import get_plugin_proxy
 from grouper.service_account import all_service_account_permissions
@@ -219,8 +221,8 @@ class GroupGraph(object):
             return ret
 
         passwords = user_indexify(session.query(UserPassword).all())
-        public_keys = user_indexify(session.query(PublicKey).all())
-        user_metadata = user_indexify(session.query(UserMetadata).all())
+        public_keys = user_indexify(session.query(SQLPublicKey).all())
+        user_metadata = user_indexify(session.query(SQLUserMetadata).all())
 
         service_account_data = (
             session.query(
@@ -236,7 +238,7 @@ class GroupGraph(object):
         )
         service_accounts = {r.user_id: r for r in service_account_data}
 
-        users = session.query(User)
+        users = session.query(SQLUser)
 
         out = {}
         for user in users:
@@ -374,10 +376,10 @@ class GroupGraph(object):
         # type: (Session) -> Dict[str, List[str]]
         """Returns a dict of groupname: { list of service account names }."""
         out = defaultdict(list)  # type: Dict[str, List[str]]
-        tuples = session.query(SQLGroup.groupname, User.username).filter(
+        tuples = session.query(SQLGroup.groupname, SQLUser.username).filter(
             GroupServiceAccount.group_id == SQLGroup.id,
             GroupServiceAccount.service_account_id == ServiceAccount.id,
-            ServiceAccount.user_id == User.id,
+            ServiceAccount.user_id == SQLUser.id,
         )
         for group, account in tuples:
             out[group].append(account)
@@ -393,7 +395,7 @@ class GroupGraph(object):
         # type: (Session) -> List[Edge]
         parent = aliased(SQLGroup)
         group_member = aliased(SQLGroup)
-        user_member = aliased(User)
+        user_member = aliased(SQLUser)
 
         now = datetime.utcnow()
 
@@ -494,6 +496,29 @@ class GroupGraph(object):
     def all_grants_of_permission(self, permission):
         # type: (str) -> UniqueGrantsOfPermission
         return self._grants_by_permission.get(permission, UniqueGrantsOfPermission({}, {}))
+
+    def all_user_metadata(self):
+        # type: () -> Dict[str, User]
+        users = {}  # type: Dict[str, User]
+        with self.lock:
+            for user, data in iteritems(self.user_metadata):
+                if not data["enabled"]:
+                    continue
+                if "service_account" in data:
+                    continue
+                metadata = [UserMetadata(m["data_key"], m["data_value"]) for m in data["metadata"]]
+                public_keys = [
+                    PublicKey(k["public_key"], k["fingerprint"], k["fingerprint_sha256"])
+                    for k in data["public_keys"]
+                ]
+                users[user] = User(
+                    name=user,
+                    enabled=data["enabled"],
+                    role_user=data["role_user"],
+                    metadata=metadata,
+                    public_keys=public_keys,
+                )
+        return users
 
     def get_permissions(self, audited=False):
         # type: (bool) -> List[Permission]

@@ -1,12 +1,9 @@
-from datetime import datetime
 from typing import List, NamedTuple
 
 from grouper.entities.public_key import PublicKey
 
 # A single key/value pair stored as user metadata.
-UserMetadata = NamedTuple(
-    "UserMetadata", [("key", str), ("value", str), ("modified_on", datetime)]
-)
+UserMetadata = NamedTuple("UserMetadata", [("key", str), ("value", str)])
 
 # Details for a single non-service-account user.
 User = NamedTuple(

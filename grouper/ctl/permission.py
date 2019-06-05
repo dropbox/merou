@@ -53,13 +53,13 @@ class PermissionCommand(CtlCommand, DisablePermissionUI):
         # type: (...) -> None
         message = ""
         if group_grants:
-            groups = [g.group for g in group_grants]
-            message = "groups " + ", ".join(groups)
+            groups = {g.group for g in group_grants}
+            message = "groups " + ", ".join(sorted(groups))
         if service_account_grants:
-            service_accounts = [g.service_account for g in service_account_grants]
+            service_accounts = {g.service_account for g in service_account_grants}
             if message:
                 message += " and "
-            message += "service accounts " + ", ".join(service_accounts)
+            message += "service accounts " + ", ".join(sorted(service_accounts))
         logging.critical("permission %s still granted to %s", name, message)
         sys.exit(1)
 

@@ -17,6 +17,7 @@ from grouper.models.base.session import Session
 from grouper.models.public_key import PublicKey
 from grouper.models.user import User as SQLUser
 from grouper.models.user_token import UserToken
+from grouper.usecases.list_grants import ListGrantsUI
 from grouper.usecases.list_permissions import ListPermissionsUI
 from grouper.usecases.list_users import ListUsersUI
 from grouper.util import try_update
@@ -268,7 +269,7 @@ class UsersPublicKeys(GraphHandler):
         self.write(fh.getvalue())
 
 
-class Grants(GraphHandler):
+class Grants(GraphHandler, ListGrantsUI):
     def listed_grants(self, grants):
         # type: (Dict[str, UniqueGrantsOfPermission]) -> None
         grants_dict = {

@@ -28,6 +28,7 @@ if TYPE_CHECKING:
         ServiceAccountPermissionGrant,
         UniqueGrantsOfPermission,
     )
+    from grouper.entities.user import User
     from grouper.usecases.authorization import Authorization
     from grouper.usecases.list_permissions import ListPermissionsSortKey
     from typing import ContextManager, Dict, List, Optional
@@ -241,6 +242,11 @@ class TransactionInterface(with_metaclass(ABCMeta, object)):
 
 class UserInterface(with_metaclass(ABCMeta, object)):
     """Abstract base class for user operations and queries."""
+
+    @abstractmethod
+    def all_users(self):
+        # type: () -> Dict[str, User]
+        pass
 
     @abstractmethod
     def disable_user(self, user, authorization):

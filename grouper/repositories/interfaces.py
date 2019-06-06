@@ -12,6 +12,7 @@ if TYPE_CHECKING:
         ServiceAccountPermissionGrant,
         UniqueGrantsOfPermission,
     )
+    from grouper.entities.user import User
     from grouper.repositories.audit_log import AuditLogRepository
     from grouper.repositories.checkpoint import CheckpointRepository
     from grouper.repositories.group import GroupRepository
@@ -19,7 +20,6 @@ if TYPE_CHECKING:
     from grouper.repositories.schema import SchemaRepository
     from grouper.repositories.service_account import ServiceAccountRepository
     from grouper.repositories.transaction import TransactionRepository
-    from grouper.repositories.user import UserRepository
     from grouper.usecases.list_permissions import ListPermissionsSortKey
     from typing import Dict, List, Optional
 
@@ -105,6 +105,25 @@ class PermissionGrantRepository(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def user_has_permission(self, user, permission):
         # type: (str, str) -> bool
+        pass
+
+
+class UserRepository(with_metaclass(ABCMeta, object)):
+    """Abstract base class for user repositories."""
+
+    @abstractmethod
+    def all_users(self):
+        # type: () -> Dict[str, User]
+        pass
+
+    @abstractmethod
+    def disable_user(self, name):
+        # type: (str) -> None
+        pass
+
+    @abstractmethod
+    def user_is_enabled(self, name):
+        # type: (str) -> bool
         pass
 
 

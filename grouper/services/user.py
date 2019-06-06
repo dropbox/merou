@@ -6,12 +6,13 @@ from grouper.usecases.interfaces import UserInterface
 
 if TYPE_CHECKING:
     from grouper.entities.permission_grant import GroupPermissionGrant
+    from grouper.entities.user import User
     from grouper.repositories.group_edge import GroupEdgeRepository
     from grouper.repositories.interfaces import PermissionGrantRepository
     from grouper.repositories.user import UserRepository
     from grouper.usecases.authorization import Authorization
     from grouper.usecases.interfaces import AuditLogInterface
-    from typing import List
+    from typing import Dict, List
 
 
 class UserService(UserInterface):
@@ -29,6 +30,10 @@ class UserService(UserInterface):
         self.permission_grant_repository = permission_grant_repository
         self.group_edge_repository = group_edge_repository
         self.audit_log = audit_log_service
+
+    def all_users(self):
+        # type: () -> Dict[str, User]
+        return self.user_repository.all_users()
 
     def disable_user(self, user, authorization):
         # type: (str, Authorization) -> None

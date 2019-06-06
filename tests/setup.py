@@ -24,6 +24,8 @@ import os
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
+from sshpubkeys import SSHKey
+
 from grouper.entities.group import GroupJoinPolicy
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.graph import GroupGraph
@@ -33,15 +35,18 @@ from grouper.models.group_edge import GroupEdge
 from grouper.models.group_service_accounts import GroupServiceAccount
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
+from grouper.models.public_key import PublicKey
 from grouper.models.service_account import ServiceAccount
 from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
 from grouper.models.user import User
+from grouper.models.user_metadata import UserMetadata
 from grouper.plugin import set_global_plugin_proxy
 from grouper.plugin.proxy import PluginProxy
 from grouper.repositories.factory import (
     GraphRepositoryFactory,
     SessionFactory,
     SingletonSessionFactory,
+    SQLRepositoryFactory,
 )
 from grouper.repositories.schema import SchemaRepository
 from grouper.services.factory import ServiceFactory
@@ -69,6 +74,7 @@ class SetupTest(object):
         session: The underlying database session
         plugin_proxy: The plugin proxy used for the tests
         repository_factory: Factory for repository objects
+        sql_repository_factory: Factory that returns only SQL repository objects (no graph)
         service_factory: Factory for service objects
         usecase_factory: Factory for usecase objects
     """
@@ -87,8 +93,12 @@ class SetupTest(object):
         self.initialize_database()
         self.session = SessionFactory(self.settings).create_session()
         self.graph = GroupGraph()
+        session_factory = SingletonSessionFactory(self.session)
         self.repository_factory = GraphRepositoryFactory(
-            self.settings, self.plugin_proxy, SingletonSessionFactory(self.session), self.graph
+            self.settings, self.plugin_proxy, session_factory, self.graph
+        )
+        self.sql_repository_factory = SQLRepositoryFactory(
+            self.settings, self.plugin_proxy, session_factory
         )
         self.service_factory = ServiceFactory(self.repository_factory)
         self.usecase_factory = UseCaseFactory(self.settings, self.service_factory)
@@ -249,6 +259,30 @@ class SetupTest(object):
             argument=argument,
         )
         grant.add(self.session)
+
+    def add_metadata_to_user(self, key, value, user):
+        # type: (str, str, str) -> None
+        sql_user = User.get(self.session, name=user)
+        assert sql_user
+        metadata = UserMetadata(user_id=sql_user.id, data_key=key, data_value=value)
+        metadata.add(self.session)
+
+    def add_public_key_to_user(self, key, user):
+        # type: (str, str) -> None
+        sql_user = User.get(self.session, name=user)
+        assert sql_user
+        public_key = SSHKey(key, strict=True)
+        public_key.parse()
+        sql_public_key = PublicKey(
+            user_id=sql_user.id,
+            public_key=public_key.keydata.strip(),
+            fingerprint=public_key.hash_md5().replace("MD5:", ""),
+            fingerprint_sha256=public_key.hash_sha256().replace("SHA256:", ""),
+            key_size=public_key.bits,
+            key_type=public_key.key_type,
+            comment=public_key.comment,
+        )
+        sql_public_key.add(self.session)
 
     def disable_user(self, user):
         # type: (str) -> None

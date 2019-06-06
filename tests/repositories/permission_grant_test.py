@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING
 
-from grouper.repositories.permission_grant import SQLPermissionGrantRepository
-
 if TYPE_CHECKING:
     from tests.setup import SetupTest
 
@@ -10,7 +8,8 @@ def test_permission_grants_for_user(setup):
     # type: (SetupTest) -> None
     with setup.transaction():
         setup.create_user("gary@a.co")
-    permission_grant_repository = SQLPermissionGrantRepository(setup.session)
+
+    permission_grant_repository = setup.sql_repository_factory.create_permission_grant_repository()
     assert permission_grant_repository.permission_grants_for_user("gary@a.co") == []
 
     # Build a bit of a group hierarchy with some nested inheritance.

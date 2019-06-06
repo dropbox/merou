@@ -6,6 +6,7 @@ from grouper.usecases.dump_schema import DumpSchema
 from grouper.usecases.initialize_schema import InitializeSchema
 from grouper.usecases.list_grants import ListGrants
 from grouper.usecases.list_permissions import ListPermissions
+from grouper.usecases.list_users import ListUsers
 from grouper.usecases.view_permission import ViewPermission
 
 if TYPE_CHECKING:
@@ -15,6 +16,7 @@ if TYPE_CHECKING:
     from grouper.usecases.disable_permission import DisablePermissionUI
     from grouper.usecases.dump_schema import DumpSchemaUI
     from grouper.usecases.list_grants import ListGrantsUI
+    from grouper.usecases.list_users import ListUsersUI
     from grouper.usecases.list_permissions import ListPermissionsUI
     from grouper.usecases.view_permission import ViewPermissionUI
 
@@ -64,6 +66,11 @@ class UseCaseFactory(object):
         permission_service = self.service_factory.create_permission_service()
         user_service = self.service_factory.create_user_service()
         return ListPermissions(ui, permission_service, user_service)
+
+    def create_list_users_usecase(self, ui):
+        # type: (ListUsersUI) -> ListUsers
+        user_service = self.service_factory.create_user_service()
+        return ListUsers(ui, user_service)
 
     def create_initialize_schema_usecase(self):
         # type: () -> InitializeSchema

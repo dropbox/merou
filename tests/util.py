@@ -1,6 +1,9 @@
 from typing import TYPE_CHECKING
 
+from sshpubkeys import SSHKey
+
 import grouper.permissions
+from grouper.entities.user import PublicKey
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -76,3 +79,15 @@ def get_group_permissions(graph, groupname, cutoff=None):
         for permission in graph.get_group_details(groupname)["permissions"]
         if not cutoff or permission["distance"] <= cutoff
     }
+
+
+def key_to_public_key(key):
+    # type: (str) -> PublicKey
+    """Convert the string representation of a public key to a PublicKey transfer object."""
+    pubkey = SSHKey(key, strict=True)
+    pubkey.parse()
+    return PublicKey(
+        public_key=pubkey.keydata.strip(),
+        fingerprint=pubkey.hash_md5().replace("MD5:", ""),
+        fingerprint_sha256=pubkey.hash_sha256().replace("SHA256:", ""),
+    )

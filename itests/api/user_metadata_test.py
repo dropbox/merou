@@ -32,7 +32,7 @@ def test_user_metadata(tmpdir, setup):
     expected = {
         "gary@a.co": {
             "role_user": False,
-            "metadata": [{"key": "some-key", "value": "some-value"}],
+            "metadata": {"some-key": "some-value"},
             "public_keys": [
                 {
                     "public_key": ssh_key_1.public_key,
@@ -46,13 +46,10 @@ def test_user_metadata(tmpdir, setup):
                 },
             ],
         },
-        "role-user@a.co": {"role_user": True, "metadata": [], "public_keys": []},
+        "role-user@a.co": {"role_user": True, "metadata": {}, "public_keys": []},
         "zorkian@a.co": {
             "role_user": False,
-            "metadata": [
-                {"key": "github_username", "value": "zorkian"},
-                {"key": "shell", "value": "/usr/bin/fish"},
-            ],
+            "metadata": {"github_username": "zorkian", "shell": "/usr/bin/fish"},
             "public_keys": [],
         },
     }

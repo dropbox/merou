@@ -184,7 +184,7 @@ class UserMetadata(GraphHandler, ListUsersUI):
         # type: (Dict[str, User]) -> None
         users_dict = {}  # type: Dict[str, Dict[str, Any]]
         for user, data in iteritems(users):
-            metadata = [{"key": m.key, "value": m.value} for m in data.metadata]
+            metadata = {m.key: m.value for m in data.metadata}
             public_keys = [
                 {
                     "public_key": k.public_key,

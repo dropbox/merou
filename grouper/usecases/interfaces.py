@@ -244,7 +244,7 @@ class UserInterface(with_metaclass(ABCMeta, object)):
     """Abstract base class for user operations and queries."""
 
     @abstractmethod
-    def all_enabled_users(self):
+    def all_users(self):
         # type: () -> Dict[str, User]
         pass
 

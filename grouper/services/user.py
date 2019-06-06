@@ -31,9 +31,9 @@ class UserService(UserInterface):
         self.group_edge_repository = group_edge_repository
         self.audit_log = audit_log_service
 
-    def all_enabled_users(self):
+    def all_users(self):
         # type: () -> Dict[str, User]
-        return self.user_repository.all_enabled_users()
+        return self.user_repository.all_users()
 
     def disable_user(self, user, authorization):
         # type: (str, Authorization) -> None

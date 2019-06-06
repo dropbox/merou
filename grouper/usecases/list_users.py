@@ -28,5 +28,5 @@ class ListUsers(object):
 
     def list_users(self):
         # type: () -> None
-        users = self.user_service.all_enabled_users()
+        users = self.user_service.all_users()
         self.ui.listed_users(users)

@@ -18,7 +18,7 @@ class GraphUserRepository(UserRepository):
         self.graph = graph
         self.repository = repository
 
-    def all_enabled_users(self):
+    def all_users(self):
         # type: () -> Dict[str, User]
         return self.graph.all_user_metadata()
 
@@ -47,7 +47,7 @@ class SQLUserRepository(UserRepository):
         # type: (Session) -> None
         self.session = session
 
-    def all_enabled_users(self):
+    def all_users(self):
         # type: () -> Dict[str, User]
         raise NotImplementedError()
 

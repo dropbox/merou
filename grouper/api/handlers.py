@@ -273,14 +273,22 @@ class Grants(GraphHandler, ListGrantsUI):
     def listed_grants(self, grants):
         # type: (Dict[str, UniqueGrantsOfPermission]) -> None
         grants_dict = {
-            k: {"users": v.users, "service_accounts": v.service_accounts}
+            k: {
+                "users": v.users,
+                "role_users": v.role_users,
+                "service_accounts": v.service_accounts,
+            }
             for k, v in iteritems(grants)
         }
         self.success({"permissions": grants_dict})
 
     def listed_grants_of_permission(self, permission, grants):
         # type: (str, UniqueGrantsOfPermission) -> None
-        grants_dict = {"users": grants.users, "service_accounts": grants.service_accounts}
+        grants_dict = {
+            "users": grants.users,
+            "role_users": grants.role_users,
+            "service_accounts": grants.service_accounts,
+        }
         self.success({"permission": permission, "grants": grants_dict})
 
     def get(self, *args, **kwargs):

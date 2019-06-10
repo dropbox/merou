@@ -179,7 +179,7 @@ class GroupGraph(object):
             rgraph = graph.reverse()
 
             grants_by_permission = self._get_grants_by_permission(
-                graph, group_grants, service_account_grants
+                graph, group_grants, service_account_grants, user_metadata
             )
 
             with self.lock:
@@ -445,6 +445,7 @@ class GroupGraph(object):
         graph,  # type: DiGraph
         group_grants,  # type: Dict[str, List[GroupPermissionGrant]]
         service_account_grants,  # type: Dict[str, List[ServiceAccountPermissionGrant]]
+        user_metadata,  # type: Dict[str, Any]
     ):
         # type: (...) -> Dict[str, UniqueGrantsOfPermission]
         """Build a map of permissions to users and service accounts with grants."""
@@ -457,7 +458,12 @@ class GroupGraph(object):
 
         # For each group that has a permission grant, determine all of its users from the graph,
         # and then record each permission grant of that group as a grant to all of those users.
-        # Use a set for the arguments in our intermediate data structure to handle uniqueness.
+        # Use a set for the arguments in our intermediate data structure to handle uniqueness.  We
+        # have to separate role users from non-role users here, since they're otherwise identical
+        # and are both handled by the same graph.
+        role_user_grants = defaultdict(
+            lambda: defaultdict(set)
+        )  # type: Dict[str, Dict[str, Set[str]]]
         user_grants = defaultdict(lambda: defaultdict(set))  # type: Dict[str, Dict[str, Set[str]]]
         for group, grant_list in iteritems(group_grants):
             members = set()  # type: Set[str]
@@ -472,16 +478,21 @@ class GroupGraph(object):
                 members.add(member_name)
             for grant in grant_list:
                 for member in members:
-                    user_grants[grant.permission][member].add(grant.argument)
+                    if user_metadata[member]["role_user"]:
+                        role_user_grants[grant.permission][member].add(grant.argument)
+                    else:
+                        user_grants[grant.permission][member].add(grant.argument)
 
-        # Now, assemble the service_grants and user_grants dicts into a single dictionary of
-        # permission names to UniqueGrantsOfPermission named tuples.  defaultdicts don't compare
-        # easily to dicts and the API server wants to return lists, so convert to a regular dict
-        # with list values for ease of testing.  (The performance loss should be insignificant.)
+        # Now, assemble the service_grants, role_user_grants, and user_grants dicts into a single
+        # dictionary of permission names to UniqueGrantsOfPermission named tuples.  defaultdicts
+        # don't compare easily to dicts and the API server wants to return lists, so convert to a
+        # regular dict with list values for ease of testing.  (The performance loss should be
+        # insignificant.)
         all_grants = {}  # type: Dict[str, UniqueGrantsOfPermission]
         for permission in set(user_grants.keys()) | set(service_grants.keys()):
             grants = UniqueGrantsOfPermission(
                 users={k: sorted(v) for k, v in iteritems(user_grants[permission])},
+                role_users={k: sorted(v) for k, v in iteritems(role_user_grants[permission])},
                 service_accounts={k: sorted(v) for k, v in iteritems(service_grants[permission])},
             )
             all_grants[permission] = grants
@@ -494,7 +505,8 @@ class GroupGraph(object):
 
     def all_grants_of_permission(self, permission):
         # type: (str) -> UniqueGrantsOfPermission
-        return self._grants_by_permission.get(permission, UniqueGrantsOfPermission({}, {}))
+        empty_grants = UniqueGrantsOfPermission(users={}, role_users={}, service_accounts={})
+        return self._grants_by_permission.get(permission, empty_grants)
 
     def all_user_metadata(self):
         # type: () -> Dict[str, User]

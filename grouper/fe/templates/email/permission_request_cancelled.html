@@ -1,0 +1,19 @@
+{% extends "email/base.html" %}
+
+{% block subject %}Request for Permission Cancelled{% endblock %}
+
+{% block content %}
+<p>
+You request for permission
+<a href="{{ url }}/permissions/{{ permission_name }} ">{{ permission_name }}</a>
+with argument {{ argument }}
+has been <b>cancelled</b> to the group <a href="{{ url }}/groups/{{ group_name }}">{{ group_name }}</a>
+</p>
+
+<p>More details about the request:</p>
+
+<ul>
+    <li><strong>Actioned By:</strong> {{ action_taken_by }}</li>
+    <li><strong>Reason:</strong> {{ reason }}</li>
+</ul>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block heading %}
+    Error
+{% endblock %}
+
+{% block subheading %}
+    403 Forbidden
+{% endblock %}
+
+{% block content %}
+<p class="lead">Not a valid user</p>
+
+<p>{{ message }}</p>
+
+<p>If you believe this message is an error, please contact the admins of
+this site ({{ how_to_get_help }}).</p>
+
+{% endblock %}

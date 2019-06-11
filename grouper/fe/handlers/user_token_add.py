@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy.exc import IntegrityError
 
 from grouper.email_util import send_email
@@ -11,17 +13,26 @@ from grouper.role_user import can_manage_role_user
 from grouper.service_account import can_manage_service_account
 from grouper.user_token import add_new_user_token
 
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from typing import Any, Optional
+
 
 class UserTokenAdd(GrouperHandler):
     @staticmethod
     def check_access(session, actor, target):
+        # type: (Session, User, User) -> bool
         return (
             actor.name == target.name
             or (target.role_user and can_manage_role_user(session, actor, tuser=target))
             or (target.is_service_account and can_manage_service_account(session, target, actor))
         )
 
-    def get(self, user_id=None, name=None):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        user_id = kwargs.get("user_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+
         user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
@@ -31,7 +42,11 @@ class UserTokenAdd(GrouperHandler):
 
         self.render("user-token-add.html", form=UserTokenForm(), user=user)
 
-    def post(self, user_id=None, name=None):
+    def post(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        user_id = kwargs.get("user_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+
         user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
@@ -81,7 +96,7 @@ class UserTokenAdd(GrouperHandler):
             [user.name],
             "User token created",
             "user_tokens_changed",
-            settings,
+            settings(),
             email_context,
         )
         return self.render("user-token-created.html", token=token, secret=secret)

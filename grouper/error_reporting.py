@@ -1,23 +1,37 @@
+from __future__ import print_function
+
 import logging
 import signal
 import sys
 import traceback
 from typing import TYPE_CHECKING
 
+from six import iteritems
+from tornado.web import RequestHandler
+
 try:
-    from raven.contrib.tornado import AsyncSentryClient
+    from raven.contrib.tornado import AsyncSentryClient, SentryMixin
 
     raven_installed = True
 except ImportError:
+    SentryMixin = object
     raven_installed = False
+
 
 if TYPE_CHECKING:
     from types import FrameType
+    from typing import Optional
 
 
 signame_by_signum = {
-    v: k for k, v in signal.__dict__.items() if k.startswith("SIG") and not k.startswith("SIG_")
+    v: k for k, v in iteritems(signal.__dict__) if k.startswith("SIG") and not k.startswith("SIG_")
 }
+
+
+class SentryHandler(RequestHandler, SentryMixin):
+    """Tornado request handler that mixes in SentryMixin if available."""
+
+    pass
 
 
 class SentryProxy(object):
@@ -34,7 +48,7 @@ class SentryProxy(object):
 
 
 def get_sentry_client(sentry_dsn):
-    # type: (str) -> SentryProxy
+    # type: (Optional[str]) -> SentryProxy
     if sentry_dsn and raven_installed:
         logging.info("sentry client setup dsn={}".format(sentry_dsn))
         sentry_client = SentryProxy(sentry_client=AsyncSentryClient(sentry_dsn))
@@ -58,7 +72,7 @@ def log_and_exit_handler(signum, frame):
 
 def dump_thread_handler(signum, frame):
     # type: (int, FrameType) -> None
-    for thread_id, thread_frame in sys._current_frames().items():
+    for thread_id, thread_frame in iteritems(sys._current_frames()):
         print("-- thread id {}:".format(thread_id))
         print("".join(traceback.format_stack(thread_frame)))
 

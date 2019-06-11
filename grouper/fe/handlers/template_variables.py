@@ -1,16 +1,15 @@
-from grouper.constants import USER_METADATA_SHELL_KEY
+from datetime import datetime
+from typing import TYPE_CHECKING
+
+from grouper.constants import USER_METADATA_GITHUB_USERNAME_KEY, USER_METADATA_SHELL_KEY
+from grouper.entities.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.fe.util import Alert
 from grouper.graph import NoSuchGroup, NoSuchUser
 from grouper.group_requests import count_requests_by_group
 from grouper.group_service_account import get_service_accounts
 from grouper.models.audit_member import AUDIT_STATUS_CHOICES
-from grouper.models.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.permissions import get_owner_arg_list, get_pending_request_by_group, get_requests
-from grouper.public_key import (
-    get_public_key_permissions,
-    get_public_key_tags,
-    get_public_keys_of_user,
-)
+from grouper.public_key import get_public_keys_of_user
 from grouper.role_user import can_manage_role_user
 from grouper.service_account import can_manage_service_account, service_account_permissions
 from grouper.user import (
@@ -25,8 +24,16 @@ from grouper.user_metadata import get_user_metadata_by_key
 from grouper.user_password import user_passwords
 from grouper.user_permissions import user_grantable_permissions, user_is_user_admin
 
+if TYPE_CHECKING:
+    from grouper.graph import GroupGraph
+    from grouper.models.base.session import Session
+    from grouper.models.group import Group
+    from grouper.models.user import User
+    from typing import Any, Dict
+
 
 def get_group_view_template_vars(session, actor, group, graph):
+    # type: (Session, User, Group, GroupGraph) -> Dict[str, Any]
     ret = {}
     ret["grantable"] = user_grantable_permissions(session, actor)
 
@@ -41,6 +48,8 @@ def get_group_view_template_vars(session, actor, group, graph):
     ret["groups"] = group.my_groups()
     ret["service_accounts"] = get_service_accounts(session, group)
     ret["permissions"] = group_md.get("permissions", [])
+    for permission in ret["permissions"]:
+        permission["granted_on"] = datetime.fromtimestamp(permission["granted_on"])
 
     ret["permission_requests_pending"] = []
     for req in get_pending_request_by_group(session, group):
@@ -84,11 +93,12 @@ def get_group_view_template_vars(session, actor, group, graph):
 
 
 def get_user_view_template_vars(session, actor, user, graph):
+    # type: (Session, User, User, GroupGraph) -> Dict[str, Any]
     # TODO(cbguder): get around circular dependencies
     from grouper.fe.handlers.user_disable import UserDisable
     from grouper.fe.handlers.user_enable import UserEnable
 
-    ret = {}
+    ret = {}  # type: Dict[str, Any]
     if user.is_service_account:
         ret["can_control"] = can_manage_service_account(
             session, user.service_account, actor
@@ -125,6 +135,8 @@ def get_user_view_template_vars(session, actor, user, graph):
         else "No shell configured"
     )
     ret["shell"] = shell
+    github_username = get_user_metadata_by_key(session, user.id, USER_METADATA_GITHUB_USERNAME_KEY)
+    ret["github_username"] = github_username.data_value if github_username else "(Unset)"
     ret["open_audits"] = user_open_audits(session, user)
     group_edge_list = get_groups_by_user(session, user) if user.enabled else []
     ret["groups"] = [
@@ -132,12 +144,6 @@ def get_user_view_template_vars(session, actor, user, graph):
     ]
     ret["passwords"] = user_passwords(session, user)
     ret["public_keys"] = get_public_keys_of_user(session, user.id)
-    for key in ret["public_keys"]:
-        key.tags = get_public_key_tags(session, key)
-        key.pretty_permissions = [
-            "{} ({})".format(perm.name, perm.argument if perm.argument else "unargumented")
-            for perm in get_public_key_permissions(session, key)
-        ]
     ret["log_entries"] = get_log_entries_by_user(session, user)
     ret["user_tokens"] = user.tokens
 
@@ -146,11 +152,14 @@ def get_user_view_template_vars(session, actor, user, graph):
         ret["permissions"] = service_account_permissions(session, service_account)
     else:
         ret["permissions"] = user_md.get("permissions", [])
+        for permission in ret["permissions"]:
+            permission["granted_on"] = datetime.fromtimestamp(permission["granted_on"])
 
     return ret
 
 
 def get_role_user_view_template_vars(session, actor, user, group, graph):
+    # type: (Session, User, User, Group, GroupGraph) -> Dict[str, Any]
     ret = get_user_view_template_vars(session, actor, user, graph)
     ret.update(get_group_view_template_vars(session, actor, group, graph))
     ret["can_control"] = can_manage_role_user(session, user=actor, tuser=user)

@@ -2,8 +2,6 @@ import json
 import logging
 import re
 import sys
-import urllib
-import urlparse
 from datetime import datetime
 from functools import wraps
 from typing import TYPE_CHECKING
@@ -12,21 +10,25 @@ from uuid import uuid4
 import sqlalchemy.exc
 import tornado.web
 from plop.collector import Collector
-from tornado.web import RequestHandler
+from six import iteritems
+from six.moves.urllib.parse import quote, unquote, urlencode, urljoin
 
-from grouper import perf_profile, stats
+from grouper import stats
 from grouper.constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATION
+from grouper.error_reporting import SentryHandler
 from grouper.fe.settings import settings
 from grouper.graph import Graph
+from grouper.initialization import create_graph_usecase_factory
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.user import User
+from grouper.perf_profile import record_trace
+from grouper.plugin import get_plugin_proxy
+from grouper.repositories.factory import SingletonSessionFactory
 from grouper.user_permissions import user_permissions
-from grouper.util import get_database_url
 
 if TYPE_CHECKING:
-    from grouper.usecases.factory import UseCaseFactory
-    from jinja2 import Environment
-    from typing import Any, Dict, List, Optional
+    from grouper.fe.templating import FrontendTemplateEngine
+    from typing import Any, Callable, Dict, List, Optional, Text
 
 
 class Alert(object):
@@ -47,26 +49,17 @@ class InvalidUser(Exception):
     pass
 
 
-# if raven library around, pull in SentryMixin
-try:
-    from raven.contrib.tornado import SentryMixin
-except ImportError:
-    pass
-else:
-
-    class SentryHandler(SentryMixin, RequestHandler):
-        pass
-
-    RequestHandler = SentryHandler  # type: ignore # no support for conditional declarations #1152
-
-
-class GrouperHandler(RequestHandler):
+class GrouperHandler(SentryHandler):
     def initialize(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         self.graph = Graph()
-        self.session = kwargs["session"]()  # type: Session
-        self.template_env = kwargs["template_env"]  # type: Environment
-        self.usecase_factory = kwargs["usecase_factory"]  # type: UseCaseFactory
+        self.session = self.settings["session"]()  # type: Session
+        self.template_engine = self.settings["template_engine"]  # type: FrontendTemplateEngine
+        self.plugins = get_plugin_proxy()
+        session_factory = SingletonSessionFactory(self.session)
+        self.usecase_factory = create_graph_usecase_factory(
+            settings(), self.plugins, session_factory
+        )
 
         if self.get_argument("_profile", False):
             self.perf_collector = Collector()
@@ -81,18 +74,27 @@ class GrouperHandler(RequestHandler):
         stats.log_rate("requests", 1)
         stats.log_rate("requests_{}".format(self.__class__.__name__), 1)
 
+    def set_default_headers(self):
+        # type: () -> None
+        self.set_header("Content-Security-Policy", self.settings["template_engine"].csp_header())
+        self.set_header("Referrer-Policy", "same-origin")
+
     def write_error(self, status_code, **kwargs):
+        # type: (int, **Any) -> None
         """Override for custom error page."""
+        message = kwargs.get("message", "Unknown error")
         if status_code >= 500 and status_code < 600:
-            template = self.template_env.get_template("errors/5xx.html")
-            self.write(template.render({"is_active": self.is_active}))
+            template = self.template_engine.get_template("errors/5xx.html")
+            self.write(
+                template.render({"is_active": self.is_active, "static_url": self.static_url})
+            )
         else:
-            template = self.template_env.get_template("errors/generic.html")
+            template = self.template_engine.get_template("errors/generic.html")
             self.write(
                 template.render(
                     {
                         "status_code": status_code,
-                        "message": self._reason,
+                        "message": message,
                         "is_active": self.is_active,
                         "trace_uuid": self.perf_trace_uuid,
                         "static_url": self.static_url,
@@ -116,26 +118,35 @@ class GrouperHandler(RequestHandler):
     # route calls this function, it will sync its graph from the database if
     # requested.
     def handle_refresh(self):
+        # type: () -> None
         if self.is_refresh():
             self.graph.update_from_db(self.session)
 
     def redirect(self, url, *args, **kwargs):
+        # type: (str, *Any, **Any) -> None
         if self.is_refresh():
-            url = urlparse.urljoin(url, "?refresh=yes")
+            url = urljoin(url, "?refresh=yes")
+        alerts = kwargs.pop("alerts", [])  # type: List[Alert]
+        self.set_alerts(alerts)
+        super(GrouperHandler, self).redirect(url, *args, **kwargs)
 
-        self.set_alerts(kwargs.pop("alerts", []))
+    def get_or_create_user(self, username):
+        # type: (str) -> Optional[User]
+        """Retrieve or create the User object for the authenticated user.
 
-        return super(GrouperHandler, self).redirect(url, *args, **kwargs)
-
-    def get_current_user(self):
-        username = self.request.headers.get(settings.user_auth_header)
+        This is done in a separate method called by prepare instead of in the magic Tornado
+        get_current_user method because exceptions thrown by the latter are caught by Tornado and
+        not propagated to the caller, and we want to use exceptions to handle invalid users and
+        then return an error page in prepare.
+        """
         if not username:
-            return
+            return None
 
         # Users must be fully qualified
         if not re.match("^{}$".format(USERNAME_VALIDATION), username):
-            raise InvalidUser()
+            raise InvalidUser("{} does not match {}".format(username, USERNAME_VALIDATION))
 
+        # User must exist in the database and be active
         try:
             user, created = User.get_or_create(self.session, username=username)
             if created:
@@ -148,25 +159,37 @@ class GrouperHandler(RequestHandler):
         except sqlalchemy.exc.OperationalError:
             # Failed to connect to database or create user, try to reconfigure the db. This invokes
             # the fetcher to try to see if our URL string has changed.
-            Session.configure(bind=get_db_engine(get_database_url(settings)))
+            Session.configure(bind=get_db_engine(settings().database))
             raise DatabaseFailure()
 
         # service accounts are, by definition, not interactive users
         if user.is_service_account:
-            raise InvalidUser()
+            raise InvalidUser("{} is a service account".format(username))
 
         return user
 
     def prepare(self):
-        if not self.current_user or not self.current_user.enabled:
-            self.forbidden()
+        # type: () -> None
+        username = self.request.headers.get(settings().user_auth_header)
+
+        try:
+            user = self.get_or_create_user(username)
+        except InvalidUser as e:
+            self.baduser(str(e))
             self.finish()
             return
 
+        if user and user.enabled:
+            self.current_user = user
+        else:
+            self.baduser("{} is not an active account".format(username))
+            self.finish()
+
     def on_finish(self):
+        # type: () -> None
         if self.perf_collector:
             self.perf_collector.stop()
-            perf_profile.record_trace(self.session, self.perf_collector, self.perf_trace_uuid)
+            record_trace(self.session, self.perf_collector, self.perf_trace_uuid)
 
         self.session.close()
 
@@ -184,17 +207,20 @@ class GrouperHandler(RequestHandler):
         stats.log_rate("response_status_{}_{}".format(self.__class__.__name__, response_status), 1)
 
     def update_qs(self, **kwargs):
+        # type: (**Any) -> str
         qs = self.request.arguments.copy()
         qs.update(kwargs)
-        return "?" + urllib.urlencode(sorted(qs.items()), True)
+        return "?" + urlencode(sorted(qs.items()), True)
 
     def is_active(self, test_path):
+        # type: (str) -> str
         path = self.request.path
         if path == test_path:
             return "active"
         return ""
 
     def get_template_namespace(self):
+        # type: () -> Dict[str, Any]
         namespace = super(GrouperHandler, self).get_template_namespace()
         namespace.update(
             {
@@ -209,11 +235,13 @@ class GrouperHandler(RequestHandler):
         return namespace
 
     def render_template(self, template_name, **kwargs):
-        template = self.template_env.get_template(template_name)
+        # type: (str, **Any) -> Text
+        template = self.template_engine.get_template(template_name)
         content = template.render(kwargs)
         return content
 
     def render(self, template_name, **kwargs):
+        # type: (str, **Any) -> None
         defaults = self.get_template_namespace()
 
         context = {}
@@ -242,46 +270,62 @@ class GrouperHandler(RequestHandler):
         return alerts
 
     def get_form_alerts(self, errors):
+        # type: (Dict[str, List[str]]) -> List[Alert]
         alerts = []
-        for field, field_errors in errors.items():
+        for field, field_errors in iteritems(errors):
             for error in field_errors:
                 alerts.append(Alert("danger", error, field))
         return alerts
 
     def raise_and_log_exception(self, exc):
+        # type: (Exception) -> None
         try:
             raise exc
         except Exception:
             self.log_exception(*sys.exc_info())
 
     def log_message(self, message, **kwargs):
-        if self.captureMessage:
+        # type: (str, **Any) -> None
+        if getattr(self, "captureMessage", None):
             self.captureMessage(message, **kwargs)
         else:
             logging.info("{}, kwargs={}".format(message, kwargs))
 
-    # TODO(gary): Add json error responses.
-    def badrequest(self, format_type=None):
+    def badrequest(self):
+        # type: () -> None
         self.set_status(400)
         self.raise_and_log_exception(tornado.web.HTTPError(400))
         self.render("errors/badrequest.html")
 
-    def forbidden(self, format_type=None):
+    def baduser(self, message):
+        # type: (str) -> None
         self.set_status(403)
         self.raise_and_log_exception(tornado.web.HTTPError(403))
-        self.render("errors/forbidden.html", how_to_get_help=settings.how_to_get_help)
+        how_to_get_help = settings().how_to_get_help
+        self.render("errors/baduser.html", message=message, how_to_get_help=how_to_get_help)
 
-    def notfound(self, format_type=None):
+    def forbidden(self):
+        # type: () -> None
+        self.set_status(403)
+        self.raise_and_log_exception(tornado.web.HTTPError(403))
+        self.render("errors/forbidden.html", how_to_get_help=settings().how_to_get_help)
+
+    def notfound(self):
+        # type: () -> None
         self.set_status(404)
         self.raise_and_log_exception(tornado.web.HTTPError(404))
         self.render("errors/notfound.html")
 
     def get_sentry_user_info(self):
-        user = self.get_current_user()
-        return {"username": user.username}
+        # type: () -> Dict[str, Optional[str]]
+        if self.current_user:
+            return {"username": self.current_user.username}
+        else:
+            return {"username": None}
 
 
 def test_reserved_names(permission_name):
+    # type: (str) -> List[str]
     """Returns a list of strings explaining which reserved regexes match a
     proposed permission name.
     """
@@ -295,6 +339,7 @@ def test_reserved_names(permission_name):
 
 
 def ensure_audit_security(perm_arg):
+    # type: (Text) -> Callable[[Callable[..., None]], Callable[..., None]]
     """Decorator for web handler methods to ensure the current_user has the
     AUDIT_SECURITY permission with the specified argument.
 
@@ -303,7 +348,9 @@ def ensure_audit_security(perm_arg):
     """
 
     def _wrapper(f):
+        # type: (Callable[..., None]) -> Callable[..., None]
         def _decorator(self, *args, **kwargs):
+            # type: (GrouperHandler, *Any, **Any) -> None
             if not any(
                 [
                     name == AUDIT_SECURITY and argument == perm_arg
@@ -312,7 +359,7 @@ def ensure_audit_security(perm_arg):
             ):
                 return self.forbidden()
 
-            return f(self, *args, **kwargs)
+            f(self, *args, **kwargs)
 
         return wraps(f)(_decorator)
 
@@ -335,15 +382,15 @@ def _deserialize_alert(alert_dict):
 
 def _serialize_alerts(alerts):
     # type: (List[Alert]) -> str
-    alert_dicts = map(_serialize_alert, alerts)
+    alert_dicts = list(map(_serialize_alert, alerts))
     alerts_json = json.dumps(alert_dicts, separators=(",", ":"))
-    return urllib.quote(alerts_json)
+    return quote(alerts_json)
 
 
 def _deserialize_alerts(quoted_alerts_json):
     # type: (str) -> List[Alert]
     try:
-        alerts_json = urllib.unquote(quoted_alerts_json)
+        alerts_json = unquote(quoted_alerts_json)
         alert_dicts = json.loads(alerts_json)
     except ValueError:
         alert_dicts = []

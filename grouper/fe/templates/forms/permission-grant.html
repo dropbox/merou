@@ -3,4 +3,4 @@
 {{ form_field(form.permission, 3, 8, class_="form-control") }}
 {{ form_field(form.argument, 3, 8, class_="form-control") }}
 
-{{ xsrf_form() }}
+{{ xsrf_form()|safe }}

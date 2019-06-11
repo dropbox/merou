@@ -7,7 +7,12 @@ from grouper.usecases.disable_permission import DisablePermissionUI
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
+    from grouper.entities.permission_grant import (
+        GroupPermissionGrant,
+        ServiceAccountPermissionGrant,
+    )
     from grouper.usecases.factory import UseCaseFactory
+    from typing import List
 
 
 class PermissionCommand(CtlCommand, DisablePermissionUI):
@@ -38,6 +43,25 @@ class PermissionCommand(CtlCommand, DisablePermissionUI):
     def disabled_permission(self, name):
         # type: (str) -> None
         logging.info("disabled permission %s", name)
+
+    def disable_permission_failed_existing_grants(
+        self,
+        name,  # type: str
+        group_grants,  # type: List[GroupPermissionGrant]
+        service_account_grants,  # type: List[ServiceAccountPermissionGrant]
+    ):
+        # type: (...) -> None
+        message = ""
+        if group_grants:
+            groups = {g.group for g in group_grants}
+            message = "groups " + ", ".join(sorted(groups))
+        if service_account_grants:
+            service_accounts = {g.service_account for g in service_account_grants}
+            if message:
+                message += " and "
+            message += "service accounts " + ", ".join(sorted(service_accounts))
+        logging.critical("permission %s still granted to %s", name, message)
+        sys.exit(1)
 
     def disable_permission_failed_not_found(self, name):
         # type: (str) -> None

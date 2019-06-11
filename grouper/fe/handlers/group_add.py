@@ -1,5 +1,6 @@
 import operator
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.email_util import send_email
@@ -13,6 +14,9 @@ from grouper.models.group import Group
 from grouper.role_user import get_role_user, is_role_user
 from grouper.user import get_all_enabled_users, get_user_or_group, user_role
 from grouper.user_group import user_can_manage_group
+
+if TYPE_CHECKING:
+    from typing import Any, Optional
 
 
 class GroupAdd(GrouperHandler):
@@ -48,7 +52,11 @@ class GroupAdd(GrouperHandler):
         )
         return form
 
-    def get(self, group_id=None, name=None):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        group_id = kwargs.get("group_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -60,7 +68,11 @@ class GroupAdd(GrouperHandler):
         my_role = user_role(self.current_user, members)
         return self.render("group-add.html", form=self.get_form(role=my_role), group=group)
 
-    def post(self, group_id=None, name=None):
+    def post(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        group_id = kwargs.get("group_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -93,7 +105,7 @@ class GroupAdd(GrouperHandler):
             user_can_join = assert_can_join(group, member, role=form.data["role"])
         except UserNotAuditor as e:
             user_can_join = False
-            fail_message = e
+            fail_message = str(e)
         if not user_can_join:
             form.member.errors.append(fail_message)
 
@@ -117,7 +129,7 @@ class GroupAdd(GrouperHandler):
             )
         except InvalidRoleForMember as e:
             return self.render(
-                "group-add.html", form=form, group=group, alerts=[Alert("danger", e.message)]
+                "group-add.html", form=form, group=group, alerts=[Alert("danger", str(e))]
             )
 
         self.session.commit()
@@ -138,7 +150,7 @@ class GroupAdd(GrouperHandler):
                 [member.name],
                 "Added to group: {}".format(group.name),
                 "request_actioned",
-                settings,
+                settings(),
                 {
                     "group_name": group.name,
                     "actioned_by": self.current_user.name,

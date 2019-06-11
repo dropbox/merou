@@ -1,14 +1,15 @@
 {% from 'macros/ui.html' import form_field -%}
 
 {% if form.creatorrole %}
-    {{ form_field(form.creatorrole, 3, 6, class_="form-control") }}
+    {{ form_field(form.creatorrole, 4, 6, class_="form-control") }}
 {% endif %}
-{{ form_field(form.groupname, 3, 8, class_="form-control") }}
-{{ form_field(form.email_address, 3, 8, class_="form-control") }}
-{{ form_field(form.description, 3, 8, class_="form-control", rows=5) }}
-{{ form_field(form.canjoin, 3, 4, class_="form-control") }}
-{{ form_field(form.auto_expire, 3, 4, class_="form-control") }}
-{{ form_field(form.require_clickthru_tojoin, 3, 4,
-        help="require agreement to the group's description, prior requesting membership") }}
+{{ form_field(form.groupname, 4, 8, class_="form-control") }}
+{{ form_field(form.email_address, 4, 8, class_="form-control") }}
+{{ form_field(form.description, 4, 8, class_="form-control", rows=5) }}
+{{ form_field(form.canjoin, 4, 4, class_="form-control") }}
+{{ form_field(form.auto_expire, 4, 4, class_="form-control") }}
+{{ form_field(form.require_clickthru_tojoin, 4, 4,
+        help="Require agreement to the group's description prior to requesting membership",
+        help_title="Require clickthru") }}
 
-{{ xsrf_form() }}
+{{ xsrf_form()|safe }}

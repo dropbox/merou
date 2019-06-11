@@ -1,12 +1,22 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
+from six import iteritems
+
+from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.comment import Comment
 from grouper.models.counter import Counter
-from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
+from grouper.models.group_edge import GroupEdge
 from grouper.models.request import Request
 from grouper.models.request_status_change import RequestStatusChange
 from grouper.plugin import get_plugin_proxy
+
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from grouper.models.group import Group
+    from grouper.models.user import User
+    from typing import Any
 
 
 class InvalidRoleForMember(Exception):
@@ -25,7 +35,7 @@ class MemberNotFound(Exception):
 
 def _serialize_changes(edge, **updates):
     changes = {}
-    for key, value in updates.items():
+    for key, value in iteritems(updates):
         if key not in ("role", "expiration", "active"):
             continue
         if getattr(edge, key) != value:
@@ -43,12 +53,14 @@ def _validate_role(member_type, role):
 
 
 def _get_edge(session, group, member):
+    # type: (Session, Group, GroupEdge) -> GroupEdge
     return GroupEdge.get(
         session, group_id=group.id, member_type=member.member_type, member_pk=member.id
     )
 
 
 def _create_edge(session, group, member, role):
+    # type: (Session, Group, GroupEdge, str) -> GroupEdge
     edge, new = GroupEdge.get_or_create(
         session, group_id=group.id, member_type=member.member_type, member_pk=member.id
     )
@@ -65,8 +77,16 @@ def _create_edge(session, group, member, role):
 
 
 def persist_group_member_changes(
-    session, group, requester, member, status, reason, create_edge=False, **updates
+    session,  # type: Session
+    group,  # type: Group
+    requester,  # type: User
+    member,  # type: GroupEdge
+    status,  # type: str
+    reason,  # type: str
+    create_edge=False,  # type: bool
+    **updates  # type: Any
 ):
+    # type: (...) -> Request
     requested_at = datetime.utcnow()
 
     if "role" in updates:

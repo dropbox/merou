@@ -1,10 +1,13 @@
 from typing import TYPE_CHECKING
 
+from grouper.plugin.base import BasePlugin
+from grouper.plugin.load import load_plugins
+
 if TYPE_CHECKING:
     from grouper.models.audit_log import AuditLog
     from grouper.models.group import Group
     from grouper.models.user import User
-    from grouper.plugin.base import BasePlugin
+    from grouper.settings import Settings
     from sshpubkeys import SSHKey
     from ssl import SSLContext
     from sqlalchemy.orm import Session
@@ -13,9 +16,23 @@ if TYPE_CHECKING:
 
 
 class PluginProxy(object):
+    """Wrapper to proxy a plugin method call to all loaded plugins."""
+
+    @classmethod
+    def load_plugins(cls, settings, service_name):
+        # type: (Settings, str) -> PluginProxy
+        plugins = load_plugins(
+            BasePlugin, settings.plugin_dirs, settings.plugin_module_paths, service_name
+        )
+        return cls(plugins)
+
     def __init__(self, plugins):
         # type: (List[BasePlugin]) -> None
         self._plugins = plugins
+
+    def add_plugin(self, plugin):
+        # type: (BasePlugin) -> None
+        self._plugins.append(plugin)
 
     def check_machine_set(self, name, machine_set):
         # type: (str, str) -> None

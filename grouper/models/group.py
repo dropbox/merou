@@ -1,15 +1,18 @@
+import itertools
 import logging
 from collections import OrderedDict
 from datetime import datetime
-from typing import List
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Column, desc, Enum, Integer, Interval, or_, String, Text, union_all
+from six import iteritems
+from sqlalchemy import Boolean, Column, desc, Enum, Integer, Interval, or_, String, Text
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.util import aliased
 from sqlalchemy.sql import label, literal
 
 from grouper.constants import MAX_NAME_LENGTH
+from grouper.entities.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.group_member import persist_group_member_changes
 from grouper.models.audit import Audit
 from grouper.models.audit_log import AuditLog
@@ -18,10 +21,14 @@ from grouper.models.base.model_base import Model
 from grouper.models.base.session import flush_transaction
 from grouper.models.comment import CommentObjectMixin
 from grouper.models.counter import Counter
-from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge, OWNER_ROLE_INDICES
+from grouper.models.group_edge import GroupEdge
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
+
+if TYPE_CHECKING:
+    from grouper.models.request import Request
+    from typing import Mapping, List, Optional, Tuple, Union
 
 GROUP_JOIN_CHOICES = {
     # Anyone can join with automatic approval
@@ -121,8 +128,15 @@ class Group(Model, CommentObjectMixin):
 
     @flush_transaction
     def add_member(
-        self, requester, user_or_group, reason, status="pending", expiration=None, role="member"
+        self,
+        requester,  # type: User
+        user_or_group,  # type: Union[User, Group]
+        reason,  # type: str
+        status="pending",  # type: str
+        expiration=None,  # type: Optional[datetime]
+        role="member",  # type: str
     ):
+        # type: (...) -> Request
         """ Add a member (User or Group) to this group.
 
             Arguments:
@@ -208,17 +222,18 @@ class Group(Model, CommentObjectMixin):
 
     def my_owners_as_strings(self):
         """Returns a list of usernames."""
-        return self.my_owners().keys()
+        return list(self.my_owners().keys())
 
     def my_owners(self):
         """Returns a dictionary from username to records."""
         od = OrderedDict()
-        for (member_type, name), member in self.my_members().iteritems():
+        for (member_type, name), member in iteritems(self.my_members()):
             if member_type == "User" and member.role in OWNER_ROLE_INDICES:
                 od[name] = member
         return od
 
     def my_members(self):
+        # type: () -> Mapping[Tuple[str, str], str]
         """Returns a dictionary from ("User"|"Group", "name") tuples to records."""
 
         parent = aliased(Group)
@@ -246,8 +261,7 @@ class Group(Model, CommentObjectMixin):
                 or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
                 GroupEdge.member_type == 0,
             )
-            .group_by("type", "name")
-            .subquery()
+            .order_by(desc("role"), "name")
         )
 
         groups = (
@@ -269,16 +283,10 @@ class Group(Model, CommentObjectMixin):
                 or_(GroupEdge.expiration > now, GroupEdge.expiration == None),
                 GroupEdge.member_type == 1,
             )
-            .subquery()
+            .order_by(desc("role"), "name")
         )
 
-        query = (
-            self.session.query("id", "type", "name", "role", "edge_id", "expiration")
-            .select_entity_from(union_all(users.select(), groups.select()))
-            .order_by(desc("role"), desc("type"))
-        )
-
-        return OrderedDict(((record.type, record.name), record) for record in query.all())
+        return OrderedDict(((r.type, r.name), r) for r in itertools.chain(users, groups))
 
     def my_groups(self):
         """Return the groups to which this group currently belongs."""

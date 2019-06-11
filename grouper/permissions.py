@@ -3,19 +3,13 @@ from collections import defaultdict, namedtuple
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from six import iteritems, itervalues
 from sqlalchemy import asc
 from sqlalchemy.exc import IntegrityError
 
 from grouper.audit import assert_controllers_are_auditors
-from grouper.constants import (
-    ARGUMENT_VALIDATION,
-    PERMISSION_ADMIN,
-    PERMISSION_GRANT,
-    SYSTEM_PERMISSIONS,
-)
-from grouper.email_util import send_email
-from grouper.fe.settings import settings
-from grouper.fe.template_util import get_template_env
+from grouper.constants import ARGUMENT_VALIDATION, PERMISSION_ADMIN, PERMISSION_GRANT
+from grouper.email_util import EmailTemplateEngine, send_email
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.comment import Comment
@@ -26,13 +20,14 @@ from grouper.models.permission_map import PermissionMap
 from grouper.models.permission_request import PermissionRequest
 from grouper.models.permission_request_status_change import PermissionRequestStatusChange
 from grouper.models.service_account_permission_map import ServiceAccountPermissionMap
-from grouper.models.tag_permission_map import TagPermissionMap
 from grouper.plugin import get_plugin_proxy
+from grouper.settings import settings
 from grouper.user_group import get_groups_by_user
 from grouper.util import matches_glob
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
+    from grouper.models.user import User
     from typing import Dict, List, Optional, Set, Tuple
 
 # Singleton
@@ -192,66 +187,6 @@ def grant_permission_to_service_account(session, account, permission, argument="
     session.commit()
 
 
-def grant_permission_to_tag(session, tag_id, permission_id, argument=""):
-    # type: (Session, int, int, str) -> bool
-    """
-    Grant a permission to this tag. This will fail if the (permission, argument) has already
-    been granted to this tag.
-
-    Args:
-        session(models.base.session.Sessioan): database session
-        tag_id(int): the id of the tag we're granting the permission to
-        permission_id(int): the id of the permission to be granted
-        argument(str): must match constants.ARGUMENT_VALIDATION
-
-    Throws:
-        AssertError if argument does not match ARGUMENT_VALIDATION regex
-
-    Returns:
-        bool indicating whether the function succeeded or not
-    """
-    assert re.match(
-        ARGUMENT_VALIDATION + r"$", argument
-    ), "Permission argument does not match regex."
-
-    try:
-        mapping = TagPermissionMap(permission_id=permission_id, tag_id=tag_id, argument=argument)
-        mapping.add(session)
-
-        Counter.incr(session, "updates")
-    except IntegrityError:
-        session.rollback()
-        return False
-
-    session.commit()
-    return True
-
-
-def disable_permission(session, permission_name, actor_user_id):
-    """Set a permission as disabled.
-
-    Args:
-        session(models.base.session.Session): database session
-        permission_name(str): name of permission in question
-        actor_user_id(int): id of user who is disabling the permission
-    """
-    if permission_name in (entry[0] for entry in SYSTEM_PERMISSIONS):
-        raise CannotDisableASystemPermission(permission_name)
-    permission = get_permission(session, permission_name)
-    if not permission:
-        raise NoSuchPermission(name=permission_name)
-    permission.enabled = False
-    AuditLog.log(
-        session,
-        actor_user_id,
-        "disable_permission",
-        "Disabled permission.",
-        on_permission_id=permission.id,
-    )
-    Counter.incr(session, "updates")
-    session.commit()
-
-
 def enable_permission_auditing(session, permission_name, actor_user_id):
     """Set a permission as audited.
 
@@ -264,7 +199,7 @@ def enable_permission_auditing(session, permission_name, actor_user_id):
     if not permission:
         raise NoSuchPermission(name=permission_name)
 
-    permission._audited = True
+    permission.audited = True
 
     AuditLog.log(
         session,
@@ -291,7 +226,7 @@ def disable_permission_auditing(session, permission_name, actor_user_id):
     if not permission:
         raise NoSuchPermission(name=permission_name)
 
-    permission._audited = False
+    permission.audited = False
 
     AuditLog.log(
         session,
@@ -367,7 +302,7 @@ def filter_grantable_permissions(session, grants, all_permissions=None):
         grantable = grant.argument.split("/", 1)
         if not grantable:
             continue
-        for name, permission_obj in all_permissions.iteritems():
+        for name, permission_obj in iteritems(all_permissions):
             if matches_glob(grantable[0], name):
                 result.append((permission_obj, grantable[1] if len(grantable) > 1 else "*"))
 
@@ -397,11 +332,7 @@ def get_owners_by_grantable_permission(session, separate_global=False):
 
     all_group_permissions = (
         session.query(Permission.name, PermissionMap.argument, PermissionMap.granted_on, Group)
-        .filter(
-            PermissionMap.group_id == Group.id,
-            Permission.id == PermissionMap.permission_id,
-            Permission.enabled == True,
-        )
+        .filter(PermissionMap.group_id == Group.id, Permission.id == PermissionMap.permission_id)
         .all()
     )
 
@@ -413,7 +344,7 @@ def get_owners_by_grantable_permission(session, separate_global=False):
     for group in all_groups:
         # special case permission admins
         group_permissions = grants_by_group[group.id]
-        if any(filter(lambda g: g.name == PERMISSION_ADMIN, group_permissions)):
+        if any([g.name == PERMISSION_ADMIN for g in group_permissions]):
             for perm_name in all_permissions:
                 owners_by_arg_by_perm[perm_name]["*"].append(group)
             if separate_global:
@@ -429,8 +360,8 @@ def get_owners_by_grantable_permission(session, separate_global=False):
 
     # merge in plugin results
     for res in get_plugin_proxy().get_owner_by_arg_by_perm(session):
-        for perm, owners_by_arg in res.items():
-            for arg, owners in owners_by_arg.items():
+        for perm, owners_by_arg in iteritems(res):
+            for arg, owners in iteritems(owners_by_arg):
                 owners_by_arg_by_perm[perm][arg] += owners
 
     return owners_by_arg_by_perm
@@ -453,12 +384,12 @@ def get_grantable_permissions(session, restricted_ownership_permissions):
     """
     owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
     args_by_perm = defaultdict(list)
-    for permission, owners_by_arg in owners_by_arg_by_perm.items():
+    for permission, owners_by_arg in iteritems(owners_by_arg_by_perm):
         for argument in owners_by_arg:
             args_by_perm[permission].append(argument)
 
     def _reduce_args(perm_name, args):
-        non_wildcard_args = map(lambda a: a != "*", args)
+        non_wildcard_args = [a != "*" for a in args]
         if (
             restricted_ownership_permissions
             and perm_name in restricted_ownership_permissions
@@ -472,7 +403,7 @@ def get_grantable_permissions(session, restricted_ownership_permissions):
             # it's all wildcard so return that one
             return ["*"]
 
-    return {p: _reduce_args(p, a) for p, a in args_by_perm.items()}
+    return {p: _reduce_args(p, a) for p, a in iteritems(args_by_perm)}
 
 
 def get_owner_arg_list(session, permission, argument, owners_by_arg_by_perm=None):
@@ -498,7 +429,7 @@ def get_owner_arg_list(session, permission, argument, owners_by_arg_by_perm=None
 
     all_owner_arg_list = []
     owners_by_arg = owners_by_arg_by_perm[permission.name]
-    for arg, owners in owners_by_arg.items():
+    for arg, owners in iteritems(owners_by_arg):
         if matches_glob(arg, argument):
             all_owner_arg_list += [(owner, arg) for owner in owners]
 
@@ -532,6 +463,7 @@ class PermissionIsDisabled(PermissionRequestException):
 
 
 def create_request(session, user, group, permission, argument, reason):
+    # type: (Session, User, Group, Permission, str, str) -> PermissionRequest
     """
     Creates an permission request and sends notification to the responsible approvers.
 
@@ -624,8 +556,8 @@ def create_request(session, user, group, permission, argument, reason):
 
     mail_to = []
     global_owners = owners_by_arg_by_perm[GLOBAL_OWNERS]["*"]
-    non_wildcard_owners = filter(lambda grant: grant[1] != "*", owner_arg_list)
-    non_global_owners = filter(lambda grant: grant[0] not in global_owners, owner_arg_list)
+    non_wildcard_owners = [grant for grant in owner_arg_list if grant[1] != "*"]
+    non_global_owners = [grant for grant in owner_arg_list if grant[0] not in global_owners]
     if any(non_wildcard_owners):
         # non-wildcard owners should get all the notifications
         mailto_owner_arg_list = non_wildcard_owners
@@ -641,12 +573,12 @@ def create_request(session, user, group, permission, argument, reason):
         else:
             mail_to.extend([u for t, u in owner.my_members() if t == "User"])
 
-    subj = (
-        get_template_env()
-        .get_template("email/pending_permission_request_subj.tmpl")
-        .render(permission=permission.name, group=group.name)
+    template_engine = EmailTemplateEngine(settings())
+    subject_template = template_engine.get_template("email/pending_permission_request_subj.tmpl")
+    subject = subject_template.render(permission=permission.name, group=group.name)
+    send_email(
+        session, set(mail_to), subject, "pending_permission_request", settings(), email_context
     )
-    send_email(session, set(mail_to), subj, "pending_permission_request", settings, email_context)
 
     return request
 
@@ -793,7 +725,14 @@ def get_changes_by_request_id(session, request_id):
     return [(sc, comment_by_status_change_id[sc.id]) for sc in status_changes]
 
 
-def update_request(session, request, user, new_status, comment):
+def update_request(
+    session,  # type: Session
+    request,  # type: PermissionRequest
+    user,  # type: User
+    new_status,  # type: str
+    comment,  # type: str
+):
+    # type: (...) -> None
     """Update a request.
 
     Args:
@@ -865,8 +804,9 @@ def update_request(session, request, user, new_status, comment):
 
     # send notification
 
-    subj_template = "email/pending_permission_request_subj.tmpl"
-    subject = "Re: " + get_template_env().get_template(subj_template).render(
+    template_engine = EmailTemplateEngine(settings())
+    subject_template = template_engine.get_template("email/pending_permission_request_subj.tmpl")
+    subject = "Re: " + subject_template.render(
         permission=request.permission.name, group=request.group.name
     )
 
@@ -883,7 +823,9 @@ def update_request(session, request, user, new_status, comment):
         "argument": request.argument,
     }
 
-    send_email(session, [request.requester.name], subject, email_template, settings, email_context)
+    send_email(
+        session, [request.requester.name], subject, email_template, settings(), email_context
+    )
 
 
 def permission_list_to_dict(perms):
@@ -940,5 +882,5 @@ def permission_intersection(perms_a, perms_b):
         # If this permission is a wildcard, we add all permissions with the same name from
         # the other set
         if perm.argument == "*":
-            ret |= {p for p in pdict_b[perm.name].values()}
+            ret |= {p for p in itervalues(pdict_b[perm.name])}
     return ret

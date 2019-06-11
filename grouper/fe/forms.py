@@ -15,7 +15,7 @@ from wtforms.validators import ValidationError
 from wtforms_tornado import Form
 
 from grouper import constants
-from grouper.models.group_edge import GROUP_EDGE_ROLES
+from grouper.entities.group_edge import GROUP_EDGE_ROLES
 
 GROUP_CANJOIN_CHOICES = [("canjoin", "Anyone"), ("canask", "Must Ask"), ("nobody", "Nobody")]
 
@@ -194,6 +194,7 @@ class GroupJoinForm(Form):
     clickthru_agreement = BooleanField(
         "Acknowledge reading and accepting the terms of this group's membership",
         [validators.Optional()],
+        default=False,
     )
 
 
@@ -236,6 +237,21 @@ class GroupPermissionRequestTextForm(Form):
     )
     reason = TextAreaField("Reason", [validators.DataRequired()])
     argument_type = HiddenField(default="text")
+
+
+class PermissionRequestForm(Form):
+    # Caller will add <select> field choices.
+    group_name = SelectField("Group", [validators.DataRequired()])
+    permission_name = SelectField("Permission", [validators.DataRequired()])
+    argument = StringField(
+        "Argument",
+        [
+            validators.DataRequired(),
+            validators.Length(min=0, max=64),
+            ValidateRegex(constants.ARGUMENT_VALIDATION),
+        ],
+    )
+    reason = TextAreaField("Reason", [validators.DataRequired()])
 
 
 class PermissionRequestsForm(Form):
@@ -300,45 +316,18 @@ class UserShellForm(Form):
     shell = SelectField("Shell", [validators.DataRequired()])
 
 
-class TagCreateForm(Form):
-    tagname = StringField(
-        "Name",
-        [
-            validators.Length(min=3, max=32),
-            validators.DataRequired(),
-            ValidateRegex(constants.NAME_VALIDATION),
-        ],
-    )
-    description = TextAreaField("Description")
-
-
-class TagEditForm(Form):
-    description = TextAreaField("Description")
-    enabled = BooleanField("Enabled")
-
-
-class PermissionGrantTagForm(Form):
-    permission = SelectField(
-        "Permission", [validators.DataRequired()], choices=[["", "(select one)"]], default=""
-    )
-    argument = StringField(
-        "Argument",
-        [
-            validators.Length(min=0, max=constants.MAX_NAME_LENGTH),
-            ValidateRegex(constants.ARGUMENT_VALIDATION),
-        ],
-    )
-
-
-class PublicKeyAddTagForm(Form):
-    tagname = SelectField(
-        "Tag", [validators.DataRequired()], choices=[["", "(select one)"]], default=""
-    )
+class UserGitHubForm(Form):
+    username = StringField("GitHub username")
 
 
 class UserPasswordForm(Form):
     name = StringField(
-        "Password name", [validators.DataRequired(), validators.Length(min=1, max=16)]
+        "Password name",
+        [
+            validators.DataRequired(),
+            validators.Length(min=1, max=16),
+            ValidateRegex(constants.TOKEN_NAME_VALIDATION),
+        ],
     )
     password = PasswordField("Password", [validators.DataRequired()])
 

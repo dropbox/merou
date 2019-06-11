@@ -1,0 +1,16 @@
+{% extends "email/base.html" %}
+
+{% block subject %}Group Membership Audit{% endblock %}
+
+{% block content %}
+
+<p>The <strong>{{ group }}</strong> group is part of an ongoing audit. As you are an owner of this
+group, you must visit the management page and process the audit:</p>
+
+<p><a href="{{url}}/groups/{{group}}">Process the audit.</a></p>
+
+<p>This is due by <strong>{{ ends_at|print_date }}</strong>.</p>
+
+<p>Thank you for your prompt attention!</p>
+
+{% endblock %}

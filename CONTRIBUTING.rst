@@ -12,8 +12,10 @@ refactorings, may drop features, may change database schemas, and will
 probably rename the project again.  You should therefore have a high
 tolerance for change if you use it today.
 
-Only Python 2.7 is currently supported.  We will be converting Merou to
-Python 3, but that work has not yet started.
+Both Python 2.7 and Python 3 are supported.  The Travis-CI tests required
+before merging pull requests will test on both Python 2 and Python 3.  For
+most development, it's best to work primarily on Python 3 so that you can
+use mypy and black.
 
 Merou used to be called Grouper and is still called Grouper internally at
 Dropbox.  We renamed the public project to avoid `a namespace conflict

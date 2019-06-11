@@ -1,11 +1,17 @@
 import re
+from typing import TYPE_CHECKING
 
 from grouper.constants import PERMISSION_VALIDATION
 from grouper.models.counter import Counter
 from grouper.models.user_metadata import UserMetadata
 
+if TYPE_CHECKING:
+    from typing import Optional, Sequence
+    from grouper.models.base.session import Session
+
 
 def get_user_metadata(session, user_id):
+    # type: (Session, int) -> Sequence[UserMetadata]
     """Return all of a user's metadata.
 
     Args:
@@ -19,6 +25,7 @@ def get_user_metadata(session, user_id):
 
 
 def get_user_metadata_by_key(session, user_id, data_key):
+    # type: (Session, int, str) -> UserMetadata
     """Return the user's metadata if it has the matching key
 
     Args:
@@ -26,12 +33,13 @@ def get_user_metadata_by_key(session, user_id, data_key):
         user_id(int): id of user in question
 
     Returns:
-        List of UserMetadata objects
+        A UserMetadata object
     """
     return session.query(UserMetadata).filter_by(user_id=user_id, data_key=data_key).scalar()
 
 
 def set_user_metadata(session, user_id, data_key, data_value):
+    # type: (Session, int, str, str) -> Optional[UserMetadata]
     """Set a single piece of user metadata.
 
     Args:

@@ -1,8 +1,9 @@
 import unittest
 from collections import namedtuple
-from urllib import urlencode
+from typing import TYPE_CHECKING
 
 import pytest
+from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 from wtforms.validators import ValidationError
 
@@ -15,7 +16,6 @@ from grouper.constants import (
     PERMISSION_AUDITOR,
     PERMISSION_GRANT,
     PERMISSION_VALIDATION,
-    SYSTEM_PERMISSIONS,
 )
 from grouper.fe.forms import ValidateRegex
 from grouper.models.async_notification import AsyncNotification
@@ -24,25 +24,16 @@ from grouper.models.permission_map import PermissionMap
 from grouper.models.service_account import ServiceAccount
 from grouper.models.user import User
 from grouper.permissions import (
-    CannotDisableASystemPermission,
     create_permission,
-    disable_permission,
-    filter_grantable_permissions,
     get_all_permissions,
     get_grantable_permissions,
-    get_groups_by_permission,
-    get_or_create_permission,
     get_owner_arg_list,
     get_owners_by_grantable_permission,
     get_permission,
     get_requests,
     grant_permission_to_service_account,
 )
-from grouper.user_permissions import (
-    user_grantable_permissions,
-    user_has_permission,
-    user_permissions,
-)
+from grouper.user_permissions import user_grantable_permissions, user_has_permission
 from tests.fixtures import (  # noqa: F401
     fe_app as app,
     graph,
@@ -55,6 +46,9 @@ from tests.fixtures import (  # noqa: F401
 )
 from tests.url_util import url
 from tests.util import get_group_permissions, get_user_permissions, grant_permission
+
+if TYPE_CHECKING:
+    from grouper.graph import GroupGraph
 
 
 @pytest.fixture
@@ -154,10 +148,10 @@ def test_has_permission(session, standard_graph, users):  # noqa: F811
 
 class PermissionTests(unittest.TestCase):
     def test_reject_bad_permission_names(self):
-        self.assertEquals(len(grouper.fe.util.test_reserved_names("permission_lacks_period")), 1)
-        self.assertEquals(len(grouper.fe.util.test_reserved_names("grouper.prefix.reserved")), 1)
-        self.assertEquals(len(grouper.fe.util.test_reserved_names("admin.prefix.reserved")), 1)
-        self.assertEquals(len(grouper.fe.util.test_reserved_names("test.prefix.reserved")), 1)
+        self.assertEqual(len(grouper.fe.util.test_reserved_names("permission_lacks_period")), 1)
+        self.assertEqual(len(grouper.fe.util.test_reserved_names("grouper.prefix.reserved")), 1)
+        self.assertEqual(len(grouper.fe.util.test_reserved_names("admin.prefix.reserved")), 1)
+        self.assertEqual(len(grouper.fe.util.test_reserved_names("test.prefix.reserved")), 1)
 
         Field = namedtuple("field", "data")
 
@@ -195,7 +189,7 @@ class PermissionTests(unittest.TestCase):
 
 
 def assert_same_recipients(emails, recipients, msg="email recipients did not match expectation"):
-    actual_recipients = sorted(map(lambda email: email.email, emails))
+    actual_recipients = sorted([email.email for email in emails])
     expected_recipients = sorted(recipients)
     assert actual_recipients == expected_recipients, msg
 
@@ -286,22 +280,20 @@ def test_permission_grant_to_owners(
 
     # make sure get_owner() respect substrings
     res = [
-        o
+        o.groupname
         for o, a in get_owner_arg_list(
             session, perm1, "somesubstring", owners_by_arg_by_perm=owners_by_arg_by_perm
         )
     ]
-    assert sorted(res) == sorted(
-        [groups["all-teams"], groups["team-sre"]]
-    ), "should include substring wildcard matches"
+    assert sorted(res) == ["all-teams", "team-sre"], "should include substring wildcard matches"
 
     res = [
-        o
+        o.groupname
         for o, a in get_owner_arg_list(
             session, perm1, "othersubstring", owners_by_arg_by_perm=owners_by_arg_by_perm
         )
     ]
-    assert sorted(res) == [groups["all-teams"]], "negative test of substring wildcard matches"
+    assert sorted(res) == ["all-teams"], "negative test of substring wildcard matches"
 
     # permission admins have all the power
     grant_permission(groups["security-team"], permissions[PERMISSION_ADMIN])
@@ -348,7 +340,7 @@ def test_permission_request_flow(
         headers={"X-Grouper-User": username},
     )
     assert resp.code == 200
-    assert "Field must match" in resp.body
+    assert b"Field must match" in resp.body
     emails = _get_unsent_and_mark_as_sent_emails(session)
     assert len(emails) == 0, "no emails queued"
 
@@ -571,8 +563,12 @@ def test_grant_and_revoke(
     user_name = "oliver@a.co"
 
     def _check_graph_for_perm(graph):
+        # type: (GroupGraph) -> bool
         return any(
-            map(lambda x: x.permission == permission_name, graph.permission_metadata[group_name])
+            [
+                g["permission"] == permission_name and g["distance"] == 0
+                for g in graph.get_group_details(group_name)["permissions"]
+            ]
         )
 
     # make some permission admins
@@ -630,140 +626,3 @@ def test_grant_and_revoke(
 
     graph.update_from_db(session)
     assert not _check_graph_for_perm(graph), "permissions revoked successfully"
-
-
-@pytest.mark.gen_test
-def test_disabling_permission(
-    session, groups, standard_graph, graph, http_client, base_url  # noqa: F811
-):
-    """
-    This tests disabling via the front-end route, including checking
-    that the user is authorized to disable permissions.
-    """
-    perm_name = "sudo"
-    nonpriv_user_name = "oliver@a.co"  # user without PERMISSION_ADMIN
-    nonpriv_headers = {"X-Grouper-User": nonpriv_user_name}
-    priv_user_name = "cbguder@a.co"  # user with PERMISSION_ADMIN
-    priv_headers = {"X-Grouper-User": priv_user_name}
-    disable_url = url(base_url, "/permissions/{}/disable".format(perm_name))
-    disable_url_non_exist_perm = url(base_url, "/permissions/no.exists/disable")
-
-    assert "sudo:shell" in get_user_permissions(graph, "gary@a.co")
-    assert "sudo:shell" in get_user_permissions(graph, "oliver@a.co")
-
-    # attempt to disable the permission -> should fail cuz actor
-    # doesn't have PERMISSION_ADMIN
-    with pytest.raises(HTTPError) as exc:
-        yield http_client.fetch(disable_url, method="POST", headers=nonpriv_headers, body="")
-    assert exc.value.code == 403
-    # check that no change
-    assert get_permission(session, perm_name).enabled
-    graph.update_from_db(session)
-    assert "sudo:shell" in get_user_permissions(graph, "gary@a.co")
-    assert "sudo:shell" in get_user_permissions(graph, "oliver@a.co")
-
-    # an actor with PERMISSION_ADMIN is allowed to disable the
-    # permission
-    resp = yield http_client.fetch(disable_url, method="POST", headers=priv_headers, body="")
-    assert resp.code == 200
-    assert not get_permission(session, perm_name).enabled
-    graph.update_from_db(session)
-    assert "sudo:shell" not in get_user_permissions(graph, "gary@a.co")
-    assert "sudo:shell" not in get_user_permissions(graph, "oliver@a.co")
-
-    with pytest.raises(HTTPError) as exc:
-        yield http_client.fetch(
-            disable_url_non_exist_perm, method="POST", headers=priv_headers, body=""
-        )
-    assert exc.value.code == 404
-
-    #
-    # make sure that when disabling the permission, all mappings of
-    # it, i.e., with different arguments, are disabled
-    #
-
-    # the standard_graph grants 'ssh' with args '*' and 'shell' to two
-    # different groups
-    assert "ssh:*" in get_group_permissions(graph, "team-sre")
-    assert "ssh:shell" in get_group_permissions(graph, "tech-ops")
-    # disable the perm
-    disable_url_ssh_pem = url(base_url, "/permissions/ssh/disable")
-    resp = yield http_client.fetch(
-        disable_url_ssh_pem, method="POST", headers=priv_headers, body=""
-    )
-    assert resp.code == 200
-    assert not get_permission(session, "ssh").enabled
-    graph.update_from_db(session)
-    assert "ssh:*" not in get_group_permissions(graph, "team-sre")
-    assert "ssh:shell" not in get_group_permissions(graph, "tech-ops")
-
-
-@pytest.mark.parametrize("perm_name", (entry[0] for entry in SYSTEM_PERMISSIONS))
-def test_reject_disabling_system_permissions(perm_name, session, permissions):  # noqa: F811
-    get_or_create_permission(session, perm_name)
-    with pytest.raises(CannotDisableASystemPermission) as exc:
-        disable_permission(session, perm_name, 0)
-    assert exc.value.name == perm_name
-
-
-def test_exclude_disabled_permissions(
-    session, standard_graph, graph, users, groups, permissions  # noqa: F811
-):
-    """
-    Ensure that disabled permissions are excluded from various
-    functions/methods that return data from the models.
-    """
-    perm_ssh = get_permission(session, "ssh")
-    perm_grant = create_permission(session, PERMISSION_GRANT)
-    session.commit()
-    # this user has grouper.permission.grant with argument "ssh/*"
-    grant_permission(groups["group-admins"], perm_grant, argument="ssh/*")
-    graph.update_from_db(session)
-
-    grant_perms = [
-        x for x in user_permissions(session, users["cbguder@a.co"]) if x.name == PERMISSION_GRANT
-    ]
-    assert "ssh" == filter_grantable_permissions(session, grant_perms)[0][0].name
-    assert "ssh" in (p.name for p in get_all_permissions(session))
-    assert "ssh" in (p.name for p in get_all_permissions(session, include_disabled=False))
-    assert "ssh" in (p.name for p in get_all_permissions(session, include_disabled=True))
-    assert "ssh" in get_grantable_permissions(session, [])
-    assert "team-sre" in [g[0] for g in get_groups_by_permission(session, perm_ssh)]
-    assert get_owner_arg_list(session, perm_ssh, "*")
-    assert "ssh" in get_owners_by_grantable_permission(session)
-    assert "ssh" in (x[0].name for x in user_grantable_permissions(session, users["cbguder@a.co"]))
-    assert user_has_permission(session, users["zay@a.co"], "ssh")
-    assert "ssh" in (p.name for p in user_permissions(session, users["zay@a.co"]))
-    assert "ssh" in (p["permission"] for p in graph.get_group_details("team-sre")["permissions"])
-    assert "ssh" in (pt.name for pt in graph.get_permissions())
-    assert "team-sre" in graph.get_permission_details("ssh")["groups"]
-    assert "ssh" in (p["permission"] for p in graph.get_user_details("zay@a.co")["permissions"])
-
-    # now disable the ssh permission
-    disable_permission(session, "ssh", users["cbguder@a.co"].id)
-    graph.update_from_db(session)
-
-    grant_perms = [
-        x for x in user_permissions(session, users["cbguder@a.co"]) if x.name == PERMISSION_GRANT
-    ]
-    assert not filter_grantable_permissions(session, grant_perms)
-    assert "ssh" not in (p.name for p in get_all_permissions(session))
-    assert "ssh" not in (p.name for p in get_all_permissions(session, include_disabled=False))
-    assert "ssh" in (p.name for p in get_all_permissions(session, include_disabled=True))
-    assert "ssh" not in get_grantable_permissions(session, [])
-    assert not get_groups_by_permission(session, perm_ssh)
-    assert not get_owner_arg_list(session, perm_ssh, "*")
-    assert "ssh" not in get_owners_by_grantable_permission(session)
-    assert "ssh" not in (
-        x[0].name for x in user_grantable_permissions(session, users["cbguder@a.co"])
-    )
-    assert not user_has_permission(session, users["zay@a.co"], "ssh")
-    assert "ssh" not in (p.name for p in user_permissions(session, users["zay@a.co"]))
-    assert "ssh" not in (
-        p["permission"] for p in graph.get_group_details("team-sre")["permissions"]
-    )
-    assert "ssh" not in (pt.name for pt in graph.get_permissions())
-    assert not graph.get_permission_details("ssh")["groups"]
-    assert "ssh" not in (
-        p["permission"] for p in graph.get_user_details("zay@a.co")["permissions"]
-    )

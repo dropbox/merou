@@ -1,47 +1,47 @@
 from __future__ import print_function
 
 import logging
+import socket
 import sys
 from contextlib import closing
 from typing import TYPE_CHECKING
 
-import tornado.httpserver
-import tornado.ioloop
+from six import PY2
+from tornado.httpserver import HTTPServer
+from tornado.ioloop import IOLoop
 
 from grouper import stats
 from grouper.api.routes import HANDLERS
-from grouper.api.settings import settings
+from grouper.api.settings import ApiSettings
 from grouper.app import GrouperApplication
 from grouper.database import DbRefreshThread
 from grouper.error_reporting import get_sentry_client, setup_signal_handlers
 from grouper.graph import Graph
 from grouper.initialization import create_graph_usecase_factory
 from grouper.models.base.session import get_db_engine, Session
-from grouper.plugin import initialize_plugins
+from grouper.plugin import set_global_plugin_proxy
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
+from grouper.plugin.proxy import PluginProxy
 from grouper.setup import build_arg_parser, setup_logging
-from grouper.util import get_database_url
 
 if TYPE_CHECKING:
     from argparse import Namespace
     from grouper.error_reporting import SentryProxy
-    from grouper.fe.settings import Settings
     from grouper.graph import GroupGraph
     from grouper.usecases.factory import UseCaseFactory
     from typing import List
 
 
 def create_api_application(graph, settings, usecase_factory):
-    # type: (GroupGraph, Settings, UseCaseFactory) -> GrouperApplication
+    # type: (GroupGraph, ApiSettings, UseCaseFactory) -> GrouperApplication
     tornado_settings = {"debug": settings.debug}
     handler_settings = {"graph": graph, "usecase_factory": usecase_factory}
     handlers = [(route, handler_class, handler_settings) for (route, handler_class) in HANDLERS]
     return GrouperApplication(handlers, **tornado_settings)
 
 
-def start_server(args, sentry_client):
-    # type: (Namespace, SentryProxy) -> None
-
+def start_server(args, settings, sentry_client):
+    # type: (Namespace, ApiSettings, SentryProxy) -> None
     log_level = logging.getLevelName(logging.getLogger().level)
     logging.info("begin. log_level={}".format(log_level))
 
@@ -50,17 +50,17 @@ def start_server(args, sentry_client):
     ), "debug mode does not support multiple processes"
 
     try:
-        initialize_plugins(settings.plugin_dirs, settings.plugin_module_paths, "grouper_api")
+        plugins = PluginProxy.load_plugins(settings, "grouper-api")
+        set_global_plugin_proxy(plugins)
     except PluginsDirectoryDoesNotExist as e:
         logging.fatal("Plugin directory does not exist: {}".format(e))
         sys.exit(1)
 
     # setup database
     logging.debug("configure database session")
-    database_url = args.database_url or get_database_url(settings)
-    Session.configure(bind=get_db_engine(database_url))
-
-    settings.start_config_thread(args.config, "api")
+    if args.database_url:
+        settings.database = args.database_url
+    Session.configure(bind=get_db_engine(settings.database))
 
     with closing(Session()) as session:
         graph = Graph()
@@ -70,23 +70,36 @@ def start_server(args, sentry_client):
     refresher.daemon = True
     refresher.start()
 
-    usecase_factory = create_graph_usecase_factory(settings, graph=graph)
+    usecase_factory = create_graph_usecase_factory(settings, plugins, graph=graph)
     application = create_api_application(graph, settings, usecase_factory)
 
-    address = args.address or settings.address
-    port = args.port or settings.port
+    if args.listen_stdin:
+        logging.info("Starting application server on stdin")
+        server = HTTPServer(application)
+        if PY2:
+            s = socket.fromfd(sys.stdin.fileno(), socket.AF_INET, socket.SOCK_STREAM)
+            s.setblocking(False)
+            s.listen(5)
+        else:
+            s = socket.socket(fileno=sys.stdin.fileno())
+            s.setblocking(False)
+            s.listen()
+        server.add_sockets([s])
+    else:
+        address = args.address or settings.address
+        port = args.port or settings.port
+        logging.info("Starting application server on %s:%d", address, port)
+        server = HTTPServer(application)
+        server.bind(port, address=address)
 
-    logging.info("Starting application server on port %d", port)
-    server = tornado.httpserver.HTTPServer(application)
-    server.bind(port, address=address)
     server.start(settings.num_processes)
 
     stats.set_defaults()
 
     try:
-        tornado.ioloop.IOLoop.instance().start()
+        IOLoop.current().start()
     except KeyboardInterrupt:
-        tornado.ioloop.IOLoop.instance().stop()
+        IOLoop.current().stop()
     finally:
         print("Bye")
 
@@ -96,12 +109,12 @@ def main(sys_argv=sys.argv):
     setup_signal_handlers()
 
     # get arguments
-    parser = build_arg_parser("Grouper API Server.")
+    parser = build_arg_parser("Grouper API Server")
     args = parser.parse_args(sys_argv[1:])
 
     try:
         # load settings
-        settings.update_from_config(args.config, "api")
+        settings = ApiSettings.global_settings_from_config(args.config)
 
         # setup logging
         setup_logging(args, settings.log_format)
@@ -113,7 +126,7 @@ def main(sys_argv=sys.argv):
         sys.exit(1)
 
     try:
-        start_server(args, sentry_client)
+        start_server(args, settings, sentry_client)
     except Exception:
         sentry_client.captureException()
     finally:

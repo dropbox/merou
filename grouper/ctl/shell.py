@@ -1,12 +1,18 @@
 import code
 from pprint import pprint
+from typing import TYPE_CHECKING
 
-from grouper.ctl.util import make_session
 from grouper.graph import GroupGraph
 
+if TYPE_CHECKING:
+    from argparse import Namespace
+    from grouper.ctl.settings import CtlSettings
+    from grouper.repositories.factory import SessionFactory
 
-def shell_command(args):
-    session = make_session()
+
+def shell_command(args, settings, session_factory):
+    # type: (Namespace, CtlSettings, SessionFactory) -> None
+    session = session_factory.create_session()
     graph = GroupGraph.from_db(session)
     pp = pprint
 

@@ -2,29 +2,21 @@
 <html>
     <head>
 
-        <title>{% block title %}Grouper{% endblock %}</title>
+        <title>Grouper{% block subtitle %}{% endblock %}</title>
 
-        <link href="{{cdnjs_prefix}}/ajax/libs/twitter-bootstrap/3.1.1/css/bootstrap.min.css"
+        {% for resource in external_css %}
+        <link href="{{cdnjs_prefix}}{{resource.url}}"
+              integrity="{{resource.integrity}}"
+              crossorigin="anonymous"
               rel="stylesheet"
               media="screen">
-        <link href="{{cdnjs_prefix}}/ajax/libs/font-awesome/4.1.0/css/font-awesome.min.css"
+        {% endfor %}
+        {% for resource in internal_css %}
+        <link href="{{ static_url(resource.url) }}"
+              integrity="{{resource.integrity}}"
               rel="stylesheet"
               media="screen">
-        <link href="{{cdnjs_prefix}}/ajax/libs/bootstrap-datetimepicker/3.0.0/css/bootstrap-datetimepicker.min.css"
-              rel="stylesheet"
-              media="screen">
-        <link href="/{{cdnjs_prefix}}/ajax/libs/datatables/1.10.10/css/dataTables.bootstrap.min.css"
-              rel="stylesheet"
-              media="screen">
-        {# chosen.css covers the basic Chosen UI; chosen.bootstrap.min.css adds the
-           extra classes to make it look compatible with Bootstrap. Both are required.  #}
-        <link href="{{cdnjs_prefix}}/ajax/libs/chosen/1.4.2/chosen.css"
-              rel="stylesheet"
-              media="screen">
-        <link href="/static/css/ext/chosen-bootstrap-1.0.4/chosen.bootstrap.min.css"
-              rel="stylesheet"
-              media="screen">
-        <link href="{{ static_url("css/grouper.css") }}" rel="stylesheet" media="screen">
+        {% endfor %}
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
     </head>
@@ -41,7 +33,6 @@
                 <div class="navbar-collapse collapse">
                     <ul class="nav navbar-nav">
                         <li class="{{is_active('/groups')}}"><a href="/groups">Groups</a></li>
-                        <li class="{{is_active('/tags')}}"><a href="/tags">Tags</a></li>
                         <li class="{{is_active('/users')}}"><a href="/users">Users</a></li>
                         <li class="{{is_active('/permissions')}}"><a href="/permissions">Permissions</a></li>
                         <li class="{{is_active('/help')}}"><a href="/help">Help</a></li>
@@ -54,7 +45,7 @@
                         <div class="input-group search-input">
                             <input type="text" class="form-control" placeholder="Search" name="query" id="query" value="{{search_query}}">
                             <div class="input-group-btn">
-                                <button class="btn btn-default" type="submit"><i class="fa fa-search"></i></button>
+                                <button id="search" class="btn btn-default" type="submit"><i class="fa fa-search"></i></button>
                             </div>
                         </div>
                     </form>
@@ -70,7 +61,7 @@
                                 <div class="col-md-12">
                                     <div class="alert alert-{{alert.severity}} alert-dismissable">
                                         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-                                        <strong>{{alert.heading}}</strong> {{alert.message|e}}
+                                        <strong>{{alert.heading}}</strong> {{alert.message}}
                                     </div>
                                 </div>
                             </div>
@@ -81,14 +72,14 @@
                     <div class="content">
                         <div class="row"><div class="col-md-12">
                             <div class="header">
-                                <h2>{% block heading %}{% endblock %}</h2>
-                                <h3><small>{% block subheading %}{% endblock %}</small></h3>
+                                <h2 id="heading">{% block heading %}{% endblock %}</h2>
+                                <h3><small id="subheading">{% block subheading %}{% endblock %}</small></h3>
                                 <div class="buttons">
                                     {% block headingbuttons %}{% endblock %}
                                 </div>
                             </div>
                         </div></div>
-                        <div class="row"><div class="col-md-12">
+                        <div class="row"><div id="content" class="col-md-12">
                             {% block content %}{% endblock %}
                         </div></div>
                     </div>
@@ -104,14 +95,14 @@
           </div>
         </footer>
 
-        <script src="{{cdnjs_prefix}}/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/twitter-bootstrap/3.1.1/js/bootstrap.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/moment.js/2.7.0/moment.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/datatables/1.10.10/js/jquery.dataTables.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/bootstrap-datetimepicker/3.0.0/js/bootstrap-datetimepicker.min.js"></script>
-        <script src="{{cdnjs_prefix}}/ajax/libs/chosen/1.4.2/chosen.jquery.min.js"></script>
-        <script src="{{ static_url("js/grouper.js") }}"></script>
+        {% for resource in external_js %}
+        <script src="{{cdnjs_prefix}}{{resource.url}}"
+                integrity="{{resource.integrity}}"
+                crossorigin="anonymous"></script>
+        {% endfor %}
+        {% for resource in internal_js %}
+        <script src="{{ static_url(resource.url) }}" integrity="{{resource.integrity}}"></script>
+        {% endfor %}
     </body>
 </html>
 

@@ -26,9 +26,8 @@ class GrouperApplication(Application):
         if handler.request.uri == "/debug/stats":
             log_method = access_log.debug
 
-        user = handler.get_current_user()
-        if user:
-            username = user.username
+        if handler.current_user:
+            username = handler.current_user.username
         else:
             username = "-"
 

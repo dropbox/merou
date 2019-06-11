@@ -2,27 +2,31 @@ from __future__ import print_function
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy.schema import CreateIndex, CreateTable
-
-from grouper.models.base.model_base import Model
-from grouper.models.base.session import get_db_engine
-from grouper.settings import settings
-from grouper.util import get_database_url
+from grouper.ctl.base import CtlCommand
+from grouper.usecases.dump_schema import DumpSchemaUI
 
 if TYPE_CHECKING:
-    from argparse import _SubParsersAction, Namespace
+    from argparse import ArgumentParser, Namespace
+    from grouper.usecases.factory import UseCaseFactory
 
 
-def dump_sql_command(args):
-    # type: (Namespace) -> None
-    db_engine = get_db_engine(get_database_url(settings))
-    for table in Model.metadata.sorted_tables:
-        print(CreateTable(table).compile(db_engine))
-        for index in table.indexes:
-            print(CreateIndex(index).compile(db_engine))
+class DumpSqlCommand(CtlCommand, DumpSchemaUI):
+    """Commands to dump the database schema."""
 
+    @staticmethod
+    def add_arguments(parser):
+        # type: (ArgumentParser) -> None
+        return
 
-def add_parser(subparsers):
-    # type: (_SubParsersAction) -> None
-    dump_sql_parser = subparsers.add_parser("dump_sql", help="Dump database schema.")
-    dump_sql_parser.set_defaults(func=dump_sql_command)
+    def __init__(self, usecase_factory):
+        # type: (UseCaseFactory) -> None
+        self.usecase_factory = usecase_factory
+
+    def dumped_schema(self, schema):
+        # type: (str) -> None
+        print(schema)
+
+    def run(self, args):
+        # type: (Namespace) -> None
+        usecase = self.usecase_factory.create_dump_schema_usecase(self)
+        usecase.dump_schema()

@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
@@ -8,10 +10,15 @@ from grouper.role_user import can_manage_role_user
 from grouper.service_account import can_manage_service_account
 from grouper.user_permissions import user_is_user_admin
 
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from typing import Any, Optional
+
 
 class PublicKeyDelete(GrouperHandler):
     @staticmethod
     def check_access(session, actor, target):
+        # type: (Session, User, User) -> bool
         return (
             actor.name == target.name
             or user_is_user_admin(session, actor)
@@ -19,7 +26,12 @@ class PublicKeyDelete(GrouperHandler):
             or (target.is_service_account and can_manage_service_account(session, target, actor))
         )
 
-    def get(self, user_id=None, name=None, key_id=None):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        user_id = kwargs.get("user_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+        key_id = kwargs["key_id"]  # type: int
+
         user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
@@ -34,7 +46,12 @@ class PublicKeyDelete(GrouperHandler):
 
         self.render("public-key-delete.html", user=user, key=key)
 
-    def post(self, user_id=None, name=None, key_id=None):
+    def post(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        user_id = kwargs.get("user_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+        key_id = kwargs["key_id"]  # type: int
+
         user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
@@ -66,7 +83,7 @@ class PublicKeyDelete(GrouperHandler):
             [user.name],
             "Public SSH key removed",
             "ssh_keys_changed",
-            settings,
+            settings(),
             email_context,
         )
 

@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from grouper import public_key
 from grouper.email_util import send_email
 from grouper.fe.forms import PublicKeyForm
@@ -8,17 +10,26 @@ from grouper.models.user import User
 from grouper.role_user import can_manage_role_user
 from grouper.service_account import can_manage_service_account
 
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from typing import Any, Optional
+
 
 class PublicKeyAdd(GrouperHandler):
     @staticmethod
     def check_access(session, actor, target):
+        # type: (Session, User, User) -> bool
         return (
             actor.name == target.name
             or (target.role_user and can_manage_role_user(session, actor, tuser=target))
             or (target.is_service_account and can_manage_service_account(session, target, actor))
         )
 
-    def get(self, user_id=None, name=None):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        user_id = kwargs.get("user_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+
         user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
@@ -28,7 +39,11 @@ class PublicKeyAdd(GrouperHandler):
 
         self.render("public-key-add.html", form=PublicKeyForm(), user=user)
 
-    def post(self, user_id=None, name=None):
+    def post(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        user_id = kwargs.get("user_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+
         user = User.get(self.session, user_id, name)
         if not user:
             return self.notfound()
@@ -52,7 +67,7 @@ class PublicKeyAdd(GrouperHandler):
         except public_key.PublicKeyParseError:
             form.public_key.errors.append("Public key appears to be invalid.")
         except public_key.BadPublicKey as e:
-            form.public_key.errors.append(e.message)
+            form.public_key.errors.append(str(e))
 
         if form.public_key.errors:
             return self.render(
@@ -80,7 +95,7 @@ class PublicKeyAdd(GrouperHandler):
             [user.name],
             "Public SSH key added",
             "ssh_keys_changed",
-            settings,
+            settings(),
             email_context,
         )
 

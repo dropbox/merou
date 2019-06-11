@@ -7,13 +7,17 @@ export PATH="${PWD}/chromedriver:$PATH"
 
 # Tests run under Python 2.  Run once with SQLite and again with MySQL.
 if [[ "$TRAVIS_PYTHON_VERSION" == 2* ]]; then
-    MEROU_TEST_DATABASE='mysql://travis:@localhost/merou' py.test -v
-    py.test -x -v
+    MEROU_TEST_DATABASE='mysql://travis:@localhost/merou' pytest -x -v
+    pytest -x -v
 fi
 
-# Python 3 currently only does static analysis.
+# Tests run under Python 3.  Run once with SQLite and again with MySQL, and
+# also do static analysis.
 if [[ "$TRAVIS_PYTHON_VERSION" == 3* ]]; then
+    MEROU_TEST_DATABASE='mysql://travis:@localhost/merou' pytest -x -v
+    pytest -x -v
     mypy .
+    mypy --py2 .
     black --check .
-    flake8 --count
+    flake8
 fi

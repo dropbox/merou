@@ -2,11 +2,13 @@ from datetime import datetime
 from time import time
 from typing import TYPE_CHECKING
 
-from grouper.constants import PERMISSION_CREATE
+from pytz import UTC
+
 from grouper.entities.permission import Permission
-from grouper.fe.template_util import print_date
+from grouper.fe.settings import FrontendSettings
 from itests.pages.permissions import PermissionsPage
 from itests.setup import frontend_server
+from tests.path_util import src_path
 from tests.url_util import url
 
 if TYPE_CHECKING:
@@ -14,6 +16,11 @@ if TYPE_CHECKING:
     from selenium.webdriver import Chrome
     from tests.setup import SetupTest
     from typing import List
+
+
+def format_date(settings, date):
+    # type: (FrontendSettings, datetime) -> str
+    return date.replace(tzinfo=UTC).astimezone(settings.timezone).strftime(settings.date_format)
 
 
 def create_test_data(setup):
@@ -27,9 +34,23 @@ def create_test_data(setup):
     now_minus_one_second = datetime.utcfromtimestamp(int(time() - 1))
     now = datetime.utcfromtimestamp(int(time()))
     permissions = [
-        Permission(name="first-permission", description="first", created_on=now_minus_one_second),
-        Permission(name="audited-permission", description="", created_on=now),
-        Permission(name="early-permission", description="is early", created_on=early_date),
+        Permission(
+            name="first-permission",
+            description="first",
+            created_on=now_minus_one_second,
+            audited=False,
+            enabled=True,
+        ),
+        Permission(
+            name="audited-permission", description="", created_on=now, audited=True, enabled=True
+        ),
+        Permission(
+            name="early-permission",
+            description="is early",
+            created_on=early_date,
+            audited=False,
+            enabled=True,
+        ),
     ]
     with setup.transaction():
         for permission in permissions:
@@ -37,17 +58,20 @@ def create_test_data(setup):
                 name=permission.name,
                 description=permission.description,
                 created_on=permission.created_on,
-                audited=(permission.name == "audited-permission"),
+                audited=permission.audited,
             )
         setup.create_permission("disabled", enabled=False)
-        setup.create_user("gary@a.co")
     return permissions
 
 
 def test_list(tmpdir, setup, browser):
     # type: (LocalPath, SetupTest, Chrome) -> None
     permissions = create_test_data(setup)
-    expected_permissions = [(p.name, p.description, print_date(p.created_on)) for p in permissions]
+    settings = FrontendSettings()
+    settings.update_from_config(src_path("config", "dev.yaml"))
+    expected_permissions = [
+        (p.name, p.description, format_date(settings, p.created_on)) for p in permissions
+    ]
 
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
         browser.get(url(frontend_url, "/permissions"))
@@ -73,7 +97,7 @@ def test_list(tmpdir, setup, browser):
         page.click_sort_by_date()
         seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
         expected_permissions_sorted_by_time = [
-            (p.name, p.description, print_date(p.created_on))
+            (p.name, p.description, format_date(settings, p.created_on))
             for p in sorted(permissions, key=lambda p: p.created_on, reverse=True)
         ]
         assert seen_permissions == expected_permissions_sorted_by_time
@@ -92,7 +116,12 @@ def test_list_pagination(tmpdir, setup, browser):
     don't create more than 100 permissions for testing.
     """
     permissions = create_test_data(setup)
-    expected_permissions = [(p.name, p.description, print_date(p.created_on)) for p in permissions]
+    settings = FrontendSettings()
+    settings.update_from_config(src_path("config", "dev.yaml"))
+    expected_permissions = [
+        (p.name, p.description, format_date(settings, p.created_on)) for p in permissions
+    ]
+
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
         browser.get(url(frontend_url, "/permissions?limit=1&offset=1"))
         page = PermissionsPage(browser)
@@ -107,20 +136,3 @@ def test_list_pagination(tmpdir, setup, browser):
         seen_permissions = [(r.name, r.description, r.created_on) for r in page.permission_rows]
         assert seen_permissions == sorted(expected_permissions)[2:]
         assert page.limit_label == "Limit: 10"
-
-
-def test_create_button(tmpdir, setup, browser):
-    # type: (LocalPath, SetupTest, Chrome) -> None
-    with setup.transaction():
-        setup.create_user("gary@a.co")
-
-    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
-        browser.get(url(frontend_url, "/permissions"))
-        page = PermissionsPage(browser)
-        assert not page.has_create_permission_button
-
-        with setup.transaction():
-            setup.grant_permission_to_group(PERMISSION_CREATE, "*", "admins")
-            setup.add_user_to_group("gary@a.co", "admins")
-        browser.get(url(frontend_url, "/permissions?refresh=yes"))
-        assert page.has_create_permission_button

@@ -49,7 +49,7 @@ class Request(Model, CommentObjectMixin):
     @property
     def reference_id(self):
         # type: () -> str
-        return reference_id(settings, "group", self)
+        return reference_id(settings(), "group", self)
 
     def my_status_updates(self):
         requests = self.session.query(
@@ -71,6 +71,7 @@ class Request(Model, CommentObjectMixin):
 
     @flush_transaction
     def update_status(self, requester, status, reason):
+        # type: (User, str, str) -> None
         now = datetime.utcnow()
         current_status = self.status
         self.status = status

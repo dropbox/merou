@@ -1,12 +1,13 @@
 import crypt
-import cStringIO as StringIO
 import csv
 import json
-from urllib import urlencode
+from io import StringIO
 
 import pytest
+from six import iteritems, itervalues
+from six.moves.urllib.parse import urlencode
 
-from grouper.constants import USER_METADATA_SHELL_KEY
+from grouper.constants import USER_METADATA_GITHUB_USERNAME_KEY, USER_METADATA_SHELL_KEY
 from grouper.models.counter import Counter
 from grouper.models.service_account import ServiceAccount
 from grouper.models.user_token import UserToken
@@ -38,7 +39,7 @@ def test_health(session, http_client, base_url):  # noqa: F811
 
 @pytest.mark.gen_test
 def test_users(users, http_client, base_url):  # noqa: F811
-    all_users = sorted(users.keys() + ["service@a.co"])
+    all_users = sorted(list(users.keys()) + ["service@a.co"])
     users_wo_role = sorted([u for u in users if u != u"role@a.co"])
 
     api_url = url(base_url, "/users")
@@ -54,8 +55,6 @@ def test_users(users, http_client, base_url):  # noqa: F811
     assert resp.code == 200
     assert body["status"] == "ok"
     assert sorted(body["data"]["users"]) == all_users
-
-    # TODO: test cutoff
 
 
 @pytest.mark.gen_test
@@ -73,7 +72,7 @@ def test_multi_users(users, http_client, base_url):  # noqa: F811
     assert resp.code == 200
     assert body["status"] == "ok"
     # Service Accounts should be included
-    assert sorted(body["data"].iterkeys()) == sorted(users.keys() + ["service@a.co"])
+    assert sorted(list(body["data"].keys())) == sorted(list(users.keys()) + ["service@a.co"])
 
     # Test case when only valid usernames are provided
     api_url = make_url("tyleromeara@a.co", "gary@a.co", "role@a.co")
@@ -83,9 +82,9 @@ def test_multi_users(users, http_client, base_url):  # noqa: F811
     assert resp.code == 200
     assert body["status"] == "ok"
     # Service Accounts should be included
-    assert sorted(body["data"].iterkeys()) == ["gary@a.co", "role@a.co", "tyleromeara@a.co"]
+    assert sorted(list(body["data"].keys())) == ["gary@a.co", "role@a.co", "tyleromeara@a.co"]
     # Verify that we return the same data as the single user endpoint
-    for username, data in body["data"].iteritems():
+    for username, data in iteritems(body["data"]):
         r = yield http_client.fetch(url(base_url, "/users/{}".format(username)))
         rbody = json.loads(r.body)
         assert data == rbody["data"]
@@ -97,7 +96,7 @@ def test_multi_users(users, http_client, base_url):  # noqa: F811
 
     assert resp.code == 200
     assert body["status"] == "ok"
-    assert sorted(body["data"].iterkeys()) == ["gary@a.co", "tyleromeara@a.co"]
+    assert sorted(list(body["data"].keys())) == ["gary@a.co", "tyleromeara@a.co"]
 
     # Test when only nonexistent usernames are given
     api_url = make_url("doesnotexist@a.co", "doesnotexist2@a.co")
@@ -106,7 +105,7 @@ def test_multi_users(users, http_client, base_url):  # noqa: F811
 
     assert resp.code == 200
     assert body["status"] == "ok"
-    assert sorted(body["data"].iterkeys()) == []
+    assert sorted(list(body["data"].keys())) == []
 
 
 @pytest.mark.gen_test
@@ -117,10 +116,8 @@ def test_service_accounts(session, standard_graph, users, http_client, base_url)
     assert resp.code == 200
     assert body["status"] == "ok"
     assert sorted(body["data"]["service_accounts"]) == sorted(
-        [u.name for u in users.values() if u.role_user] + ["service@a.co"]
+        [u.name for u in itervalues(users) if u.role_user] + ["service@a.co"]
     )
-
-    # TODO: test cutoff
 
     # Retrieve a single service account and check its metadata.
     api_url = url(base_url, "/service_accounts/service@a.co")
@@ -273,8 +270,6 @@ def test_groups(groups, http_client, base_url):  # noqa: F811
     assert body["status"] == "ok"
     assert sorted(body["data"]["groups"]) == sorted(groups)
 
-    # TODO: test cutoff
-
 
 @pytest.mark.gen_test
 def test_groups_email(groups, session, graph, http_client, base_url):  # noqa: F811
@@ -328,6 +323,30 @@ def test_shell(session, users, http_client, base_url, graph):  # noqa: F811
         body["data"]["user"]["metadata"][0]["data_value"] == "/bin/zsh"
     ), "The shell should be set to the correct value"
     assert len(body["data"]["user"]["metadata"]) == 1, "There should only be 1 metadata!"
+
+
+@pytest.mark.gen_test
+def test_github_username(session, users, http_client, base_url, graph):  # noqa: F811
+    user = users["zorkian@a.co"]
+    assert get_user_metadata_by_key(session, user.id, USER_METADATA_GITHUB_USERNAME_KEY) is None
+
+    set_user_metadata(session, user.id, USER_METADATA_GITHUB_USERNAME_KEY, "zorkian-on-gh")
+    graph.update_from_db(session)
+    fe_url = url(base_url, "/users/{}".format(user.username))
+    resp = yield http_client.fetch(fe_url)
+    assert resp.code == 200
+    body = json.loads(resp.body)
+    [metadata] = body["data"]["user"]["metadata"]
+    assert metadata["data_key"] == "github_username"
+    assert metadata["data_value"] == "zorkian-on-gh"
+
+    set_user_metadata(session, user.id, USER_METADATA_GITHUB_USERNAME_KEY, None)
+    graph.update_from_db(session)
+    fe_url = url(base_url, "/users/{}".format(user.username))
+    resp = yield http_client.fetch(fe_url)
+    assert resp.code == 200
+    body = json.loads(resp.body)
+    assert body["data"]["user"]["metadata"] == []
 
 
 @pytest.mark.gen_test
@@ -385,8 +404,7 @@ def test_public_keys(session, users, http_client, base_url):  # noqa: F811
     api_url = url(base_url, "/public-keys")
     resp = yield http_client.fetch(api_url)
 
-    body_io = StringIO.StringIO(resp.body)
-
+    body_io = StringIO(resp.body.decode())
     csv_reader = csv.DictReader(body_io)
     rows = list(csv_reader)
 

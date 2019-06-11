@@ -1,28 +1,29 @@
 import logging
 import re
 from argparse import ArgumentTypeError
-from contextlib import contextmanager
 from datetime import datetime
 from functools import wraps
-from sys import stdout
 from typing import TYPE_CHECKING
 
 from grouper.constants import NAME_VALIDATION, SERVICE_ACCOUNT_VALIDATION, USERNAME_VALIDATION
-from grouper.models.base.session import get_db_engine, Session
-from grouper.settings import settings
-from grouper.util import get_database_url
 
 if TYPE_CHECKING:
+    from argparse import Namespace
     from datetime import date
-    from typing import Generator
+    from grouper.ctl.settings import CtlSettings
+    from grouper.repositories.factory import SessionFactory
+    from typing import Callable
 
+    CommandFunction = Callable[[Namespace, CtlSettings, SessionFactory], None]
 
 DATE_FORMAT = "%Y-%m-%d"
 
 
 def ensure_valid_username(f):
+    # type: (CommandFunction) -> CommandFunction
     @wraps(f)
-    def wrapper(args):
+    def wrapper(args, settings, session_factory):
+        # type: (Namespace, CtlSettings, SessionFactory) -> None
         usernames = args.username if type(args.username) == list else [args.username]
         valid = True
         for username in usernames:
@@ -33,39 +34,37 @@ def ensure_valid_username(f):
         if not valid:
             return
 
-        return f(args)
+        return f(args, settings, session_factory)
 
     return wrapper
 
 
 def ensure_valid_groupname(f):
+    # type: (CommandFunction) -> CommandFunction
     @wraps(f)
-    def wrapper(args):
+    def wrapper(args, settings, session_factory):
+        # type: (Namespace, CtlSettings, SessionFactory) -> None
         if not re.match("^{}$".format(NAME_VALIDATION), args.groupname):
             logging.error("Invalid group name {}".format(args.groupname))
             return
 
-        return f(args)
+        return f(args, settings, session_factory)
 
     return wrapper
 
 
 def ensure_valid_service_account_name(f):
+    # type: (CommandFunction) -> CommandFunction
     @wraps(f)
-    def wrapper(args):
+    def wrapper(args, settings, session_factory):
+        # type: (Namespace, CtlSettings, SessionFactory) -> None
         if not re.match("^{}$".format(SERVICE_ACCOUNT_VALIDATION), args.name):
             logging.error('Invalid service account name "{}"'.format(args.name))
             return
 
-        return f(args)
+        return f(args, settings, session_factory)
 
     return wrapper
-
-
-def make_session():
-    db_engine = get_db_engine(get_database_url(settings))
-    Session.configure(bind=db_engine)
-    return Session()
 
 
 def argparse_validate_date(s):
@@ -75,20 +74,3 @@ def argparse_validate_date(s):
         return datetime.strptime(s, DATE_FORMAT).date()
     except ValueError:
         raise ArgumentTypeError("not a valid date: '{}'".format(s))
-
-
-@contextmanager
-def open_file(fn, mode):
-    # type: (str, str) -> Generator
-    """mimic standard library `open` function to support stdout if None is
-    specified as the filename."""
-    if fn and fn != "--":
-        fh = open(fn, mode)
-    else:
-        fh = stdout  # type: ignore
-
-    try:
-        yield fh
-    finally:
-        if fh is not stdout:
-            fh.close()

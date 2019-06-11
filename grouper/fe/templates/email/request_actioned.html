@@ -1,0 +1,19 @@
+{% extends "email/base.html" %}
+
+{% block subject %}Added to Group{% endblock %}
+
+{% block content %}
+
+<p>You have been added to the group
+<strong><a href="{{url}}/groups/{{group_name}}">{{ group_name }}</a></strong>
+by {{ actioned_by }}.</p>
+
+<p>More details about the request:</p>
+
+<ul>
+    <li><strong>Role:</strong> {{ role }}</li>
+    <li><strong>Expiration:</strong> {{ expiration|expires_when_str }}</li>
+    <li><strong>Reason:</strong> {{ reason }}</li>
+</ul>
+
+{% endblock %}

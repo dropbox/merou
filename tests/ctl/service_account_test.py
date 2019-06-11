@@ -1,5 +1,3 @@
-from mock import patch
-
 from grouper.group_service_account import get_service_accounts
 from grouper.models.group import Group
 from grouper.models.service_account import ServiceAccount
@@ -14,12 +12,7 @@ from tests.fixtures import (  # noqa: F401
 )
 
 
-@patch("grouper.ctl.service_account.make_session")
-def test_service_account_create(
-    make_session, groups, service_accounts, session, users  # noqa: F811
-):
-    make_session.return_value = session
-
+def test_service_account_create(groups, service_accounts, session, tmpdir, users):  # noqa: F811
     machine_set = "foo +bar -(org)"
     description = "this is a service account.\n\n it is for testing"
     security_team_group = Group.get(session, name="security-team")
@@ -31,6 +24,7 @@ def test_service_account_create(
     # no-op if non-existing actor
     call_main(
         session,
+        tmpdir,
         "service_account",
         "--actor",
         "no-such-actor@a.co",
@@ -43,6 +37,7 @@ def test_service_account_create(
     # ... or if bad account name
     call_main(
         session,
+        tmpdir,
         "service_account",
         "--actor",
         good_actor_username,
@@ -55,6 +50,7 @@ def test_service_account_create(
     # ... or non-existing owner group
     call_main(
         session,
+        tmpdir,
         "service_account",
         "--actor",
         good_actor_username,
@@ -71,6 +67,7 @@ def test_service_account_create(
     # now it works
     call_main(
         session,
+        tmpdir,
         "service_account",
         "--actor",
         good_actor_username,
@@ -90,6 +87,7 @@ def test_service_account_create(
     # no-op if account name already exists
     call_main(
         session,
+        tmpdir,
         "service_account",
         "--actor",
         good_actor_username,
@@ -109,6 +107,7 @@ def test_service_account_create(
     # actor can be a service account as well
     call_main(
         session,
+        tmpdir,
         "service_account",
         "--actor",
         "service@a.co",

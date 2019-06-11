@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% from 'macros/ui.html' import permission with context %}
 
+{% block subtitle %} help{% endblock %}
+
 {% block heading %}
     Help
 {% endblock %}
@@ -26,10 +28,11 @@ acyclic graph</a> and a user or group is a member of any of its ancestors.</p>
 
 <h3>What's the difference between the member, manager, owner, and np-owner roles?</h3>
 <p>These are the types of group membership for users: a member just inherits the group's
-permissions, a manager is allowed to process requests to join a group, and an owner has
-full control over the group (including the ability to change the membership type of other
-users or add/remove the group's permissions.)  An np-owner is like an owner but does not
-inherit permissions from the group. Technically, groups are members of other groups.</p>
+permissions, a manager is a member who is additionally allowed to process requests to join
+a group, and an owner has full control over the group (including the ability to change the
+membership type of other users or add/remove the group's permissions.)  An np-owner is
+like an owner but does not inherit permissions from the group. Technically, groups are
+members of other groups.</p>
 
 <h3>What's the deal with permissions?</h3>
 <p>Grouper <a href="/permissions">permissions</a> are just enumerated strings. First,
@@ -74,17 +77,6 @@ owner, or np-owner of an audited group.</p>
 <!-- TODO: change once auditing tooling is ready! -->
 <p>We're working on tooling to facilitate regular monitoring of both members of audited
   groups and groups with audited permissions.</p>
-
-<h3>What are tags?</h3>
-<p>Tags are sets of permissions (similar to groups) that can be applied to public keys.
-Tags restrict the permissions of the public key that they are applied to. This allows
-users to have separate public keys for different permissions (and therefore services).
-In order to grant permissions to a tag, a user must have the {{permission(tag_edit)}}
-permission with the argument set to the tag's name. For most users, the only thing
-they need to do to use tags properly is to add the appropriate tag to the relevant
-public keys. If you have multiple tags on a single public key, the permissions of that
-public key are the intersection of the user's permissions and the permissions granted
-on the tags.</p>
 
 <h3>What if my questions aren't answered here?</h3>
 <p>This list isn't comprehensive. Please contact the admins of this site ({{

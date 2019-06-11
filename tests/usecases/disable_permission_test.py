@@ -1,8 +1,9 @@
 from typing import TYPE_CHECKING
 
-from mock import call, MagicMock
+from mock import ANY, call, MagicMock
 
 from grouper.constants import PERMISSION_ADMIN, PERMISSION_CREATE
+from grouper.entities.permission_grant import GroupPermissionGrant, ServiceAccountPermissionGrant
 from grouper.models.permission import Permission
 
 if TYPE_CHECKING:
@@ -22,12 +23,32 @@ def test_permission_disable(setup):
     assert mock_ui.mock_calls == [call.disabled_permission("some-permission")]
     assert not Permission.get(setup.session, name="some-permission").enabled
 
-    audit_log_repository = setup.repository_factory.create_audit_log_repository()
-    audit_log_entries = audit_log_repository.get_entries_affecting_permission("some-permission")
+    audit_log_service = setup.service_factory.create_audit_log_service()
+    audit_log_entries = audit_log_service.entries_affecting_permission("some-permission", 20)
     assert len(audit_log_entries) == 1
     assert audit_log_entries[0].actor == "gary@a.co"
     assert audit_log_entries[0].action == "disable_permission"
     assert audit_log_entries[0].on_permission == "some-permission"
+
+
+def test_permission_disable_inactive_grants(setup):
+    # type: (SetupTest) -> None
+    """Test that permission grants to disabled objects are automatically deleted."""
+    with setup.transaction():
+        setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
+        setup.add_user_to_group("gary@a.co", "admins")
+        setup.grant_permission_to_group("some-permission", "argument", "some-group")
+        setup.disable_group("some-group")
+
+    mock_ui = MagicMock()
+    usecase = setup.usecase_factory.create_disable_permission_usecase("gary@a.co", mock_ui)
+    usecase.disable_permission("some-permission")
+    assert mock_ui.mock_calls == [call.disabled_permission("some-permission")]
+    permission_grant_repository = setup.repository_factory.create_permission_grant_repository()
+    grants = permission_grant_repository.group_grants_for_permission(
+        "some-permission", include_disabled_groups=True
+    )
+    assert grants == []
 
 
 def test_permission_disable_denied(setup):
@@ -42,6 +63,45 @@ def test_permission_disable_denied(setup):
         call.disable_permission_failed_permission_denied("some-permission")
     ]
     assert Permission.get(setup.session, name="some-permission").enabled
+
+
+def test_permission_disable_existing_grants(setup):
+    # type: (SetupTest) -> None
+    with setup.transaction():
+        setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
+        setup.add_user_to_group("gary@a.co", "admins")
+        setup.grant_permission_to_group("some-permission", "argument", "some-group")
+        setup.create_service_account("service@svc.localhost", "some-group")
+        setup.grant_permission_to_service_account("some-permission", "", "service@svc.localhost")
+
+    mock_ui = MagicMock()
+    usecase = setup.usecase_factory.create_disable_permission_usecase("gary@a.co", mock_ui)
+    usecase.disable_permission("some-permission")
+    assert mock_ui.mock_calls == [
+        call.disable_permission_failed_existing_grants(
+            "some-permission",
+            [
+                GroupPermissionGrant(
+                    group="some-group",
+                    permission="some-permission",
+                    argument="argument",
+                    granted_on=ANY,
+                    is_alias=False,
+                    grant_id=ANY,
+                )
+            ],
+            [
+                ServiceAccountPermissionGrant(
+                    service_account="service@svc.localhost",
+                    permission="some-permission",
+                    argument="",
+                    granted_on=ANY,
+                    is_alias=False,
+                    grant_id=ANY,
+                )
+            ],
+        )
+    ]
 
 
 def test_permission_disable_system(setup):

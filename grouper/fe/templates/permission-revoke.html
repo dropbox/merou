@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block subtitle %} revoke permission{% endblock %}
+
 {% block heading %}
     <a href="/groups">Groups</a>
 {% endblock %}
@@ -21,7 +23,7 @@
                     Revoke permission <strong>{{ mapping.permission.name }}:{{ mapping.argument }}</strong>
                     from group <a href="/groups/{{ mapping.group.name }}">{{ mapping.group.name }}</a>?
                 </div>
-                {{ xsrf_form() }}
+                {{ xsrf_form()|safe }}
                 <div class="form-group text-center">
                     <button type="submit" class="btn btn-primary">Revoke Permission</button>
                 </div>

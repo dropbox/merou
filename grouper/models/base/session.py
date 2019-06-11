@@ -1,8 +1,12 @@
 import functools
 import logging
+from typing import TYPE_CHECKING
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session as _Session, sessionmaker
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Engine
 
 
 def flush_transaction(method):
@@ -26,6 +30,7 @@ def flush_transaction(method):
 
 
 def get_db_engine(url):
+    # type: (str) -> Engine
     return create_engine(url, pool_recycle=300)
 
 

@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% from 'macros/ui.html' import paginator, dropdown with context %}
 
+{% block subtitle %} search{% endblock %}
+
 {% block heading %}
     Search
 {% endblock %}
@@ -25,11 +27,13 @@
             </thead>
             <tbody>
             {% for result in results %}
-                <tr>
-                    <td>{{result.type}}</td>
-                    <td>
+                <tr class="result-row">
+                    <td class="result-type">{{result.type}}</td>
+                    <td class="result-name">
                         {% if result.type == "Group" %}
                             <a href="/groups/{{result.name}}">{{result.name}}</a>
+                        {% elif result.type == "Permission" %}
+                            <a href="/permissions/{{result.name}}">{{result.name}}</a>
                         {% elif result.type == "User" %}
                             <a href="/users/{{result.name}}">{{result.name}}</a>
                         {% else %}

@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% from 'macros/ui.html' import account, paginator, dropdown with context %}
 
+{% block subtitle %} groups{% endblock %}
+
 {% block heading %}
     {% if audited_groups %}
       Audited
@@ -24,10 +26,11 @@
           <i class="fa"></i> Show all groups
       </a>
       {% else %}
-      <button class="btn btn-success" data-toggle="modal" data-target="#createModal">
+      <button class="btn btn-success" id="create-group" data-toggle="modal"
+              data-target="#createModal">
           <i class="fa fa-plus"></i> Create
       </button>
-      <a class="btn btn-warning" href="/groups?limit={{limit}}&audited=1">
+      <a id="show-audited" class="btn btn-warning" href="/groups?limit={{limit}}&audited=1">
           <i class="fa"></i> Show audited groups
       </a>
       {% endif %}
@@ -46,7 +49,7 @@
         <table class="table table-elist">
             <thead>
                 <tr>
-                    <th class="col-sm-2">Groupname</th>
+                    <th class="col-sm-2">Group name</th>
                     <th class="col-sm-4">Description</th>
                     <th class="col-sm-1">Can join?</th>
 		    {% if audited_groups %}
@@ -57,8 +60,8 @@
             <tbody>
             {% for group in groups %}
                 <tr class="group-row">
-                    <td class="group-name">{{ account(group) }}</td>
-                    <td class="group-description">{{group.description|default("", True)|escape}}</td>
+                    <td class="group-name">{{ account(group.name, "group") }}</td>
+                    <td class="group-description">{{group.description|default("", True)}}</td>
                     <td class="group-can-join">
                         {% if group.canjoin == "canjoin" %}
                             Anyone
@@ -70,7 +73,7 @@
                     </td>
 		    {% if audited_groups %}
 		    <td class="group-why-audited">
-		      {% if group.groupname in directly_audited_groups %}
+		      {% if group.name in directly_audited_groups %}
 		      Direct
 		      {% else %}
 		      Inherited

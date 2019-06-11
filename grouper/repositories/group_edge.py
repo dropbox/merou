@@ -3,9 +3,10 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import or_
 
+from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.group import Group
-from grouper.models.group_edge import GROUP_EDGE_ROLES, GroupEdge
+from grouper.models.group_edge import GroupEdge
 from grouper.models.user import User
 from grouper.repositories.interfaces import GroupEdgeRepository
 
@@ -25,7 +26,7 @@ class GraphGroupEdgeRepository(GroupEdgeRepository):
     def groups_of_user(self, username):
         # type: (str) -> List[str]
         user_details = self.graph.get_user_details(username)
-        return [group for group in user_details["groups"]]
+        return list(user_details["groups"].keys())
 
 
 class SQLGroupEdgeRepository(GroupEdgeRepository):

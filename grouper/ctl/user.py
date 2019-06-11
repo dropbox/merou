@@ -4,10 +4,11 @@ from typing import TYPE_CHECKING
 
 from grouper import public_key
 from grouper.ctl.base import CtlCommand
-from grouper.ctl.util import ensure_valid_username, make_session
+from grouper.ctl.util import ensure_valid_username
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
 from grouper.plugin.exceptions import PluginRejectedDisablingUser
+from grouper.repositories.factory import SessionFactory
 from grouper.role_user import disable_role_user, enable_role_user
 from grouper.usecases.convert_user_to_service_account import ConvertUserToServiceAccountUI
 from grouper.user import disable_user, enable_user, get_all_users
@@ -15,13 +16,14 @@ from grouper.user_metadata import set_user_metadata
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
+    from grouper.ctl.settings import CtlSettings
     from grouper.usecases.factory import UseCaseFactory
 
 
 @ensure_valid_username
-def user_command(args):
-    # type: (Namespace) -> None
-    session = make_session()
+def user_command(args, settings, session_factory):
+    # type: (Namespace, CtlSettings, SessionFactory) -> None
+    session = session_factory.create_session()
 
     if args.subcommand == "create":
         for username in args.username:
@@ -57,7 +59,7 @@ def user_command(args):
                     )
                     session.commit()
                 except PluginRejectedDisablingUser as e:
-                    logging.error(e.message)
+                    logging.error("%s", e)
 
         return
 
@@ -184,8 +186,9 @@ class UserCommand(CtlCommand, ConvertUserToServiceAccountUI):
         user_set_metadata_parser.add_argument("metadata_key")
         user_set_metadata_parser.add_argument("metadata_value")
 
-    def __init__(self, usecase_factory):
-        # type: (UseCaseFactory) -> None
+    def __init__(self, settings, usecase_factory):
+        # type: (CtlSettings, UseCaseFactory) -> None
+        self.settings = settings
         self.usecase_factory = usecase_factory
 
     def converted_user_to_service_account(self, user, owner):
@@ -211,7 +214,9 @@ class UserCommand(CtlCommand, ConvertUserToServiceAccountUI):
             usecase.convert_user_to_service_account(args.username, args.owner)
 
         elif args.subcommand == "list":
-            session = make_session()
+            # Ugly temporary hack until this is converted to a usecase.
+            repository_factory = self.usecase_factory.service_factory.repository_factory
+            session = repository_factory.session_factory.create_session()
             all_users = get_all_users(session)
             for user in all_users:
                 user_enabled = "enabled" if user.enabled else "disabled"
@@ -219,4 +224,6 @@ class UserCommand(CtlCommand, ConvertUserToServiceAccountUI):
             return
 
         else:
-            user_command(args)
+            # Ugly temporary hack until this is converted to a usecase.
+            repository_factory = self.usecase_factory.service_factory.repository_factory
+            user_command(args, self.settings, repository_factory.session_factory)

@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% from 'macros/ui.html' import account, paginator, dropdown with context %}
 
+{% block subtitle %} users{% endblock %}
+
 {% block heading %}
     {% if not enabled %}
       Disabled

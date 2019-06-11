@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from itests.fixtures import async_server  # noqa: F401
@@ -9,6 +11,7 @@ from itests.pages.groups import (
     GroupsViewPage,
     GroupViewPage,
 )
+from itests.setup import frontend_server
 from plugins import group_ownership_policy
 from tests.fixtures import (  # noqa: F401
     fe_app as app,
@@ -22,6 +25,11 @@ from tests.fixtures import (  # noqa: F401
 )
 from tests.url_util import url
 
+if TYPE_CHECKING:
+    from py.path import LocalPath
+    from selenium.webdriver import Chrome
+    from tests.setup import SetupTest
+
 
 def test_list_groups(async_server, browser, groups):  # noqa: F811
     fe_url = url(async_server, "/groups")
@@ -29,9 +37,34 @@ def test_list_groups(async_server, browser, groups):  # noqa: F811
 
     page = GroupsViewPage(browser)
 
-    for name, _ in groups.iteritems():
+    for name in groups:
         row = page.find_group_row(name)
         assert row.href.endswith("/groups/{}".format(name))
+
+
+def test_list_audited_groups(tmpdir, setup, browser):
+    # type: (LocalPath, SetupTest, Chrome) -> None
+    with setup.transaction():
+        setup.create_group("one-group", "Some group")
+        setup.create_group("audited-group", "Another group")
+        setup.create_permission("audited", "", audited=True)
+        setup.grant_permission_to_group("audited", "", "audited-group")
+        setup.add_group_to_group("child-audited", "audited-group")
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups"))
+        page = GroupsViewPage(browser)
+        assert page.find_group_row("one-group")
+        assert page.find_group_row("audited-group")
+        assert page.find_group_row("child-audited")
+
+        page.click_show_audited_button()
+        row = page.find_group_row("audited-group")
+        assert row.audited_reason == "Direct"
+        row = page.find_group_row("child-audited")
+        assert row.audited_reason == "Inherited"
+        with pytest.raises(NoSuchElementException):
+            page.find_group_row("one-group")
 
 
 def test_show_group(async_server, browser, groups):  # noqa: F811
@@ -43,7 +76,7 @@ def test_show_group(async_server, browser, groups):  # noqa: F811
     page = GroupViewPage(browser)
 
     members = group.my_members()
-    for [_, username], _ in members.iteritems():
+    for (_, username) in members:
         row = page.find_member_row(username)
         assert row.href.endswith("/users/{}".format(username))
 

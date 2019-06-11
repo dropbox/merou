@@ -1,0 +1,28 @@
+{% extends "email/base.html" %}
+
+{% block subject %}Membership Request{% endblock %}
+
+{% block content %}
+
+<p><strong><a href="{{url}}/users/{{requester}}">{{ requester }}</a></strong> has requested
+to join <strong><a href="{{url}}/groups/{{group_name}}">{{ group_name }}</a></strong>.
+
+<ul>
+    <li><strong>Role:</strong> {{ role }}</li>
+    <li><strong>Expiration:</strong> {{ expiration|expires_when_str }}</li>
+    <li><strong>Reason:</strong> {{ reason }}</li>
+</ul>
+
+<p>
+    <a href="{{url}}/groups/{{group_name}}/requests/{{ request_id }}">
+        Take action on this membership request.
+    </a>
+</p>
+
+
+{% if requester != requested_by %}
+    <p>This request was made by
+    <a href="{{url}}/users/{{requested_by}}">{{ requested_by }}</a>.</p>
+{% endif %}
+
+{% endblock %}

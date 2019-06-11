@@ -1,6 +1,5 @@
-from urllib import urlencode
-
 import pytest
+from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 
 from grouper.group_service_account import get_service_accounts
@@ -297,7 +296,7 @@ def test_service_account_fe_perms(
 
     # Unrelated people cannot revoke a permission.
     fe_url = url(
-        base_url, "/groups/team-sre/service/service@a.co/revoke/{}".format(perms[0].mapping_id)
+        base_url, "/groups/team-sre/service/service@a.co/revoke/{}".format(perms[0].grant_id)
     )
     with pytest.raises(HTTPError):
         yield http_client.fetch(
@@ -310,7 +309,7 @@ def test_service_account_fe_perms(
     )
     assert resp.code == 200
     fe_url = url(
-        base_url, "/groups/team-sre/service/service@a.co/revoke/{}".format(perms[1].mapping_id)
+        base_url, "/groups/team-sre/service/service@a.co/revoke/{}".format(perms[1].grant_id)
     )
     resp = yield http_client.fetch(
         fe_url, method="POST", headers={"X-Grouper-User": owner}, body=urlencode({})
@@ -349,7 +348,7 @@ def test_machine_set_plugin(
         fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode(update)
     )
     assert resp.code == 200
-    assert "service@a.co has invalid machine set" in resp.body
+    assert b"service@a.co has invalid machine set" in resp.body
     graph.update_from_db(session)
     metadata = graph.user_metadata["service@a.co"]
     assert metadata["service_account"]["machine_set"] == "some machines"
@@ -375,7 +374,7 @@ def test_machine_set_plugin(
         fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode(data)
     )
     assert resp.code == 200
-    assert "other@svc.localhost has invalid machine set" in resp.body
+    assert b"other@svc.localhost has invalid machine set" in resp.body
     graph.update_from_db(session)
     assert "other@svc.localhost" not in graph.users
 

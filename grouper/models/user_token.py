@@ -3,6 +3,7 @@ import hmac
 import os
 from datetime import datetime
 
+from six import PY2
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
@@ -11,7 +12,11 @@ from grouper.models.user import User
 
 
 def _make_secret():
-    return os.urandom(20).encode("hex")
+    # type: () -> str
+    if PY2:
+        return os.urandom(20).encode("hex")
+    else:
+        return os.urandom(20).hex()
 
 
 class UserToken(Model):
@@ -63,15 +68,18 @@ class UserToken(Model):
         return session.query(UserToken).filter_by(id=id, user=user).scalar()
 
     def _set_secret(self):
+        # type: () -> str
         secret = _make_secret()
-        self.hashed_secret = hashlib.sha256(secret).hexdigest()
+        self.hashed_secret = hashlib.sha256(secret.encode()).hexdigest()
         return secret
 
     def check_secret(self, secret):
-        # The length of self.hashed_secret is not secret
-        return self.enabled and hmac.compare_digest(
-            hashlib.sha256(secret).hexdigest(), self.hashed_secret.encode("utf-8")
-        )
+        # type: (str) -> bool
+        if not self.enabled:
+            return False
+        stored_secret = self.hashed_secret.encode()
+        hashed_secret = hashlib.sha256(secret.encode()).hexdigest().encode()
+        return hmac.compare_digest(stored_secret, hashed_secret)
 
     @property
     def enabled(self):

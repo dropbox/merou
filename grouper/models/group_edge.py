@@ -1,29 +1,18 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
+from six import iteritems
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, SmallInteger
 from sqlalchemy.orm import relationship
 
+from grouper.entities.group_edge import GROUP_EDGE_ROLES, OWNER_ROLE_INDICES
 from grouper.expiration import add_expiration, cancel_expiration
 from grouper.models.base.constants import OBJ_TYPES_IDX
 from grouper.models.base.model_base import Model
 from grouper.models.user import User
 
-# Note: the order of the GROUP_EDGE_ROLES tuple matters! New roles must be
-# appended!  When adding a new role, be sure to update the regression test.
-GROUP_EDGE_ROLES = (
-    "member",  # Belongs to the group. Nothing more.
-    "manager",  # Make changes to the group / Approve requests.
-    "owner",  # Same as manager plus enable/disable group and make Users owner.
-    "np-owner",  # Same as owner but don't inherit permissions.
-)
-
-OWNER_ROLE_INDICES = {GROUP_EDGE_ROLES.index("owner"), GROUP_EDGE_ROLES.index("np-owner")}
-
-APPROVER_ROLE_INDICES = {
-    GROUP_EDGE_ROLES.index("owner"),
-    GROUP_EDGE_ROLES.index("np-owner"),
-    GROUP_EDGE_ROLES.index("manager"),
-}
+if TYPE_CHECKING:
+    from typing import Any, Dict
 
 
 class GroupEdge(Model):
@@ -50,10 +39,12 @@ class GroupEdge(Model):
 
     @property
     def role(self):
+        # type: () -> str
         return GROUP_EDGE_ROLES[self._role]
 
     @role.setter
     def role(self, role):
+        # type: (str) -> None
         prev_role = self._role
         self._role = GROUP_EDGE_ROLES.index(role)
 
@@ -65,7 +56,9 @@ class GroupEdge(Model):
         if (self._role in OWNER_ROLE_INDICES) == (prev_role in OWNER_ROLE_INDICES):
             return
 
-        recipient = User.get(self.session, pk=self.member_pk).username
+        user = User.get(self.session, pk=self.member_pk)
+        assert user
+        recipient = user.username
         expiring_supergroups = self.group.my_expiring_groups()
         member_name = self.group.name
 
@@ -93,15 +86,17 @@ class GroupEdge(Model):
                 )
 
     def apply_changes(self, changes):
+        # type: (Dict[str, Any]) -> None
         # TODO(cbguder): get around circular dependencies
         from grouper.models.group import Group
 
-        for key, value in changes.items():
+        for key, value in iteritems(changes):
             if key == "expiration":
                 group_name = self.group.name
                 if OBJ_TYPES_IDX[self.member_type] == "User":
                     # If affected member is a user, plan to notify that user.
                     user = User.get(self.session, pk=self.member_pk)
+                    assert user
                     member_name = user.username
                     recipients = [member_name]
                     member_is_user = True

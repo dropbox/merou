@@ -8,7 +8,7 @@
     </td>
     <td>
         <span class="pull-right">
-        <button class="btn btn-default btn-xs public-key" key-body="{{ key.public_key|escape }}">
+        <button class="btn btn-default btn-xs public-key" key-body="{{ key.public_key }}">
             <i class="fa fa-search"></i>
         </button>
     {% if can_control %}
@@ -48,31 +48,11 @@
         <code>{{ key.fingerprint_sha256 }}</code>
     </td>
     <td>
-        {% for tag in key.tags %}
-            {% if can_control %}
-            <form action="/users/{{ username }}/public-key/{{ key.id }}/delete_tag/{{ tag.id }}" method="post" class="inline">
-            {% endif %}
-                <button type="submit" class="btn btn-danger">
-                    {{ tag.name }}
-                </button>
-            {% if can_control %}
-                {{ xsrf_form() }}
-            </form>
-            {% endif %}
-        {% endfor %}
-    </td>
-    <td>
         <span class="pull-right">
-        <button class="btn btn-default btn-xs public-key" key-body="{{ key.public_key|escape }}">
+        <button class="btn btn-default btn-xs public-key" key-body="{{ key.public_key }}">
             <i class="fa fa-search"></i>
         </button>
-        <button class="btn btn-default btn-xs public-key" key-body="{{ ",".join(key.pretty_permissions)|escape }}">
-            <i class="fa fa-key"></i>
-        </button>
     {% if can_control %}
-        <a class="btn btn-default btn-xs" href="/users/{{ username }}/public-key/{{ key.id }}/tag">
-            <span class="glyphicon glyphicon-tag glyphicon-vertical-adjust"></span>
-        </a>
         <a class="btn btn-default btn-xs" href="/users/{{ username }}/public-key/{{ key.id }}/delete">
             <span class="glyphicon glyphicon-remove glyphicon-vertical-adjust"></span>
         </a>
@@ -95,7 +75,6 @@
                         <th class="col-sm-1">Type</th>
                         <th class="col-sm-1">Size</th>
                         <th class="col-sm-3 hidden-xs">Fingerprint</th>
-                        <th class="col-sm-1">Tags</th>
                         <th class="col-sm-2"></th>
                     </tr>
                 </thead>
@@ -199,11 +178,38 @@
     </div>
 {%- endmacro %}
 
+{% macro github_panel(user, github_username, can_control=False) -%}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">GitHub</h3>
+        </div>
+        <div class="table-responsive standard-panel">
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th class="col-md-2">GitHub username</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ github_username }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            {% if can_control %}
+            <div class='panel-footer'>
+                <a class="btn btn-default btn-sm" href="/users/{{ user.name }}/github">
+                <span class="glyphicon glyphicon-pencil"></span> Change GitHub username
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{%- endmacro %}
 
-{% macro help_for(subj) -%}
-class="has-help"
-data-toggle="popover"
-title="Grouper Help" data-content="
+
+{% macro help_for(subj, text) -%}
+    <span class="has-help" data-toggle="popover" title="Grouper Help" data-content="
 {% if subj == "role" %}
 A 'role' describes someone's ability to control the group. There are three types of roles:
 <ul><li><strong>member</strong> has no special power</li>
@@ -214,7 +220,7 @@ A 'role' describes someone's ability to control the group. There are three types
 One or more of the permissions that apply to this group have auditing
 enabled. Membership in this group is regularly reviewed.
 {% endif %}
-"
+">{{ text }}</span>
 {%- endmacro %}
 
 {% macro group_panel(groups, show_role=False) -%}
@@ -229,7 +235,7 @@ enabled. Membership in this group is regularly reviewed.
                         <th class="col-sm-2">Name</th>
                         {% if show_role %}
                             <th class="col-sm-2">
-                                <span {{ help_for('role') }}>Role</span>
+                                {{ help_for("role", "Role") }}
                             </th>
                         {% endif %}
                     </tr>
@@ -321,13 +327,6 @@ enabled. Membership in this group is regularly reviewed.
 </a>
 {%- endmacro %}
 
-{% macro format_tag(t) -%}
-<a class="tag-link" href="/tags/{{t.name}}">
-    <i class="fa fa-tag hidden-xs"></i>
-    {{t.name}}
-</a>
-{%- endmacro %}
-
 {% macro member_row(group, member, members, current_user, current_user_role) -%}
     <tr class="member-row">
         <td>
@@ -366,15 +365,15 @@ enabled. Membership in this group is regularly reviewed.
                     <tr>
                         <th class="col-sm-1"></th>
                         <th class="col-sm-3">Member</th>
-                        <th class="col-sm-1"><span {{ help_for('role') }}>Role</span></th>
+                        <th class="col-sm-1">{{ help_for("role", "Role") }}</th>
                         <th class="col-sm-1">Expires</th>
                     </tr>
                 </thead>
                 <tbody>
-                {% for member in members.itervalues()|sort(attribute='name') if member.type == 'Group' %}
+                {% for member in members.values()|sort(attribute='name') if member.type == 'Group' %}
                     {{ member_row(group, member, members, current_user, current_user_role) }}
                 {% endfor %}
-                {% for member in members.itervalues()|sort(attribute='name') if member.type == 'User' %}
+                {% for member in members.values()|sort(attribute='name') if member.type == 'User' %}
                     {{ member_row(group, member, members, current_user, current_user_role) }}
                 {% endfor %}
                 {% if not members %}
@@ -388,6 +387,7 @@ enabled. Membership in this group is regularly reviewed.
     </div>
 {%- endmacro %}
 
+{# The old panel, which uses an old serialization format for the entries based on SQLAlchemy. #}
 {% macro log_entry_panel(log_entries) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
@@ -412,11 +412,8 @@ enabled. Membership in this group is regularly reviewed.
                             {{ account(entry.actor) }}
                         </td>
                         <td class="col-sm-2">{{ entry.action }}</td>
-                        <td class="col-sm-2">{{ entry.description|escape }}</td>
+                        <td class="col-sm-2">{{ entry.description }}</td>
                         <td class="col-sm-2">
-                            {% if entry.on_tag %}
-                                Tag: {{ format_tag(entry.on_tag) }}<br />
-                            {% endif %}
                             {% if entry.on_group %}
                                 Group: {{ account(entry.on_group) }}<br />
                             {% endif %}
@@ -430,6 +427,58 @@ enabled. Membership in this group is regularly reviewed.
                     </tr>
                 {% endfor %}
                 {% if not log_entries %}
+                    <tr>
+                        <td colspan="5" class="text-center">
+                            <em>No activity found.</em>
+                        </td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{%- endmacro %}
+
+{# The new panel, which expects a list of AuditLogEntry. #}
+{% macro audit_log_panel(audit_log_entries) -%}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Recent Activity</h3>
+        </div>
+        <div class="standard-panel">
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th class="col-sm-2">Date</th>
+                        <th class="col-sm-2">Actor</th>
+                        <th class="col-sm-2">Action</th>
+                        <th class="col-sm-2">Description</th>
+                        <th class="col-sm-2">Extra</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for entry in audit_log_entries %}
+                    <tr>
+                        <td class="col-sm-2">{{ entry.date|print_date }}</td>
+                        <td class="col-sm-2">
+                            {{ account(entry.actor, type="user") }}
+                        </td>
+                        <td class="col-sm-2">{{ entry.action }}</td>
+                        <td class="col-sm-2">{{ entry.description|escape }}</td>
+                        <td class="col-sm-2">
+                            {% if entry.on_group %}
+                                Group: {{ account(entry.on_group, type="group") }}<br />
+                            {% endif %}
+                            {% if entry.on_permission %}
+                                Permission: {{ permission(entry.on_permission) }}<br />
+                            {% endif %}
+                            {% if entry.on_user %}
+                                User: {{ account(entry.on_user, type="user") }}<br />
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                {% if not audit_log_entries %}
                     <tr>
                         <td colspan="5" class="text-center">
                             <em>No activity found.</em>
@@ -464,7 +513,7 @@ enabled. Membership in this group is regularly reviewed.
                 {% for map in mappings if not map.alias %}
                     <tr class="permission-row">
                         <td class="permission-name">{{ permission(map) }}</td>
-                        <td class="permission-argument col-sm-2">{{ map.argument|default("(unargumented)", True)|escape }}</td>
+                        <td class="permission-argument col-sm-2">{{ map.argument|default("(unargumented)", True) }}</td>
                         <td class="permission-source col-sm-2">
                         {% if map.distance == 0 %}
                             (direct)
@@ -544,7 +593,7 @@ enabled. Membership in this group is regularly reviewed.
 
 {% macro dropdown(key, current, values, allow_none=False) -%}
     <div class="btn-group">
-        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+        <button id="dropdown-{{key}}" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
             {% if current %}
                 {{key|title}}: {{current}}
             {% else %}
@@ -595,72 +644,13 @@ enabled. Membership in this group is regularly reviewed.
     </div>
 {%- endmacro %}
 
-{% macro tag_permission_panel(mappings, tag, can_grant=None) -%}
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">Permissions</h3>
-        </div>
-        <div class="standard-panel">
-            <table class="{% if mappings %}datatable {% endif %}table table-striped table-condensed">
-                <thead>
-                    <tr>
-                        <th class="col-sm-2">Permission</th>
-                        <th class="col-sm-2">Argument</th>
-                        <th class="col-sm-2">Granted</th>
-                        {% if can_grant %}
-                            <th class="col-sm-2"></th>
-                        {% endif %}
-                    </tr>
-                </thead>
-                <tbody>
-                {% for map in mappings %}
-                    <tr>
-                        <td>{{ permission(map) }}</td>
-                        <td class="col-sm-2">{{ map.argument|default("(unargumented)", True)|escape }}</td>
-                        <td class="col-sm-2" title="{{ map.granted_on|print_date }}">
-                            {{ map.granted_on|long_ago_str }}
-                        </td>
-                        {% if can_grant %}
-                            <td class="col-sm-2">
-                            {% for grantable in can_grant if grantable.name == map.name %}
-                                {% if loop.first %}
-                                    <a class="btn btn-default btn-xs" href="/permissions/{{ map.name }}/revoke_tag/{{ map.mapping_id }}">
-                                    <span class="glyphicon glyphicon-remove glyphicon-vertical-adjust"></span> Revoke
-                                    </a>
-                                {% endif %}
-                            {% endfor %}
-                            </td>
-                        {% endif %}
-                    </tr>
-                {% endfor %}
-                {% if not mappings and not pending_requests %}
-                    <tr>
-                        <td colspan="5" class="text-center">
-                            <em>No permissions found.</em>
-                        </td>
-                    </tr>
-                {% endif %}
-                </tbody>
-            </table>
-        </div>
-        {% if can_grant %}
-        <div class='panel-footer'>
-            <a class="btn btn-default btn-sm" href="/permissions/grant_tag/{{ tag.name }}">
-                <span class="glyphicon glyphicon-plus"></span> Add Permission
-            </a>
-        </div>
-        {% endif %}
-    </div>
-{%- endmacro %}
-
-{% macro form_field(field, label_width, field_width, help=None) -%}
+{% macro form_field(field, label_width, field_width, help=None, help_title=None) -%}
     <div class="form-group form-group-{{field.label.field_id}} {% if field.errors %}has-error{% endif %}">
         <label for="{{field.label.field_id}}"
                class="col-sm-{{label_width}} control-label">
             {{ field.label.text }}
             {% if help %}
-            <a data-toggle="popover" title="restricted argument set"
-                    data-content="{{ help|escape }}">
+            <a data-toggle="popover" title="{{ help_title }}" data-content="{{ help }}">
                 <sup>?</sup>
             </a>
             {% endif %}

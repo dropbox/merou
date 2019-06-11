@@ -18,11 +18,11 @@ class CheckPublicKeys(BaseOneOff):
             try:
                 pubkey.parse()
             except sshpubkeys.InvalidKeyException as e:
-                logging.error("Invalid Key (id={}): {}".format(key.id, e.message))
+                logging.error("Invalid Key (id={}): {}".format(key.id, str(e)))
                 continue
 
             try:
                 get_plugin_proxy().will_add_public_key(pubkey)
             except PluginRejectedPublicKey as e:
-                logging.error("Bad Key (id={}): {}".format(key.id, e.message))
+                logging.error("Bad Key (id={}): {}".format(key.id, str(e)))
                 continue

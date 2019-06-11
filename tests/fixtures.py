@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from grouper.api.main import create_api_application
+from grouper.api.settings import ApiSettings
 from grouper.app import GrouperApplication
 from grouper.constants import (
     AUDIT_MANAGER,
@@ -16,6 +17,7 @@ from grouper.constants import (
     USER_ADMIN,
 )
 from grouper.fe.main import create_fe_application
+from grouper.fe.settings import FrontendSettings
 from grouper.graph import Graph
 from grouper.initialization import create_graph_usecase_factory
 from grouper.models.base.model_base import Model
@@ -24,13 +26,17 @@ from grouper.models.group import Group
 from grouper.models.permission import Permission
 from grouper.models.user import User
 from grouper.permissions import enable_permission_auditing
+from grouper.plugin import set_global_plugin_proxy
+from grouper.plugin.proxy import PluginProxy
+from grouper.repositories.factory import SingletonSessionFactory
 from grouper.service_account import create_service_account
-from grouper.settings import Settings
+from grouper.settings import set_global_settings, Settings
 from tests.path_util import db_url
 from tests.util import add_member, grant_permission
 
 if TYPE_CHECKING:
     from grouper.graph import GroupGraph
+    from pytest import FixtureRequest
     from py.local import LocalPath
     from typing import Dict
 
@@ -164,7 +170,18 @@ def standard_graph(session, graph, users, groups, service_accounts, permissions)
 
 @pytest.fixture
 def session(request, tmpdir):
+    # type: (FixtureRequest, LocalPath) -> None
+    settings = Settings()
+    set_global_settings(settings)
+
+    # Reinitialize plugins in case a previous test configured some.
+    set_global_plugin_proxy(PluginProxy([]))
+
     db_engine = get_db_engine(db_url(tmpdir))
+
+    # Clean up from previous tests if using a persistent database.
+    if "MEROU_TEST_DATABASE" in os.environ:
+        Model.metadata.drop_all(db_engine)
 
     # Create the database schema and the corresponding session.
     Model.metadata.create_all(db_engine)
@@ -173,10 +190,8 @@ def session(request, tmpdir):
 
     def fin():
         # type: () -> None
-        """Explicitly close the session and clean up if using a persistent database."""
+        """Explicitly close the session to avoid any dangling transactions."""
         session.close()
-        if "MEROU_TEST_DATABASE" in os.environ:
-            Model.metadata.drop_all(db_engine)
 
     request.addfinalizer(fin)
     return session
@@ -298,16 +313,18 @@ def permissions(session, users):
 @pytest.fixture
 def api_app(session, standard_graph):
     # type: (Session, GroupGraph) -> GrouperApplication
-    settings = Settings({"debug": False})
-    usecase_factory = create_graph_usecase_factory(settings, session, standard_graph)
+    settings = ApiSettings()
+    set_global_settings(settings)
+    session_factory = SingletonSessionFactory(session)
+    usecase_factory = create_graph_usecase_factory(
+        settings, PluginProxy([]), session_factory, standard_graph
+    )
     return create_api_application(standard_graph, settings, usecase_factory)
 
 
 @pytest.fixture
 def fe_app(session, standard_graph, tmpdir):
     # type: (Session, GroupGraph, LocalPath) -> GrouperApplication
-    settings = Settings({"debug": False})
-    usecase_factory = create_graph_usecase_factory(settings, session, standard_graph)
-    return create_fe_application(
-        settings, usecase_factory, "", xsrf_cookies=False, session=lambda: session
-    )
+    settings = FrontendSettings()
+    set_global_settings(settings)
+    return create_fe_application(settings, "", xsrf_cookies=False, session=lambda: session)

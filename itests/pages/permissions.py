@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING
 
+from selenium.common.exceptions import NoSuchElementException
+
 from itests.pages.base import BaseElement, BasePage
 
 if TYPE_CHECKING:
@@ -10,7 +12,11 @@ class PermissionsPage(BasePage):
     @property
     def has_create_permission_button(self):
         # type: () -> bool
-        return self.find_elements_by_class_name("create-permission") != []
+        try:
+            self.find_element_by_id("create-permission")
+            return True
+        except NoSuchElementException:
+            return False
 
     @property
     def permission_rows(self):
@@ -21,16 +27,21 @@ class PermissionsPage(BasePage):
     @property
     def limit_label(self):
         # type: () -> str
-        return self.find_element_by_class_name("dropdown-toggle").text.strip()
+        return self.find_element_by_id("dropdown-limit").text.strip()
+
+    def click_create_permission_button(self):
+        # type: () -> None
+        button = self.find_element_by_id("create-permission")
+        button.click()
 
     def click_show_all_button(self):
         # type: () -> None
-        button = self.find_element_by_class_name("show-all")
+        button = self.find_element_by_id("show-all")
         button.click()
 
     def click_show_audited_button(self):
         # type: () -> None
-        button = self.find_element_by_class_name("show-audited")
+        button = self.find_element_by_id("show-audited")
         button.click()
 
     def click_sort_by_date(self):

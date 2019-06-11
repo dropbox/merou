@@ -40,7 +40,6 @@ AUDIT_MANAGER = "grouper.audit.manage"
 AUDIT_VIEWER = "grouper.audit.view"
 USER_DISABLE = "grouper.user.disable"
 USER_ENABLE = "grouper.user.enable"
-TAG_EDIT = "grouper.tag.edit"
 
 # Permissions that are always created and are reserved.
 SYSTEM_PERMISSIONS = [
@@ -55,8 +54,11 @@ SYSTEM_PERMISSIONS = [
     (AUDIT_VIEWER, "Ability to view audit results and status."),
     (USER_ENABLE, "Ability to enable a disabled user without preserving group membership."),
     (USER_DISABLE, "Ability to disable an enabled user."),
-    (TAG_EDIT, "Ability to edit the permissions granted to a tag."),
 ]
+
+# The name of the administrator group that's created during schema initialization.  (Grouper
+# doesn't depend on the name of this group and is happy for it to be renamed later.)
+DEFAULT_ADMIN_GROUP = "grouper-administrators"
 
 # Used to construct name tuples in notification engine.
 ILLEGAL_NAME_CHARACTER = "|"
@@ -78,3 +80,4 @@ MAX_NAME_LENGTH = 128
 
 # Grouper used UserMetadata data_keys
 USER_METADATA_SHELL_KEY = "shell"
+USER_METADATA_GITHUB_USERNAME_KEY = "github_username"

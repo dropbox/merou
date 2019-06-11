@@ -1,0 +1,11 @@
+{% extends "email/base.html" %}
+
+{% block subject %}Added as member to '{{ auditors_group_name }}'{% endblock %}
+
+{% block content %}
+<p>You are an approver (owner or manager) of one or more audited groups, but you were previously not an auditor.
+We have automatically made you an auditor by adding you to group '{{ auditors_group_name }}'.
+For more information, please see <a href="{{ url }}/help">Grouper Help</a>.
+</p>
+
+{% endblock %}

@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block subtitle %} leave {{group.name}}{% endblock %}
+
 {% block heading %}
     <a href="/groups">Groups</a>
 {% endblock %}
@@ -21,7 +23,7 @@
                     <p>If you proceed, you will immediately leave this group. Your account will lose
                     access to any permissions you had via this group (or any of its parent groups).</p>
                 </div>
-                {{ xsrf_form() }}
+                {{ xsrf_form()|safe }}
                 <div class="col-sm-offset-3 col-sm-9">
                     <button type="submit" class="btn btn-primary">Leave {{ group.name }}</button>
                 </div>

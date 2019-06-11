@@ -2,4 +2,4 @@
 
 {{ form_field(form.name, 3, 8, class_="form-control", rows=5) }}
 
-{{ xsrf_form() }}
+{{ xsrf_form()|safe }}

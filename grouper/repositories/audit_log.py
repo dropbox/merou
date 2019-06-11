@@ -11,10 +11,10 @@ from grouper.models.audit_log import AuditLog, AuditLogCategory
 from grouper.models.group import Group
 from grouper.models.permission import Permission
 from grouper.models.user import User
-from grouper.plugin import get_plugin_proxy
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
+    from grouper.plugin.proxy import PluginProxy
     from grouper.usecases.authorization import Authorization
     from typing import List, Optional
 
@@ -22,12 +22,26 @@ if TYPE_CHECKING:
 class AuditLogRepository(object):
     """SQL storage layer for audit log entries."""
 
-    def __init__(self, session):
-        # type: (Session) -> None
+    def __init__(self, session, plugins):
+        # type: (Session, PluginProxy) -> None
         self.session = session
+        self.plugins = plugins
 
-    def get_entries_affecting_permission(self, permission):
-        # type: (str) -> List[AuditLogEntry]
+    def entries_affecting_group(self, group, limit):
+        # type: (str, int) -> List[AuditLogEntry]
+        group_obj = Group.get(self.session, name=group)
+        if not group_obj:
+            return []
+        results = (
+            self.session.query(AuditLog)
+            .filter(AuditLog.on_group_id == group_obj.id)
+            .order_by(desc(AuditLog.log_time))
+            .limit(limit)
+        )
+        return [self._to_audit_log_entry(e) for e in results]
+
+    def entries_affecting_permission(self, permission, limit):
+        # type: (str, int) -> List[AuditLogEntry]
         permission_obj = Permission.get(self.session, name=permission)
         if not permission_obj:
             return []
@@ -35,6 +49,20 @@ class AuditLogRepository(object):
             self.session.query(AuditLog)
             .filter(AuditLog.on_permission_id == permission_obj.id)
             .order_by(desc(AuditLog.log_time))
+            .limit(limit)
+        )
+        return [self._to_audit_log_entry(e) for e in results]
+
+    def entries_affecting_user(self, user, limit):
+        # type: (str, int) -> List[AuditLogEntry]
+        user_obj = User.get(self.session, name=user)
+        if not user_obj:
+            return []
+        results = (
+            self.session.query(AuditLog)
+            .filter(AuditLog.on_user_id == user_obj.id)
+            .order_by(desc(AuditLog.log_time))
+            .limit(limit)
         )
         return [self._to_audit_log_entry(e) for e in results]
 
@@ -47,6 +75,7 @@ class AuditLogRepository(object):
         on_group=None,  # type: Optional[str]
         on_permission=None,  # type: Optional[str]
         category=AuditLogCategory.general,  # type: AuditLogCategory
+        date=None,  # type: Optional[datetime]
     ):
         # type: (...) -> None
         """Log an action to the audit log.
@@ -55,6 +84,8 @@ class AuditLogRepository(object):
         are ported to this service.
         """
         actor = self._id_for_user(authorization.actor)
+        if not date:
+            date = datetime.utcnow()
 
         # We currently have no way to log audit log entries for objects that no longer exist.  This
         # should eventually be fixed via a schema change to use strings for all fields of the audit
@@ -65,7 +96,7 @@ class AuditLogRepository(object):
 
         entry = AuditLog(
             actor_id=actor,
-            log_time=datetime.utcnow(),
+            log_time=date,
             action=action,
             description=description,
             on_user_id=user,
@@ -78,7 +109,7 @@ class AuditLogRepository(object):
         # This should happen at the service layer, not the repository layer, but the API for the
         # plugin currently takes a SQL object.  This can move to the service layer once a data
         # transfer object is defined instead.
-        get_plugin_proxy().log_auditlog_entry(entry)
+        self.plugins.log_auditlog_entry(entry)
 
     def _id_for_group(self, group):
         # type: (str) -> int
@@ -104,6 +135,7 @@ class AuditLogRepository(object):
     def _to_audit_log_entry(self, entry):
         # type: (AuditLog) -> AuditLogEntry
         return AuditLogEntry(
+            date=entry.log_time,
             actor=entry.actor.username,
             action=entry.action,
             description=entry.description,

@@ -1,3 +1,5 @@
+from six import itervalues
+
 from grouper.audit import get_audits
 from grouper.constants import PERMISSION_AUDITOR
 from grouper.email_util import cancel_async_emails
@@ -11,15 +13,14 @@ from grouper.user_permissions import user_has_permission
 
 class AuditsComplete(GrouperHandler):
     def post(self, audit_id):
-        user = self.get_current_user()
-        if not user_has_permission(self.session, user, PERMISSION_AUDITOR):
+        if not user_has_permission(self.session, self.current_user, PERMISSION_AUDITOR):
             return self.forbidden()
 
         audit = self.session.query(Audit).filter(Audit.id == audit_id).one()
 
         # only owners can complete
-        owner_ids = {member.id for member in audit.group.my_owners().values()}
-        if user.id not in owner_ids:
+        owner_ids = {member.id for member in itervalues(audit.group.my_owners())}
+        if self.current_user.id not in owner_ids:
             return self.forbidden()
 
         if audit.complete:
@@ -28,13 +29,13 @@ class AuditsComplete(GrouperHandler):
         edges = {}
         for argument in self.request.arguments:
             if argument.startswith("audit_"):
-                edges[int(argument.split("_")[1])] = self.request.arguments[argument][0]
+                edges[int(argument.split("_")[1])] = self.request.arguments[argument][0].decode()
 
         for member in audit.my_members():
             if member.id in edges:
                 # You can only approve yourself (otherwise you can remove yourself
                 # from the group and leave it ownerless)
-                if member.member.id == user.id:
+                if member.member.id == self.current_user.id:
                     member.status = "approved"
                 elif edges[member.id] in AUDIT_STATUS_CHOICES:
                     member.status = edges[member.id]

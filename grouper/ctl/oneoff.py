@@ -1,16 +1,23 @@
 import logging
 import sys
-import types
 from contextlib import contextmanager
+from types import MethodType
+from typing import TYPE_CHECKING
 
-from grouper.ctl.util import make_session
 from grouper.oneoff import BaseOneOff
-from grouper.plugin import load_plugins
-from grouper.settings import settings
+from grouper.plugin.load import load_plugins
+
+if TYPE_CHECKING:
+    from argparse import Namespace
+    from grouper.ctl.settings import CtlSettings
+    from grouper.models.session import Session
+    from grouper.repositories.factory import SessionFactory
+    from typing import Any, Iterator, Tuple
 
 
 @contextmanager
 def wrapped_session(session, make_read_only):
+    # type: (Session, bool) -> Iterator[Session]
     """Simple wrapper around a sqlalchemy session allowing it to be used in a
     context and to be made read-only.
 
@@ -25,13 +32,15 @@ def wrapped_session(session, make_read_only):
         # HACK: monkey patch sqlachemy session so nothing writes to
         # database but things think that it did
         def is_clean_ro(self):
+            # type: (Session) -> bool
             return True
 
         def flush_ro(self, objects=None):
+            # type: (Session, Any) -> None
             pass
 
-        session.flush = types.MethodType(flush_ro, session)
-        session._is_clean = types.MethodType(is_clean_ro, session)
+        session.flush = MethodType(flush_ro, session)
+        session._is_clean = MethodType(is_clean_ro, session)
 
         yield session
 
@@ -45,14 +54,16 @@ def wrapped_session(session, make_read_only):
 
 
 def key_value_arg_type(arg):
+    # type: (str) -> Tuple[str, str]
     """Simple validate/transform function to use in argparse as a 'type' for an
     argument where the argument is of the form 'key=value'."""
     k, v = arg.split("=", 1)
     return (k, v)
 
 
-def oneoff_command(args):
-    session = make_session()
+def oneoff_command(args, settings, session_factory):
+    # type: (Namespace, CtlSettings, SessionFactory) -> None
+    session = session_factory.create_session()
 
     oneoffs = load_plugins(
         BaseOneOff, settings.oneoff_dirs, settings.oneoff_module_paths, "grouper-ctl"

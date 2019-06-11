@@ -1,15 +1,22 @@
 import logging
+from typing import TYPE_CHECKING
 
-from grouper.ctl.util import ensure_valid_service_account_name, make_session
+from grouper.ctl.util import ensure_valid_service_account_name
 from grouper.models.group import Group
 from grouper.models.service_account import ServiceAccount
 from grouper.models.user import User
 from grouper.service_account import create_service_account
 
+if TYPE_CHECKING:
+    from argparse import Namespace
+    from grouper.ctl.settings import CtlSettings
+    from grouper.repositories.factory import SessionFactory
+
 
 @ensure_valid_service_account_name
-def service_account_command(args):
-    session = make_session()
+def service_account_command(args, settings, session_factory):
+    # type: (Namespace, CtlSettings, SessionFactory) -> None
+    session = session_factory.create_session()
     actor_user = User.get(session, name=args.actor_name)
     if not actor_user:
         logging.fatal('Actor user "{}" is not a valid Grouper user'.format(args.actor_name))

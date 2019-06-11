@@ -1,0 +1,14 @@
+{% extends "email/base.html" %}
+
+{% block subject %}User tokens changed{% endblock %}
+
+{% block content %}
+
+<p>User token {{ action }} for <strong><a href="{{url}}/users/{{changed_user}}">{{ changed_user }}</a></strong>.</p>
+
+{% if changed_user != actioner %}
+    <p>This edit was made by
+    <a href="{{url}}/users/{{actioner}}">{{ actioner }}</a>.</p>
+{% endif %}
+
+{% endblock %}

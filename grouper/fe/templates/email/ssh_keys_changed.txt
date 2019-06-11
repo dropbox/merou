@@ -1,0 +1,14 @@
+{% extends "email/base.html" %}
+
+{% block subject %}SSH Keys Changed{% endblock %}
+
+{% block content %}
+
+Public SSH key {{ action }} for {{ changed_user }}.
+
+{% if changed_user != actioner %}
+    This edit was made by
+    {{ actioner }}.
+{% endif %}
+
+{% endblock %}

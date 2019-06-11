@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from grouper.fe.forms import ServiceAccountCreateForm
 from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
@@ -9,9 +11,16 @@ from grouper.service_account import (
     DuplicateServiceAccount,
 )
 
+if TYPE_CHECKING:
+    from typing import Any, Optional
+
 
 class ServiceAccountCreate(GrouperHandler):
-    def get(self, group_id=None, name=None):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        group_id = kwargs.get("group_id")  # type: Optional[str]
+        name = kwargs.get("name")  # type: Optional[str]
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -22,13 +31,19 @@ class ServiceAccountCreate(GrouperHandler):
         form = ServiceAccountCreateForm()
         return self.render("service-account-create.html", form=form, group=group)
 
-    def post(self, group_id=None, name=None):
+    def post(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        group_id = kwargs.get("group_id")  # type: Optional[str]
+        name = kwargs.get("name")  # type: Optional[str]
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
 
-        if "@" not in self.request.arguments["name"][0]:
-            self.request.arguments["name"][0] += "@" + settings.service_account_email_domain
+        if "@" not in self.request.arguments["name"][0].decode():
+            self.request.arguments["name"][0] += (
+                "@" + settings().service_account_email_domain
+            ).encode()
 
         if not can_create_service_account(self.session, self.current_user, group):
             return self.forbidden()
@@ -42,10 +57,10 @@ class ServiceAccountCreate(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors),
             )
 
-        if form.data["name"].split("@")[-1] != settings.service_account_email_domain:
+        if form.data["name"].split("@")[-1] != settings().service_account_email_domain:
             form.name.errors.append(
                 "All service accounts must have a username ending in {}".format(
-                    settings.service_account_email_domain
+                    settings().service_account_email_domain
                 )
             )
             return self.render(

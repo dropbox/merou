@@ -1,4 +1,5 @@
 import json
+from typing import TYPE_CHECKING
 
 from grouper import permissions
 from grouper.audit import UserNotAuditor
@@ -8,6 +9,9 @@ from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.group import Group
 from grouper.permissions import get_grantable_permissions, get_permission
 
+if TYPE_CHECKING:
+    from typing import Any, Optional
+
 
 class GroupPermissionRequest(GrouperHandler):
     @staticmethod
@@ -16,15 +20,17 @@ class GroupPermissionRequest(GrouperHandler):
         text_form = GroupPermissionRequestTextForm(data)
 
         for form in [dropdown_form, text_form]:
-            form.permission_name.choices = [("", "")] + sorted(
-                [(p, p) for p in args_by_perm.keys()]
-            )
+            form.permission_name.choices = [("", "")] + sorted([(p, p) for p in args_by_perm])
 
         dropdown_form.argument.choices = [("", "")]
 
         return dropdown_form, text_form
 
-    def get(self, group_id=None, name=None):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        group_id = kwargs.get("group_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -34,7 +40,7 @@ class GroupPermissionRequest(GrouperHandler):
             return self.forbidden()
 
         args_by_perm = get_grantable_permissions(
-            self.session, settings.restricted_ownership_permissions
+            self.session, settings().restricted_ownership_permissions
         )
         dropdown_form, text_form = GroupPermissionRequest._get_forms(args_by_perm, None)
 
@@ -44,11 +50,15 @@ class GroupPermissionRequest(GrouperHandler):
             text_form=text_form,
             group=group,
             args_by_perm_json=json.dumps(args_by_perm),
-            dropdown_help=settings.permission_request_dropdown_help,
-            text_help=settings.permission_request_text_help,
+            dropdown_help=settings().permission_request_dropdown_help,
+            text_help=settings().permission_request_text_help,
         )
 
-    def post(self, group_id=None, name=None):
+    def post(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        group_id = kwargs.get("group_id")  # type: Optional[int]
+        name = kwargs.get("name")  # type: Optional[str]
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -59,16 +69,16 @@ class GroupPermissionRequest(GrouperHandler):
 
         # check inputs
         args_by_perm = get_grantable_permissions(
-            self.session, settings.restricted_ownership_permissions
+            self.session, settings().restricted_ownership_permissions
         )
         dropdown_form, text_form = GroupPermissionRequest._get_forms(
             args_by_perm, self.request.arguments
         )
 
         argument_type = self.request.arguments.get("argument_type")
-        if argument_type and argument_type[0] == "text":
+        if argument_type and argument_type[0].decode() == "text":
             form = text_form
-        elif argument_type and argument_type[0] == "dropdown":
+        elif argument_type and argument_type[0].decode() == "dropdown":
             form = dropdown_form
             form.argument.choices = [(a, a) for a in args_by_perm[form.permission_name.data]]
         else:
@@ -86,8 +96,8 @@ class GroupPermissionRequest(GrouperHandler):
                 group=group,
                 args_by_perm_json=json.dumps(args_by_perm),
                 alerts=self.get_form_alerts(form.errors),
-                dropdown_help=settings.permission_request_dropdown_help,
-                text_help=settings.permission_request_text_help,
+                dropdown_help=settings().permission_request_dropdown_help,
+                text_help=settings().permission_request_text_help,
             )
 
         permission = get_permission(self.session, form.permission_name.data)
@@ -129,7 +139,7 @@ class GroupPermissionRequest(GrouperHandler):
         except UserNotAuditor as e:
             alerts = [Alert("danger", str(e))]
         else:
-            alerts = None
+            alerts = []
 
         if alerts:
             return self.render(

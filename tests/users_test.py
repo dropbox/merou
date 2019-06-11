@@ -1,6 +1,5 @@
-from urllib import urlencode
-
 import pytest
+from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 
 from grouper.constants import USER_ADMIN, USER_ENABLE
@@ -141,7 +140,7 @@ def test_graph_disable(
 ):
     graph.update_from_db(session)
     old_users = graph.users
-    assert sorted(old_users) == sorted(users.keys() + ["service@a.co"])
+    assert sorted(old_users) == sorted(list(users.keys()) + ["service@a.co"])
 
     # disable a user
     username = u"oliver@a.co"

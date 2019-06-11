@@ -3,6 +3,8 @@
 {% from 'macros/ui.html' import account, one_public_key_row %}
 {% from 'macros/ui.html' import dropdown, paginator, public_key_modal with context %}
 
+{% block subtitle %} public keys{% endblock %}
+
 {% block heading %}
     {% if not form.enabled.data %}
       Disabled

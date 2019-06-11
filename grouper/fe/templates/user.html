@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 
 {% from 'macros/ui.html' import group_panel, permission_panel, log_entry_panel, tokens_panel,
-                                shell_panel, passwords_panel %}
+                                shell_panel, passwords_panel, github_panel %}
 {% from 'macros/ui.html' import public_key_panel with context %}
+
+{% block subtitle %} user {{user.username}}{% endblock %}
 
 {% block heading %}
     <a href="/users">Users</a>
@@ -116,6 +118,12 @@
 {% endif %}
 
 <div class="row">
+    <div class="col-md-4">
+        {{ github_panel(user, github_username, can_control) }}
+    </div>
+</div>
+
+<div class="row">
     <div class="col-md-12">
         {{ log_entry_panel(log_entries) }}
     </div>
@@ -145,7 +153,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default"
                             data-dismiss="modal">Close</button>
-                    {{ xsrf_form() }}
+                    {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Enable</button>
                 </div>
             </form>
@@ -172,7 +180,7 @@
                         data-dismiss="modal">Close</button>
                 <form action="/users/{{user.id}}/disable" method="post"
                       class="inline">
-                    {{ xsrf_form() }}
+                    {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Disable</button>
                 </form>
             </div>

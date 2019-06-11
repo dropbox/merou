@@ -1,0 +1,5 @@
+{% from 'macros/ui.html' import form_field -%}
+
+{{ form_field(form.username, 3, 8, class_="form-control") }}
+
+{{ xsrf_form()|safe }}

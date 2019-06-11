@@ -1,14 +1,10 @@
 import csv
 import logging
+import sys
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
-from grouper.ctl.util import (
-    argparse_validate_date,
-    ensure_valid_groupname,
-    ensure_valid_username,
-    make_session,
-    open_file,
-)
+from grouper.ctl.util import argparse_validate_date, ensure_valid_groupname, ensure_valid_username
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
 from grouper.models.user import User
@@ -16,13 +12,16 @@ from grouper.plugin.exceptions import PluginRejectedGroupMembershipUpdate
 
 if TYPE_CHECKING:
     from argparse import Namespace
+    from grouper.ctl.settings import CtlSettings
     from grouper.models.base.session import Session
+    from grouper.repositories.factory import SessionFactory
+    from typing import Iterator, IO
 
 
 @ensure_valid_groupname
-def group_command(args):
-    # type: (Namespace) -> None
-    session = make_session()
+def group_command(args, settings, session_factory):
+    # type: (Namespace, CtlSettings, SessionFactory) -> None
+    session = session_factory.create_session()
     group = session.query(Group).filter_by(groupname=args.groupname).scalar()
     if not group:
         logging.error("No such group %s".format(args.groupname))
@@ -32,10 +31,11 @@ def group_command(args):
         # somewhat hacky: using function instance to use # `ensure_valid_username` only on
         # these subcommands
         @ensure_valid_username
-        def call_mutate(args):
+        def call_mutate(args, settings, session_factory):
+            # type: (Namespace, CtlSettings, SessionFactory) -> None
             mutate_group_command(session, group, args)
 
-        call_mutate(args)
+        call_mutate(args, settings, session_factory)
 
     elif args.subcommand == "log_dump":
         logdump_group_command(session, group, args)
@@ -86,7 +86,24 @@ def mutate_group_command(session, group, args):
                 )
                 session.commit()
             except PluginRejectedGroupMembershipUpdate as e:
-                logging.error(str(e))
+                logging.error("%s", e)
+
+
+@contextmanager
+def open_file_or_stdout_for_write(fn):
+    # type: (str) -> Iterator[IO[str]]
+    """mimic standard library `open` function to support stdout if None is
+    specified as the filename."""
+    if not fn or fn == "--":
+        fh = sys.stdout
+    else:
+        fh = open(fn, "w")
+
+    try:
+        yield fh
+    finally:
+        if fh is not sys.stdout:
+            fh.close()
 
 
 def logdump_group_command(session, group, args):
@@ -98,7 +115,7 @@ def logdump_group_command(session, group, args):
     if args.end_date:
         log_entries = log_entries.filter(AuditLog.log_time <= args.end_date)
 
-    with open_file(args.outfile, "w") as fh:
+    with open_file_or_stdout_for_write(args.outfile) as fh:
         csv_w = csv.writer(fh)
         for log_entry in log_entries:
             if log_entry.on_user:

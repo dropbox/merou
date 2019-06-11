@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% from 'macros/ui.html' import paginator, dropdown with context %}
 
+{% block subtitle %} requests for {{ current_user.name }}{% endblock %}
+
 {% block heading %}
     Permission Requests
 {% endblock %}
@@ -44,10 +46,15 @@
                         </a>
                     </td>
                     <td class="request-requested">
-                        {{ request.permission.name }}, {{ request.argument }}
+                        <a href="/permissions/{{ request.permission.name }}">{{ request.permission.name }}</a>,
+                        {{ request.argument }}
                     </td>
 		    <td class="request-approvers">
-		        {{ ", ".join(granters[request.permission.name][request.argument]) }}
+                        {% for granter in granters[request.permission.name][request.argument] %}
+                            <a href="/groups/{{ granter }}">
+                                {{ granter }}{% if not loop.last %},{% endif %}
+                            </a>
+                        {% endfor %}
 		    </td>
                     <td class="request-status">{{ request.status }}</td>
                     <td class="request-requested-at">{{ request.requested_at | print_date }}</td>
@@ -59,10 +66,16 @@
                     <td colspan="4">
                         <dl class="dl-horizontal no-margin-bottom">
                             <dt>Group:</dt>
-			    <dd class="request-group">{{ request.group.name }}</dd>
+			    <dd class="request-group">
+                                <a href="/groups/{{ request.group.name }}">
+                                    {{ request.group.name }}
+                                </a>
+                            </dd>
                             <dt>Who:</dt>
                             <dd class="request-who">
-                                {{ status_change.user.name  }}
+                                <a href="/users/{{ status_change.user.name }}">
+                                    {{ status_change.user.name }}
+                                </a>
                                 ({{ status_change.change_at|long_ago_str }})
                             </dd>
                             <dt>Reason:</dt>

@@ -1,0 +1,12 @@
+{% extends "email/base.html" %}
+
+{% block subject %}expiration warning for membership in group '{{ group_name }}'{% endblock %}
+
+{% block content %}
+{% if member_is_user %}
+<p>Your membership is about to expire at {{ expiration|print_date }}</p>
+
+{% else %}
+<p>The membership of '{{ member_name }}' in the group '{{ group_name }}' (of which you are an owner) is about to expire on {{ expiration|print_date }}.</p>
+{% endif %}
+{% endblock %}

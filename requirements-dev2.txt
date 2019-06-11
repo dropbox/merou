@@ -1,0 +1,11 @@
+coverage==4.5.3
+flake8-import-order==0.18.1
+flake8==3.7.7
+groupy>=0.5.1
+mock==2.0.0
+py==1.5.2
+pytest-mock==1.10.3
+pytest-tornado==0.7.0
+pytest-xdist==1.28.0
+pytest==4.4.0
+selenium==3.141.0

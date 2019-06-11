@@ -8,8 +8,9 @@ import errno
 import logging
 import socket
 import subprocess
+import sys
 import time
-from contextlib import closing, contextmanager
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 from selenium.webdriver import Chrome, ChromeOptions
@@ -21,16 +22,12 @@ if TYPE_CHECKING:
     from typing import Iterator
 
 
-def _get_unused_port():
-    # type: () -> int
-    """Bind, requesting a system-allocated port, and return it.
-
-    This isn't strictly correct in that there's a race condition where the port could be taken by
-    something else before the server we launch uses it.  Hopefully this will not be common.
-    """
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(("", 0))
-        return s.getsockname()[1]
+def _bind_socket():
+    # type: () -> socket.socket
+    """Bind a system-allocated port and return it."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("127.0.0.1", 0))
+    return s
 
 
 def _wait_until_accept(port, timeout=3.0):
@@ -59,20 +56,22 @@ def _wait_until_accept(port, timeout=3.0):
 @contextmanager
 def api_server(tmpdir):
     # type: (LocalPath) -> Iterator[str]
-    api_port = _get_unused_port()
+    api_socket = _bind_socket()
+    api_port = api_socket.getsockname()[1]
 
     cmd = [
+        sys.executable,
         src_path("bin", "grouper-api"),
-        "-c",
+        "-vvc",
         src_path("config", "dev.yaml"),
-        "-p",
-        str(api_port),
         "-d",
         db_url(tmpdir),
+        "--listen-stdin",
     ]
 
     logging.info("Starting server with command: %s", " ".join(cmd))
-    p = subprocess.Popen(cmd, env=bin_env())
+    p = subprocess.Popen(cmd, env=bin_env(), stdin=api_socket.fileno())
+    api_socket.close()
 
     logging.info("Waiting on server to come online")
     _wait_until_accept(api_port)
@@ -86,41 +85,56 @@ def api_server(tmpdir):
 @contextmanager
 def frontend_server(tmpdir, user):
     # type: (LocalPath, str) -> Iterator[str]
-    proxy_port = _get_unused_port()
-    fe_port = _get_unused_port()
+    proxy_socket = _bind_socket()
+    proxy_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    proxy_port = proxy_socket.getsockname()[1]
+    fe_socket = _bind_socket()
+    fe_port = fe_socket.getsockname()[1]
 
-    cmds = [
-        [
-            src_path("bin", "grouper-ctl"),
-            "-vvc",
-            src_path("config", "dev.yaml"),
-            "user_proxy",
-            "-P",
-            str(fe_port),
-            "-p",
-            str(proxy_port),
-            user,
-        ],
-        [
-            src_path("bin", "grouper-fe"),
-            "-vvc",
-            src_path("config", "dev.yaml"),
-            "-p",
-            str(fe_port),
-            "-d",
-            db_url(tmpdir),
-        ],
+    proxy_cmd = [
+        sys.executable,
+        src_path("bin", "grouper-ctl"),
+        "-vvc",
+        src_path("config", "dev.yaml"),
+        "user_proxy",
+        "-P",
+        str(fe_port),
+        "-p",
+        str(proxy_port),
+        user,
+    ]
+    fe_cmd = [
+        sys.executable,
+        src_path("bin", "grouper-fe"),
+        "-vvc",
+        src_path("config", "dev.yaml"),
+        "-d",
+        db_url(tmpdir),
+        "--listen-stdin",
     ]
 
     subprocesses = []
-    for cmd in cmds:
-        logging.info("Starting command: %s", " ".join(cmd))
-        p = subprocess.Popen(cmd, env=bin_env())
-        subprocesses.append(p)
+
+    logging.info("Starting command: %s", " ".join(fe_cmd))
+    fe_process = subprocess.Popen(fe_cmd, env=bin_env(), stdin=fe_socket.fileno())
+    subprocesses.append(fe_process)
+    fe_socket.close()
+
+    # TODO(rra): There is a race condition here because grouper-ctl user_proxy doesn't implement
+    # --listen-stdin yet, which in turn is because the built-in Python HTTPServer doesn't support
+    # wrapping a pre-existing socket.  Since we have to close the socket so that grouper-ctl
+    # user_proxy can re-open it, something else might grab it in the interim.  Once it is rewritten
+    # using Tornado, it can use the same approach as the frontend and API servers and take an open
+    # socket on standard input.  At that point, we can also drop the SO_REUSEADDR above, which is
+    # there to protect against the race condition.
+    logging.info("Starting command: %s", " ".join(proxy_cmd))
+    proxy_socket.close()
+    proxy_process = subprocess.Popen(proxy_cmd, env=bin_env())
+    subprocesses.append(proxy_process)
 
     logging.info("Waiting on server to come online")
-    _wait_until_accept(proxy_port)
     _wait_until_accept(fe_port)
+    _wait_until_accept(proxy_port)
     logging.info("Connection established")
 
     yield "http://localhost:{}".format(proxy_port)
@@ -135,4 +149,4 @@ def selenium_browser():
     options.add_argument("headless")
     options.add_argument("no-sandbox")
     options.add_argument("window-size=1920,1080")
-    return Chrome(chrome_options=options)
+    return Chrome(options=options)

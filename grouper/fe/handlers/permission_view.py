@@ -1,29 +1,43 @@
+from typing import TYPE_CHECKING
+
 from grouper.fe.util import GrouperHandler
-from grouper.permissions import (
-    get_groups_by_permission,
-    get_log_entries_by_permission,
-    get_permission,
-)
-from grouper.user_permissions import user_is_permission_admin
+from grouper.usecases.view_permission import ViewPermissionUI
+
+if TYPE_CHECKING:
+    from grouper.entities.audit_log_entry import AuditLogEntry
+    from grouper.entities.permission import Permission, PermissionAccess
+    from grouper.entities.permission_grant import (
+        GroupPermissionGrant,
+        ServiceAccountPermissionGrant,
+    )
+    from typing import Any, List
 
 
-class PermissionView(GrouperHandler):
-    def get(self, name=None):
-        # TODO: use cached data instead, add refresh to appropriate redirects.
-        permission = get_permission(self.session, name)
-        if not permission:
-            return self.notfound()
-
-        can_change_audit_status = user_is_permission_admin(self.session, self.current_user)
-        can_disable = user_is_permission_admin(self.session, self.current_user)
-        mapped_groups = get_groups_by_permission(self.session, permission)
-        log_entries = get_log_entries_by_permission(self.session, permission)
-
+class PermissionView(GrouperHandler, ViewPermissionUI):
+    def viewed_permission(
+        self,
+        permission,  # type: Permission
+        group_grants,  # type: List[GroupPermissionGrant]
+        service_account_grants,  # type: List[ServiceAccountPermissionGrant]
+        access,  # type: PermissionAccess
+        audit_log_entries,  # type: List[AuditLogEntry]
+    ):
+        # type (...) -> None
         self.render(
             "permission.html",
             permission=permission,
-            can_disable=can_disable,
-            mapped_groups=mapped_groups,
-            log_entries=log_entries,
-            can_change_audit_status=can_change_audit_status,
+            access=access,
+            group_grants=group_grants,
+            service_account_grants=service_account_grants,
+            audit_log_entries=audit_log_entries,
         )
+
+    def view_permission_failed_not_found(self, name):
+        # type: (str) -> None
+        self.notfound()
+
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        name = kwargs["name"]  # type: str
+        usecase = self.usecase_factory.create_view_permission_usecase(self)
+        usecase.view_permission(name, self.current_user.username, audit_log_limit=20)

@@ -1,9 +1,9 @@
 from collections import namedtuple
 from datetime import datetime, timedelta
-from urllib import urlencode
 
 import pytest
 from mock import call, Mock, patch
+from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 
 from grouper.audit import (
@@ -16,6 +16,7 @@ from grouper.audit import (
     UserNotAuditor,
 )
 from grouper.background.background_processor import BackgroundProcessor
+from grouper.background.settings import BackgroundSettings
 from grouper.constants import AUDIT_VIEWER, PERMISSION_AUDITOR
 from grouper.graph import NoSuchGroup
 from grouper.models.audit_log import AuditLog, AuditLogCategory
@@ -23,7 +24,7 @@ from grouper.models.group import Group
 from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
 from grouper.permissions import enable_permission_auditing, get_or_create_permission
-from grouper.settings import settings
+from grouper.settings import set_global_settings
 from tests.fixtures import (  # noqa: F401
     fe_app as app,
     graph,
@@ -175,7 +176,7 @@ def test_audit_end_to_end(session, users, groups, http_client, base_url, graph):
     open_audits = [
         Audit(
             x.id,
-            x.group.my_owners().iterkeys().next(),
+            next(iter(x.group.my_owners())),
             x.group.name,
             [AuditMember(am.id, am.edge.member_type, am.edge_id) for am in x.my_members()],
         )
@@ -214,7 +215,7 @@ def test_audit_end_to_end(session, users, groups, http_client, base_url, graph):
             # approve
             body_dict["audit_{}".format(am.id)] = "approved"
 
-    owner_name = one_audit.group.my_owners().iterkeys().next()
+    owner_name = next(iter(one_audit.group.my_owners()))
     fe_url = url(base_url, "/audits/{}/complete".format(one_audit.id))
     resp = yield http_client.fetch(
         fe_url, method="POST", body=urlencode(body_dict), headers={"X-Grouper-User": owner_name}
@@ -291,6 +292,8 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
     user43 will be added to the auditors group.
 
     """
+    settings = BackgroundSettings()
+    set_global_settings(settings)
 
     #
     # set up our test part of the graph
@@ -441,10 +444,10 @@ def test_auditor_promotion(mock_nnp, mock_gagn, session, graph, permissions, use
 def test_get_auditors_group(session, standard_graph):  # noqa: F811
     with pytest.raises(NoSuchGroup) as exc:
         get_auditors_group(Mock(auditors_group=None), session)
-    assert exc.value.message == "Please ask your admin to configure the `auditors_group` settings"
+    assert str(exc.value) == "Please ask your admin to configure the `auditors_group` settings"
     with pytest.raises(NoSuchGroup) as exc:
         get_auditors_group(Mock(auditors_group="do-not-exist"), session)
-    assert exc.value.message == "Please ask your admin to configure the default group for auditors"
+    assert str(exc.value) == "Please ask your admin to configure the default group for auditors"
     # now should be able to get the group
     auditors_group = get_auditors_group(Mock(auditors_group="auditors"), session)
     assert auditors_group is not None

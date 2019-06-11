@@ -6,6 +6,7 @@ from datetime import datetime
 from time import sleep
 from typing import TYPE_CHECKING
 
+from six import iteritems
 from sqlalchemy import and_
 
 from grouper import stats
@@ -16,18 +17,18 @@ from grouper.email_util import (
     notify_nonauditor_promoted,
     process_async_emails,
 )
+from grouper.entities.group_edge import APPROVER_ROLE_INDICES
 from grouper.graph import Graph
 from grouper.models.base.session import Session
 from grouper.models.group import Group
-from grouper.models.group_edge import APPROVER_ROLE_INDICES, GroupEdge
+from grouper.models.group_edge import GroupEdge
 from grouper.models.user import User
 from grouper.perf_profile import prune_old_traces
-from grouper.util import get_database_url
 
 if TYPE_CHECKING:
-    from grouper.settings import Settings
+    from grouper.background.settings import BackgroundSettings
     from grouper.error_reporting import SentryProxy
-    from typing import Dict, Set
+    from typing import Dict, NoReturn, Set
 
 
 class BackgroundProcessor(object):
@@ -37,7 +38,7 @@ class BackgroundProcessor(object):
     """
 
     def __init__(self, settings, sentry_client):
-        # type: (Settings, SentryProxy) -> None
+        # type: (BackgroundSettings, SentryProxy) -> None
         """Initialize new BackgroundProcessor"""
 
         self.settings = settings
@@ -45,10 +46,12 @@ class BackgroundProcessor(object):
         self.logger = logging.getLogger(__name__)
 
     def _capture_exception(self):
+        # type: () -> None
         if self.sentry_client:
             self.sentry_client.captureException()
 
     def crash(self):
+        # type: () -> NoReturn
         os._exit(1)
 
     def expire_edges(self, session):
@@ -98,8 +101,8 @@ class BackgroundProcessor(object):
         nonauditor_approver_to_groups = defaultdict(set)  # type: Dict[User, Set[str]]
         user_is_auditor = {}  # type: Dict[str, bool]
         for group_tuple in graph.get_groups(audited=True, directly_audited=False):
-            group_md = graph.get_group_details(group_tuple.groupname, expose_aliases=False)
-            for username, user_md in group_md["users"].items():
+            group_md = graph.get_group_details(group_tuple.name, expose_aliases=False)
+            for username, user_md in iteritems(group_md["users"]):
                 if username not in user_is_auditor:
                     user_perms = graph.get_user_details(username)["permissions"]
                     user_is_auditor[username] = any(
@@ -110,15 +113,16 @@ class BackgroundProcessor(object):
                     continue
                 if user_md["role"] in APPROVER_ROLE_INDICES:
                     # non-auditor approver. BAD!
-                    nonauditor_approver_to_groups[username].add(group_tuple.groupname)
+                    nonauditor_approver_to_groups[username].add(group_tuple.name)
 
         if nonauditor_approver_to_groups:
             auditors_group = get_auditors_group(self.settings, session)
-            for username, group_names in nonauditor_approver_to_groups.items():
+            for username, group_names in iteritems(nonauditor_approver_to_groups):
                 reason = "auto-added due to having approver role(s) in group(s): {}".format(
                     ", ".join(group_names)
                 )
                 user = User.get(session, name=username)
+                assert user
                 auditors_group.add_member(user, user, reason, status="actioned")
                 notify_nonauditor_promoted(
                     self.settings, session, user, auditors_group, group_names
@@ -128,10 +132,10 @@ class BackgroundProcessor(object):
 
     def run(self):
         # type: () -> None
-        initial_url = get_database_url(self.settings)
+        initial_url = self.settings.database
         while True:
             try:
-                if get_database_url(self.settings) != initial_url:
+                if self.settings.database != initial_url:
                     self.crash()
                 with closing(Session()) as session:
                     self.logger.info("Expiring edges....")

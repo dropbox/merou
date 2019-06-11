@@ -271,6 +271,10 @@ span.disabled {
     white-space: nowrap;
 }
 
+.popover {
+    z-index: 2000;
+}
+
 .popover-content {
     font-weight: normal;
 }
@@ -331,4 +335,8 @@ a.white {
 .standard-panel {
     max-height: 390px;
     overflow-y: auto;
+}
+
+.clickthru-checkbox {
+    display: none;
 }

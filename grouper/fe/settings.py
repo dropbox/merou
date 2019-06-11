@@ -1,38 +1,49 @@
-import pytz
+from typing import cast, TYPE_CHECKING
 
-from grouper.settings import Settings, settings as base_settings
+from grouper.settings import set_global_settings, Settings, settings as global_settings
 
-
-class FeSettings(Settings):
-
-    default_timezone = pytz.timezone("UTC")
-
-    def override_timezone(self, value):
-        try:
-            return pytz.timezone(value)
-        except pytz.exceptions.UnknownTimeZoneError:
-            return self.default_timezone
+if TYPE_CHECKING:
+    from typing import Dict, List, Optional
 
 
-settings = FeSettings.from_settings(
-    base_settings,
-    {
-        "address": None,
-        "cdnjs_prefix": "//cdnjs.cloudflare.com",
-        "date_format": "%Y-%m-%d %I:%M %p",
-        "debug": False,
-        "how_to_get_help": None,
-        "num_processes": 1,
-        "permission_request_dropdown_help": None,
-        "permission_request_text_help": None,
-        "port": 8989,
-        "refresh_interval": 60,
-        "service_account_email_domain": "svc.localhost",
-        "shell": [
-            ["/bin/false", "Shell support in Grouper has not been setup by the administrator"]
-        ],
-        "site_docs": None,
-        "timezone": FeSettings.default_timezone,
-        "user_auth_header": "X-Grouper-User",
-    },
-)
+class FrontendSettings(Settings):
+    """Grouper frontend settings."""
+
+    @staticmethod
+    def global_settings_from_config(filename=None, section="fe"):
+        # type: (Optional[str], Optional[str]) -> FrontendSettings
+        """Create and return a new global Settings singleton."""
+        settings = FrontendSettings()
+        settings.update_from_config(filename, section)
+        set_global_settings(settings)
+        return settings
+
+    def __init__(self):
+        """Set up frontend defaults."""
+        super(FrontendSettings, self).__init__()
+
+        # Keep attributes here in the same order as in config/dev.yaml.
+        self.address = None  # type: Optional[str]
+        self.port = 8989
+        self.cdnjs_prefix = "https://cdnjs.cloudflare.com"
+        self.debug = False
+        self.how_to_get_help = "if this is prod, ask someone to fix the how_to_get_help setting"
+        self.num_processes = 1
+        self.permission_request_dropdown_help = ""
+        self.permission_request_text_help = ""
+        self.refresh_interval = 60
+        self.shell = (
+            [["/bin/false", "Shell support in Grouper has not been setup by the administrator"]],
+        )
+        self.site_docs = []  # type: List[Dict[str, str]]
+
+    def update_from_config(self, filename=None, section="fe"):
+        # type: (Optional[str], Optional[str]) -> None
+        super(FrontendSettings, self).update_from_config(filename, section)
+
+
+# See grouper.settings for more information about why this nonsense is here.
+def settings():
+    # type: () -> FrontendSettings
+    """Return a global FrontendSettings for frontend code."""
+    return cast(FrontendSettings, global_settings())

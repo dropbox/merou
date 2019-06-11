@@ -23,7 +23,7 @@ class GroupJoin(GrouperHandler):
         name = kwargs.get("name")  # type: Optional[str]
 
         group = Group.get(self.session, group_id, name)
-        if not group:
+        if not group or not group.enabled:
             return self.notfound()
 
         group_md = self.graph.get_group_details(group.name)
@@ -38,7 +38,7 @@ class GroupJoin(GrouperHandler):
         name = kwargs.get("name")  # type: Optional[str]
 
         group = Group.get(self.session, group_id, name)
-        if not group:
+        if not group or not group.enabled:
             return self.notfound()
 
         form = GroupJoinForm(self.request.arguments)

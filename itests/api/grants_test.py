@@ -29,6 +29,9 @@ def create_graph(setup):
     setup.create_user("oliver@a.co")
     setup.create_service_account("service@svc.localhost", "some-group")
     setup.grant_permission_to_service_account("some-permission", "*", "service@svc.localhost")
+    setup.create_role_user("role-user@a.co")
+    setup.grant_permission_to_group("some-permission", "foo", "role-user@a.co")
+    setup.grant_permission_to_group("some-permission", "role", "role-user@a.co")
 
 
 def test_list_grants(tmpdir, setup):
@@ -37,13 +40,18 @@ def test_list_grants(tmpdir, setup):
         create_graph(setup)
 
     expected = {
-        "not-gary": {"users": {"zorkian@a.co": ["foo"]}, "service_accounts": {}},
-        "other-permission": {"users": {"gary@a.co": [""]}, "service_accounts": {}},
+        "not-gary": {"users": {"zorkian@a.co": ["foo"]}, "role_users": {}, "service_accounts": {}},
+        "other-permission": {
+            "users": {"gary@a.co": [""]},
+            "role_users": {},
+            "service_accounts": {},
+        },
         "some-permission": {
             "users": {"gary@a.co": ["bar", "foo"], "zorkian@a.co": ["*"]},
+            "role_users": {"role-user@a.co": ["foo", "role"]},
             "service_accounts": {"service@svc.localhost": ["*"]},
         },
-        "twice": {"users": {"gary@a.co": ["*"]}, "service_accounts": {}},
+        "twice": {"users": {"gary@a.co": ["*"]}, "role_users": {}, "service_accounts": {}},
     }
 
     with api_server(tmpdir) as api_url:
@@ -60,6 +68,7 @@ def test_list_grants_of_permission(tmpdir, setup):
 
     expected = {
         "users": {"gary@a.co": ["bar", "foo"], "zorkian@a.co": ["*"]},
+        "role_users": {"role-user@a.co": ["foo", "role"]},
         "service_accounts": {"service@svc.localhost": ["*"]},
     }
 

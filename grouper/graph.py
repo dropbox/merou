@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
     Node = Tuple[str, str]
-    Edge = Tuple[Node, Node, Dict[str, str]]
+    Edge = Tuple[Node, Node, Dict[str, int]]
 
 MEMBER_TYPE_MAP = {"User": "users", "Group": "subgroups"}
 EPOCH = datetime(1970, 1, 1)
@@ -173,13 +173,24 @@ class GroupGraph(object):
             group_service_accounts = self._get_group_service_accounts(session)
             service_account_grants = all_service_account_permissions(session)
 
+            nodes = self._get_nodes(groups, user_metadata)
+            edges = self._get_edges(session)
+            edges_without_np_owner = [
+                (n1, n2) for n1, n2, r in edges if GROUP_EDGE_ROLES[r["role"]] != "np-owner"
+            ]
+
             graph = DiGraph()
-            graph.add_nodes_from(self._get_nodes(groups, user_metadata))
-            graph.add_edges_from(self._get_edges(session))
+            graph.add_nodes_from(nodes)
+            graph.add_edges_from(edges)
             rgraph = graph.reverse()
 
+            # We need a separate graph without np-owner edges to construct the mapping of
+            # permissions to users with that grant.
+            permission_graph = DiGraph()
+            permission_graph.add_nodes_from(nodes)
+            permission_graph.add_edges_from(edges_without_np_owner)
             grants_by_permission = self._get_grants_by_permission(
-                graph, group_grants, service_account_grants, user_metadata
+                permission_graph, group_grants, service_account_grants, user_metadata
             )
 
             with self.lock:
@@ -440,9 +451,9 @@ class GroupGraph(object):
 
         return edges
 
+    @staticmethod
     def _get_grants_by_permission(
-        self,
-        graph,  # type: DiGraph
+        permission_graph,  # type: DiGraph
         group_grants,  # type: Dict[str, List[GroupPermissionGrant]]
         service_account_grants,  # type: Dict[str, List[ServiceAccountPermissionGrant]]
         user_metadata,  # type: Dict[str, Any]
@@ -467,13 +478,10 @@ class GroupGraph(object):
         user_grants = defaultdict(lambda: defaultdict(set))  # type: Dict[str, Dict[str, Set[str]]]
         for group, grant_list in iteritems(group_grants):
             members = set()  # type: Set[str]
-            paths = single_source_shortest_path(graph, ("Group", group))
+            paths = single_source_shortest_path(permission_graph, ("Group", group))
             for member, path in iteritems(paths):
                 member_type, member_name = member
                 if member_type != "User":
-                    continue
-                role = graph[("Group", group)][path[1]]["role"]
-                if GROUP_EDGE_ROLES[role] == "np-owner":
                     continue
                 members.add(member_name)
             for grant in grant_list:

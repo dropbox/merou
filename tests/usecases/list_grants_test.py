@@ -106,3 +106,34 @@ def test_unknown_permission(setup):
             users={}, role_users={}, service_accounts={}
         )
     }
+
+
+def test_np_owner_grants(setup):
+    # type: (SetupTest) -> None
+    """Test special behavior of np-owner.
+
+    np-owner roles should not cause permission grants to pass on to the user with that role, either
+    as a direct member or as np-owner of a group that in turn is a member of the group with the
+    permission.  To make things even trickier, the user who is an np-owner on the shortest path
+    should still get the permission if there is some other path that doesn't involve np-owner.
+    This sets up a graph to test this behavior.
+    """
+    with setup.transaction():
+        setup.add_user_to_group("user@a.co", "group")
+        setup.add_user_to_group("user@a.co", "np-group", "np-owner")
+        setup.grant_permission_to_group("permission", "direct", "np-group")
+        setup.add_group_to_group("np-group", "parent-group")
+        setup.grant_permission_to_group("permission", "parent", "parent-group")
+        setup.add_group_to_group("group", "intermediate-group")
+        setup.add_group_to_group("intermediate-group", "grandparent-group")
+        setup.add_group_to_group("np-group", "grandparent-group")
+        setup.grant_permission_to_group("permission", "grandparent", "grandparent-group")
+
+    mock_ui = MockUI()
+    usecase = setup.usecase_factory.create_list_grants_usecase(mock_ui)
+    usecase.list_grants()
+    assert mock_ui.grants == {
+        "permission": UniqueGrantsOfPermission(
+            users={"user@a.co": ["grandparent"]}, role_users={}, service_accounts={}
+        )
+    }

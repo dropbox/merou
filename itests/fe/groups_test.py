@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from grouper.entities.group import GroupJoinPolicy
 from itests.fixtures import async_server  # noqa: F401
 from itests.pages.exceptions import NoSuchElementException
 from itests.pages.groups import (
@@ -31,15 +32,34 @@ if TYPE_CHECKING:
     from tests.setup import SetupTest
 
 
-def test_list_groups(async_server, browser, groups):  # noqa: F811
-    fe_url = url(async_server, "/groups")
-    browser.get(fe_url)
+def test_list_groups(tmpdir, setup, browser):
+    # type: (LocalPath, SetupTest, Chrome) -> None
+    with setup.transaction():
+        setup.create_group("one-group", "Some group", GroupJoinPolicy.CAN_JOIN)
+        setup.create_group("another-group", "Another group", GroupJoinPolicy.CAN_ASK)
+        setup.create_group("private", join_policy=GroupJoinPolicy.NOBODY)
 
-    page = GroupsViewPage(browser)
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups"))
+        page = GroupsViewPage(browser)
 
-    for name in groups:
-        row = page.find_group_row(name)
-        assert row.href.endswith("/groups/{}".format(name))
+        group_row = page.find_group_row("one-group")
+        assert group_row.name == "one-group"
+        assert group_row.href == url(frontend_url, "/groups/one-group")
+        assert group_row.description == "Some group"
+        assert group_row.can_join == "Anyone"
+
+        group_row = page.find_group_row("another-group")
+        assert group_row.name == "another-group"
+        assert group_row.href == url(frontend_url, "/groups/another-group")
+        assert group_row.description == "Another group"
+        assert group_row.can_join == "Must Ask"
+
+        group_row = page.find_group_row("private")
+        assert group_row.name == "private"
+        assert group_row.href == url(frontend_url, "/groups/private")
+        assert group_row.description == ""
+        assert group_row.can_join == "Nobody"
 
 
 def test_list_audited_groups(tmpdir, setup, browser):

@@ -63,9 +63,9 @@
                     <td class="group-name">{{ account(group.name, "group") }}</td>
                     <td class="group-description">{{group.description|default("", True)}}</td>
                     <td class="group-can-join">
-                        {% if group.canjoin == "canjoin" %}
+                        {% if group.join_policy.name == "CAN_JOIN" %}
                             Anyone
-                        {% elif group.canjoin == "canask" %}
+                        {% elif group.join_policy.name == "CAN_ASK" %}
                             Must Ask
                         {% else %}
                             Nobody

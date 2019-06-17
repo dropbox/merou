@@ -187,11 +187,6 @@ class AuditMemberRow(BaseElement):
 
 class GroupRow(BaseElement):
     @property
-    def audited_reason(self):
-        # type: () -> str
-        return self.find_element_by_class_name("group-why-audited").text
-
-    @property
     def name(self):
         # type: () -> str
         return self.find_element_by_class_name("group-name").text
@@ -202,6 +197,21 @@ class GroupRow(BaseElement):
         name = self.find_element_by_class_name("group-name")
         link = name.find_element_by_tag_name("a")
         return link.get_attribute("href")
+
+    @property
+    def description(self):
+        # type: () -> str
+        return self.find_element_by_class_name("group-description").text
+
+    @property
+    def can_join(self):
+        # type: () -> str
+        return self.find_element_by_class_name("group-can-join").text
+
+    @property
+    def audited_reason(self):
+        # type: () -> str
+        return self.find_element_by_class_name("group-why-audited").text
 
 
 class MemberRow(BaseElement):

@@ -89,7 +89,7 @@ In Merou, there are three separate UIs:
 - Frontend server: uses Tornado web handlers with Jinja2 and WTForms,
   returns HTML for a browser
 - The `grouper-ctl` command-line tool: takes command line arguments and
-  reports the results with Python `logging`
+  reports the results with `print` or Python `logging`
 
 There may be additional UIs in the future.  All of these UIs gather data
 for the request from a user and then instantiate and call a *use case*.
@@ -358,8 +358,7 @@ permission:
 - `grouper.fe.handlers.permission_disable`
 - `tests.usecases.disable_permission_test`
 - `tests.ctl.permission_test`
-
-A separate integration test for the frontend hasn't been written yet.
+- `itests.fe.permission_view_test`
 
 Checklists
 ==========

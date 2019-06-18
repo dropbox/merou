@@ -125,7 +125,44 @@ def user_command(args, settings, session_factory):
         )
 
 
-class UserCommand(CtlCommand, ConvertUserToServiceAccountUI):
+class ConvertUserToServiceAccountCommand(CtlCommand, ConvertUserToServiceAccountUI):
+    """Convert a user to a service account."""
+
+    @staticmethod
+    def add_arguments(parser):
+        # type: (ArgumentParser) -> None
+        parser.add_argument(
+            "--owner", required=True, help="Name of group to own the service account"
+        )
+        parser.add_argument("username")
+
+    def __init__(self, usecase_factory):
+        # type: (UseCaseFactory) -> None
+        self.usecase_factory = usecase_factory
+
+    def converted_user_to_service_account(self, user, owner):
+        # type: (str, str) -> None
+        logging.info("converted user %s to service account owned by %s", user, owner)
+
+    def convert_user_to_service_account_failed_permission_denied(self, user):
+        # type: (str) -> None
+        logging.critical("not permitted to convert user %s to service account", user)
+        sys.exit(1)
+
+    def convert_user_to_service_account_failed_user_is_in_groups(self, user):
+        # type: (str) -> None
+        logging.critical("user %s cannot be converted while a member of any groups", user)
+        sys.exit(1)
+
+    def run(self, args):
+        # type: (Namespace) -> None
+        usecase = self.usecase_factory.create_convert_user_to_service_account_usecase(
+            args.actor_name, self
+        )
+        usecase.convert_user_to_service_account(args.username, args.owner)
+
+
+class UserCommand(CtlCommand):
     """Commands to modify users."""
 
     @staticmethod
@@ -151,10 +188,7 @@ class UserCommand(CtlCommand, ConvertUserToServiceAccountUI):
         user_convert_parser = subparser.add_parser(
             "convert_to_service_account", help="Convert to service account"
         )
-        user_convert_parser.add_argument(
-            "--owner", required=True, help="Name of group to own the service account"
-        )
-        user_convert_parser.add_argument("username")
+        ConvertUserToServiceAccountCommand.add_arguments(user_convert_parser)
 
         user_create_parser = subparser.add_parser("create", help="Create a new user account")
         user_create_parser.add_argument("username", nargs="+")
@@ -191,27 +225,11 @@ class UserCommand(CtlCommand, ConvertUserToServiceAccountUI):
         self.settings = settings
         self.usecase_factory = usecase_factory
 
-    def converted_user_to_service_account(self, user, owner):
-        # type: (str, str) -> None
-        logging.info("converted user %s to service account owned by %s", user, owner)
-
-    def convert_user_to_service_account_failed_permission_denied(self, user):
-        # type: (str) -> None
-        logging.critical("not permitted to convert user %s to service account", user)
-        sys.exit(1)
-
-    def convert_user_to_service_account_failed_user_is_in_groups(self, user):
-        # type: (str) -> None
-        logging.critical("user %s cannot be converted while a member of any groups", user)
-        sys.exit(1)
-
     def run(self, args):
         # type: (Namespace) -> None
         if args.subcommand == "convert_to_service_account":
-            usecase = self.usecase_factory.create_convert_user_to_service_account_usecase(
-                args.actor_name, self
-            )
-            usecase.convert_user_to_service_account(args.username, args.owner)
+            subcommand = ConvertUserToServiceAccountCommand(self.usecase_factory)
+            subcommand.run(args)
 
         elif args.subcommand == "list":
             # Ugly temporary hack until this is converted to a usecase.

@@ -71,6 +71,7 @@ def test_permission_grant_revoke(tmpdir, setup, browser):
         browser.get(url(frontend_url, "/groups/some-group/service/service@svc.localhost"))
 
         page = ServiceAccountViewPage(browser)
+        assert page.owner == "some-group"
         assert page.permission_rows == []
         page.click_add_permission_button()
 
@@ -79,7 +80,7 @@ def test_permission_grant_revoke(tmpdir, setup, browser):
         grant_page.set_argument("foo")
         grant_page.submit()
 
-        page = ServiceAccountViewPage(browser)
+        assert page.owner == "some-group"
         permission_rows = page.permission_rows
         assert len(permission_rows) == 1
         permission = permission_rows[0]
@@ -90,4 +91,5 @@ def test_permission_grant_revoke(tmpdir, setup, browser):
         permission_revoke_modal = page.get_revoke_permission_modal()
         permission_revoke_modal.confirm()
 
+        assert page.owner == "some-group"
         assert page.permission_rows == []

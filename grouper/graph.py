@@ -472,6 +472,14 @@ class GroupGraph(object):
         # Use a set for the arguments in our intermediate data structure to handle uniqueness.  We
         # have to separate role users from non-role users here, since they're otherwise identical
         # and are both handled by the same graph.
+        #
+        # TODO(rra): We currently have a bug that erroneously allows service accounts to be added
+        # as regular members of groups, causing them to show up in the user graph.  Work around
+        # this by skipping such users based on user metadata.  This special-case can be removed
+        # once we enforce that the user underlying service accounts cannot be added as a member of
+        # groups.  (A better place to put this is to remove service accounts from the nodes in the
+        # graph, but this will break some arguably broken software that (ab)used the membership of
+        # service accounts in groups, so we'll do that later when we fix that bug.)
         role_user_grants = defaultdict(
             lambda: defaultdict(set)
         )  # type: Dict[str, Dict[str, Set[str]]]
@@ -482,6 +490,8 @@ class GroupGraph(object):
             for member, path in iteritems(paths):
                 member_type, member_name = member
                 if member_type != "User":
+                    continue
+                if "service_account" in user_metadata[member_name]:
                     continue
                 members.add(member_name)
             for grant in grant_list:

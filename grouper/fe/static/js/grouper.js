@@ -97,18 +97,20 @@ $(function () {
         $("#createFrom").submit();
     });
 
-    // The revokeModal is generated once per page but could be used for any member being removed. So,
-    // when the modal shows up, make sure to populate its text and set its form actions to correspond to
-    // the selected user.
+    // The revokeModal is generated once per page but could be used for any member being
+    // removed. So, when the modal shows up, make sure to populate its text and set its form
+    // actions to correspond to the selected user.
 
     $("#revokeModal").on("show.bs.modal", function(e) {
         var button = $(e.relatedTarget);
+        var group = button.data("group");
+        var user = button.data("user");
         var mappingId = button.data("mapping-id");
 
         var modal = $(e.currentTarget);
 
         var form = modal.find(".revoke-permission-form");
-        form.attr("action", "/groups/{{group.name}}/service/{{user.username}}/revoke/" + mappingId);
+        form.attr("action", "/groups/" + group + "/service/" + user + "/revoke/" + mappingId);
     });
 
     var auditModal = $('#auditModal');

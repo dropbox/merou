@@ -11,6 +11,11 @@ if TYPE_CHECKING:
 
 class ServiceAccountViewPage(BasePage):
     @property
+    def owner(self):
+        # type: () -> str
+        return self.find_element_by_id("owner").text
+
+    @property
     def permission_rows(self):
         # type: () -> List[ServiceAccountPermissionRow]
         all_permission_rows = self.find_elements_by_class_name("permission-row")

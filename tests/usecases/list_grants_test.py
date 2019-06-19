@@ -137,3 +137,31 @@ def test_np_owner_grants(setup):
             users={"user@a.co": ["grandparent"]}, role_users={}, service_accounts={}
         )
     }
+
+
+def test_broken_service_account_grants(setup):
+    # type: (SetupTest) -> None
+    """Test correct handling of a bug in service account membership.
+
+    It's currently possible to add the user underlying a service account directly to a group.  This
+    was not intended behavior, but unfortunately some code depends on this behavior, so we can't
+    fix it (yet).  Until then, we want to suppress any permissions derived from such membership
+    from the graph underlying /grants to maintain separation between service account permissions
+    and user permissions.  This tests that we do so correctly.
+
+    TODO(rra): Remove this test once we've cleaned up service account membership handling.
+    """
+    with setup.transaction():
+        setup.create_service_account("service@svc.localhost", "some-group")
+        setup.grant_permission_to_service_account("service", "bar", "service@svc.localhost")
+        setup.grant_permission_to_group("some-permission", "foo", "another-group")
+        setup.add_user_to_group("service@svc.localhost", "another-group")
+
+    mock_ui = MockUI()
+    usecase = setup.usecase_factory.create_list_grants_usecase(mock_ui)
+    usecase.list_grants()
+    assert mock_ui.grants == {
+        "service": UniqueGrantsOfPermission(
+            users={}, role_users={}, service_accounts={"service@svc.localhost": ["bar"]}
+        )
+    }

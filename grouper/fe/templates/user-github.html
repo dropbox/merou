@@ -18,6 +18,7 @@
        </div>
 
         <div class="panel-body" id="dropdown_form">
+            <p>Your GitHub username is the handle that identifies your GitHub account. github.com/YOURUSERNAME should show your GitHub profile. Your GitHub username is not your email address.</p>
             <form class="form-horizontal" role="form"
                 method="post" action="/users/{{ user.name }}/github">
                 {% include "forms/user-github.html" %}

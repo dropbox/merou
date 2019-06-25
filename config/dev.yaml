@@ -29,6 +29,22 @@ common:
     # Type: int
     expiration_notice_days: 7
 
+    # "client id" of a GitHub app used to find GitHub usernames. A plugin must
+    # provide the client secret.
+    #
+    # Type: str
+    github_app_client_id: null
+
+    # Host for the proxy that external HTTP requests are made over.
+    #
+    # Type: str
+    http_proxy_host: null
+
+    # Port for the proxy that external HTTP requests are made over.
+    #
+    # Type: int
+    http_proxy_port: null
+
     # Format for logging output.
     # See https://docs.python.org/3/library/logging.html#logrecord-attributes
     #

@@ -53,6 +53,14 @@ class PluginProxy(object):
             for alias in aliases:
                 yield alias
 
+    def get_github_app_client_secret(self):
+        # type: () -> bytes
+        for plugin in self._plugins:
+            secret = plugin.get_github_app_client_secret()
+            if secret is not None:
+                return secret
+        raise ValueError("no github secret available")
+
     def get_owner_by_arg_by_perm(self, session):
         # type: (Session) -> Iterable[Dict[str, Dict[str, List[Group]]]]
         for plugin in self._plugins:

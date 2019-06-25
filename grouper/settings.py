@@ -75,6 +75,9 @@ class Settings(object):
         self.database_source = ""
         self.date_format = "%Y-%m-%d %I:%M %p"
         self.expiration_notice_days = 7
+        self.github_app_client_id = None
+        self.http_proxy_host = None
+        self.http_proxy_port = None
         self.log_format = "%(asctime)-15s\t%(levelname)s\t%(message)s  [%(name)s]"
         self.plugin_dirs = []  # type: List[str]
         self.plugin_module_paths = []  # type: List[str]

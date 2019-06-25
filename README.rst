@@ -35,7 +35,7 @@ On Debian-based systems:
 
 .. code:: bash
 
-    apt-get install libmysqlclient-dev libpython3-dev
+    apt-get install libmysqlclient-dev libpython3-dev libcurl4-openssl-dev libssl-dev
     pip3 install -e git+https://github.com/dropbox/merou#egg=grouper
 
 Alternately, you can install libpython2.7-dev and use pip2 to run Grouper

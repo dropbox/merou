@@ -178,7 +178,7 @@
     </div>
 {%- endmacro %}
 
-{% macro github_panel(user, github_username, can_control=False) -%}
+{% macro github_panel(user, github_username, xsrf_form, can_control=False) -%}
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">GitHub</h3>
@@ -198,9 +198,13 @@
             </table>
             {% if can_control %}
             <div class='panel-footer'>
-                <a class="btn btn-default btn-sm" href="/users/{{ user.name }}/github">
-                <span class="glyphicon glyphicon-pencil"></span> Change GitHub username
+                <a class="btn btn-default btn-sm" href="/github/link_begin/{{ user.id }}">
+                <span class="glyphicon glyphicon-pencil"></span>Link GitHub
                 </a>
+		<form action="/users/{{ user.name }}/github/clear" method="post" class="inline">
+                    {{ xsrf_form|safe }}
+                    <button type="submit" class="btn btn-primary">Clear</button>
+		</form>
             </div>
             {% endif %}
         </div>

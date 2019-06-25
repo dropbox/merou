@@ -8,6 +8,8 @@ from contextlib import closing
 from typing import TYPE_CHECKING
 
 from six import PY2
+from tornado.curl_httpclient import CurlAsyncHTTPClient
+from tornado.httpclient import AsyncHTTPClient
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 
@@ -127,6 +129,9 @@ def start_server(args, settings, sentry_client):
 def main(sys_argv=sys.argv):
     # type: (List[str]) -> None
     setup_signal_handlers()
+
+    # The curl HTTP client is required to support proxies.
+    AsyncHTTPClient.configure(CurlAsyncHTTPClient)
 
     # get arguments
     parser = build_arg_parser("Grouper Web Server.")

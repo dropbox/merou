@@ -17,6 +17,7 @@ from grouper.constants import (
 from grouper.fe.handlers.audits_complete import AuditsComplete
 from grouper.fe.handlers.audits_create import AuditsCreate
 from grouper.fe.handlers.audits_view import AuditsView
+from grouper.fe.handlers.github import GitHubLinkBeginView, GitHubLinkCompleteView, UserClearGitHub
 from grouper.fe.handlers.group_add import GroupAdd
 from grouper.fe.handlers.group_disable import GroupDisable
 from grouper.fe.handlers.group_edit import GroupEdit
@@ -59,7 +60,6 @@ from grouper.fe.handlers.service_account_permission_revoke import ServiceAccount
 from grouper.fe.handlers.service_account_view import ServiceAccountView
 from grouper.fe.handlers.user_disable import UserDisable
 from grouper.fe.handlers.user_enable import UserEnable
-from grouper.fe.handlers.user_github import UserGitHub
 from grouper.fe.handlers.user_password_add import UserPasswordAdd
 from grouper.fe.handlers.user_password_delete import UserPasswordDelete
 from grouper.fe.handlers.user_requests import UserRequests
@@ -81,6 +81,8 @@ HANDLERS = [
     (r"/audits", AuditsView),
     (r"/audits/(?P<audit_id>[0-9]+)/complete", AuditsComplete),
     (r"/audits/create", AuditsCreate),
+    (r"/github/link_begin/(?P<user_id>[0-9]+)", GitHubLinkBeginView),
+    (r"/github/link_complete/(?P<user_id>[0-9]+)", GitHubLinkCompleteView),
     (r"/groups", GroupsView),
     (r"/permissions/create", PermissionsCreate),
     (r"/permissions/request", PermissionRequest),
@@ -110,7 +112,7 @@ for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
             (r"/users/{}".format(regex), UserView),
             (r"/users/{}/disable".format(regex), UserDisable),
             (r"/users/{}/enable".format(regex), UserEnable),
-            (r"/users/{}/github".format(regex), UserGitHub),
+            (r"/users/{}/github/clear".format(regex), UserClearGitHub),
             (r"/users/{}/shell".format(regex), UserShell),
             (r"/users/{}/public-key/add".format(regex), PublicKeyAdd),
             (r"/users/{}/public-key/(?P<key_id>[0-9]+)/delete".format(regex), PublicKeyDelete),

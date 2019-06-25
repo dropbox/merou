@@ -316,10 +316,6 @@ class UserShellForm(Form):
     shell = SelectField("Shell", [validators.DataRequired()])
 
 
-class UserGitHubForm(Form):
-    username = StringField("GitHub username")
-
-
 class UserPasswordForm(Form):
     name = StringField(
         "Password name",

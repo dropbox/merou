@@ -8,7 +8,8 @@ if TYPE_CHECKING:
     from ssl import SSLContext
     from sqlalchemy.orm import Session
     from tornado.httpserver import HTTPRequest
-    from typing import Any, Dict, List, Tuple, Union
+    from types import TracebackType
+    from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 
 class BasePlugin(object):
@@ -80,19 +81,23 @@ class BasePlugin(object):
         """
         pass
 
-    def log_exception(self, request, status, exception, stack):
-        # type: (HTTPRequest, int, Exception, List) -> None
-        """
-        Called when responding with statuses 400, 403, 404, and 500.
+    def log_exception(
+        self,
+        request,  # type: Optional[HTTPRequest]
+        status,  # type: Optional[int]
+        exc_type,  # type: Optional[Type[BaseException]]
+        exc_value,  # type: Optional[BaseException]
+        exc_tb,  # type: Optional[TracebackType]
+    ):
+        # type: (...) -> None
+        """Called when an exception is triggered.
 
         Args:
-            request: the request being handled.
-            status: the response status.
-            exception: either a tornado.web.HTTPError or an unexpected exception.
-            stack: "pre-processed" stack trace entries for traceback.format_list.
-
-        Returns:
-            The return code of this method is ignored.
+            request: The request being handled (None for non-Tornado exceptions)
+            status: The response status (None for non-Tornado exceptions)
+            exc_type: The type of the exception
+            exc_value: The exception object
+            exc_tb: The traceback, in the same form as sys.exc_info()[2]
         """
         pass
 

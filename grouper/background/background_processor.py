@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from collections import defaultdict
 from contextlib import closing
 from datetime import datetime
@@ -27,7 +28,7 @@ from grouper.perf_profile import prune_old_traces
 
 if TYPE_CHECKING:
     from grouper.background.settings import BackgroundSettings
-    from grouper.error_reporting import SentryProxy
+    from grouper.plugin.proxy import PluginProxy
     from typing import Dict, NoReturn, Set
 
 
@@ -37,18 +38,12 @@ class BackgroundProcessor(object):
     Currently, this sends asynchronous mail messages and handles edge expiration and notification.
     """
 
-    def __init__(self, settings, sentry_client):
-        # type: (BackgroundSettings, SentryProxy) -> None
+    def __init__(self, settings, plugins):
+        # type: (BackgroundSettings, PluginProxy) -> None
         """Initialize new BackgroundProcessor"""
-
         self.settings = settings
-        self.sentry_client = sentry_client
+        self.plugins = plugins
         self.logger = logging.getLogger(__name__)
-
-    def _capture_exception(self):
-        # type: () -> None
-        if self.sentry_client:
-            self.sentry_client.captureException()
 
     def crash(self):
         # type: () -> NoReturn
@@ -157,8 +152,8 @@ class BackgroundProcessor(object):
             except Exception:
                 stats.log_gauge("successful-background-update", 0)
                 stats.log_gauge("failed-background-update", 1)
-                self._capture_exception()
-                self.logger.exception("Unexpected exception occurred in background thread.")
+                self.plugins.log_exception(None, None, *sys.exc_info())
+                self.logger.exception("Unexpected exception occurred in background thread")
                 self.crash()
 
             self.logger.debug("Sleeping for {} seconds...".format(self.settings.sleep_interval))

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from grouper import __version__
 from grouper.background.background_processor import BackgroundProcessor
 from grouper.background.settings import BackgroundSettings
-from grouper.error_reporting import get_sentry_client, setup_signal_handlers
+from grouper.error_reporting import setup_signal_handlers
 from grouper.models.base.session import get_db_engine, Session
 from grouper.plugin import set_global_plugin_proxy
 from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
@@ -16,7 +16,6 @@ from grouper.setup import setup_logging
 
 if TYPE_CHECKING:
     from argparse import Namespace
-    from grouper.error_reporting import SentryProxy
     from typing import List
 
 
@@ -43,8 +42,8 @@ def build_arg_parser():
     return parser
 
 
-def start_processor(args, settings, sentry_client):
-    # type: (Namespace, BackgroundSettings, SentryProxy) -> None
+def start_processor(args, settings):
+    # type: (Namespace, BackgroundSettings) -> None
     log_level = logging.getLevelName(logging.getLogger().level)
     logging.info("begin. log_level={}".format(log_level))
 
@@ -59,7 +58,7 @@ def start_processor(args, settings, sentry_client):
     logging.debug("configure database session")
     Session.configure(bind=get_db_engine(settings.database))
 
-    background = BackgroundProcessor(settings, sentry_client)
+    background = BackgroundProcessor(settings, plugins)
     background.run()
 
 
@@ -77,11 +76,8 @@ def main(sys_argv=sys.argv):
 
         # setup logging
         setup_logging(args, settings.log_format)
-
-        # setup sentry
-        sentry_client = get_sentry_client(settings.sentry_dsn)
     except Exception:
         logging.exception("uncaught exception in startup")
         sys.exit(1)
 
-    start_processor(args, settings, sentry_client)
+    start_processor(args, settings)

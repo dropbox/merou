@@ -29,7 +29,8 @@ if TYPE_CHECKING:
     from grouper.entities.user import User
     from grouper.graph import GroupGraph
     from grouper.usecases.factory import UseCaseFactory
-    from typing import Any, Dict, Iterable, Optional, Tuple
+    from types import TracebackType
+    from typing import Any, Dict, Iterable, Optional, Tuple, Type
 
 
 def get_individual_user_info(handler, name, service_account):
@@ -92,6 +93,20 @@ class GraphHandler(SentryHandler):
 
         stats.log_rate("response_status_{}".format(response_status), 1)
         stats.log_rate("response_status_{}_{}".format(self.__class__.__name__, response_status), 1)
+
+    def log_exception(
+        self,
+        exc_type,  # type: Optional[Type[BaseException]]
+        exc_value,  # type: Optional[BaseException]
+        exc_tb,  # type: Optional[TracebackType]
+    ):
+        # type: (...) -> None
+        if isinstance(exc_value, HTTPError):
+            status_code = exc_value.status_code
+        else:
+            status_code = 500
+        self.plugins.log_exception(self.request, status_code, exc_type, exc_value, exc_tb)
+        super(GraphHandler, self).log_exception(exc_type, exc_value, exc_tb)
 
     def error(self, errors):
         # type: (Iterable[Tuple[int, Any]]) -> None

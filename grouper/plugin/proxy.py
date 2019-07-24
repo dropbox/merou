@@ -12,7 +12,8 @@ if TYPE_CHECKING:
     from ssl import SSLContext
     from sqlalchemy.orm import Session
     from tornado.httpserver import HTTPRequest
-    from typing import Any, Dict, List, Iterable, Optional, Tuple, Union
+    from types import TracebackType
+    from typing import Any, Dict, List, Iterable, Optional, Type, Tuple, Union
 
 
 class PluginProxy(object):
@@ -73,10 +74,17 @@ class PluginProxy(object):
         for plugin in self._plugins:
             plugin.log_auditlog_entry(entry)
 
-    def log_exception(self, request, status, exception, stack):
-        # type: (HTTPRequest, int, Exception, List) -> None
+    def log_exception(
+        self,
+        request,  # type: Optional[HTTPRequest]
+        status,  # type: Optional[int]
+        exc_type,  # type: Optional[Type[BaseException]]
+        exc_value,  # type: Optional[BaseException]
+        exc_tb,  # type: Optional[TracebackType]
+    ):
+        # type: (...) -> None
         for plugin in self._plugins:
-            plugin.log_exception(request, status, exception, stack)
+            plugin.log_exception(request, status, exc_type, exc_value, exc_tb)
 
     def log_gauge(self, key, val):
         # type: (str, float) -> None

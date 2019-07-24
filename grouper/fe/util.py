@@ -12,6 +12,7 @@ import tornado.web
 from plop.collector import Collector
 from six import iteritems
 from six.moves.urllib.parse import quote, unquote, urlencode, urljoin
+from tornado.web import HTTPError
 
 from grouper import stats
 from grouper.constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATION
@@ -28,7 +29,8 @@ from grouper.user_permissions import user_permissions
 
 if TYPE_CHECKING:
     from grouper.fe.templating import FrontendTemplateEngine
-    from typing import Any, Callable, Dict, List, Optional, Text
+    from types import TracebackType
+    from typing import Any, Callable, Dict, List, Optional, Text, Type
 
 
 class Alert(object):
@@ -78,6 +80,20 @@ class GrouperHandler(SentryHandler):
         # type: () -> None
         self.set_header("Content-Security-Policy", self.settings["template_engine"].csp_header())
         self.set_header("Referrer-Policy", "same-origin")
+
+    def log_exception(
+        self,
+        exc_type,  # type: Optional[Type[BaseException]]
+        exc_value,  # type: Optional[BaseException]
+        exc_tb,  # type: Optional[TracebackType]
+    ):
+        # type: (...) -> None
+        if isinstance(exc_value, HTTPError):
+            status_code = exc_value.status_code
+        else:
+            status_code = 500
+        self.plugins.log_exception(self.request, status_code, exc_type, exc_value, exc_tb)
+        super(GrouperHandler, self).log_exception(exc_type, exc_value, exc_tb)
 
     def write_error(self, status_code, **kwargs):
         # type: (int, **Any) -> None

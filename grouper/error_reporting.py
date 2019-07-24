@@ -7,61 +7,14 @@ import traceback
 from typing import TYPE_CHECKING
 
 from six import iteritems
-from tornado.web import RequestHandler
-
-try:
-    from raven.contrib.tornado import AsyncSentryClient, SentryMixin
-
-    raven_installed = True
-except ImportError:
-    SentryMixin = object
-    raven_installed = False
-
 
 if TYPE_CHECKING:
     from types import FrameType
-    from typing import Optional
 
 
 signame_by_signum = {
     v: k for k, v in iteritems(signal.__dict__) if k.startswith("SIG") and not k.startswith("SIG_")
 }
-
-
-class SentryHandler(RequestHandler, SentryMixin):
-    """Tornado request handler that mixes in SentryMixin if available."""
-
-    pass
-
-
-class SentryProxy(object):
-    """Simple proxy for sentry client that logs to stderr even if no sentry client exists."""
-
-    def __init__(self, sentry_client):
-        self.sentry_client = sentry_client
-
-    def captureException(self, exc_info=None, **kwargs):
-        if self.sentry_client:
-            self.sentry_client.captureException(exc_info=exc_info, **kwargs)
-
-        logging.exception("exception occurred")
-
-
-def get_sentry_client(sentry_dsn):
-    # type: (Optional[str]) -> SentryProxy
-    if sentry_dsn and raven_installed:
-        logging.info("sentry client setup dsn={}".format(sentry_dsn))
-        sentry_client = SentryProxy(sentry_client=AsyncSentryClient(sentry_dsn))
-    else:
-        if not sentry_dsn:
-            logging.info("no sentry_dsn specified")
-
-        if not raven_installed:
-            logging.info("raven not installed")
-
-        sentry_client = SentryProxy(sentry_client=None)
-
-    return sentry_client
 
 
 def log_and_exit_handler(signum, frame):

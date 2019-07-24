@@ -15,7 +15,7 @@ import grouper.fe
 from grouper import stats
 from grouper.app import GrouperApplication
 from grouper.database import DbRefreshThread
-from grouper.error_reporting import get_sentry_client, setup_signal_handlers
+from grouper.error_reporting import setup_signal_handlers
 from grouper.fe.routes import HANDLERS
 from grouper.fe.settings import FrontendSettings
 from grouper.fe.templating import FrontendTemplateEngine
@@ -28,7 +28,6 @@ from grouper.setup import build_arg_parser, setup_logging
 
 if TYPE_CHECKING:
     from argparse import Namespace
-    from grouper.error_reporting import SentryProxy
     from typing import Callable, List
 
 
@@ -50,21 +49,14 @@ def create_fe_application(
     return GrouperApplication(HANDLERS, **tornado_settings)
 
 
-def start_server(args, settings, sentry_client):
-    # type: (Namespace, FrontendSettings, SentryProxy) -> None
+def start_server(args, settings, plugins):
+    # type: (Namespace, FrontendSettings, PluginProxy) -> None
     log_level = logging.getLevelName(logging.getLogger().level)
     logging.info("begin. log_level={}".format(log_level))
 
     assert not (
         settings.debug and settings.num_processes > 1
     ), "debug mode does not support multiple processes"
-
-    try:
-        plugins = PluginProxy.load_plugins(settings, "grouper-fe")
-        set_global_plugin_proxy(plugins)
-    except PluginsDirectoryDoesNotExist as e:
-        logging.fatal("Plugin directory does not exist: {}".format(e))
-        sys.exit(1)
 
     # setup database
     logging.debug("configure database session")
@@ -112,7 +104,7 @@ def start_server(args, settings, sentry_client):
         graph = Graph()
         graph.update_from_db(session)
 
-    refresher = DbRefreshThread(settings, graph, settings.refresh_interval, sentry_client)
+    refresher = DbRefreshThread(settings, plugins, graph, settings.refresh_interval)
     refresher.daemon = True
     refresher.start()
 
@@ -133,21 +125,21 @@ def main(sys_argv=sys.argv):
     args = parser.parse_args(sys_argv[1:])
 
     try:
-        # load settings
         settings = FrontendSettings.global_settings_from_config(args.config)
-
-        # setup logging
         setup_logging(args, settings.log_format)
-
-        # setup sentry
-        sentry_client = get_sentry_client(settings.sentry_dsn)
+        plugins = PluginProxy.load_plugins(settings, "grouper-fe")
+        set_global_plugin_proxy(plugins)
+    except PluginsDirectoryDoesNotExist as e:
+        logging.fatal("Plugin directory does not exist: {}".format(e))
+        sys.exit(1)
     except Exception:
-        logging.exception("uncaught exception in startup")
+        logging.exception("Uncaught exception in startup")
         sys.exit(1)
 
     try:
-        start_server(args, settings, sentry_client)
+        start_server(args, settings, plugins)
     except Exception:
-        sentry_client.captureException()
+        plugins.log_exception(None, None, *sys.exc_info())
+        logging.exception("Uncaught exception")
     finally:
         logging.info("end")

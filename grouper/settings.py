@@ -85,7 +85,6 @@ class Settings(object):
         self.smtp_username = ""
         self.smtp_password = ""
         self.from_addr = "no-reply@grouper.local"
-        self.sentry_dsn = None
         self.service_account_email_domain = "svc.localhost"
         self.timezone = "UTC"
         self.url = "http://127.0.0.1:8888"

@@ -7,11 +7,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from six import iteritems, StringIO
-from tornado.web import HTTPError
+from tornado.web import HTTPError, RequestHandler
 
 from grouper import stats
 from grouper.constants import TOKEN_FORMAT
-from grouper.error_reporting import SentryHandler
 from grouper.graph import NoSuchGroup, NoSuchUser
 from grouper.models.base.session import Session
 from grouper.models.public_key import PublicKey
@@ -28,6 +27,7 @@ if TYPE_CHECKING:
     from grouper.entities.permission_grant import UniqueGrantsOfPermission
     from grouper.entities.user import User
     from grouper.graph import GroupGraph
+    from grouper.plugin.proxy import PluginProxy
     from grouper.usecases.factory import UseCaseFactory
     from types import TracebackType
     from typing import Any, Dict, Iterable, Optional, Tuple, Type
@@ -68,11 +68,12 @@ def get_individual_user_info(handler, name, service_account):
         return out
 
 
-class GraphHandler(SentryHandler):
+class GraphHandler(RequestHandler):
     def initialize(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         self.graph = kwargs["graph"]  # type: GroupGraph
         self.usecase_factory = kwargs["usecase_factory"]  # type: UseCaseFactory
+        self.plugins = kwargs["plugins"]  # type: PluginProxy
 
         self._request_start_time = datetime.utcnow()
 

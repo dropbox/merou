@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from contextlib import closing
 from threading import Thread
 from time import sleep
@@ -9,8 +10,8 @@ from grouper import stats
 from grouper.models.base.session import Session
 
 if TYPE_CHECKING:
-    from grouper.error_reporting import SentryProxy
     from grouper.graph import GroupGraph
+    from grouper.plugins.proxy import PluginProxy
     from grouper.settings import Settings
     from typing import Any, NoReturn
 
@@ -18,19 +19,14 @@ if TYPE_CHECKING:
 class DbRefreshThread(Thread):
     """Background thread for refreshing the in-memory cache of the graph."""
 
-    def __init__(self, settings, graph, refresh_interval, sentry_client, *args, **kwargs):
-        # type: (Settings, GroupGraph, int, SentryProxy, *Any, **Any) -> None
+    def __init__(self, settings, plugins, graph, refresh_interval, *args, **kwargs):
+        # type: (Settings, PluginProxy, GroupGraph, int, *Any, **Any) -> None
         self.settings = settings
+        self.plugins = plugins
         self.graph = graph
         self.refresh_interval = refresh_interval
-        self.sentry_client = sentry_client
         self.logger = logging.getLogger(__name__)
         Thread.__init__(self, *args, **kwargs)
-
-    def capture_exception(self):
-        # type: () -> None
-        if self.sentry_client:
-            self.sentry_client.captureException()
 
     def crash(self):
         # type: () -> NoReturn
@@ -52,7 +48,8 @@ class DbRefreshThread(Thread):
             except Exception:
                 stats.log_gauge("successful-db-update", 0)
                 stats.log_gauge("failed-db-update", 1)
-                self.capture_exception()
+                self.plugins.log_exception(*sys.exc_info())
+                logging.exception("Failed to refresh graph")
                 self.crash()
 
             sleep(self.refresh_interval)

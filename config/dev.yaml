@@ -89,11 +89,6 @@ common:
     # Type: str
     from_addr: "no-reply@grouper.local"
 
-    # Sentry DSN for logging exceptions.
-    #
-    # Type: str
-    sentry_dsn:
-
     # The email domain that all service accounts must have.  This will also be
     # used as the domain when constructing message IDs when Grouper sends email.
     #
@@ -149,17 +144,7 @@ api:
     # Type: int
     refresh_interval: 1
 
-    # Sentry DSN for logging exceptions.
-    #
-    # Type: str
-    sentry_dsn:
-
 background:
-    # Sentry DSN for logging exceptions.
-    #
-    # Type: str
-    sentry_dsn:
-
     # How long to wait between iterations.
     #
     # Type: int

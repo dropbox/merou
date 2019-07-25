@@ -12,11 +12,10 @@ import tornado.web
 from plop.collector import Collector
 from six import iteritems
 from six.moves.urllib.parse import quote, unquote, urlencode, urljoin
-from tornado.web import HTTPError
+from tornado.web import HTTPError, RequestHandler
 
 from grouper import stats
 from grouper.constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATION
-from grouper.error_reporting import SentryHandler
 from grouper.fe.settings import settings
 from grouper.graph import Graph
 from grouper.initialization import create_graph_usecase_factory
@@ -51,7 +50,7 @@ class InvalidUser(Exception):
     pass
 
 
-class GrouperHandler(SentryHandler):
+class GrouperHandler(RequestHandler):
     def initialize(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         self.graph = Graph()
@@ -302,10 +301,7 @@ class GrouperHandler(SentryHandler):
 
     def log_message(self, message, **kwargs):
         # type: (str, **Any) -> None
-        if getattr(self, "captureMessage", None):
-            self.captureMessage(message, **kwargs)
-        else:
-            logging.info("{}, kwargs={}".format(message, kwargs))
+        logging.info("{}, kwargs={}".format(message, kwargs))
 
     def badrequest(self):
         # type: () -> None
@@ -331,13 +327,6 @@ class GrouperHandler(SentryHandler):
         self.set_status(404)
         self.raise_and_log_exception(tornado.web.HTTPError(404))
         self.render("errors/notfound.html")
-
-    def get_sentry_user_info(self):
-        # type: () -> Dict[str, Optional[str]]
-        if self.current_user:
-            return {"username": self.current_user.username}
-        else:
-            return {"username": None}
 
 
 def test_reserved_names(permission_name):

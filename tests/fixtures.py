@@ -316,10 +316,11 @@ def api_app(session, standard_graph):
     settings = ApiSettings()
     set_global_settings(settings)
     session_factory = SingletonSessionFactory(session)
+    plugins = PluginProxy([])
     usecase_factory = create_graph_usecase_factory(
-        settings, PluginProxy([]), session_factory, standard_graph
+        settings, plugins, session_factory, standard_graph
     )
-    return create_api_application(standard_graph, settings, usecase_factory)
+    return create_api_application(standard_graph, settings, plugins, usecase_factory)
 
 
 @pytest.fixture

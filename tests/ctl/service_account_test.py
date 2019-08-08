@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING
 
+import pytest
+
 from grouper.constants import USER_ADMIN
 from grouper.group_service_account import get_service_accounts
 from grouper.models.group import Group
@@ -22,34 +24,33 @@ def test_create(setup):
         "--actor",
         "gary@a.co",
         "create",
-        "good-service@a.co",
+        "good-service@svc.localhost",
         "some-group",
         "foo +bar -(org)",
         "this is a service account.\n\n it is for testing",
     )
-    service_account = ServiceAccount.get(setup.session, name="good-service@a.co")
+    service_account = ServiceAccount.get(setup.session, name="good-service@svc.localhost")
     assert service_account is not None
-    assert service_account.user.name == "good-service@a.co"
+    assert service_account.user.name == "good-service@svc.localhost"
     assert service_account.machine_set == "foo +bar -(org)"
     assert service_account.description == "this is a service account.\n\n it is for testing"
     group = Group.get(setup.session, name="some-group")
     assert get_service_accounts(setup.session, group) == [service_account]
 
-    # If the account already exists, creating it again does nothing.
-    #
-    # TODO(rra): Change this behavior to return an error message instead, since it's confusing.
-    run_ctl(
-        setup,
-        "service_account",
-        "--actor",
-        "gary@a.co",
-        "create",
-        "good-service@a.co",
-        "other-group",
-        "foo",
-        "another test",
-    )
-    service_account = ServiceAccount.get(setup.session, name="good-service@a.co")
+    # If the account already exists, creating it again returns an error and does nothing.
+    with pytest.raises(SystemExit):
+        run_ctl(
+            setup,
+            "service_account",
+            "--actor",
+            "gary@a.co",
+            "create",
+            "good-service@svc.localhost",
+            "other-group",
+            "foo",
+            "another test",
+        )
+    service_account = ServiceAccount.get(setup.session, name="good-service@svc.localhost")
     assert service_account is not None
     assert service_account.machine_set == "foo +bar -(org)"
     assert service_account.description == "this is a service account.\n\n it is for testing"
@@ -70,14 +71,14 @@ def test_create_as_service_account(setup):
         "--actor",
         "creator@a.co",
         "create",
-        "good-service@a.co",
+        "good-service@svc.localhost",
         "some-group",
         "foo +bar -(org)",
         "this is a service account.\n\n it is for testing",
     )
-    service_account = ServiceAccount.get(setup.session, name="good-service@a.co")
+    service_account = ServiceAccount.get(setup.session, name="good-service@svc.localhost")
     assert service_account is not None
-    assert service_account.user.name == "good-service@a.co"
+    assert service_account.user.name == "good-service@svc.localhost"
     assert service_account.machine_set == "foo +bar -(org)"
     assert service_account.description == "this is a service account.\n\n it is for testing"
     group = Group.get(setup.session, name="some-group")
@@ -89,18 +90,19 @@ def test_create_invalid_actor(setup):
     with setup.transaction():
         setup.create_group("some-group")
 
-    # TODO(rra): Change this to exit with non-zero status.
-    run_ctl(
-        setup,
-        "service_account",
-        "--actor",
-        "gary@a.co",
-        "create",
-        "good-service@a.co",
-        "some-group",
-        "foo",
-        "another test",
-    )
+    with pytest.raises(SystemExit):
+        run_ctl(
+            setup,
+            "service_account",
+            "--actor",
+            "gary@a.co",
+            "create",
+            "good-service@svc.localhost",
+            "some-group",
+            "foo",
+            "another test",
+        )
+
     assert ServiceAccount.get(setup.session, name="good-service@a.co") is None
     group = Group.get(setup.session, name="some-group")
     assert get_service_accounts(setup.session, group) == []
@@ -111,19 +113,20 @@ def test_create_bad_name(setup):
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group")
 
-    # TODO(rra): Change this to exit with non-zero status.
-    run_ctl(
-        setup,
-        "service_account",
-        "--actor",
-        "gary@a.co",
-        "create",
-        "bad-service-account-name",
-        "some-group",
-        "foo",
-        "another test",
-    )
-    assert ServiceAccount.get(setup.session, name="bad-service-account-name") is None
+    with pytest.raises(SystemExit):
+        run_ctl(
+            setup,
+            "service_account",
+            "--actor",
+            "gary@a.co",
+            "create",
+            "good-service@a.co",
+            "some-group",
+            "foo",
+            "another test",
+        )
+
+    assert ServiceAccount.get(setup.session, name="good-service@a.co") is None
     group = Group.get(setup.session, name="some-group")
     assert get_service_accounts(setup.session, group) == []
 
@@ -133,19 +136,20 @@ def test_create_bad_owner(setup):
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group")
 
-    # TODO(rra): Change this to exit with non-zero status.
-    run_ctl(
-        setup,
-        "service_account",
-        "--actor",
-        "gary@a.co",
-        "create",
-        "good-service@a.co",
-        "nonexistent-group",
-        "foo",
-        "another test",
-    )
-    assert ServiceAccount.get(setup.session, name="good-service@a.co") is None
+    with pytest.raises(SystemExit):
+        run_ctl(
+            setup,
+            "service_account",
+            "--actor",
+            "gary@a.co",
+            "create",
+            "good-service@svc.localhost",
+            "nonexistent-group",
+            "foo",
+            "another test",
+        )
+
+    assert ServiceAccount.get(setup.session, name="good-service@svc.localhost") is None
     group = Group.get(setup.session, name="some-group")
     assert get_service_accounts(setup.session, group) == []
     assert Group.get(setup.session, name="nonexistent-group") is None

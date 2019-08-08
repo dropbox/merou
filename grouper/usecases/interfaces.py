@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from grouper.entities.user import User
     from grouper.usecases.authorization import Authorization
     from grouper.usecases.list_permissions import ListPermissionsSortKey
-    from typing import ContextManager, Dict, List, Optional
+    from typing import ContextManager, Dict, List, Optional, Tuple
 
 
 class AuditLogInterface(with_metaclass(ABCMeta, object)):
@@ -55,6 +55,11 @@ class AuditLogInterface(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def entries_affecting_user(self, user, limit):
         # type: (str, int) -> List[AuditLogEntry]
+        pass
+
+    @abstractmethod
+    def log_create_service_account(self, service, owner, authorization, date=None):
+        # type: (str, str, Authorization, Optional[datetime]) -> None
         pass
 
     @abstractmethod
@@ -222,6 +227,11 @@ class ServiceAccountInterface(with_metaclass(ABCMeta, object)):
     """Abstract base class for service account operations and queries."""
 
     @abstractmethod
+    def create_service_account(self, service, owner, machine_set, description, authorization):
+        # type: (str, str, str, str, Authorization) -> None
+        pass
+
+    @abstractmethod
     def create_service_account_from_disabled_user(self, user, authorization):
         # type: (str, Authorization) -> None
         pass
@@ -229,6 +239,26 @@ class ServiceAccountInterface(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def enable_service_account(self, user, owner, authorization):
         # type: (str, str, Authorization) -> None
+        pass
+
+    @abstractmethod
+    def is_valid_service_account_name(self, name):
+        # type: (str) -> Tuple[bool, Optional[str]]
+        pass
+
+    @abstractmethod
+    def permission_grants_for_service_account(self, user):
+        # type: (str) -> List[ServiceAccountPermissionGrant]
+        pass
+
+    @abstractmethod
+    def service_account_exists(self, service):
+        # type: (str) -> bool
+        pass
+
+    @abstractmethod
+    def service_account_is_user_admin(self, user):
+        # type: (str) -> bool
         pass
 
 
@@ -270,6 +300,11 @@ class UserInterface(with_metaclass(ABCMeta, object)):
 
     @abstractmethod
     def user_can_create_permissions(self, user):
+        # type: (str) -> bool
+        pass
+
+    @abstractmethod
+    def user_exists(self, user):
         # type: (str) -> bool
         pass
 

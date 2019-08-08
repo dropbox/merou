@@ -26,6 +26,10 @@ class GraphUserRepository(UserRepository):
         # type: (str) -> None
         self.repository.disable_user(user)
 
+    def user_exists(self, name):
+        # type: (str) -> bool
+        return self.repository.user_exists(name)
+
     def user_is_enabled(self, name):
         # type: (str) -> bool
         """Return whether a user is enabled.
@@ -57,6 +61,10 @@ class SQLUserRepository(UserRepository):
         if not user:
             raise UserNotFoundException(name)
         user.enabled = False
+
+    def user_exists(self, name):
+        # type: (str) -> bool
+        return SQLUser.get(self.session, name=name) is not None
 
     def user_is_enabled(self, name):
         # type: (str) -> bool

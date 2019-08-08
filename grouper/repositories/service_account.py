@@ -40,6 +40,22 @@ class ServiceAccountRepository(object):
             )
             group_service_account.add(self.session)
 
+    def create_service_account(self, name, owner, machine_set, description):
+        # type: (str, str, str, str) -> None
+        group = Group.get(self.session, name=owner)
+        if not group:
+            raise GroupNotFoundException(group)
+
+        # Create the service account in the database.
+        user = SQLUser(username=name, is_service_account=True)
+        service = SQLServiceAccount(user=user, machine_set=machine_set, description=description)
+        user.add(self.session)
+        service.add(self.session)
+
+        # Flush the account to allocate an ID, and then create the linkage to the owner.
+        self.session.flush()
+        GroupServiceAccount(group_id=group.id, service_account=service).add(self.session)
+
     def enable_service_account(self, name):
         # type: (str) -> None
         service_account = SQLServiceAccount.get(self.session, name=name)
@@ -67,3 +83,7 @@ class ServiceAccountRepository(object):
         service_account.add(self.session)
 
         user.is_service_account = True
+
+    def service_account_exists(self, name):
+        # type: (str) -> bool
+        return SQLServiceAccount.get(self.session, name=name) is not None

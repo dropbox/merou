@@ -14,6 +14,40 @@ if TYPE_CHECKING:
     from tests.setup import SetupTest
 
 
+def test_can_create(setup):
+    # type: (SetupTest) -> None
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group")
+        setup.create_group("another-group")
+        setup.add_user_to_group("zorkian@a.co", "admins")
+        setup.grant_permission_to_group(USER_ADMIN, "", "admins")
+        setup.create_service_account("service@a.co", "some-group")
+        setup.create_service_account("admin@a.co", "some-group")
+        setup.grant_permission_to_service_account(USER_ADMIN, "", "admin@a.co")
+
+    mock_ui = MagicMock()
+
+    # Regular group member.
+    usecase = setup.usecase_factory.create_create_service_account_usecase("gary@a.co", mock_ui)
+    assert usecase.can_create_service_account("some-group")
+    assert not usecase.can_create_service_account("another-group")
+
+    # Admin.
+    usecase = setup.usecase_factory.create_create_service_account_usecase("zorkian@a.co", mock_ui)
+    assert usecase.can_create_service_account("some-group")
+    assert usecase.can_create_service_account("another-group")
+
+    # Service account admin.
+    usecase = setup.usecase_factory.create_create_service_account_usecase("admin@a.co", mock_ui)
+    assert usecase.can_create_service_account("some-group")
+    assert usecase.can_create_service_account("another-group")
+
+    # Service account with no special permissions.
+    usecase = setup.usecase_factory.create_create_service_account_usecase("service@a.co", mock_ui)
+    assert not usecase.can_create_service_account("some-group")
+    assert not usecase.can_create_service_account("another-group")
+
+
 def test_success(setup):
     # type: (SetupTest) -> None
     with setup.transaction():
@@ -108,6 +142,7 @@ def test_invalid_name(setup):
     assert mock_ui.mock_calls == [
         call.create_service_account_failed_invalid_name(
             "service@foo@bar",
+            "some-group",
             "service@foo@bar is not a valid service account name (does not match {})".format(
                 SERVICE_ACCOUNT_VALIDATION
             ),
@@ -123,7 +158,9 @@ def test_invalid_name(setup):
     usecase.create_service_account(long_name, "some-group", "", "")
     assert mock_ui.mock_calls == [
         call.create_service_account_failed_invalid_name(
-            long_name, "{} is longer than {} characters".format(long_name, MAX_NAME_LENGTH)
+            long_name,
+            "some-group",
+            "{} is longer than {} characters".format(long_name, MAX_NAME_LENGTH),
         )
     ]
 
@@ -133,6 +170,7 @@ def test_invalid_name(setup):
     assert mock_ui.mock_calls == [
         call.create_service_account_failed_invalid_name(
             "service@a.co",
+            "some-group",
             "All service accounts must end in @{}".format(
                 setup.settings.service_account_email_domain
             ),
@@ -173,6 +211,6 @@ def test_invalid_machine_set(setup):
     usecase.create_service_account("service@svc.localhost", "some-group", "machine-set", "")
     assert mock_ui.mock_calls == [
         call.create_service_account_failed_invalid_machine_set(
-            "service@svc.localhost", "machine-set", "some error message"
+            "service@svc.localhost", "some-group", "machine-set", "some error message"
         )
     ]

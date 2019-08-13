@@ -1,96 +1,86 @@
 from typing import TYPE_CHECKING
 
 from grouper.fe.forms import ServiceAccountCreateForm
-from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
-from grouper.models.group import Group
-from grouper.service_account import (
-    BadMachineSet,
-    can_create_service_account,
-    create_service_account,
-    DuplicateServiceAccount,
-)
+from grouper.usecases.create_service_account import CreateServiceAccountUI
 
 if TYPE_CHECKING:
-    from typing import Any, Optional
+    from typing import Any
 
 
-class ServiceAccountCreate(GrouperHandler):
+class ServiceAccountCreate(GrouperHandler, CreateServiceAccountUI):
+    def render_form_with_errors(self, form, owner):
+        # type: (ServiceAccountCreateForm, str) -> None
+        return self.render(
+            "service-account-create.html",
+            form=form,
+            owner=owner,
+            alerts=self.get_form_alerts(form.errors),
+        )
+
+    def create_service_account_failed_already_exists(self, service, owner):
+        # type: (str, str) -> None
+        form = ServiceAccountCreateForm(self.request.arguments)
+        msg = "A user or service account with name {} already exists".format(service)
+        form.name.errors.append(msg)
+        self.render_form_with_errors(form, owner)
+
+    def create_service_account_failed_invalid_name(self, service, owner, message):
+        # type: (str, str, str) -> None
+        form = ServiceAccountCreateForm(self.request.arguments)
+        form.name.errors.append(message)
+        self.render_form_with_errors(form, owner)
+
+    def create_service_account_failed_invalid_machine_set(
+        self, service, owner, machine_set, message
+    ):
+        # type: (str, str, str, str) -> None
+        form = ServiceAccountCreateForm(self.request.arguments)
+
+        # form.machine_set.errors is set to an empty tuple so append() doesn't work the way that it
+        # does with name.  It's unclear why; perhaps because the field has no validators.  This
+        # seems to work.
+        form.machine_set.errors = [message]
+
+        self.render_form_with_errors(form, owner)
+
+    def create_service_account_failed_invalid_owner(self, service, owner):
+        # type: (str, str) -> None
+        self.notfound()
+
+    def create_service_account_failed_permission_denied(self, service, owner):
+        # type: (str, str) -> None
+        self.forbidden()
+
+    def created_service_account(self, service, owner):
+        # type: (str, str) -> None
+        url = "/groups/{}/service/{}?refresh=yes".format(owner, service)
+        self.redirect(url)
+
     def get(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
-        group_id = kwargs.get("group_id")  # type: Optional[str]
-        name = kwargs.get("name")  # type: Optional[str]
+        owner = kwargs["name"]  # type: str
 
-        group = Group.get(self.session, group_id, name)
-        if not group:
-            return self.notfound()
-
-        if not can_create_service_account(self.session, self.current_user, group):
+        usecase = self.usecase_factory.create_create_service_account_usecase(
+            self.current_user.username, self
+        )
+        if not usecase.can_create_service_account(owner):
             return self.forbidden()
 
         form = ServiceAccountCreateForm()
-        return self.render("service-account-create.html", form=form, group=group)
+        return self.render("service-account-create.html", form=form, owner=owner)
 
     def post(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
-        group_id = kwargs.get("group_id")  # type: Optional[str]
-        name = kwargs.get("name")  # type: Optional[str]
-
-        group = Group.get(self.session, group_id, name)
-        if not group:
-            return self.notfound()
-
-        if "@" not in self.request.arguments["name"][0].decode():
-            self.request.arguments["name"][0] += (
-                "@" + settings().service_account_email_domain
-            ).encode()
-
-        if not can_create_service_account(self.session, self.current_user, group):
-            return self.forbidden()
+        owner = kwargs["name"]  # type: str
 
         form = ServiceAccountCreateForm(self.request.arguments)
         if not form.validate():
-            return self.render(
-                "service-account-create.html",
-                form=form,
-                group=group,
-                alerts=self.get_form_alerts(form.errors),
-            )
+            self.render_form_with_errors(form, owner)
 
-        if form.data["name"].split("@")[-1] != settings().service_account_email_domain:
-            form.name.errors.append(
-                "All service accounts must have a username ending in {}".format(
-                    settings().service_account_email_domain
-                )
-            )
-            return self.render(
-                "service-account-create.html",
-                form=form,
-                group=group,
-                alerts=self.get_form_alerts(form.errors),
-            )
-
-        try:
-            create_service_account(
-                self.session,
-                self.current_user,
-                form.data["name"],
-                form.data["description"],
-                form.data["machine_set"],
-                group,
-            )
-        except DuplicateServiceAccount:
-            form.name.errors.append("A user with name {} already exists".format(form.data["name"]))
-        except BadMachineSet as e:
-            form.machine_set.errors.append(str(e))
-
-        if form.name.errors or form.machine_set.errors:
-            return self.render(
-                "service-account-create.html",
-                form=form,
-                group=group,
-                alerts=self.get_form_alerts(form.errors),
-            )
-
-        url = "/groups/{}/service/{}?refresh=yes".format(group.name, form.data["name"])
-        return self.redirect(url)
+        usecase = self.usecase_factory.create_create_service_account_usecase(
+            self.current_user.username, self
+        )
+        usecase.create_service_account(
+            form.data["name"], owner, form.data["machine_set"], form.data["description"]
+        )

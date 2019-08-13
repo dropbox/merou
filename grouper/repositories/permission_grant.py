@@ -57,6 +57,11 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
 
     def permission_grants_for_service_account(self, name):
         # type: (str) -> List[ServiceAccountPermissionGrant]
+        """Return all permission grants for a service account.
+
+        TODO(rra): Currently does not expand permission aliases because they are not expanded by
+        the graph.
+        """
         user_details = self.graph.get_user_details(name)
         permissions = []
         for permission_data in user_details["permissions"]:
@@ -65,7 +70,7 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
                 permission=permission_data["permission"],
                 argument=permission_data["argument"],
                 granted_on=datetime.utcfromtimestamp(permission_data["granted_on"]),
-                is_alias=permission_data["alias"],
+                is_alias=False,
                 grant_id=None,
             )
             permissions.append(permission)
@@ -202,8 +207,7 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         # type: (str) -> List[ServiceAccountPermissionGrant]
         """Return all permission grants for a service account.
 
-        TODO(rra): Currently does not expand permission aliases, and therefore doesn't match the
-        graph behavior.  Use with caution until that is fixed.
+        TODO(rra): Currently does not expand permission aliases.
         """
         grants = self.session.query(
             Permission.name,

@@ -5,9 +5,9 @@ from tornado.httpclient import HTTPError
 from grouper.group_service_account import get_service_accounts
 from grouper.models.service_account import ServiceAccount
 from grouper.permissions import grant_permission_to_service_account
+from grouper.plugin import get_plugin_proxy
 from grouper.plugin.base import BasePlugin
 from grouper.plugin.exceptions import PluginRejectedMachineSet
-from grouper.plugin.proxy import PluginProxy
 from grouper.service_account import (
     can_manage_service_account,
     create_service_account,
@@ -332,12 +332,8 @@ class MachineSetPlugin(BasePlugin):
 
 
 @pytest.mark.gen_test
-def test_machine_set_plugin(
-    mocker, session, standard_graph, graph, http_client, base_url  # noqa: F811
-):
-    mocker.patch(
-        "grouper.service_account.get_plugin_proxy", return_value=PluginProxy([MachineSetPlugin()])
-    )
+def test_machine_set_plugin(session, standard_graph, graph, http_client, base_url):  # noqa: F811
+    get_plugin_proxy().add_plugin(MachineSetPlugin())
     admin = "zorkian@a.co"
 
     # Edit the metadata of an existing service account.  This should fail (although return 200)

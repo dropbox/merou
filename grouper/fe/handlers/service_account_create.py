@@ -22,7 +22,7 @@ class ServiceAccountCreate(GrouperHandler, CreateServiceAccountUI):
         # type: (str, str) -> None
         form = ServiceAccountCreateForm(self.request.arguments)
         msg = "A user or service account with name {} already exists".format(service)
-        form.name.errors.append(msg)
+        form.name.errors = [msg]
         self.render_form_with_errors(form, owner)
 
     def create_service_account_failed_invalid_name(self, service, owner, message):

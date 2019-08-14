@@ -78,6 +78,21 @@ def test_service_account_lifecycle(tmpdir, setup, browser):
         assert view_page.owner == "some-group"
 
 
+def test_create_duplicate(tmpdir, setup, browser):
+    # type: (LocalPath, SetupTest, Chrome) -> None
+    with setup.transaction():
+        setup.add_user_to_group("cbguder@a.co", "some-group")
+        setup.create_service_account("service@svc.localhost", "some-group")
+
+    with frontend_server(tmpdir, "cbguder@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group/service/create"))
+        page = ServiceAccountCreatePage(browser)
+        page.set_name("service")
+        page.submit()
+        assert page.has_alert("name")
+        assert page.has_alert("service account with name service@svc.localhost already exists")
+
+
 def test_permission_grant_revoke(tmpdir, setup, browser):
     # type: (LocalPath, SetupTest, Chrome) -> None
     with setup.transaction():

@@ -36,6 +36,20 @@ class BasePlugin(object):
         """
         pass
 
+    def check_service_account_name(self, name, owner):
+        # type: (str, str) -> None
+        """Check whether a service account name is allowed.
+
+        Args:
+            name: Name of a new service account being created (with domain)
+            owner: The name of the group that will own the new service account
+
+        Raises:
+            PluginRejectedServiceAccountName to reject the name.  The exception message will be
+            shown to the user.
+        """
+        pass
+
     def get_aliases_for_mapped_permission(self, session, permission, argument):
         # type: (Session, str, str) -> List[Tuple[str, str]]
         """Called when building the graph to get aliases of a mapped permission.

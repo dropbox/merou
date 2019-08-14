@@ -99,7 +99,7 @@ class SetupTest(object):
         self.sql_repository_factory = SQLRepositoryFactory(
             self.settings, self.plugins, session_factory
         )
-        self.service_factory = ServiceFactory(self.settings, self.repository_factory)
+        self.service_factory = ServiceFactory(self.settings, self.plugins, self.repository_factory)
         self.usecase_factory = UseCaseFactory(self.settings, self.plugins, self.service_factory)
         self._transaction_service = self.service_factory.create_transaction_service()
 

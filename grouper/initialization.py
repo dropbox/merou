@@ -32,7 +32,7 @@ def create_graph_usecase_factory(
     if not session_factory:
         session_factory = SessionFactory(settings)
     repository_factory = GraphRepositoryFactory(settings, plugins, session_factory, graph)
-    service_factory = ServiceFactory(settings, repository_factory)
+    service_factory = ServiceFactory(settings, plugins, repository_factory)
     return UseCaseFactory(settings, plugins, service_factory)
 
 
@@ -46,5 +46,5 @@ def create_sql_usecase_factory(settings, plugins, session_factory=None):
     if not session_factory:
         session_factory = SessionFactory(settings)
     repository_factory = SQLRepositoryFactory(settings, plugins, session_factory)
-    service_factory = ServiceFactory(settings, repository_factory)
+    service_factory = ServiceFactory(settings, plugins, repository_factory)
     return UseCaseFactory(settings, plugins, service_factory)

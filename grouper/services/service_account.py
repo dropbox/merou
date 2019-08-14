@@ -7,10 +7,12 @@ from grouper.entities.user import (
     UserIsEnabledException,
     UserIsMemberOfGroupsException,
 )
+from grouper.plugin.exceptions import PluginRejectedServiceAccountName
 from grouper.usecases.interfaces import ServiceAccountInterface
 
 if TYPE_CHECKING:
     from grouper.entities.permission_grant import ServiceAccountPermissionGrant
+    from grouper.plugin import PluginProxy
     from grouper.repositories.group_edge import GroupEdgeRepository
     from grouper.repositories.group_request import GroupRequestRepository
     from grouper.repositories.interfaces import PermissionGrantRepository
@@ -28,6 +30,7 @@ class ServiceAccountService(ServiceAccountInterface):
     def __init__(
         self,
         settings,  # type: Settings
+        plugins,  # type: PluginProxy
         user_repository,  # type: UserRepository
         service_account_repository,  # type: ServiceAccountRepository
         permission_grant_repository,  # type: PermissionGrantRepository
@@ -37,6 +40,7 @@ class ServiceAccountService(ServiceAccountInterface):
     ):
         # type: (...) -> None
         self.settings = settings
+        self.plugins = plugins
         self.user_repository = user_repository
         self.service_account_repository = service_account_repository
         self.permission_grant_repository = permission_grant_repository
@@ -75,8 +79,8 @@ class ServiceAccountService(ServiceAccountInterface):
 
         self.audit_log.log_enable_service_account(user, owner, authorization)
 
-    def is_valid_service_account_name(self, name):
-        # type: (str) -> Tuple[bool, Optional[str]]
+    def is_valid_service_account_name(self, name, owner):
+        # type: (str, str) -> Tuple[bool, Optional[str]]
         """Check if the given name is valid for use as a service account.
 
         Returns:
@@ -98,6 +102,11 @@ class ServiceAccountService(ServiceAccountInterface):
                 self.settings.service_account_email_domain
             )
             return (False, error)
+
+        try:
+            self.plugins.check_service_account_name(name, owner)
+        except PluginRejectedServiceAccountName as e:
+            return (False, str(e))
 
         return (True, None)
 

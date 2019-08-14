@@ -8,7 +8,7 @@ from grouper.models.group_service_accounts import GroupServiceAccount
 from grouper.models.service_account import ServiceAccount
 from grouper.models.user import User
 from grouper.plugin.base import BasePlugin
-from grouper.plugin.exceptions import PluginRejectedMachineSet
+from grouper.plugin.exceptions import PluginRejectedMachineSet, PluginRejectedServiceAccountName
 
 if TYPE_CHECKING:
     from tests.setup import SetupTest
@@ -86,7 +86,6 @@ def test_add_domain(setup):
         setup.add_user_to_group("gary@a.co", "some-group")
 
     mock_ui = MagicMock()
-    mock_ui = MagicMock()
     usecase = setup.usecase_factory.create_create_service_account_usecase("gary@a.co", mock_ui)
     usecase.create_service_account("service", "some-group", "machine-set", "description")
 
@@ -151,8 +150,7 @@ def test_invalid_name(setup):
 
     # Test a service account name that's one character longer than MAX_NAME_LENGTH minus the length
     # of the default email domain minus 1 (for the @).
-    mock_ui = MagicMock()
-    usecase = setup.usecase_factory.create_create_service_account_usecase("gary@a.co", mock_ui)
+    mock_ui.reset_mock()
     long_name = "x" * (MAX_NAME_LENGTH - len(setup.settings.service_account_email_domain))
     long_name += "@" + setup.settings.service_account_email_domain
     usecase.create_service_account(long_name, "some-group", "", "")
@@ -164,8 +162,7 @@ def test_invalid_name(setup):
         )
     ]
 
-    mock_ui = MagicMock()
-    usecase = setup.usecase_factory.create_create_service_account_usecase("gary@a.co", mock_ui)
+    mock_ui.reset_mock()
     usecase.create_service_account("service@a.co", "some-group", "", "")
     assert mock_ui.mock_calls == [
         call.create_service_account_failed_invalid_name(
@@ -213,4 +210,34 @@ def test_invalid_machine_set(setup):
         call.create_service_account_failed_invalid_machine_set(
             "service@svc.localhost", "some-group", "machine-set", "some error message"
         )
+    ]
+
+
+class ServiceAccountNameTestPlugin(BasePlugin):
+    def check_service_account_name(self, name, owner):
+        # type: (str, str) -> None
+        if "_" in name:
+            raise PluginRejectedServiceAccountName("{} owned by {}".format(name, owner))
+
+
+def test_name_rejected_by_plugin(setup):
+    # type: (SetupTest) -> None
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group")
+
+    setup.plugins.add_plugin(ServiceAccountNameTestPlugin())
+
+    mock_ui = MagicMock()
+    usecase = setup.usecase_factory.create_create_service_account_usecase("gary@a.co", mock_ui)
+    usecase.create_service_account("ser_vice", "some-group", "", "")
+    assert mock_ui.mock_calls == [
+        call.create_service_account_failed_invalid_name(
+            "ser_vice@svc.localhost", "some-group", "ser_vice@svc.localhost owned by some-group"
+        )
+    ]
+
+    mock_ui.reset_mock()
+    usecase.create_service_account("service", "some-group", "", "")
+    assert mock_ui.mock_calls == [
+        call.created_service_account("service@svc.localhost", "some-group")
     ]

@@ -20,5 +20,11 @@ class PluginRejectedMachineSet(PluginException):
     pass
 
 
+class PluginRejectedServiceAccountName(PluginException):
+    """A plugin rejected a name for a service account."""
+
+    pass
+
+
 class PluginRejectedPublicKey(PluginException):
     pass

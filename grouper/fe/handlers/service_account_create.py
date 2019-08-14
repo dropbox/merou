@@ -28,7 +28,7 @@ class ServiceAccountCreate(GrouperHandler, CreateServiceAccountUI):
     def create_service_account_failed_invalid_name(self, service, owner, message):
         # type: (str, str, str) -> None
         form = ServiceAccountCreateForm(self.request.arguments)
-        form.name.errors.append(message)
+        form.name.errors = [message]
         self.render_form_with_errors(form, owner)
 
     def create_service_account_failed_invalid_machine_set(
@@ -36,12 +36,7 @@ class ServiceAccountCreate(GrouperHandler, CreateServiceAccountUI):
     ):
         # type: (str, str, str, str) -> None
         form = ServiceAccountCreateForm(self.request.arguments)
-
-        # form.machine_set.errors is set to an empty tuple so append() doesn't work the way that it
-        # does with name.  It's unclear why; perhaps because the field has no validators.  This
-        # seems to work.
         form.machine_set.errors = [message]
-
         self.render_form_with_errors(form, owner)
 
     def create_service_account_failed_invalid_owner(self, service, owner):

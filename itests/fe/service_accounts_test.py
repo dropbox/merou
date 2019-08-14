@@ -22,6 +22,7 @@ def test_service_account_lifecycle(tmpdir, setup, browser):
     # type: (LocalPath, SetupTest, Chrome) -> None
     with setup.transaction():
         setup.add_user_to_group("cbguder@a.co", "user-admins")
+        setup.add_user_to_group("cbguder@a.co", "some-group")
         setup.grant_permission_to_group(USER_ADMIN, "", "user-admins")
 
     with frontend_server(tmpdir, "cbguder@a.co") as frontend_url:
@@ -30,11 +31,30 @@ def test_service_account_lifecycle(tmpdir, setup, browser):
         group_page = GroupViewPage(browser)
         group_page.click_add_service_account_button()
 
+        # Test with an invalid machine set.
         create_page = ServiceAccountCreatePage(browser)
+        create_page.set_name("my-special-service-account")
+        create_page.set_description("some description")
+        create_page.set_machine_set("some machines bad-machine")
+        create_page.submit()
+        assert create_page.has_alert("machine_set")
+        expected = "my-special-service-account@svc.localhost has invalid machine set"
+        assert create_page.has_alert(expected)
+
+        # Fix the machine set but test with an invalid name.
+        create_page.set_name("service@service@service")
+        create_page.set_machine_set("some machines")
+        create_page.submit()
+        assert create_page.has_alert("name")
+
+        # Fix the name and then creation should succeed.
         create_page.set_name("my-special-service-account")
         create_page.submit()
 
         view_page = ServiceAccountViewPage(browser)
+        assert view_page.owner == "user-admins"
+        assert view_page.description == "some description"
+        assert view_page.machine_set == "some machines"
         view_page.click_disable_button()
         disable_modal = view_page.get_disable_modal()
         disable_modal.confirm()
@@ -51,8 +71,11 @@ def test_service_account_lifecycle(tmpdir, setup, browser):
         view_page.click_enable_button()
 
         enable_page = ServiceAccountEnablePage(browser)
-        enable_page.select_owner("Group: user-admins")
+        enable_page.select_owner("Group: some-group")
         enable_page.submit()
+
+        view_page = ServiceAccountViewPage(browser)
+        assert view_page.owner == "some-group"
 
 
 def test_permission_grant_revoke(tmpdir, setup, browser):

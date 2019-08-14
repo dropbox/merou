@@ -358,29 +358,3 @@ def test_machine_set_plugin(session, standard_graph, graph, http_client, base_ur
     graph.update_from_db(session)
     metadata = graph.user_metadata["service@a.co"]
     assert metadata["service_account"]["machine_set"] == "is okay"
-
-    # Try creating a new service account with an invalid machine set.
-    data = {
-        "name": "other@svc.localhost",
-        "description": "some other service account",
-        "machine_set": "not valid",
-    }
-    fe_url = url(base_url, "/groups/team-sre/service/create")
-    resp = yield http_client.fetch(
-        fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode(data)
-    )
-    assert resp.code == 200
-    assert b"other@svc.localhost has invalid machine set" in resp.body
-    graph.update_from_db(session)
-    assert "other@svc.localhost" not in graph.users
-
-    # But this should go through with a valid machine set.
-    data["machine_set"] = "is okay"
-    resp = yield http_client.fetch(
-        fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode(data)
-    )
-    assert resp.code == 200
-    graph.update_from_db(session)
-    metadata = graph.user_metadata["other@svc.localhost"]
-    assert metadata["service_account"]["description"] == "some other service account"
-    assert metadata["service_account"]["machine_set"] == "is okay"

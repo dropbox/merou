@@ -5,7 +5,7 @@ from datetime import datetime
 from functools import wraps
 from typing import TYPE_CHECKING
 
-from grouper.constants import NAME_VALIDATION, SERVICE_ACCOUNT_VALIDATION, USERNAME_VALIDATION
+from grouper.constants import NAME_VALIDATION, USERNAME_VALIDATION
 
 if TYPE_CHECKING:
     from argparse import Namespace
@@ -46,20 +46,6 @@ def ensure_valid_groupname(f):
         # type: (Namespace, CtlSettings, SessionFactory) -> None
         if not re.match("^{}$".format(NAME_VALIDATION), args.groupname):
             logging.error("Invalid group name {}".format(args.groupname))
-            return
-
-        return f(args, settings, session_factory)
-
-    return wrapper
-
-
-def ensure_valid_service_account_name(f):
-    # type: (CommandFunction) -> CommandFunction
-    @wraps(f)
-    def wrapper(args, settings, session_factory):
-        # type: (Namespace, CtlSettings, SessionFactory) -> None
-        if not re.match("^{}$".format(SERVICE_ACCOUNT_VALIDATION), args.name):
-            logging.error('Invalid service account name "{}"'.format(args.name))
             return
 
         return f(args, settings, session_factory)

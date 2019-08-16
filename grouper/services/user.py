@@ -55,6 +55,10 @@ class UserService(UserInterface):
         # type: (str) -> List[GroupPermissionGrant]
         return self.permission_grant_repository.permission_grants_for_user(user)
 
+    def user_exists(self, user):
+        # type: (str) -> bool
+        return self.user_repository.user_exists(user)
+
     def user_is_audit_manager(self, user):
         # type: (str) -> bool
         return self.permission_grant_repository.user_has_permission(user, AUDIT_MANAGER)

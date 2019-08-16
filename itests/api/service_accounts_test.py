@@ -59,7 +59,7 @@ def test_get_role_user(api_client):  # noqa: F811
 def test_includes_disabled_service_accounts(tmpdir, setup):
     # type: (LocalPath, SetupTest) -> None
     with setup.transaction():
-        setup.create_service_account("service@a.co", "some-group", "an account", "some machines")
+        setup.create_service_account("service@a.co", "some-group", "some machines", "an account")
     with setup.transaction():
         setup.disable_service_account("service@a.co")
 

@@ -88,6 +88,11 @@ class PermissionGrantRepository(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
+    def permission_grants_for_service_account(self, name):
+        # type: (str) -> List[ServiceAccountPermissionGrant]
+        pass
+
+    @abstractmethod
     def permission_grants_for_user(self, user):
         # type: (str) -> List[GroupPermissionGrant]
         pass
@@ -100,6 +105,11 @@ class PermissionGrantRepository(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def revoke_all_service_account_grants(self, permission):
         # type: (str) -> List[ServiceAccountPermissionGrant]
+        pass
+
+    @abstractmethod
+    def service_account_has_permission(self, service, permission):
+        # type: (str, str) -> bool
         pass
 
     @abstractmethod
@@ -119,6 +129,11 @@ class UserRepository(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def disable_user(self, name):
         # type: (str) -> None
+        pass
+
+    @abstractmethod
+    def user_exists(self, name):
+        # type: (str) -> bool
         pass
 
     @abstractmethod

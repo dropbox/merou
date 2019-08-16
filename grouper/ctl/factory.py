@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from grouper.ctl.dump_sql import DumpSqlCommand
 from grouper.ctl.permission import PermissionCommand
+from grouper.ctl.service_account import ServiceAccountCommand
 from grouper.ctl.sync_db import SyncDbCommand
 from grouper.ctl.user import UserCommand
 from grouper.ctl.user_proxy import UserProxyCommand
@@ -36,6 +37,8 @@ class CtlCommandFactory(object):
         DumpSqlCommand.add_arguments(parser)
         parser = subparsers.add_parser("permission", help="Manipulate permissions")
         PermissionCommand.add_arguments(parser)
+        parser = subparsers.add_parser("service_account", help="Manipulate service accounts")
+        ServiceAccountCommand.add_arguments(parser)
         parser = subparsers.add_parser("sync_db", help="Create database schema")
         SyncDbCommand.add_arguments(parser)
         parser = subparsers.add_parser("user", help="Manipulate users")
@@ -54,6 +57,8 @@ class CtlCommandFactory(object):
             return self.construct_dump_sql_command()
         elif command == "permission":
             return self.construct_permission_command()
+        elif command == "service_account":
+            return self.construct_service_account_command()
         elif command == "sync_db":
             return self.construct_sync_db_command()
         elif command == "user":
@@ -70,6 +75,10 @@ class CtlCommandFactory(object):
     def construct_permission_command(self):
         # type: () -> PermissionCommand
         return PermissionCommand(self.usecase_factory)
+
+    def construct_service_account_command(self):
+        # type: () -> ServiceAccountCommand
+        return ServiceAccountCommand(self.usecase_factory)
 
     def construct_sync_db_command(self):
         # type: () -> SyncDbCommand

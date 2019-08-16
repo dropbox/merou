@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from grouper.usecases.convert_user_to_service_account import ConvertUserToServiceAccount
+from grouper.usecases.create_service_account import CreateServiceAccount
 from grouper.usecases.disable_permission import DisablePermission
 from grouper.usecases.dump_schema import DumpSchema
 from grouper.usecases.initialize_schema import InitializeSchema
@@ -11,7 +12,9 @@ from grouper.usecases.view_permission import ViewPermission
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
+    from grouper.plugin.proxy import PluginProxy
     from grouper.settings import Settings
+    from grouper.usecases.create_service_account import CreateServiceAccountUI
     from grouper.usecases.convert_user_to_service_account import ConvertUserToServiceAccountUI
     from grouper.usecases.disable_permission import DisablePermissionUI
     from grouper.usecases.dump_schema import DumpSchemaUI
@@ -24,10 +27,26 @@ if TYPE_CHECKING:
 class UseCaseFactory(object):
     """Create use cases with dependency injection."""
 
-    def __init__(self, settings, service_factory):
-        # type: (Settings, Session) -> None
+    def __init__(self, settings, plugins, service_factory):
+        # type: (Settings, PluginProxy, Session) -> None
         self.settings = settings
+        self.plugins = plugins
         self.service_factory = service_factory
+
+    def create_create_service_account_usecase(self, actor, ui):
+        # type: (str, CreateServiceAccountUI) -> CreateServiceAccount
+        service_account_service = self.service_factory.create_service_account_service()
+        user_service = self.service_factory.create_user_service()
+        transaction_service = self.service_factory.create_transaction_service()
+        return CreateServiceAccount(
+            actor,
+            ui,
+            self.settings,
+            self.plugins,
+            service_account_service,
+            user_service,
+            transaction_service,
+        )
 
     def create_convert_user_to_service_account_usecase(self, actor, ui):
         # type: (str, ConvertUserToServiceAccountUI) -> ConvertUserToServiceAccount

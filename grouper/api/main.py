@@ -52,6 +52,8 @@ def start_server(args, settings, plugins):
     logging.debug("configure database session")
     if args.database_url:
         settings.database = args.database_url
+    elif args.database_source:
+        settings.database_source = args.database_source
     Session.configure(bind=get_db_engine(settings.database))
 
     with closing(Session()) as session:

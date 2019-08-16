@@ -41,6 +41,12 @@ def build_arg_parser(description):
         "-d", "--database-url", type=str, default=None, help="Override database URL in config."
     )
     parser.add_argument(
+        "--database-source",
+        type=str,
+        default=None,
+        help="Override command to run to get database URL in config.",
+    )
+    parser.add_argument(
         "--listen-stdin",
         action="store_true",
         help="Ignore address and port and expect connections on standard input",

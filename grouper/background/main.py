@@ -27,6 +27,15 @@ def build_arg_parser():
         "-c", "--config", default=default_settings_path(), help="Path to config file."
     )
     parser.add_argument(
+        "-d", "--database-url", type=str, default=None, help="Override database URL in config."
+    )
+    parser.add_argument(
+        "--database-source",
+        type=str,
+        default=None,
+        help="Override command to run to get database URL in config.",
+    )
+    parser.add_argument(
         "-v", "--verbose", action="count", default=0, help="Increase logging verbosity."
     )
     parser.add_argument(
@@ -56,6 +65,10 @@ def start_processor(args, settings):
 
     # setup database
     logging.debug("configure database session")
+    if args.database_url:
+        settings.database = args.database_url
+    elif args.database_source:
+        settings.database_source = args.database_source
     Session.configure(bind=get_db_engine(settings.database))
 
     background = BackgroundProcessor(settings, plugins)

@@ -34,6 +34,12 @@ def main(sys_argv=sys.argv, session=None):
         "-d", "--database-url", type=str, default=None, help="Override database URL in config."
     )
     parser.add_argument(
+        "--database-source",
+        type=str,
+        default=None,
+        help="Override command to run to get database URL in config.",
+    )
+    parser.add_argument(
         "-q", "--quiet", action="count", default=0, help="Decrease logging verbosity."
     )
     parser.add_argument(
@@ -62,6 +68,8 @@ def main(sys_argv=sys.argv, session=None):
     settings = CtlSettings.global_settings_from_config(args.config)
     if args.database_url:
         settings.database = args.database_url
+    elif args.database_source:
+        settings.database_source = args.database_source
 
     # Construct a session factory, which is passed into all the legacy commands that haven't been
     # converted to usecases yet.

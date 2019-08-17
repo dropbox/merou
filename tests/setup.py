@@ -233,17 +233,10 @@ class SetupTest(object):
     def grant_permission_to_service_account(self, permission, argument, service_account):
         # type: (str, str, str) -> None
         self.create_permission(permission)
-        permission_obj = Permission.get(self.session, name=permission)
-        assert permission_obj
-        user_obj = User.get(self.session, name=service_account)
-        assert user_obj, "Must create the service account first"
-        assert user_obj.is_service_account
-        grant = ServiceAccountPermissionMap(
-            permission_id=permission_obj.id,
-            service_account_id=user_obj.service_account.id,
-            argument=argument,
+        permission_grant_repository = self.repository_factory.create_permission_grant_repository()
+        permission_grant_repository.grant_permission_to_service_account(
+            permission, argument, service_account
         )
-        grant.add(self.session)
 
     def add_metadata_to_user(self, key, value, user):
         # type: (str, str, str) -> None

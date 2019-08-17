@@ -86,6 +86,18 @@ class AuditLogInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def log_grant_permission_to_service_account(
+        self,
+        permission,  # type: str
+        argument,  # type: str
+        service,  # type: str
+        authorization,  # type: Authorization
+        date=None,  # type: Optional[datetime]
+    ):
+        # type: (...) -> None
+        pass
+
+    @abstractmethod
     def log_revoke_group_permission_grant(
         self,
         group,  # type: str
@@ -134,8 +146,18 @@ class GroupInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def group_has_matching_permission_grant(self, group, permission, argument):
+        # type: (str, str, str) -> bool
+        pass
+
+    @abstractmethod
     def is_valid_group_name(self, name):
         # type: (str) -> bool
+        pass
+
+    @abstractmethod
+    def permission_grants_for_group(self, name):
+        # type: (str) -> List[GroupPermissionGrant]
         pass
 
 
@@ -192,6 +214,11 @@ class PermissionInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def is_valid_permission_argument(self, permission, argument):
+        # type: (str, str) -> Tuple[bool, Optional[str]]
+        pass
+
+    @abstractmethod
     def list_permissions(self, pagination, audited_only):
         # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]
         pass
@@ -240,8 +267,18 @@ class ServiceAccountInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def grant_permission_to_service_account(self, permission, argument, service, authorization):
+        # type: (str, str, str, Authorization) -> None
+        pass
+
+    @abstractmethod
     def is_valid_service_account_name(self, name):
         # type: (str) -> Tuple[bool, Optional[str]]
+        pass
+
+    @abstractmethod
+    def owner_of_service_account(self, service):
+        # type: (str) -> str
         pass
 
     @abstractmethod
@@ -251,6 +288,16 @@ class ServiceAccountInterface(metaclass=ABCMeta):
 
     @abstractmethod
     def service_account_exists(self, service):
+        # type: (str) -> bool
+        pass
+
+    @abstractmethod
+    def service_account_is_enabled(self, service):
+        # type: (str) -> bool
+        pass
+
+    @abstractmethod
+    def service_account_is_permission_admin(self, user):
         # type: (str) -> bool
         pass
 

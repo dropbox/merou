@@ -97,6 +97,23 @@ class AuditLogService(AuditLogInterface):
             date=date,
         )
 
+    def log_grant_permission_to_service_account(
+        self,
+        permission,  # type: str
+        argument,  # type: str
+        service,  # type: str
+        authorization,  # type: Authorization
+        date=None,  # type: Optional[datetime]
+    ):
+        # type: (...) -> None
+        self.audit_log_repository.log(
+            authorization=authorization,
+            action="grant_permission",
+            description="Granted permission with argument: {}".format(argument),
+            on_permission=permission,
+            on_user=service,
+        )
+
     def log_revoke_group_permission_grant(
         self,
         group,  # type: str

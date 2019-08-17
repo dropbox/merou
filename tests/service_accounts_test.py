@@ -211,7 +211,7 @@ def test_service_account_fe_edit(
 def test_service_account_fe_perms(
     session, standard_graph, graph, http_client, base_url  # noqa: F811
 ):
-    admin = "tyleromeara@a.co"
+    admin = "cbguder@a.co"
     owner = "zay@a.co"
     plebe = "oliver@a.co"
 
@@ -235,13 +235,16 @@ def test_service_account_fe_perms(
 
     # Unrelated people cannot grant a permission.
     fe_url = url(base_url, "/groups/team-sre/service/service@a.co/grant")
-    with pytest.raises(HTTPError):
-        yield http_client.fetch(
-            fe_url,
-            method="POST",
-            headers={"X-Grouper-User": plebe},
-            body=urlencode({"permission": "team-sre", "argument": "*"}),
-        )
+    resp = yield http_client.fetch(
+        fe_url,
+        method="POST",
+        headers={"X-Grouper-User": plebe},
+        body=urlencode({"permission": "team-sre", "argument": "*"}),
+    )
+    assert resp.code == 200
+    graph.update_from_db(session)
+    metadata = graph.get_user_details("service@a.co")
+    assert metadata["permissions"] == []
 
     # Even group owners cannot grant an unrelated permission.
     resp = yield http_client.fetch(
@@ -264,7 +267,7 @@ def test_service_account_fe_perms(
     )
     assert resp.code == 200
 
-    # Global user admins still cannot grant an unrelated permission.
+    # Global permission admins still cannot grant an unrelated permission.
     resp = yield http_client.fetch(
         fe_url,
         method="POST",

@@ -1,125 +1,113 @@
-from sqlalchemy.exc import IntegrityError
+from typing import TYPE_CHECKING
 
-from grouper.constants import USER_ADMIN
 from grouper.fe.forms import ServiceAccountPermissionGrantForm
-from grouper.fe.util import GrouperHandler
-from grouper.models.audit_log import AuditLog
-from grouper.models.group import Group
-from grouper.models.service_account import ServiceAccount
-from grouper.permissions import get_permission, grant_permission_to_service_account
-from grouper.service_account import can_manage_service_account
-from grouper.user_permissions import user_has_permission
-from grouper.util import matches_glob
+from grouper.fe.util import Alert, GrouperHandler
+from grouper.usecases.grant_permission_to_service_account import GrantPermissionToServiceAccountUI
+
+if TYPE_CHECKING:
+    from grouper.entities.permission_grant import GroupPermissionGrant
+    from typing import Any, Iterable
 
 
-class ServiceAccountPermissionGrant(GrouperHandler):
-    @staticmethod
-    def check_access(session, actor, target):
-        if user_has_permission(session, actor, USER_ADMIN):
-            return True
-        return can_manage_service_account(session, target, actor)
+class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAccountUI):
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        owner = kwargs["name"]  # type: str
+        service = kwargs["accountname"]  # type: str
 
-    def get_form(self, grantable):
+        usecase = self.usecase_factory.create_grant_permission_to_service_account_usecase(
+            self.current_user.username, self
+        )
+        if not usecase.service_account_exists_with_owner(service, owner):
+            return self.notfound()
+        if not usecase.can_grant_permissions_for_service_account(service):
+            return self.forbidden()
+
+        grantable = usecase.permission_grants_for_group(owner)
+        form = self._get_form(grantable)
+        return self.render(
+            "service-account-permission-grant.html", form=form, service=service, owner=owner
+        )
+
+    def grant_permission_to_service_account_failed_invalid_argument(
+        self, permission, argument, service, message
+    ):
+        # type: (str, str, str, str) -> None
+        form = self._get_form(self._grantable)
+        form.argument.errors = [message]
+        self._render_form_with_errors(form, service, self._owner)
+
+    def grant_permission_to_service_account_failed_permission_denied(
+        self, permission, argument, service, message
+    ):
+        # type: (str, str, str, str) -> None
+        form = self._get_form(self._grantable)
+        self.render(
+            "service-account-permission-grant.html",
+            form=form,
+            service=service,
+            owner=self._owner,
+            alerts=[Alert("error", message)],
+        )
+
+    def grant_permission_to_service_account_failed_permission_not_found(self, permission, service):
+        # type: (str, str) -> None
+        message = "Unknown permission {}".format(permission)
+        form = self._get_form(self._grantable)
+        form.permission.errors = [message]
+        self._render_form_with_errors(form, service, self._owner)
+
+    def grant_permission_to_service_account_failed_service_account_not_found(self, service):
+        # type: (str) -> None
+        self.notfound()
+
+    def granted_permission_to_service_account(self, permission, argument, service):
+        # type: (str, str, str) -> None
+        url = "/groups/{}/service/{}?refresh=yes".format(self._owner, service)
+        self.redirect(url)
+
+    def post(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        self._owner = kwargs["name"]  # type: str
+        service = kwargs["accountname"]  # type: str
+
+        usecase = self.usecase_factory.create_grant_permission_to_service_account_usecase(
+            self.current_user.username, self
+        )
+        if not usecase.service_account_exists_with_owner(service, self._owner):
+            return self.notfound()
+        self._grantable = usecase.permission_grants_for_group(self._owner)
+        form = self._get_form(self._grantable)
+        if not form.validate():
+            return self._render_form_with_errors(form, service, self._owner)
+
+        usecase.grant_permission_to_service_account(
+            form.data["permission"], form.data["argument"], service
+        )
+
+    def _get_form(self, grantable):
+        # type: (Iterable[GroupPermissionGrant]) -> ServiceAccountPermissionGrantForm
         """Helper to create a ServiceAccountPermissionGrantForm.
 
-        Populate it with all the permissions held by the group.  Note that the first choice is
-        blank so the first user alphabetically isn't always selected.
+        Populate it with all the grantable permissions.  Note that the first choice is blank so the
+        first permission alphabetically isn't always selected.
 
         Returns:
             ServiceAccountPermissionGrantForm object.
         """
         form = ServiceAccountPermissionGrantForm(self.request.arguments)
         form.permission.choices = [["", "(select one)"]]
-        for perm in grantable:
-            entry = "{} ({})".format(perm[1], perm[3])
-            form.permission.choices.append([perm[1], entry])
+        for grant in grantable:
+            entry = "{} ({})".format(grant.permission, grant.argument)
+            form.permission.choices.append([grant.permission, entry])
         return form
 
-    def get(self, group_id=None, name=None, account_id=None, accountname=None):
-        group = Group.get(self.session, group_id, name)
-        if not group:
-            return self.notfound()
-        service_account = ServiceAccount.get(self.session, account_id, accountname)
-        if not service_account:
-            return self.notfound()
-        user = service_account.user
-
-        if not self.check_access(self.session, self.current_user, service_account):
-            return self.forbidden()
-
-        form = self.get_form(group.my_permissions())
-        return self.render(
-            "service-account-permission-grant.html", form=form, user=user, group=group
-        )
-
-    def post(self, group_id=None, name=None, account_id=None, accountname=None):
-        group = Group.get(self.session, group_id, name)
-        if not group:
-            return self.notfound()
-        service_account = ServiceAccount.get(self.session, account_id, accountname)
-        if not service_account:
-            return self.notfound()
-        user = service_account.user
-
-        if not self.check_access(self.session, self.current_user, service_account):
-            return self.forbidden()
-
-        grantable = group.my_permissions()
-        form = self.get_form(grantable)
-        if not form.validate():
-            return self.render(
-                "service-account-permission-grant.html",
-                form=form,
-                user=user,
-                group=group,
-                alerts=self.get_form_alerts(form.errors),
-            )
-
-        permission = get_permission(self.session, form.data["permission"])
-        if not permission:
-            return self.notfound()
-
-        allowed = False
-        for perm in grantable:
-            if perm[1] == permission.name:
-                if matches_glob(perm[3], form.data["argument"]):
-                    allowed = True
-                    break
-        if not allowed:
-            form.argument.errors.append(
-                "The group {} does not have that permission".format(group.name)
-            )
-            return self.render(
-                "service-account-permission-grant.html",
-                form=form,
-                user=user,
-                group=group,
-                alerts=self.get_form_alerts(form.errors),
-            )
-
-        try:
-            grant_permission_to_service_account(
-                self.session, service_account, permission, form.data["argument"]
-            )
-        except IntegrityError:
-            self.session.rollback()
-            return self.render(
-                "service-account-permission-grant.html",
-                form=form,
-                user=user,
-                alerts=self.get_form_alerts(form.errors),
-            )
-
-        AuditLog.log(
-            self.session,
-            self.current_user.id,
-            "grant_permission",
-            "Granted permission with argument: {}".format(form.data["argument"]),
-            on_permission_id=permission.id,
-            on_group_id=group.id,
-            on_user_id=service_account.user.id,
-        )
-
-        return self.redirect(
-            "/groups/{}/service/{}?refresh=yes".format(group.name, service_account.user.username)
+    def _render_form_with_errors(self, form, service, owner):
+        # type: (ServiceAccountPermissionGrantForm, str, str) -> None
+        self.render(
+            "service-account-permission-grant.html",
+            form=form,
+            service=service,
+            owner=owner,
+            alerts=self.get_form_alerts(form.errors),
         )

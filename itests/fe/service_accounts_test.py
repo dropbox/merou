@@ -98,6 +98,8 @@ def test_permission_grant_revoke(tmpdir, setup, browser):
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group")
         setup.grant_permission_to_group("some-permission", "foo", "some-group")
+        setup.grant_permission_to_group("other-permission", "bar", "parent-group")
+        setup.add_group_to_group("some-group", "parent-group")
         setup.create_service_account("service@svc.localhost", "some-group")
 
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
@@ -126,3 +128,53 @@ def test_permission_grant_revoke(tmpdir, setup, browser):
 
         assert page.owner == "some-group"
         assert page.permission_rows == []
+
+        # Add a permission from the parent group.
+        page.click_add_permission_button()
+
+        grant_page = ServiceAccountGrantPermissionPage(browser)
+        grant_page.select_permission("other-permission (bar)")
+        grant_page.set_argument("bar")
+        grant_page.submit()
+
+        permission_rows = page.permission_rows
+        assert len(permission_rows) == 1
+        permission = permission_rows[0]
+        assert permission.permission == "other-permission"
+        assert permission.argument == "bar"
+
+
+def test_permission_grant_denied(tmpdir, setup, browser):
+    # type: (LocalPath, SetupTest, Chrome) -> None
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group")
+        setup.grant_permission_to_group("some-permission", "foo", "some-group")
+        setup.create_service_account("service@svc.localhost", "some-group")
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group/service/service@svc.localhost/grant"))
+
+        page = ServiceAccountGrantPermissionPage(browser)
+        page.select_permission("some-permission (foo)")
+        page.set_argument("bar")
+        page.submit()
+
+        assert page.has_alert("The group some-group does not have that permission")
+
+
+def test_permission_grant_invalid_argument(tmpdir, setup, browser):
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group")
+        setup.grant_permission_to_group("some-permission", "foo", "some-group")
+        setup.create_service_account("service@svc.localhost", "some-group")
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group/service/service@svc.localhost/grant"))
+
+        page = ServiceAccountGrantPermissionPage(browser)
+        page.select_permission("some-permission (foo)")
+        page.set_argument("@@@@")
+        page.submit()
+
+        print(page.root.page_source)
+        assert page.has_alert("argument")

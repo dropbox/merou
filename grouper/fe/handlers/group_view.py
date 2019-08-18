@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from grouper.audit import get_group_audit_members_infos
 from grouper.fe.handlers.template_variables import get_group_view_template_vars
 from grouper.fe.util import GrouperHandler
 from grouper.models.group import Group
@@ -23,8 +24,11 @@ class GroupView(GrouperHandler):
         if is_role_user(self.session, group=group):
             return self.redirect("/service/{}".format(group.groupname))
 
+        audit_members_infos = get_group_audit_members_infos(self.session, group)
+
         self.render(
             "group.html",
             group=group,
+            audit_members_infos=audit_members_infos,
             **get_group_view_template_vars(self.session, self.current_user, group, self.graph)
         )

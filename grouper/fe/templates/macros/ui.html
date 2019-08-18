@@ -320,6 +320,19 @@ enabled. Membership in this group is regularly reviewed.
 {% endif %}
 {%- endmacro %}
 
+{% macro group_member_audit_status(current_user, audit_member_obj, member_obj, statuses) -%}
+    {% if member_obj.name == current_user.name %}
+        <input type="hidden" name="audit_{{audit_member_obj.id}}" value="approved" />
+        approved
+    {% else %}
+        <select name="audit_{{audit_member_obj.id}}">
+            {% for status in statuses %}
+            <option {% if status == audit_member_obj.status %}selected{% endif %}>{{ status }}</option>
+            {% endfor %}
+        </select>
+    {% endif %}
+{% endmacro %}
+
 {% macro permission(perm) -%}
 <a class="permission-link" href="/permissions/{{perm.name or perm.permission}}">
     <i class="fa fa-key hidden-xs"></i>

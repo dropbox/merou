@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from 'macros/ui.html' import group_panel, member_panel, permission_panel, log_entry_panel,
-                                help_for, account, service_account_panel %}
+                                help_for, account, service_account_panel, group_member_audit_status %}
 
 {% block subtitle %} group {{group.groupname}}{% endblock %}
 
@@ -207,19 +207,6 @@
 {% if group.audit and not group.audit.complete %}
 {# TODO(herb): audit db calls in this block #}
 
-{% macro audit_status(member) -%}
-    {% if member.member.name == current_user.name %}
-        <input type="hidden" name="audit_{{member.id}}" value="approved" />
-        approved
-    {% else %}
-        <select name="audit_{{member.id}}">
-            {% for status in statuses %}
-            <option {% if status == member.status %}selected{% endif %}>{{ status }}</option>
-            {% endfor %}
-        </select>
-    {% endif %}
-{% endmacro %}
-
 <div class="modal fade" id="auditModal" tabindex="-1" role="dialog"
       aria-labelledby="auditModal" aria-hidden="true" data-show="{{ "true" if group.audit and not group.audit.complete and current_user_role['is_owner'] else "false" }}">
     <div class="modal-dialog">
@@ -248,11 +235,11 @@
                         </tr>
                     </thead>
                     <tbody>
-                    {% for member in group.audit.my_members() %}
+                    {% for ami in audit_members_infos %}
                         <tr class="audit-member-row">
-                            <td class="audit-member-name">{{ account(member.member) }}</td>
-                            <td class="audit-member-role">{{ member.edge.role }}</td>
-                            <td class="audit-member-status">{{ audit_status(member) }}</td>
+                            <td class="audit-member-name">{{ account(ami.member_obj) }}</td>
+                            <td class="audit-member-role">{{ ROLES[ami.audit_member_role] }}</td>
+                            <td class="audit-member-status">{{ group_member_audit_status(current_user, ami.audit_member_obj, ami.member_obj, statuses) }}</td>
                         </tr>
                     {% endfor %}
                     </tbody>

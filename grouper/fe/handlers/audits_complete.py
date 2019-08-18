@@ -1,6 +1,6 @@
 from six import itervalues
 
-from grouper.audit import get_audits
+from grouper.audit import get_audits, get_group_audit_members_count, get_group_audit_members_infos
 from grouper.constants import PERMISSION_AUDITOR
 from grouper.email_util import cancel_async_emails
 from grouper.fe.util import Alert, GrouperHandler
@@ -31,37 +31,39 @@ class AuditsComplete(GrouperHandler):
             if argument.startswith("audit_"):
                 edges[int(argument.split("_")[1])] = self.request.arguments[argument][0].decode()
 
-        for member in audit.my_members():
-            if member.id in edges:
+        audit_members_infos = get_group_audit_members_infos(self.session, audit.group)
+        for ami in audit_members_infos:
+            if ami.audit_member_obj.id in edges:
                 # You can only approve yourself (otherwise you can remove yourself
                 # from the group and leave it ownerless)
-                if member.member.id == self.current_user.id:
-                    member.status = "approved"
-                elif edges[member.id] in AUDIT_STATUS_CHOICES:
-                    member.status = edges[member.id]
+                if ami.audit_member_obj.id == self.current_user.id:
+                    ami.audit_member_obj.status = "approved"
+                elif edges[ami.audit_member_obj.id] in AUDIT_STATUS_CHOICES:
+                    ami.audit_member_obj.status = edges[ami.audit_member_obj.id]
 
         self.session.commit()
 
-        # Now if it's completable (no pendings) then mark it complete, else redirect them
-        # to the group page.
-        if not audit.completable:
+        # If there are still pending statuses, then redirect to the group page.
+        if get_group_audit_members_count(self.session, audit.group, "pending"):
             return self.redirect("/groups/{}".format(audit.group.name))
 
         # Complete audits have to be "enacted" now. This means anybody marked as remove has to
         # be removed from the group now.
         try:
-            for member in audit.my_members():
-                if member.status == "remove":
+            audit_members_infos = get_group_audit_members_infos(self.session, audit.group)
+            for ami in audit_members_infos:
+                member_obj = ami.member_obj
+                if ami.audit_member_obj.status == "remove":
                     audit.group.revoke_member(
-                        self.current_user, member.member, "Revoked as part of audit."
+                        self.current_user, member_obj, "Revoked as part of audit."
                     )
                     AuditLog.log(
                         self.session,
                         self.current_user.id,
                         "remove_member",
-                        "Removed membership in audit: {}".format(member.member.name),
+                        "Removed membership in audit: {}".format(member_obj.name),
                         on_group_id=audit.group.id,
-                        on_user_id=member.member.id,
+                        on_user_id=member_obj.id,
                         category=AuditLogCategory.audit,
                     )
         except PluginRejectedGroupMembershipUpdate as e:

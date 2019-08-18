@@ -2,7 +2,7 @@ import itertools
 import logging
 from collections import OrderedDict
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from six import iteritems
 from sqlalchemy import Boolean, Column, desc, Enum, Integer, Interval, or_, String, Text
@@ -233,7 +233,7 @@ class Group(Model, CommentObjectMixin):
         return od
 
     def my_members(self):
-        # type: () -> Mapping[Tuple[str, str], str]
+        # type: () -> Mapping[Tuple[str, str], Any]
         """Returns a dictionary from ("User"|"Group", "name") tuples to records."""
 
         parent = aliased(Group)

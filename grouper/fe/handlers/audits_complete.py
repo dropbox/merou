@@ -31,8 +31,7 @@ class AuditsComplete(GrouperHandler):
             if argument.startswith("audit_"):
                 edges[int(argument.split("_")[1])] = self.request.arguments[argument][0].decode()
 
-        audit_members_infos = get_group_audit_members_infos(self.session, audit.group)
-        for ami in audit_members_infos:
+        for ami in get_group_audit_members_infos(self.session, audit.group):
             if ami.audit_member_obj.id in edges:
                 # You can only approve yourself (otherwise you can remove yourself
                 # from the group and leave it ownerless)
@@ -50,8 +49,7 @@ class AuditsComplete(GrouperHandler):
         # Complete audits have to be "enacted" now. This means anybody marked as remove has to
         # be removed from the group now.
         try:
-            audit_members_infos = get_group_audit_members_infos(self.session, audit.group)
-            for ami in audit_members_infos:
+            for ami in get_group_audit_members_infos(self.session, audit.group):
                 member_obj = ami.member_obj
                 if ami.audit_member_obj.status == "remove":
                     audit.group.revoke_member(

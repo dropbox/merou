@@ -3,7 +3,6 @@ from sqlalchemy.orm import relationship
 
 from grouper.models.base.model_base import Model
 
-
 AUDIT_STATUS_CHOICES = {"pending", "approved", "remove"}
 
 

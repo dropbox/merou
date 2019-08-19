@@ -36,7 +36,7 @@ class AuditsComplete(GrouperHandler):
             if ami.audit_member_obj.id in edges:
                 # You can only approve yourself (otherwise you can remove yourself
                 # from the group and leave it ownerless)
-                if ami.audit_member_obj.id == self.current_user.id:
+                if ami.member_obj.id == self.current_user.id:
                     ami.audit_member_obj.status = "approved"
                 elif edges[ami.audit_member_obj.id] in AUDIT_STATUS_CHOICES:
                     ami.audit_member_obj.status = edges[ami.audit_member_obj.id]

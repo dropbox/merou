@@ -130,10 +130,13 @@ an existing tornado install at a different major release than that in our
 
 .. code:: bash
 
-    virtualenv ~/merou-venv
-    ~/merou-venv/bin/pip install -r requirements.txt
-    ~/merou-venv/bin/pip install -r requirements-dev.txt
-    ~/merou-venv/bin/pytest
+    $ virtualenv ~/merou-venv -p /usr/bin/python3
+    $ source ~/merou-venv/bin/activate
+    (merou-venv) $ pip install -r requirements.txt
+    (merou-venv) $ pip install -r requirements-dev.txt
+    (merou-venv) $ pytest
+    (merou-venv) $ deactivate
+    $
 
 All Merou code is formatted with black, which is installed by the
 `requirements-dev.txt` requirements file for Python 3. After installation,

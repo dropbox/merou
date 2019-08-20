@@ -227,8 +227,7 @@ def get_group_audit_members_infos(session, group):
             AuditMember.edge_id == GroupEdge.id,
             GroupEdge.member_type == OBJ_TYPES["User"],
             GroupEdge.member_pk == User.id,
-            # but only those members who are still current members of the group, because members
-            # that need audits might have left the group after the audit was started
+            # only those members who have not left the group after the audit started
             AuditMember.edge_id.in_(members_edge_ids),
         )
         .all()
@@ -241,8 +240,7 @@ def get_group_audit_members_infos(session, group):
             AuditMember.edge_id == GroupEdge.id,
             GroupEdge.member_type == OBJ_TYPES["Group"],
             GroupEdge.member_pk == Group.id,
-            # but only those members who are still current members of the group, because members
-            # that need audits might have left the group after the audit was started
+            # only those members who have not left the group after the audit started
             AuditMember.edge_id.in_(members_edge_ids),
         )
         .all()
@@ -256,25 +254,23 @@ def get_group_audit_members_infos(session, group):
     ]
 
 
-def get_group_audit_members_count(session, group, status):
-    # type: (Session, Group, str) -> int
-    """Count the memberships of a group with a specific audit status
+def group_has_pending_audit_members(session, group):
+    # type: (Session, Group) -> bool
+    """Check if a group still has memberships with "pending" audit status
 
     Arg(s):
         session: The SQL session
         group: The group
-        status: The type of audit status to count.
 
     Return:
-        The number of memberships of a group with a specific audit status.
+        True if the group still has memberships with "pending" audit status
 
     """
     members_edge_ids = {member.edge_id for member in itervalues(group.my_members())}
     audit_members_statuses = session.query(AuditMember.status).filter(
         AuditMember.audit_id == group.audit_id,
-        AuditMember.status == status,
-        # but only those members who are still current members of the group, because members that
-        # need audits might have left the group after the audit was started
+        AuditMember.status == "pending",
+        # only those members who have not left the group after the audit started
         AuditMember.edge_id.in_(members_edge_ids),
     )
     return audit_members_statuses.count()

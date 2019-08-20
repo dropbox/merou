@@ -1,9 +1,7 @@
 from sqlalchemy import Column, Enum, ForeignKey, Integer
-from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from grouper.models.base.model_base import Model
-from grouper.models.user import User
 
 AUDIT_STATUS_CHOICES = {"pending", "approved", "remove"}
 
@@ -26,14 +24,3 @@ class AuditMember(Model):
     edge = relationship("GroupEdge", backref="audits", foreign_keys=[edge_id])
 
     status = Column(Enum(*AUDIT_STATUS_CHOICES), default="pending", nullable=False)
-
-    @hybrid_property
-    def member(self):
-        # TODO(cbguder): get around circular dependencies
-        from grouper.models.group import Group
-
-        if self.edge.member_type == 0:  # User
-            return User.get(self.session, pk=self.edge.member_pk)
-        elif self.edge.member_type == 1:  # Group
-            return Group.get(self.session, pk=self.edge.member_pk)
-        raise Exception("invalid member_type in AuditMember!")

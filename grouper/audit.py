@@ -1,19 +1,23 @@
-from typing import TYPE_CHECKING
+import itertools
+from typing import List, NamedTuple, TYPE_CHECKING, Union
 
-from six import iteritems
+from six import iteritems, itervalues
 
 from grouper.constants import PERMISSION_AUDITOR
 from grouper.graph import Graph, NoSuchGroup
 from grouper.models.audit import Audit
+from grouper.models.audit_member import AuditMember
+from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.group import Group
+from grouper.models.group_edge import GroupEdge
+from grouper.models.user import User
 from grouper.util import get_auditors_group_name
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
-    from grouper.models.user import User
     from grouper.settings import Settings
     from sqlalchemy.orm.query import Query
-    from typing import Set, Union
+    from typing import Set
 
 
 class UserNotAuditor(Exception):
@@ -22,6 +26,18 @@ class UserNotAuditor(Exception):
 
 class GroupDoesNotHaveAuditPermission(Exception):
     pass
+
+
+# Contains audit information about members of a group, mostly to avoid latencies of individual
+# queries due to lazy loading when looking up fields of group members.
+AuditMemberInfo = NamedTuple(
+    "AuditMemberInfo",
+    [
+        ("audit_member_obj", AuditMember),  # To allow updating of the audit status
+        ("audit_member_role", int),  # use this to avoid a lazy lookup of `AuditMember.edge`
+        ("member_obj", Union[User, Group]),
+    ],
+)
 
 
 def user_is_auditor(username):
@@ -185,3 +201,76 @@ def get_auditors_group(settings, session):
     if not any([p.name == PERMISSION_AUDITOR for p in group.my_permissions()]):
         raise GroupDoesNotHaveAuditPermission()
     return group
+
+
+def get_group_audit_members_infos(session, group):
+    # type: (Session, Group) -> List[AuditMemberInfo]
+    """Get audit information about the members of a group.
+
+    Note that only current members of the group are relevant, i.e., members of the group at the
+    time the current audit was started but are no longer part of the group are excluded, as are
+    members of the group added after the audit was started.
+
+    Arg(s):
+        session: The SQL session
+        group: The group
+
+    Return:
+        List of AuditMemberInfo.
+
+    """
+    members_edge_ids = {member.edge_id for member in itervalues(group.my_members())}
+    user_members = (
+        session.query(AuditMember, GroupEdge._role, User)
+        .filter(
+            AuditMember.audit_id == group.audit_id,
+            AuditMember.edge_id == GroupEdge.id,
+            GroupEdge.member_type == OBJ_TYPES["User"],
+            GroupEdge.member_pk == User.id,
+            # only those members who have not left the group after the audit started
+            AuditMember.edge_id.in_(members_edge_ids),
+        )
+        .all()
+    )
+
+    group_members = (
+        session.query(AuditMember, GroupEdge._role, Group)
+        .filter(
+            AuditMember.audit_id == group.audit_id,
+            AuditMember.edge_id == GroupEdge.id,
+            GroupEdge.member_type == OBJ_TYPES["Group"],
+            GroupEdge.member_pk == Group.id,
+            # only those members who have not left the group after the audit started
+            AuditMember.edge_id.in_(members_edge_ids),
+        )
+        .all()
+    )
+
+    return [
+        AuditMemberInfo(audit_member, audit_member_role, member_obj)
+        for audit_member, audit_member_role, member_obj in itertools.chain(
+            user_members, group_members
+        )
+    ]
+
+
+def group_has_pending_audit_members(session, group):
+    # type: (Session, Group) -> bool
+    """Check if a group still has memberships with "pending" audit status
+
+    Arg(s):
+        session: The SQL session
+        group: The group
+
+    Return:
+        True if the group still has memberships with "pending" audit status
+
+    """
+    members_edge_ids = {member.edge_id for member in itervalues(group.my_members())}
+    audit_members_statuses = session.query(AuditMember.status).filter(
+        AuditMember.audit_id == group.audit_id,
+        AuditMember.status == "pending",
+        # only those members who have not left the group after the audit started
+        AuditMember.edge_id.in_(members_edge_ids),
+    )
+    return audit_members_statuses.count()

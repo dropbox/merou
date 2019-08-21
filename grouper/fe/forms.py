@@ -340,8 +340,7 @@ class ServiceAccountCreateForm(Form):
         [
             validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
             validators.DataRequired(),
-            ValidateRegex(constants.NAME_VALIDATION),
-            ValidateRegex(constants.SERVICE_ACCOUNT_VALIDATION),
+            ValidateRegex(constants.NAME_VALIDATION + "|" + constants.SERVICE_ACCOUNT_VALIDATION),
         ],
     )
     description = TextAreaField("Description")

@@ -60,10 +60,11 @@ class ServiceAccountCreate(GrouperHandler, CreateServiceAccountUI):
             self.current_user.username, self
         )
         if not usecase.can_create_service_account(owner):
-            return self.forbidden()
+            self.forbidden()
+            return
 
         form = ServiceAccountCreateForm()
-        return self.render("service-account-create.html", form=form, owner=owner)
+        self.render("service-account-create.html", form=form, owner=owner)
 
     def post(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
@@ -72,6 +73,7 @@ class ServiceAccountCreate(GrouperHandler, CreateServiceAccountUI):
         form = ServiceAccountCreateForm(self.request.arguments)
         if not form.validate():
             self.render_form_with_errors(form, owner)
+            return
 
         usecase = self.usecase_factory.create_create_service_account_usecase(
             self.current_user.username, self

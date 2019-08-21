@@ -21,23 +21,25 @@ class CreateServiceAccountUI(with_metaclass(ABCMeta, object)):
     """Abstract base class for UI for CreateServiceAccount."""
 
     @abstractmethod
-    def create_service_account_failed_already_exists(self, service):
-        # type: (str) -> None
+    def create_service_account_failed_already_exists(self, service, owner):
+        # type: (str, str) -> None
         pass
 
     @abstractmethod
-    def create_service_account_failed_invalid_name(self, service, message):
-        # type: (str, str) -> None
+    def create_service_account_failed_invalid_name(self, service, owner, message):
+        # type: (str, str, str) -> None
+        pass
+
+    @abstractmethod
+    def create_service_account_failed_invalid_machine_set(
+        self, service, owner, machine_set, message
+    ):
+        # type: (str, str, str, str) -> None
         pass
 
     @abstractmethod
     def create_service_account_failed_invalid_owner(self, service, owner):
         # type: (str, str) -> None
-        pass
-
-    @abstractmethod
-    def create_service_account_failed_invalid_machine_set(self, service, machine_set, message):
-        # type: (str, str, str) -> None
         pass
 
     @abstractmethod
@@ -73,6 +75,20 @@ class CreateServiceAccount(object):
         self.user_service = user_service
         self.transaction_service = transaction_service
 
+    def can_create_service_account(self, owner):
+        # type: (str) -> bool
+        """Whether the actor can create a service account owned by the given group.
+
+        Creation is permitted if the actor is a user admin or if the actor is a user (not a service
+        account) and is a member of the owning group.
+        """
+        if self.service_account_service.service_account_exists(self.actor):
+            return self.service_account_service.service_account_is_user_admin(self.actor)
+        elif owner in self.user_service.groups_of_user(self.actor):
+            return True
+        else:
+            return self.user_service.user_is_user_admin(self.actor)
+
     def create_service_account(self, service, owner, machine_set, description):
         # type: (str, str, str, str) -> None
         if "@" not in service:
@@ -81,26 +97,18 @@ class CreateServiceAccount(object):
         valid, error = self.service_account_service.is_valid_service_account_name(service)
         if not valid:
             assert error
-            self.ui.create_service_account_failed_invalid_name(service, error)
+            self.ui.create_service_account_failed_invalid_name(service, owner, error)
             return
 
-        # Creation is permitted if the actor is a user admin or if the actor is a user (not a
-        # service account) and is a member of the owning group.
-        if self.service_account_service.service_account_exists(self.actor):
-            allowed = self.service_account_service.service_account_is_user_admin(self.actor)
-        else:
-            allowed = owner in self.user_service.groups_of_user(self.actor)
-            if not allowed:
-                allowed = self.user_service.user_is_user_admin(self.actor)
-        if not allowed:
+        if not self.can_create_service_account(owner):
             self.ui.create_service_account_failed_permission_denied(service, owner)
             return
 
         if self.user_service.user_exists(service):
-            self.ui.create_service_account_failed_already_exists(service)
+            self.ui.create_service_account_failed_already_exists(service, owner)
             return
         if self.service_account_service.service_account_exists(service):
-            self.ui.create_service_account_failed_already_exists(service)
+            self.ui.create_service_account_failed_already_exists(service, owner)
             return
 
         if machine_set:
@@ -108,7 +116,7 @@ class CreateServiceAccount(object):
                 self.plugins.check_machine_set(service, machine_set)
             except PluginRejectedMachineSet as e:
                 self.ui.create_service_account_failed_invalid_machine_set(
-                    service, machine_set, str(e)
+                    service, owner, machine_set, str(e)
                 )
                 return
 
@@ -120,5 +128,5 @@ class CreateServiceAccount(object):
                 )
             except GroupNotFoundException:
                 self.ui.create_service_account_failed_invalid_owner(service, owner)
-            else:
-                self.ui.created_service_account(service, owner)
+                return
+        self.ui.created_service_account(service, owner)

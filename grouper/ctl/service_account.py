@@ -25,24 +25,26 @@ class CreateServiceAccountCommand(CtlCommand, CreateServiceAccountUI):
         # type: (UseCaseFactory) -> None
         self.usecase_factory = usecase_factory
 
-    def create_service_account_failed_already_exists(self, service):
-        # type: (str) -> None
+    def create_service_account_failed_already_exists(self, service, owner):
+        # type: (str, str) -> None
         logging.critical("service account %s already exists", service)
         sys.exit(1)
 
-    def create_service_account_failed_invalid_name(self, service, message):
-        # type: (str, str) -> None
+    def create_service_account_failed_invalid_name(self, service, owner, message):
+        # type: (str, str, str) -> None
         logging.critical("invalid service account name %s: %s", service, message)
+        sys.exit(1)
+
+    def create_service_account_failed_invalid_machine_set(
+        self, service, owner, machine_set, message
+    ):
+        # type: (str, str, str, str) -> None
+        logging.critical("machine set %s is not valid: %s", machine_set, message)
         sys.exit(1)
 
     def create_service_account_failed_invalid_owner(self, service, owner):
         # type: (str, str) -> None
         logging.critical("owning group %s does not exist", owner)
-        sys.exit(1)
-
-    def create_service_account_failed_invalid_machine_set(self, service, machine_set, message):
-        # type: (str, str, str) -> None
-        logging.critical("machine set %s is not valid: %s", machine_set, message)
         sys.exit(1)
 
     def create_service_account_failed_permission_denied(self, service, owner):

@@ -26,7 +26,7 @@ def bin_env():
     # type: () -> Dict[str, str]
     """Return an environment suitable for running programs from bin."""
     return {
-        "GROUPER_SETTINGS": src_path("config", "dev.yaml"),
+        "GROUPER_SETTINGS": src_path("config", "test.yaml"),
         "PATH": os.environ["PATH"],
         "PYTHONPATH": src_path(),
     }

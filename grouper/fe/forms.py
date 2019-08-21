@@ -333,13 +333,14 @@ class UserPasswordForm(Form):
 
 
 class ServiceAccountCreateForm(Form):
+    # Allow either NAME or SERVICE_ACCOUNT validation since we allow people to specify just the
+    # left-hand side of a service account name and add the domain automatically.
     name = StringField(
         "Name",
         [
             validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
             validators.DataRequired(),
-            ValidateRegex(constants.NAME_VALIDATION),
-            ValidateRegex(constants.USERNAME_VALIDATION),
+            ValidateRegex(constants.NAME_VALIDATION + "|" + constants.SERVICE_ACCOUNT_VALIDATION),
         ],
     )
     description = TextAreaField("Description")

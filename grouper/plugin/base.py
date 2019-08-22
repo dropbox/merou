@@ -13,6 +13,15 @@ if TYPE_CHECKING:
 
 
 class BasePlugin(object):
+    def configure(self, service_name):
+        # type: (str) -> None
+        """Configure the plugin.
+
+        Called once the plugin is instantiated to identify the executable (grouper-api, grouper-fe,
+        or grouper-background).
+        """
+        pass
+
     def check_machine_set(self, name, machine_set):
         # type: (str, str) -> None
         """Check whether a service account machine set is valid.
@@ -27,11 +36,17 @@ class BasePlugin(object):
         """
         pass
 
-    def configure(self, service_name):
-        # type: (str) -> None
-        """
-        Called once the plugin is instantiated to identify the executable
-        (grouper-api or grouper-fe).
+    def check_service_account_name(self, name, owner):
+        # type: (str, str) -> None
+        """Check whether a service account name is allowed.
+
+        Args:
+            name: Name of a new service account being created (with domain)
+            owner: The name of the group that will own the new service account
+
+        Raises:
+            PluginRejectedServiceAccountName to reject the name.  The exception message will be
+            shown to the user.
         """
         pass
 
@@ -66,15 +81,12 @@ class BasePlugin(object):
 
     def get_ssl_context(self):
         # type: () -> SSLContext
-        """
-        Called to get the ssl.SSLContext for the application.
-        """
+        """Called to get the ssl.SSLContext for the application."""
         pass
 
     def log_auditlog_entry(self, entry):
         # type: (AuditLog) -> None
-        """
-        Called when an audit log entry is saved to the database.
+        """Called when an audit log entry is saved to the database.
 
         Args:
             entry: just-saved log object
@@ -103,24 +115,35 @@ class BasePlugin(object):
 
     def log_gauge(self, key, val):
         # type: (str, float) -> None
-        """ Log an instantaneous-value gauge stat that does not vary with
-        time. For e.g., number of CPUs or amount of RAM on a machine.
+        """Log a gauge stat.
+
+        Log an instantaneous-value gauge stat which measures the total of something.  For example,
+        number of CPUs or amount of RAM on a machine.
         """
         pass
 
     def log_rate(self, key, val, count=1):
         # type: (str, float, int) -> None
-        """ Log a time-varying rate stat, such as an execution time or a
-        method invocation.
-            @param key - the name of the stat.
-            @param val - increment to the value of the stat.
-            @param count - the number of samples that created the increment.
+        """Log an incremental rate stat.
+
+        Log a rate stat, which counts something over time.  For example, execution time or number
+        of invocations of a method.
+
+        Args:
+            key: The name of the stat
+            val: Amount to add to the stat (for example, additional ms spent executing a method, or
+                additional count of method invocations)
+            count: Number of samples that created the increment (default: 1)
         """
         pass
 
     def set_default_stats_tags(self, tags):
         # type: (Dict[str, str]) -> None
-        """Set default tags for stats"""
+        """Set default tags for stats logged via log_gauge or log_rate.
+
+        Args:
+            tags: Key/value pairs of tags to associate with the stats.
+        """
         pass
 
     def user_created(self, user, is_service_account=False):
@@ -141,8 +164,7 @@ class BasePlugin(object):
 
     def will_add_public_key(self, key):
         # type: (SSHKey) -> None
-        """
-        Called before adding a public key
+        """Called before adding a public key.
 
         Args:
             key: Parsed public key
@@ -154,8 +176,7 @@ class BasePlugin(object):
 
     def will_disable_user(self, session, user):
         # type: (Session, User) -> None
-        """
-        Called before disabling a user
+        """Called before disabling a user.
 
         Args:
             session: database session
@@ -168,8 +189,7 @@ class BasePlugin(object):
 
     def will_update_group_membership(self, session, group, member, **updates):
         # type: (Session, Group, Union[User, Group], **Any) -> None
-        """
-        Called before applying changes to a group membership
+        """Called before applying changes to a group membership.
 
         Args:
             session: database session

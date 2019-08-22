@@ -10,6 +10,7 @@ from grouper.services.transaction import TransactionService
 from grouper.services.user import UserService
 
 if TYPE_CHECKING:
+    from grouper.plugin import PluginProxy
     from grouper.repositories.interfaces import RepositoryFactory
     from grouper.settings import Settings
     from grouper.usecases.interfaces import (
@@ -27,9 +28,10 @@ if TYPE_CHECKING:
 class ServiceFactory(object):
     """Construct backend services."""
 
-    def __init__(self, settings, repository_factory):
-        # type: (Settings, RepositoryFactory) -> None
+    def __init__(self, settings, plugins, repository_factory):
+        # type: (Settings, PluginProxy, RepositoryFactory) -> None
         self.settings = settings
+        self.plugins = plugins
         self.repository_factory = repository_factory
 
     def create_audit_log_service(self):
@@ -73,6 +75,7 @@ class ServiceFactory(object):
         group_request_repository = self.repository_factory.create_group_request_repository()
         return ServiceAccountService(
             self.settings,
+            self.plugins,
             user_repository,
             service_account_repository,
             permission_grant_repository,

@@ -1,20 +1,20 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import group_panel, member_panel, permission_panel, log_entry_panel,
-                                help_for, account, service_account_panel, group_member_audit_status %}
+{% from 'macros/ui.html' import parent_group_panel, member_panel_2, group_permissions_panel, audit_log_panel,
+                                help_for, account, service_account_panel_2, group_member_audit_status %}
 
-{% block subtitle %} group {{group.groupname}}{% endblock %}
+{% block subtitle %} group {{group_details.name}}{% endblock %}
 
 {% block heading %}
     <a href="/groups">Groups</a>
 {% endblock %}
 
 {% block subheading %}
-    {{group.groupname}} {% if not group.enabled %}<small>(disabled)</small>{% endif %}
-    {% if group.audit and not group.audit.complete %}
+    {{group_details.name}} {% if not group_details.enabled %}<small>(disabled)</small>{% endif %}
+    {% if group_details.has_pending_audit %}
         <span class="label label-danger">AUDIT IN PROGRESS</span>
     {% endif %}
-    {% if group.email_address %}
-        <a href="mailto:{{ group.email_address }}">
+    {% if group_details.email_address %}
+        <a href="mailto:{{ group_details.email_address }}">
             <i class="fa fa-envelope" aria-hidden="true"></i>
             <span class="sr-only">Send email</span>
         </a>
@@ -23,8 +23,8 @@
 
 {% block headingbuttons %}
     <!-- Enable/Disable button. -->
-    {% if current_user_role['is_owner'] %}
-        {% if group.enabled %}
+    {% if access.can_change_enabled_status %}
+        {% if group_details.enabled %}
             <button class="btn btn-danger" data-toggle="modal" data-target="#disableModal">
                 <i class="fa fa-minus"></i> Disable
             </button>
@@ -37,32 +37,34 @@
 
     <!-- Approve members. -->
     <div class="btn-group">
-        <a href="/groups/{{group.name}}/requests"
+        <a href="/groups/{{group_details.name}}/requests"
            class="btn btn-default"><i class="fa fa-list"></i> Requests</a>
-        {% if current_user_role['is_approver'] and num_pending %}
-            <a href="/groups/{{group.name}}/requests?status=pending"
+        {% if access.can_approve_join_requests and num_pending_join_requests %}
+            <a href="/groups/{{group_details.name}}/requests?status=pending"
                title="Pending Requests"
-               class="btn btn-default btn-pending">{{ num_pending }}</a>
+               class="btn btn-default btn-pending">{{ num_pending_join_requests }}</a>
         {% endif %}
     </div>
 
     <!-- Show the join button if the user isn't an approver (since they can directly add)
          and the group isn't invite-only. -->
-    {% if not current_user_role['is_approver'] and group.canjoin != "nobody" %}
-    <a href="/groups/{{group.name}}/join"
+    {% if not access.can_approve_join_requests and group_details.join_policy != "nobody" %}
+    <a href="/groups/{{group_details.name}}/join"
        class="btn btn-success"><i class="fa fa-user"></i> Join</a>
     {% endif %}
 
     <!-- Add member or edit group -->
-    {% if current_user_role['is_approver'] %}
-        <a href="/groups/{{group.name}}/add"
+    {% if access.can_add_members %}
+        <a href="/groups/{{group_details.name}}/add"
            class="btn btn-success"><i class="fa fa-plus-circle"></i> Add Member</a>
-        <a href="/groups/{{group.name}}/edit"
+    {% endif %}
+    {% if access.can_edit_group %}
+        <a href="/groups/{{group_details.name}}/edit"
            class="btn btn-primary"><i class="fa fa-edit"></i> Edit</a>
     {% endif %}
 
-    {% if can_leave %}
-        <a href="/groups/{{group.name}}/leave"
+    {% if access.can_leave %}
+        <a href="/groups/{{group_details.name}}/leave"
            class="btn btn-danger"><i class="fa fa-sign-out"></i> Leave</a>
     {% endif %}
 {% endblock %}
@@ -71,17 +73,17 @@
 <div class="row">
     <div class="col-md-6">
         <blockquote><p>
-            <em>{{group.description|default("", True)}}</em>
+            <em>{{group_details.description|default("", True)}}</em>
         </p></blockquote>
     </div>
     <div class="col-md-6">
         <h4>
-            {% if audited %}
+            {% if group_details.is_audited %}
                 <span class="label label-warning pull-right">
                     <i class="fa fa-gavel"></i> {{ help_for("audited_group", "Auditing Enabled") }}
                 </span>
             {% endif %}
-            {% if group.canjoin == "canjoin" %}
+            {% if group_details.join_policy == "canjoin" %}
                 <span class="label label-success pull-right">
                     <i class="fa fa-group"></i> Open Membership
                 </span>
@@ -96,21 +98,21 @@
 
 <div class="row">
     <div class="col-md-7">
-        {{ member_panel(group, members, current_user, current_user_role) }}
+        {{ member_panel_2(group_details, group_details.members_infos, current_user, access) }}
     </div>
     <div class="col-md-5">
-        {{ group_panel(groups, current_user_role['role']) }}
-        {{ service_account_panel(group.name, service_accounts, current_user_role["is_member"]) }}
+        {{ parent_group_panel(group_details.parent_groups) }}
+        {{ service_account_panel_2(group_details.name, group_details.service_account_names, access.can_manage_service_accounts) }}
     </div>
 </div>
 <div class="row">
     <div class="col-md-12">
-        {{ permission_panel(permissions, group=group, can_grant=grantable, is_member=current_user.is_member(members), pending_requests=permission_requests_pending, is_owner=current_user_role["is_owner"]) }}
+        {{ group_permissions_panel(group_details, access, viewer_can_manage_some_permission_grants) }}
     </div>
 </div>
 <div class="row">
     <div class="col-md-12">
-        {{ log_entry_panel(log_entries) }}
+        {{ audit_log_panel(audit_log_entries) }}
     </div>
 </div>
 
@@ -131,7 +133,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-default"
                         data-dismiss="modal">Close</button>
-                <form action="/groups/{{group.id}}/enable" method="post"
+                <form action="/groups/{{group_details.id}}/enable" method="post"
                       class="inline">
                     {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Enable</button>
@@ -161,7 +163,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-default"
                         data-dismiss="modal">Close</button>
-                <form action="/groups/{{group.id}}/disable" method="post"
+                <form action="/groups/{{group_details.id}}/disable" method="post"
                       class="inline">
                     {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Disable</button>
@@ -171,7 +173,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="removeUserModal" tabindex="-1" role="dialog" data-group-id="{{ group.id }}"
+<div class="modal fade" id="removeUserModal" tabindex="-1" role="dialog" data-group-id="{{ group_details.id }}"
       aria-labelledby="removeUserModal" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -184,7 +186,7 @@
            </div>
             <div class="modal-body">
                 <p>
-                    Are you sure you want to remove <span class="member-name"></span> from {{group.name}}?
+                    Are you sure you want to remove <span class="member-name"></span> from {{group_details.name}}?
                 </p>
             </div>
             <div class="modal-footer">
@@ -204,13 +206,12 @@
     </div>
 </div>
 
-{% if group.audit and not group.audit.complete %}
-{# TODO(herb): audit db calls in this block #}
+{% if group_details.is_audited and group_details.has_pending_audit %}
 
 <div class="modal fade" id="auditModal" tabindex="-1" role="dialog"
-      aria-labelledby="auditModal" aria-hidden="true" data-show="{{ "true" if group.audit and not group.audit.complete and current_user_role['is_owner'] else "false" }}">
+      aria-labelledby="auditModal" aria-hidden="true" data-show="{{ "true" if group_details.is_audited and group_details.has_pending_audit and access.can_complete_audit else "false" }}">
     <div class="modal-dialog">
-        <form action="/audits/{{ group.audit.id }}/complete" method="post"
+        <form action="/audits/{{ pending_audit_details.id }}/complete" method="post"
               class="inline">
         <div class="modal-content">
             <div class="modal-header">
@@ -223,8 +224,8 @@
             <div class="modal-body">
                 <p>
                     Your group has an outstanding audit that needs to be completed before
-                    <strong>{{ group.audit.ends_at|print_date }}</strong>, giving you
-                    {{ group.audit.ends_at|expires_when_str }} to complete the audit.
+                    <strong>{{ pending_audit_details.ends_at|print_date }}</strong>, giving you
+                    {{ pending_audit_details.ends_at|expires_when_str }} to complete the audit.
                 </p>
                 <table class="table table-striped table-condensed">
                     <thead>
@@ -235,11 +236,11 @@
                         </tr>
                     </thead>
                     <tbody>
-                    {% for ami in audit_members_infos %}
+                    {% for ami in pending_audit_details.audit_members_infos %}
                         <tr class="audit-member-row">
-                            <td class="audit-member-name">{{ account(ami.member_obj) }}</td>
-                            <td class="audit-member-role">{{ ROLES[ami.audit_member_role] }}</td>
-                            <td class="audit-member-status">{{ group_member_audit_status(current_user, ami.audit_member_obj, ami.member_obj, statuses) }}</td>
+                            <td class="audit-member-name">{{ account(ami.member_name, type=ami.member_type) }}</td>
+                            <td class="audit-member-role">{{ ami.membership_role }}</td>
+                            <td class="audit-member-status">{{ group_member_audit_status(current_user, ami, audit_statuses) }}</td>
                         </tr>
                     {% endfor %}
                     </tbody>

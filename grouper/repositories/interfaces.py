@@ -5,6 +5,7 @@ from six import with_metaclass
 
 if TYPE_CHECKING:
     from datetime import datetime
+    from grouper.entities.audit import AuditMemberInfo, GroupAuditInfo
     from grouper.entities.pagination import PaginatedList, Pagination
     from grouper.entities.permission import Permission
     from grouper.entities.permission_grant import (
@@ -12,7 +13,9 @@ if TYPE_CHECKING:
         ServiceAccountPermissionGrant,
         UniqueGrantsOfPermission,
     )
+    from grouper.entities.permission_request import PermissionRequest
     from grouper.entities.user import User
+    from grouper.entities.group import MemberInfo
     from grouper.repositories.audit_log import AuditLogRepository
     from grouper.repositories.checkpoint import CheckpointRepository
     from grouper.repositories.group import GroupRepository
@@ -24,11 +27,57 @@ if TYPE_CHECKING:
     from typing import Dict, List, Optional
 
 
+class AuditRepository(with_metaclass(ABCMeta, object)):
+    """Abstract base class for audit repositories."""
+
+    def group_pending_audit_info(self, groupname):
+        # type: (str) -> Optional[GroupAuditInfo]
+        """Get high-level information about a pending audit for a group, if any"""
+        pass
+
+    def group_audit_members_infos(self, groupname, audit_id):
+        # type: (str, int) -> List[AuditMemberInfo]
+        """Get information about audited memberships of a group, if any"""
+        pass
+
+
 class GroupEdgeRepository(with_metaclass(ABCMeta, object)):
     """Abstract base class for group edge repositories."""
 
     @abstractmethod
     def groups_of_user(self, username):
+        # type: (str) -> List[str]
+        """Get names of groups wherein the user has direct as well as inherited memberships"""
+        pass
+
+    @abstractmethod
+    def direct_groups_of_user(self, username):
+        # type: (str) -> List[str]
+        """Get names of groups wherein the user has direct memberships"""
+        pass
+
+    @abstractmethod
+    def user_is_owner_of_group(self, username, groupname):
+        # type: (str, str) -> bool
+        pass
+
+    @abstractmethod
+    def user_role_in_group(self, username, groupname):
+        # type: (str, str) -> Optional[str]
+        pass
+
+    @abstractmethod
+    def user_is_approver_of_group(self, username, groupname):
+        # type: (str, str) -> bool
+        pass
+
+    @abstractmethod
+    def group_members(self, groupname):
+        # type: (str) -> List[MemberInfo]
+        pass
+
+    @abstractmethod
+    def direct_parent_groups(self, groupname):
         # type: (str) -> List[str]
         pass
 
@@ -56,6 +105,11 @@ class PermissionRepository(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def list_permissions(self, pagination, audited_only):
         # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]
+        pass
+
+    @abstractmethod
+    def all_permissions(self):
+        # type: () -> List[Permission]
         pass
 
 
@@ -97,6 +151,10 @@ class PermissionGrantRepository(with_metaclass(ABCMeta, object)):
         # type: (str) -> List[GroupPermissionGrant]
         pass
 
+    def permission_grants_for_group(self, name):
+        # type: (str) -> List[GroupPermissionGrant]
+        pass
+
     @abstractmethod
     def revoke_all_group_grants(self, permission):
         # type: (str) -> List[GroupPermissionGrant]
@@ -115,6 +173,15 @@ class PermissionGrantRepository(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def user_has_permission(self, user, permission):
         # type: (str, str) -> bool
+        pass
+
+
+class PermissionRequestRepository(with_metaclass(ABCMeta, object)):
+    """Abstract base class for permission request repositories."""
+
+    @abstractmethod
+    def pending_requests_for_group(self, group):
+        # type: (str) -> List[PermissionRequest]
         pass
 
 
@@ -151,6 +218,11 @@ class RepositoryFactory(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
+    def create_audit_repository(self):
+        # type: () -> AuditRepository
+        pass
+
+    @abstractmethod
     def create_checkpoint_repository(self):
         # type: () -> CheckpointRepository
         pass
@@ -178,6 +250,11 @@ class RepositoryFactory(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def create_permission_grant_repository(self):
         # type: () -> PermissionGrantRepository
+        pass
+
+    @abstractmethod
+    def create_permission_request_repository(self):
+        # type: () -> PermissionRequestRepository
         pass
 
     @abstractmethod

@@ -1,32 +1,48 @@
 from typing import TYPE_CHECKING
 
-from grouper.audit import get_group_audit_members_infos
-from grouper.fe.handlers.template_variables import get_group_view_template_vars
-from grouper.fe.util import GrouperHandler
-from grouper.models.group import Group
-from grouper.role_user import is_role_user
+from grouper.entities.audit import MembershipAuditStatus
+from grouper.entities.group import GroupDetails
+from grouper.fe.util import Alert, GrouperHandler
+from grouper.usecases.view_group import ViewGroupUI
 
 if TYPE_CHECKING:
-    from typing import Any, Optional
+    from grouper.entities.audit_log_entry import AuditLogEntry
+    from grouper.entities.group import GroupAccess
+    from typing import Any, List
 
 
-class GroupView(GrouperHandler):
-    def get(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        group_id = kwargs.get("group_id")  # type: Optional[int]
-        name = kwargs.get("name")  # type: Optional[str]
-
-        self.handle_refresh()
-        group = Group.get(self.session, group_id, name)
-        if not group:
-            return self.notfound()
-
-        if is_role_user(self.session, group=group):
-            return self.redirect("/service/{}".format(group.groupname))
-
+class GroupView(GrouperHandler, ViewGroupUI):
+    def viewed_group(
+        self,
+        group_details,  # type: GroupDetails
+        access,  # type: GroupAccess
+        viewer_can_manage_some_permission_grants,  # type: bool
+        audit_log_entries,  # type: List[AuditLogEntry]
+    ):
+        # type: (...) -> None
+        alerts = []
+        if group_details.num_pending_join_requests_from_viewer:
+            alerts.append(Alert("info", "You have a pending request to join this group.", None))
         self.render(
             "group.html",
-            group=group,
-            audit_members_infos=get_group_audit_members_infos(self.session, group),
-            **get_group_view_template_vars(self.session, self.current_user, group, self.graph)
+            group_details=group_details,
+            pending_audit_details=group_details.pending_audit_details,
+            audit_statuses=[e.value for e in MembershipAuditStatus],
+            access=access,
+            num_pending_join_requests=group_details.num_pending_join_requests,
+            alerts=alerts,
+            audit_log_entries=audit_log_entries,
+            viewer_can_manage_some_permission_grants=viewer_can_manage_some_permission_grants,
+            # temp hack, due to enabling StrictUndefined
+            search_query="MY search!!!",
         )
+
+    def view_group_failed_not_found(self, name):
+        # type: (str) -> None
+        self.notfound()
+
+    def get(self, *args, **kwargs):
+        # type: (*Any, **Any) -> None
+        name = kwargs["name"]  # type: str
+        usecase = self.usecase_factory.create_view_group_usecase(self)
+        usecase.view_group(name, self.current_user.username, audit_log_limit=20)

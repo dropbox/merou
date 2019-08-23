@@ -343,7 +343,7 @@ class GroupGraph(object):
     @staticmethod
     def _get_permissions(session):
         # type: (Session) -> Dict[str, Permission]
-        """Returns all permissions in the graph."""
+        """Returns all enabled permissions in the graph."""
         permissions = session.query(SQLPermission).filter(SQLPermission.enabled == True)
         out = {}
         for permission in permissions:
@@ -369,6 +369,7 @@ class GroupGraph(object):
                 is_role_user = False
             group = Group(
                 name=sql_group.groupname,
+                id=sql_group.id,
                 description=sql_group.description,
                 email_address=sql_group.email_address,
                 join_policy=GroupJoinPolicy(sql_group.canjoin),
@@ -551,7 +552,7 @@ class GroupGraph(object):
 
     def get_permissions(self, audited=False):
         # type: (bool) -> List[Permission]
-        """Get the list of permissions as Permission instances."""
+        """Get the list of enabled permissions as Permission instances."""
         with self.lock:
             if audited:
                 permissions = [p for p in itervalues(self._permissions) if p.audited]
@@ -720,6 +721,7 @@ class GroupGraph(object):
                         "granted_on": (grant.granted_on - EPOCH).total_seconds(),
                         "distance": len(path) - 1,
                         "path": [elem[1] for elem in path],
+                        "grant_id": grant.grant_id,
                     }
 
                     if expose_aliases:
@@ -739,6 +741,7 @@ class GroupGraph(object):
                     "granted_on": (grant.granted_on - EPOCH).total_seconds(),
                     "distance": 0,
                     "path": [groupname],
+                    "grant_id": grant.grant_id,
                 }
 
                 if expose_aliases:

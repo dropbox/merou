@@ -30,6 +30,7 @@ class GroupRepository(object):
         is_role_user = user.role_user if user else False
         return Group(
             name=group.groupname,
+            id=group.id,
             description=group.description,
             email_address=group.email_address,
             join_policy=GroupJoinPolicy(group.canjoin),

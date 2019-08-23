@@ -18,20 +18,44 @@ from six import with_metaclass
 
 if TYPE_CHECKING:
     from datetime import datetime
+    from grouper.entities.audit import GroupAuditDetails, GroupAuditInfo
     from grouper.entities.audit_log_entry import AuditLogEntry
-    from grouper.entities.group import GroupJoinPolicy
+    from grouper.entities.group import Group, GroupAccess, GroupJoinPolicy, MemberInfo
     from grouper.entities.group_request import GroupRequestStatus, UserGroupRequest
     from grouper.entities.pagination import PaginatedList, Pagination
     from grouper.entities.permission import Permission, PermissionAccess
     from grouper.entities.permission_grant import (
+        GrantablePermission,
         GroupPermissionGrant,
         ServiceAccountPermissionGrant,
         UniqueGrantsOfPermission,
     )
+    from grouper.entities.permission_request import PermissionRequest
     from grouper.entities.user import User
     from grouper.usecases.authorization import Authorization
     from grouper.usecases.list_permissions import ListPermissionsSortKey
     from typing import ContextManager, Dict, List, Optional, Tuple
+
+
+class AuditInterface(with_metaclass(ABCMeta, object)):
+    """Abstract base class for audits."""
+
+    @abstractmethod
+    def is_group_audited(self, groupname):
+        # type: (str) -> bool
+        pass
+
+    @abstractmethod
+    def group_pending_audit_info(self, groupname):
+        # type: (str) -> Optional[GroupAuditInfo]
+        """Return high-level information about a pending audit for a group, if any"""
+        pass
+
+    @abstractmethod
+    def group_pending_audit_details(self, groupname):
+        # type: (str) -> Optional[GroupAuditDetails]
+        """Return detail information about a pending audit for a group, if any"""
+        pass
 
 
 class AuditLogInterface(with_metaclass(ABCMeta, object)):
@@ -131,6 +155,11 @@ class GroupInterface(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
+    def group(self, name):
+        # type: (str) -> Optional[Group]
+        pass
+
+    @abstractmethod
     def group_exists(self, name):
         # type: (str) -> bool
         pass
@@ -138,6 +167,44 @@ class GroupInterface(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def is_valid_group_name(self, name):
         # type: (str) -> bool
+        pass
+
+    @abstractmethod
+    def members_infos(self, name):
+        # type: (str) -> List[MemberInfo]
+        pass
+
+    @abstractmethod
+    def direct_parent_groups(self, name):
+        # type: (str) -> List[str]
+        pass
+
+    @abstractmethod
+    def service_accounts(self, name):
+        # type: (str) -> List[str]
+        pass
+
+    @abstractmethod
+    def pending_join_requests(self, groupname):
+        # type: (str) -> List[UserGroupRequest]
+        """Get the pending requests to join a group
+
+        Arg(s):
+            groupname: The group in question
+
+        Return:
+            List of UserGroupRequest
+        """
+        pass
+
+    @abstractmethod
+    def permission_grants(self, groupname):
+        # type: (str) -> List[GroupPermissionGrant]
+        pass
+
+    @abstractmethod
+    def pending_permission_grant_requests(self, groupname):
+        # type: (str) -> List[PermissionRequest]
         pass
 
 
@@ -206,6 +273,17 @@ class PermissionInterface(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def permission_exists(self, name):
         # type: (str) -> bool
+        pass
+
+    @abstractmethod
+    def groups_that_can_approve_grant(self, grant):
+        # type: (GrantablePermission) -> List[str]
+        """Get names of groups that have permission to grant/revoke the given permission grant.
+
+        Note that this permission to grant/revoke is not inherited: e.g., if `parent-group` has the
+        permission to grant permission grant P, then a sub-group of `parent-group` can't
+        grant/revoke permission grant P simply by virtue of being a sub-group of `parent-group`.
+        """
         pass
 
 
@@ -284,7 +362,22 @@ class UserInterface(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
+    def group_access_for_user(self, user, group):
+        # type: (str, str) -> GroupAccess
+        pass
+
+    @abstractmethod
     def groups_of_user(self, user):
+        # type: (str) -> List[str]
+        pass
+
+    @abstractmethod
+    def is_group_owner(self, user, group):
+        # type: (str, str) -> bool
+        pass
+
+    @abstractmethod
+    def direct_groups_of_user(self, user):
         # type: (str) -> List[str]
         pass
 
@@ -309,6 +402,11 @@ class UserInterface(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
+    def user_is_auditor(self, user):
+        # type: (str) -> bool
+        pass
+
+    @abstractmethod
     def user_is_permission_admin(self, user):
         # type: (str) -> bool
         pass
@@ -316,4 +414,10 @@ class UserInterface(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def user_is_user_admin(self, user):
         # type: (str) -> bool
+        pass
+
+    @abstractmethod
+    def user_can_grant_some_permissions(self, user):
+        # type: (str) -> bool
+        """Whether the user can grant (and revoke) *some* permission grant"""
         pass

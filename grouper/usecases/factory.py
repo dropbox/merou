@@ -8,6 +8,7 @@ from grouper.usecases.initialize_schema import InitializeSchema
 from grouper.usecases.list_grants import ListGrants
 from grouper.usecases.list_permissions import ListPermissions
 from grouper.usecases.list_users import ListUsers
+from grouper.usecases.view_group import ViewGroup
 from grouper.usecases.view_permission import ViewPermission
 
 if TYPE_CHECKING:
@@ -21,6 +22,7 @@ if TYPE_CHECKING:
     from grouper.usecases.list_grants import ListGrantsUI
     from grouper.usecases.list_users import ListUsersUI
     from grouper.usecases.list_permissions import ListPermissionsUI
+    from grouper.usecases.view_group import ViewGroupUI
     from grouper.usecases.view_permission import ViewPermissionUI
 
 
@@ -99,6 +101,17 @@ class UseCaseFactory(object):
         transaction_service = self.service_factory.create_transaction_service()
         return InitializeSchema(
             self.settings, schema_service, group_service, permission_service, transaction_service
+        )
+
+    def create_view_group_usecase(self, ui):
+        # type: (ViewGroupUI) -> ViewGroup
+        group_service = self.service_factory.create_group_service()
+        user_service = self.service_factory.create_user_service()
+        permission_service = self.service_factory.create_permission_service()
+        audit_log_service = self.service_factory.create_audit_log_service()
+        audit_service = self.service_factory.create_audit_service()
+        return ViewGroup(
+            ui, group_service, permission_service, user_service, audit_service, audit_log_service
         )
 
     def create_view_permission_usecase(self, ui):

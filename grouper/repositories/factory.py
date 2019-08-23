@@ -2,10 +2,11 @@ from typing import TYPE_CHECKING
 
 from grouper.graph import Graph
 from grouper.models.base.session import get_db_engine, Session
+from grouper.repositories.audit import SQLAuditRepository
 from grouper.repositories.audit_log import AuditLogRepository
 from grouper.repositories.checkpoint import CheckpointRepository
 from grouper.repositories.group import GroupRepository
-from grouper.repositories.group_edge import GraphGroupEdgeRepository, SQLGroupEdgeRepository
+from grouper.repositories.group_edge import SQLGroupEdgeRepository
 from grouper.repositories.group_request import GroupRequestRepository
 from grouper.repositories.interfaces import RepositoryFactory
 from grouper.repositories.permission import GraphPermissionRepository, SQLPermissionRepository
@@ -13,6 +14,7 @@ from grouper.repositories.permission_grant import (
     GraphPermissionGrantRepository,
     SQLPermissionGrantRepository,
 )
+from grouper.repositories.permission_request import SQLPermissionRequestRepository
 from grouper.repositories.schema import SchemaRepository
 from grouper.repositories.service_account import ServiceAccountRepository
 from grouper.repositories.transaction import TransactionRepository
@@ -22,9 +24,11 @@ if TYPE_CHECKING:
     from grouper.graph import GroupGraph
     from grouper.plugin.proxy import PluginProxy
     from grouper.repositories.interfaces import (
+        AuditRepository,
         GroupEdgeRepository,
         PermissionRepository,
         PermissionGrantRepository,
+        PermissionRequestRepository,
         UserRepository,
     )
     from grouper.settings import Settings
@@ -105,6 +109,10 @@ class GraphRepositoryFactory(RepositoryFactory):
             self._session = self.session_factory.create_session()
         return self._session
 
+    def create_audit_repository(self):
+        # type: () -> AuditRepository
+        return SQLAuditRepository(self.session)
+
     def create_audit_log_repository(self):
         # type: () -> AuditLogRepository
         return AuditLogRepository(self.session, self.plugins)
@@ -115,7 +123,7 @@ class GraphRepositoryFactory(RepositoryFactory):
 
     def create_group_edge_repository(self):
         # type: () -> GroupEdgeRepository
-        return GraphGroupEdgeRepository(self.graph)
+        return SQLGroupEdgeRepository(self.session)
 
     def create_group_repository(self):
         # type: () -> GroupRepository
@@ -134,6 +142,10 @@ class GraphRepositoryFactory(RepositoryFactory):
         # type: () -> PermissionGrantRepository
         sql_permission_grant_repository = SQLPermissionGrantRepository(self.session)
         return GraphPermissionGrantRepository(self.graph, sql_permission_grant_repository)
+
+    def create_permission_request_repository(self):
+        # type: () -> PermissionRequestRepository
+        return SQLPermissionRequestRepository(self.session)
 
     def create_service_account_repository(self):
         # type: () -> ServiceAccountRepository
@@ -181,6 +193,10 @@ class SQLRepositoryFactory(RepositoryFactory):
             self._session = self.session_factory.create_session()
         return self._session
 
+    def create_audit_repository(self):
+        # type: () -> AuditRepository
+        return SQLAuditRepository(self.session)
+
     def create_audit_log_repository(self):
         # type: () -> AuditLogRepository
         return AuditLogRepository(self.session, self.plugins)
@@ -208,6 +224,10 @@ class SQLRepositoryFactory(RepositoryFactory):
     def create_permission_grant_repository(self):
         # type: () -> PermissionGrantRepository
         return SQLPermissionGrantRepository(self.session)
+
+    def create_permission_request_repository(self):
+        # type: () -> PermissionRequestRepository
+        return SQLPermissionRequestRepository(self.session)
 
     def create_schema_repository(self):
         # type: () -> SchemaRepository

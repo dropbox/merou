@@ -276,7 +276,12 @@ def get_log_entries_by_permission(session, permission, limit=20):
     return AuditLog.get_entries(session, on_permission_id=permission.id, limit=limit)
 
 
-def filter_grantable_permissions(session, grants, all_permissions=None):
+def filter_grantable_permissions(
+    session,  # type: Session
+    grants,  # type: List[Permission]
+    all_permissions=None,  # type: Optional[Dict[str, Permission]]
+):
+    # type: (...) -> List[Tuple[Permission, str]]
     """For a given set of PERMISSION_GRANT permissions, return all enabled
     permissions that are grantable.
 

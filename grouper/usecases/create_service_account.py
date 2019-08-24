@@ -94,7 +94,7 @@ class CreateServiceAccount(object):
         if "@" not in service:
             service += "@" + self.settings.service_account_email_domain
 
-        valid, error = self.service_account_service.is_valid_service_account_name(service, owner)
+        valid, error = self.service_account_service.is_valid_service_account_name(service)
         if not valid:
             assert error
             self.ui.create_service_account_failed_invalid_name(service, owner, error)

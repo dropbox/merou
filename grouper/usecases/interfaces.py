@@ -242,8 +242,8 @@ class ServiceAccountInterface(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
-    def is_valid_service_account_name(self, name, owner):
-        # type: (str, str) -> Tuple[bool, Optional[str]]
+    def is_valid_service_account_name(self, name):
+        # type: (str) -> Tuple[bool, Optional[str]]
         pass
 
     @abstractmethod

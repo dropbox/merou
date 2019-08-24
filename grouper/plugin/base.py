@@ -36,13 +36,12 @@ class BasePlugin(object):
         """
         pass
 
-    def check_service_account_name(self, name, owner):
-        # type: (str, str) -> None
+    def check_service_account_name(self, name):
+        # type: (str) -> None
         """Check whether a service account name is allowed.
 
         Args:
             name: Name of a new service account being created (with domain)
-            owner: The name of the group that will own the new service account
 
         Raises:
             PluginRejectedServiceAccountName to reject the name.  The exception message will be

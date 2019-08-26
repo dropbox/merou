@@ -214,10 +214,10 @@ def test_invalid_machine_set(setup):
 
 
 class ServiceAccountNameTestPlugin(BasePlugin):
-    def check_service_account_name(self, name, owner):
-        # type: (str, str) -> None
+    def check_service_account_name(self, name):
+        # type: (str) -> None
         if "_" in name:
-            raise PluginRejectedServiceAccountName("{} owned by {}".format(name, owner))
+            raise PluginRejectedServiceAccountName(name)
 
 
 def test_name_rejected_by_plugin(setup):
@@ -232,7 +232,7 @@ def test_name_rejected_by_plugin(setup):
     usecase.create_service_account("ser_vice", "some-group", "", "")
     assert mock_ui.mock_calls == [
         call.create_service_account_failed_invalid_name(
-            "ser_vice@svc.localhost", "some-group", "ser_vice@svc.localhost owned by some-group"
+            "ser_vice@svc.localhost", "some-group", "ser_vice@svc.localhost"
         )
     ]
 

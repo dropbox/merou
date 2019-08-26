@@ -79,8 +79,8 @@ class ServiceAccountService(ServiceAccountInterface):
 
         self.audit_log.log_enable_service_account(user, owner, authorization)
 
-    def is_valid_service_account_name(self, name, owner):
-        # type: (str, str) -> Tuple[bool, Optional[str]]
+    def is_valid_service_account_name(self, name):
+        # type: (str) -> Tuple[bool, Optional[str]]
         """Check if the given name is valid for use as a service account.
 
         Returns:
@@ -104,7 +104,7 @@ class ServiceAccountService(ServiceAccountInterface):
             return (False, error)
 
         try:
-            self.plugins.check_service_account_name(name, owner)
+            self.plugins.check_service_account_name(name)
         except PluginRejectedServiceAccountName as e:
             return (False, str(e))
 

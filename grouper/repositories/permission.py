@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from grouper.entities.pagination import Pagination
     from grouper.graph import GroupGraph
     from grouper.models.base.session import Session
-    from typing import Optional
+    from typing import List, Optional
 
 
 class GraphPermissionRepository(PermissionRepository):
@@ -39,6 +39,10 @@ class GraphPermissionRepository(PermissionRepository):
     def get_permission(self, name):
         # type: (str) -> Optional[Permission]
         return self.repository.get_permission(name)
+
+    def all_permissions(self):
+        # type: () -> List[Permission]
+        return self.graph.get_permissions()
 
     def list_permissions(self, pagination, audited_only):
         # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]
@@ -105,4 +109,8 @@ class SQLPermissionRepository(PermissionRepository):
 
     def list_permissions(self, pagination, audited_only):
         # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]
+        raise NotImplementedError()
+
+    def all_permissions(self):
+        # type: () -> List[Permission]
         raise NotImplementedError()

@@ -1,12 +1,14 @@
 from typing import TYPE_CHECKING
 
-from grouper.constants import SYSTEM_PERMISSIONS
+from grouper.constants import PERMISSION_ADMIN, PERMISSION_GRANT, SYSTEM_PERMISSIONS
 from grouper.usecases.interfaces import PermissionInterface
+from grouper.util import matches_glob
 
 if TYPE_CHECKING:
     from grouper.entities.pagination import PaginatedList, Pagination
     from grouper.entities.permission import Permission
     from grouper.entities.permission_grant import (
+        GrantablePermission,
         GroupPermissionGrant,
         ServiceAccountPermissionGrant,
         UniqueGrantsOfPermission,
@@ -93,4 +95,47 @@ class PermissionService(PermissionInterface):
 
     def permission_exists(self, name):
         # type: (str) -> bool
-        return True if self.permission_repository.get_permission(name) else False
+        return bool(self.permission_repository.get_permission(name))
+
+    def groups_that_can_approve_grant(self, grant):
+        # type: (GrantablePermission) -> List[str]
+
+        # First, permissions admins, i.e., groups that have the PERMISSION_ADMIN permission, can
+        # approve all permissions
+        group_names = [
+            gpg.group
+            for gpg in self.permission_grant_repository.group_grants_for_permission(
+                PERMISSION_ADMIN
+            )
+        ]
+
+        # Then, groups that have the PERMISSION_GRANT permission can grant *some* permission. Go
+        # through them to see which ones can grant the one we care about.
+        target_permission_name = grant.name
+        target_permission_argument = grant.argument or "*"
+        groups_with_some_grant_perm = self.permission_grant_repository.group_grants_for_permission(
+            PERMISSION_GRANT
+        )
+        for group_with_some_grant_perm in groups_with_some_grant_perm:
+            parts = group_with_some_grant_perm.argument.split("/", 1)
+            # Both grantable permission name and argument can have wildcards, e.g.,
+            # `permtree.foo.*.bar.o*g` with argument `arg-*-abc-*-ok`. For example, a group with
+            # ability to grant such a permission name and permission argument would be able to
+            # grant/revoke all of the following cross-product(
+            #  [`permtree.foo.one.bar.o1g`,
+            #   `permtree.foo.two.bar.o3g`,
+            #   `permtree.foo.two.bar.o456g`,
+            #   `permtree.foo.three.bar.og`,
+            #   `permtree.foo.three.bar.o.b.g`,
+            #  ],
+            #  [`arg-123-abc-456-ok`,
+            #   `arg-1.2.3-abc-4.5.6-ok`,
+            #  ])
+            grantable_permission_name = parts[0]
+            grantable_permission_argument = parts[-1] if len(parts) > 1 else "*"
+            if matches_glob(grantable_permission_name, target_permission_name) and matches_glob(
+                grantable_permission_argument, target_permission_argument
+            ):
+                # Found! This group can grant the grant we're interested in.
+                group_names.append(group_with_some_grant_perm.group)
+        return group_names

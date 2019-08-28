@@ -92,6 +92,22 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
             permissions.append(permission)
         return permissions
 
+    def permission_grants_for_group(self, name):
+        # type: (str) -> List[GroupPermissionGrant]
+        group_details = self.graph.get_group_details(name)
+        permissions = []
+        for permission_data in group_details["permissions"]:
+            permission = GroupPermissionGrant(
+                group=permission_data["path"][-1],
+                permission=permission_data["permission"],
+                argument=permission_data["argument"],
+                granted_on=datetime.utcfromtimestamp(permission_data["granted_on"]),
+                is_alias=permission_data["alias"],
+                grant_id=permission_data["grant_id"],
+            )
+            permissions.append(permission)
+        return permissions
+
     def revoke_all_group_grants(self, permission):
         # type: (str) -> List[GroupPermissionGrant]
         return self.repository.revoke_all_group_grants(permission)
@@ -266,9 +282,20 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         if not group_ids:
             return []
 
-        # Now, get the parent groups of those groups and so forth until we run out of levels of the
-        # tree.  Use a set of seen group_ids to avoid querying the same group twice if a user is a
-        # member of it via multiple paths.
+        return self._combined_grants_of_groups(group_ids)
+
+    def _combined_grants_of_groups(self, group_ids):
+        # type: (List[int]) -> List[GroupPermissionGrant]
+        """Given a list of group IDs, determine the combined permissions grants that those groups have,
+        both directly and inherited from parent groups.
+
+        TODO: Currently does not expand permission aliases, and therefore doesn't match the graph
+        behavior.  Use with caution until that is fixed.
+        """
+        now = datetime.utcnow()
+        # Iteratively get the parent groups until we run out of levels of the tree.  Use a set of
+        # seen group_ids to avoid querying the same group twice if a user is a member of it via
+        # multiple paths.
         seen_group_ids = set(group_ids)
         while group_ids:
             parent_groups = (
@@ -314,6 +341,11 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
             )
             for g in group_permission_grants
         ]
+
+    def permission_grants_for_group(self, name):
+        # type: (str) -> List[GroupPermissionGrant]
+        group = self.session.query(Group.id).filter(Group.groupname == name).one_or_none()
+        return self._combined_grants_of_groups([group.id]) if group else []
 
     def revoke_all_group_grants(self, permission):
         # type: (str) -> List[GroupPermissionGrant]

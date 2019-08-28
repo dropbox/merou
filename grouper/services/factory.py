@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from grouper.services.audit import AuditService
 from grouper.services.audit_log import AuditLogService
 from grouper.services.group import GroupService
 from grouper.services.group_request import GroupRequestService
@@ -14,6 +15,7 @@ if TYPE_CHECKING:
     from grouper.repositories.interfaces import RepositoryFactory
     from grouper.settings import Settings
     from grouper.usecases.interfaces import (
+        AuditInterface,
         AuditLogInterface,
         GroupInterface,
         GroupRequestInterface,
@@ -34,6 +36,13 @@ class ServiceFactory(object):
         self.plugins = plugins
         self.repository_factory = repository_factory
 
+    def create_audit_service(self):
+        # type: () -> AuditInterface
+        audit_repository = self.repository_factory.create_audit_repository()
+        permission_repository = self.repository_factory.create_permission_repository()
+        permission_grant_repository = self.repository_factory.create_permission_grant_repository()
+        return AuditService(audit_repository, permission_repository, permission_grant_repository)
+
     def create_audit_log_service(self):
         # type: () -> AuditLogInterface
         audit_log_repository = self.repository_factory.create_audit_log_repository()
@@ -48,8 +57,21 @@ class ServiceFactory(object):
     def create_group_service(self):
         # type: () -> GroupInterface
         group_repository = self.repository_factory.create_group_repository()
+        group_edge_repository = self.repository_factory.create_group_edge_repository()
+        group_request_repository = self.repository_factory.create_group_request_repository()
         permission_grant_repository = self.repository_factory.create_permission_grant_repository()
-        return GroupService(group_repository, permission_grant_repository)
+        permission_request_repository = (
+            self.repository_factory.create_permission_request_repository()
+        )
+        service_account_repository = self.repository_factory.create_service_account_repository()
+        return GroupService(
+            group_repository,
+            group_edge_repository,
+            group_request_repository,
+            permission_grant_repository,
+            permission_request_repository,
+            service_account_repository,
+        )
 
     def create_permission_service(self):
         # type: () -> PermissionInterface
@@ -94,8 +116,13 @@ class ServiceFactory(object):
         # type: () -> UserInterface
         audit_log_service = self.create_audit_log_service()
         user_repository = self.repository_factory.create_user_repository()
+        permission_repository = self.repository_factory.create_permission_repository()
         permission_grant_repository = self.repository_factory.create_permission_grant_repository()
         group_edge_repository = self.repository_factory.create_group_edge_repository()
         return UserService(
-            user_repository, permission_grant_repository, group_edge_repository, audit_log_service
+            user_repository,
+            permission_repository,
+            permission_grant_repository,
+            group_edge_repository,
+            audit_log_service,
         )

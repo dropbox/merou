@@ -1,17 +1,37 @@
 from datetime import datetime
 from typing import Dict, List, NamedTuple, Optional
 
+GrantablePermission = NamedTuple(
+    "GrantablePermission", [("name", str), ("argument", Optional[str])]
+)
+
 GroupPermissionGrant = NamedTuple(
     "GroupPermissionGrant",
     [
-        ("group", str),
+        ("group", str),  # Name of the group directly granted this permission
         ("permission", str),
         ("argument", str),
         ("granted_on", datetime),
         ("is_alias", bool),
+        # Unique ID of this permission grant, that can be used to revoke the grant
         ("grant_id", Optional[int]),
     ],
 )
+
+GroupPermissionGrantWithRevocability = NamedTuple(
+    "GroupPermissionGrant",
+    [
+        ("group", str),  # Name of the group directly granted this permission
+        ("permission", str),
+        ("argument", str),
+        ("granted_on", datetime),
+        ("is_alias", bool),
+        # Unique ID of this permission grant, that can be used to revoke the grant
+        ("grant_id", Optional[int]),
+        ("viewer_can_revoke", bool),
+    ],
+)
+
 ServiceAccountPermissionGrant = NamedTuple(
     "ServiceAccountPermissionGrant",
     [

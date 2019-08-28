@@ -84,3 +84,33 @@ class GroupRequestRepository(object):
             )
             requests.append(request)
         return requests
+
+    def pending_requests_for_group(self, groupname):
+        # type: (str) -> List[UserGroupRequest]
+        requester = aliased(User)
+        on_behalf_of = aliased(User)
+        sql_requests = self.session.query(
+            Request.id,
+            Request.status,
+            label("requester", requester.username),
+            label("on_behalf_of", on_behalf_of.username),
+        ).filter(
+            Group.groupname == groupname,
+            Request.requesting_id == Group.id,
+            Request.on_behalf_obj_type == OBJ_TYPES["User"],
+            Request.on_behalf_obj_pk == on_behalf_of.id,
+            Request.requester_id == requester.id,
+            Request.status == "pending",
+        )
+
+        requests = []
+        for sql_request in sql_requests:
+            request = UserGroupRequest(
+                id=sql_request.id,
+                user=sql_request.on_behalf_of,
+                group=groupname,
+                requester=sql_request.requester,
+                status=sql_request.status,
+            )
+            requests.append(request)
+        return requests

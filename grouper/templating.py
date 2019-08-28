@@ -1,8 +1,9 @@
+import logging
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 from dateutil.relativedelta import relativedelta
-from jinja2 import Environment, PackageLoader, select_autoescape
+from jinja2 import Environment, PackageLoader, select_autoescape, StrictUndefined
 from pytz import UTC
 
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
@@ -23,6 +24,11 @@ def _utcnow():
     return datetime.now(UTC)
 
 
+def debug(text):
+    # type: (str) -> None
+    logging.warn("____ template debug: {}".format(text))
+
+
 class BaseTemplateEngine(object):
     """Lightweight wrapper around the Jinja2 template engine.
 
@@ -37,7 +43,12 @@ class BaseTemplateEngine(object):
         # type: (Settings, str) -> None
         self.settings = settings
         loader = PackageLoader(package, "templates")
-        self.environment = Environment(loader=loader, autoescape=select_autoescape(["html"]))
+        self.environment = Environment(
+            loader=loader,
+            autoescape=select_autoescape(["html"]),
+            undefined=StrictUndefined,  # temporary: to catch our bugs
+        )
+        self.environment.filters["debug"] = debug
 
         filters = {
             "expires_when_str": self.expires_when_str,

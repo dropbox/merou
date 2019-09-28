@@ -20,23 +20,23 @@
 
     {% if user.enabled and can_disable %}
         <button class="btn btn-danger disable-user" data-toggle="modal" data-target="#disableModal">
-            <i class="fa fa-minus"></i> Disable
+            <em class="fa fa-minus"></em> Disable
         </button>
     {% elif not user.enabled and can_enable %}
         <button class="btn btn-warning enable-user" data-toggle="modal" data-target="#enableModal">
-            <i class="fa fa-plus"></i> Enable
+            <em class="fa fa-plus"></em> Enable
         </button>
     {% endif %}
     {% if current_user.id == user.id %}
     <div class="btn-group">
         <a href="/user/requests" title="Pending Group Membership Requests"
-           class="btn btn-default"><i class="fa fa-list"></i> Group Requests</a>
+           class="btn btn-default"><em class="fa fa-list"></em> Group Requests</a>
         <a href="/user/requests" title="Pending Group Membership Requests"
            class="btn btn-default btn-pending">{{ num_pending_group_requests }}</a>
     </div>
     <div class="btn-group">
         <a href="/permissions/requests?status=pending" title="Pending Permission Requests"
-           class="btn btn-default"><i class="fa fa-list"></i> Permission Requests</a>
+           class="btn btn-default"><em class="fa fa-list"></em> Permission Requests</a>
         <a href="/permissions/requests?status=pending" title="Pending Permission  Requests"
            class="btn btn-default btn-pending">{{ num_pending_perm_requests }}</a>
     </div>
@@ -145,7 +145,7 @@
                     <p>Are you sure you want to enable this user?</p>
 		    {% if can_enable_preserving_membership %}
                     <label class="checkbox" class="normal-weight">
-                        <i>preserve any pre-existing group membership (you don't want this)</i>
+                        <i>preserve any pre-existing group membership (you don't want this)</em>
                         <input type="checkbox" name="preserve_membership" value="true"/>
                     </label>
 		    {% endif %}

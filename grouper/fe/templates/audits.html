@@ -18,12 +18,12 @@
     {% if not open_audits %}
         {% if can_start %}
             <a href="/audits/create" class="btn btn-success">
-                <i class="fa fa-plus"></i> Start Global Audit
+                <em class="fa fa-plus"></em> Start Global Audit
             </a>
         {% endif %}
     {% else %}
         <a class="btn btn-danger">
-            <i class="fa fa-warning"></i> Global Audit In Progress
+            <em class="fa fa-warning"></em> Global Audit In Progress
         </a>
     {% endif %}
 {% endblock %}
@@ -64,11 +64,11 @@
                                 {% endif %}</td>
                                 <td>{% if audit.complete %}
                                     <span class="btn-xs btn-success">
-                                        <i class="fa fa-check"></i> complete
+                                        <em class="fa fa-check"></em> complete
                                     </span>
                                 {% else %}
                                     <span class="btn-xs btn-danger">
-                                        <i class="fa fa-warning"></i> in progress
+                                        <em class="fa fa-warning"></em> in progress
                                     </span>
                                 {% endif %}</td>
                             </tr>

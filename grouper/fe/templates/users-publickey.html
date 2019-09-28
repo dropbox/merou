@@ -21,11 +21,11 @@
     {{ paginator(form.offset.data, form.limit.data, total) }}
     {% if form.enabled.data %}
     <a class="btn btn-default" href="/users/public-keys?limit={{form.limit.data}}&enabled=0" role="button">
-          <i class="fa"></i> Show disabled users
+          <em class="fa"></em> Show disabled users
       </a>
     {% else %}
     <a class="btn btn-default" href="/users/public-keys?limit={{form.limit.data}}&enabled=1" role="button">
-          <i class="fa"></i> Show enabled users
+          <em class="fa"></em> Show enabled users
       </a>
     {% endif %}
 
@@ -48,7 +48,7 @@
                 <label class="sr-only" for="fingerprint">Fingerprint</label>
                 {{ form.fingerprint(class="form-control", placeholder="fingerprint",
                         size=48) }}
-                <button class="btn btn-default" type="submit"><i class="fa fa-search"></i></button>
+                <button class="btn btn-default" type="submit"><em class="fa fa-search"></em></button>
             </div>
         </form>
         </div>

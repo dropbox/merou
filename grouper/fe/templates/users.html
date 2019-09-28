@@ -24,23 +24,23 @@
     {% if enabled %}
         <a class="btn btn-default show-disabled-users"
            href="/users?limit={{ limit }}&enabled=0&service={{ service|int }}">
-            <i class="fa"></i> Show disabled users
+            <em class="fa"></em> Show disabled users
         </a>
     {% else %}
         <a class="btn btn-default show-enabled-users"
            href="/users?limit={{ limit }}&enabled=1&service={{ service|int }}">
-            <i class="fa"></i> Show enabled users
+            <em class="fa"></em> Show enabled users
         </a>
     {% endif %}
     {% if service %}
         <a class="btn btn-default show-normal-users"
            href="/users?limit={{ limit }}&enabled={{ enabled|int }}&service=0">
-            <i class="fa"></i> Show normal users
+            <em class="fa"></em> Show normal users
         </a>
     {% else %}
         <a class="btn btn-default show-service-accounts"
            href="/users?limit={{ limit }}&enabled={{ enabled|int }}&service=1">
-            <i class="fa"></i> Show service accounts
+            <em class="fa"></em> Show service accounts
         </a>
     {% endif %}
 {% endblock %}

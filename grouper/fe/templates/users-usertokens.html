@@ -19,11 +19,11 @@
     {{ paginator(form.offset.data, form.limit.data, total) }}
     {% if form.enabled.data %}
     <a class="btn btn-default" href="/users/tokens?limit={{form.limit.data}}&enabled=0" role="button">
-          <i class="fa"></i> Show disabled users
+          <em class="fa"></em> Show disabled users
       </a>
     {% else %}
     <a class="btn btn-default" href="/users/tokens?limit={{form.limit.data}}&enabled=1" role="button">
-          <i class="fa"></i> Show enabled users
+          <em class="fa"></em> Show enabled users
       </a>
     {% endif %}
 

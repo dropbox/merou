@@ -23,23 +23,23 @@
     {% if enabled %}
       {% if audited_groups %}
       <a class="btn btn-warning" href="/groups?limit={{limit}}">
-          <i class="fa"></i> Show all groups
+          <em class="fa"></em> Show all groups
       </a>
       {% else %}
       <button class="btn btn-success" id="create-group" data-toggle="modal"
               data-target="#createModal">
-          <i class="fa fa-plus"></i> Create
+          <em class="fa fa-plus"></em> Create
       </button>
       <a id="show-audited" class="btn btn-warning" href="/groups?limit={{limit}}&audited=1">
-          <i class="fa"></i> Show audited groups
+          <em class="fa"></em> Show audited groups
       </a>
       {% endif %}
       <a class="btn btn-default" href="/groups?limit={{limit}}&enabled=0">
-          <i class="fa"></i> Show disabled groups
+          <em class="fa"></em> Show disabled groups
       </a>
     {% else %}
       <a class="btn btn-default" href="/groups?limit={{limit}}&enabled=1">
-          <i class="fa"></i> Show enabled groups
+          <em class="fa"></em> Show enabled groups
       </a>
     {% endif %}
 {% endblock %}

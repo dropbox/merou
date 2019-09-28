@@ -14,22 +14,22 @@
 {% block headingbuttons %}
     {% if permission.enabled and access.can_disable %}
         <button class="btn btn-danger disable-permission" data-toggle="modal" data-target="#disablePermModal">
-            <i class="fa fa-minus"></i> Disable Permission
+            <em class="fa fa-minus"></em> Disable Permission
         </button>
     {% endif %}
     {% if permission.enabled and access.can_change_audited_status %}
         {% if permission.audited %}
             <button class="btn btn-danger disable-auditing" data-toggle="modal" data-target="#disableAuditingModal">
-                <i class="fa fa-minus"></i> Disable Auditing
+                <em class="fa fa-minus"></em> Disable Auditing
             </button>
         {% else %}
             <button class="btn btn-warning enable-auditing" data-toggle="modal" data-target="#enableAuditingModal">
-                <i class="fa fa-plus"></i> Enable Auditing
+                <em class="fa fa-plus"></em> Enable Auditing
             </button>
         {% endif %}
     {% endif %}
     <a class="btn btn-warning" href="/permissions/request?permission={{ permission.name }}">
-        <i class="fa fa-plus"></i> Request this permission
+        <em class="fa fa-plus"></em> Request this permission
     </a>
 {% endblock %}
 

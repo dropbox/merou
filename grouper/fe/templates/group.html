@@ -15,7 +15,7 @@
     {% endif %}
     {% if group.email_address %}
         <a href="mailto:{{ group.email_address }}">
-            <i class="fa fa-envelope" aria-hidden="true"></i>
+            <em class="fa fa-envelope" aria-hidden="true"></em>
             <span class="sr-only">Send email</span>
         </a>
     {% endif %}
@@ -26,11 +26,11 @@
     {% if current_user_role['is_owner'] %}
         {% if group.enabled %}
             <button class="btn btn-danger" data-toggle="modal" data-target="#disableModal">
-                <i class="fa fa-minus"></i> Disable
+                <em class="fa fa-minus"></em> Disable
             </button>
         {% else %}
             <button class="btn btn-warning" data-toggle="modal" data-target="#enableModal">
-                <i class="fa fa-plus"></i> Enable
+                <em class="fa fa-plus"></em> Enable
             </button>
         {% endif %}
     {% endif %}
@@ -38,7 +38,7 @@
     <!-- Approve members. -->
     <div class="btn-group">
         <a href="/groups/{{group.name}}/requests"
-           class="btn btn-default"><i class="fa fa-list"></i> Requests</a>
+           class="btn btn-default"><em class="fa fa-list"></em> Requests</a>
         {% if current_user_role['is_approver'] and num_pending %}
             <a href="/groups/{{group.name}}/requests?status=pending"
                title="Pending Requests"
@@ -50,20 +50,20 @@
          and the group isn't invite-only. -->
     {% if not current_user_role['is_approver'] and group.canjoin != "nobody" %}
     <a href="/groups/{{group.name}}/join"
-       class="btn btn-success"><i class="fa fa-user"></i> Join</a>
+       class="btn btn-success"><em class="fa fa-user"></em> Join</a>
     {% endif %}
 
     <!-- Add member or edit group -->
     {% if current_user_role['is_approver'] %}
         <a href="/groups/{{group.name}}/add"
-           class="btn btn-success"><i class="fa fa-plus-circle"></i> Add Member</a>
+           class="btn btn-success"><em class="fa fa-plus-circle"></em> Add Member</a>
         <a href="/groups/{{group.name}}/edit"
-           class="btn btn-primary"><i class="fa fa-edit"></i> Edit</a>
+           class="btn btn-primary"><em class="fa fa-edit"></em> Edit</a>
     {% endif %}
 
     {% if can_leave %}
         <a href="/groups/{{group.name}}/leave"
-           class="btn btn-danger"><i class="fa fa-sign-out"></i> Leave</a>
+           class="btn btn-danger"><em class="fa fa-sign-out"></em> Leave</a>
     {% endif %}
 {% endblock %}
 
@@ -78,16 +78,16 @@
         <h4>
             {% if audited %}
                 <span class="label label-warning pull-right">
-                    <i class="fa fa-gavel"></i> {{ help_for("audited_group", "Auditing Enabled") }}
+                    <em class="fa fa-gavel"></em> {{ help_for("audited_group", "Auditing Enabled") }}
                 </span>
             {% endif %}
             {% if group.canjoin == "canjoin" %}
                 <span class="label label-success pull-right">
-                    <i class="fa fa-group"></i> Open Membership
+                    <em class="fa fa-group"></em> Open Membership
                 </span>
             {% else %}
                 <span class="label label-info pull-right">
-                    <i class="fa fa-group"></i> Requires Approval
+                    <em class="fa fa-group"></em> Requires Approval
                 </span>
             {% endif %}
         </h4>

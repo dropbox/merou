@@ -9,6 +9,10 @@ body {
     margin-bottom: 50px;
 }
 
+.waiting {
+    cursor: progress;
+}
+
 .footer {
   position: absolute;
   bottom: 0;

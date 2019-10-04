@@ -180,7 +180,7 @@ class GroupJoinForm(Form):
         [
             validators.Length(min=3, max=constants.MAX_NAME_LENGTH),
             validators.DataRequired(),
-            ValidateRegex(r"(?:User|Member|Group): {}".format(constants.NAME_VALIDATION)),
+            ValidateRegex(r"(?:User|Group): {}".format(constants.NAME_VALIDATION)),
         ],
     )
     role = SelectField(

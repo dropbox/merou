@@ -107,11 +107,20 @@ class GroupJoinPage(BasePage):
         # type: () -> WebElement
         return self.find_element_by_class_name("join-group-form")
 
+    def get_alerts(self):
+        # type: () -> List[WebElement]
+        return self.find_elements_by_class_name("alert")
+
     def get_clickthru_modal(self):
         # type: () -> GroupJoinClickthruModal
         element = self.find_element_by_id("clickthruModal")
         self.wait_until_visible(element)
         return GroupJoinClickthruModal(element)
+
+    def get_member_options(self):
+        # type: () -> List[WebElement]
+        element = self.find_element_by_name("member")
+        return element.find_elements_by_tag_name("option")
 
     def set_expiration(self, expiration):
         # type: (str) -> None

@@ -12,7 +12,6 @@ from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 
 import grouper.fe
-from grouper import stats
 from grouper.app import GrouperApplication
 from grouper.database import DbRefreshThread
 from grouper.error_reporting import setup_signal_handlers
@@ -95,8 +94,6 @@ def start_server(args, settings, plugins):
 
     # When using multiple processes, the forking happens here
     server.start(settings.num_processes)
-
-    stats.set_defaults()
 
     # Create the Graph and start the graph update thread post fork to ensure each process gets
     # updated.

@@ -43,11 +43,9 @@ class DbRefreshThread(Thread):
                 with closing(Session()) as session:
                     self.graph.update_from_db(session)
 
-                stats.log_gauge("successful-db-update", 1)
-                stats.log_gauge("failed-db-update", 0)
+                stats.log_periodic_graph_update(True)
             except Exception:
-                stats.log_gauge("successful-db-update", 0)
-                stats.log_gauge("failed-db-update", 1)
+                stats.log_periodic_graph_update(False)
                 self.plugins.log_exception(*sys.exc_info())
                 logging.exception("Failed to refresh graph")
                 self.crash()

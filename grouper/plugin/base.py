@@ -92,6 +92,15 @@ class BasePlugin(object):
         """
         pass
 
+    def log_background_run(self, success):
+        # type: (bool) -> None
+        """Log a background processor run
+
+        Arg(s):
+            success: whether the run succeeded
+        """
+        pass
+
     def log_exception(
         self,
         request,  # type: Optional[HTTPRequest]
@@ -112,36 +121,32 @@ class BasePlugin(object):
         """
         pass
 
-    def log_gauge(self, key, val):
-        # type: (str, float) -> None
-        """Log a gauge stat.
+    def log_graph_update_duration(self, duration_ms):
+        # type: (int) -> None
+        """Log a graph update duration
 
-        Log an instantaneous-value gauge stat which measures the total of something.  For example,
-        number of CPUs or amount of RAM on a machine.
+        Arg(s):
+            duration_ms: the graph update latency
         """
         pass
 
-    def log_rate(self, key, val, count=1):
-        # type: (str, float, int) -> None
-        """Log an incremental rate stat.
+    def log_periodic_graph_update(self, success):
+        # type: (bool) -> None
+        """Log a periodic graph update run
 
-        Log a rate stat, which counts something over time.  For example, execution time or number
-        of invocations of a method.
-
-        Args:
-            key: The name of the stat
-            val: Amount to add to the stat (for example, additional ms spent executing a method, or
-                additional count of method invocations)
-            count: Number of samples that created the increment (default: 1)
+        Arg(s):
+            success: whether the run succeeded
         """
         pass
 
-    def set_default_stats_tags(self, tags):
-        # type: (Dict[str, str]) -> None
-        """Set default tags for stats logged via log_gauge or log_rate.
+    def log_request(self, handler, status, duration_ms):
+        # type: (str, int, int) -> None
+        """Log information about a handled request
 
-        Args:
-            tags: Key/value pairs of tags to associate with the stats.
+        Arg(s):
+            handler: name of the handler class that handled the request
+            status: the response status of the request (e.g., 200, 404, etc.)
+            duration_ms: the request processing latency
         """
         pass
 

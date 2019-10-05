@@ -1,11 +1,14 @@
 import crypt
 import csv
 import json
+import time
 from io import StringIO
 
 import pytest
+from mock import patch
 from six import iteritems, itervalues
 from six.moves.urllib.parse import urlencode
+from tornado.httpclient import HTTPError
 
 from grouper.constants import USER_METADATA_GITHUB_USERNAME_KEY, USER_METADATA_SHELL_KEY
 from grouper.models.counter import Counter
@@ -413,3 +416,42 @@ def test_public_keys(session, users, http_client, base_url):  # noqa: F811
     assert rows[0]["fingerprint"] == "e9:ae:c5:8f:39:9b:3a:9c:6a:b8:33:6b:cb:6f:ba:35"
     assert rows[0]["fingerprint_sha256"] == "MP9uWaujW96EWxbjDtPdPWheoMDu6BZ8FZj0+CBkVWU"
     assert rows[0]["comment"] == "some-comment"
+
+
+@pytest.mark.gen_test
+def test_request_logging(session, users, http_client, base_url):  # noqa: F811
+    """Test that the api request handlers properly log stats"""
+    # It does not appear possible to add a mock plugin to the global plugins here and expect it to
+    # be called by the request handler: the server side will create its own plugin proxy
+    with patch("grouper.stats.log_request") as mock_log_request:
+        user = users["zorkian@a.co"]
+        fe_url = url(base_url, "/users/{}".format(user.username))
+        start_time = time.time()
+        resp = yield http_client.fetch(
+            fe_url,
+            method="GET",
+            headers={"X-Grouper-User": user.username},
+        )
+        duration_ms = (time.time() - start_time) * 1000
+        assert resp.code == 200
+        assert mock_log_request.call_count == 1
+        assert mock_log_request.call_args_list[0][0][0] == "Users"
+        assert mock_log_request.call_args_list[0][0][1] == 200
+        # the reported value should be within 1s of our own observation
+        assert abs(mock_log_request.call_args_list[0][0][2] - duration_ms) <= 1000
+
+        mock_log_request.reset_mock()
+        start_time = time.time()
+        with pytest.raises(HTTPError):
+            fe_url = url(base_url, "/groups/{}".format("does-not-exist"))
+            resp = yield http_client.fetch(
+                fe_url,
+                method="GET",
+                headers={"X-Grouper-User": user.username},
+            )
+        duration_ms = (time.time() - start_time) * 1000
+        assert mock_log_request.call_count == 1
+        assert mock_log_request.call_args_list[0][0][0] == "Groups"
+        assert mock_log_request.call_args_list[0][0][1] == 404
+        # the reported value should be within 1s of our own observation
+        assert abs(mock_log_request.call_args_list[0][0][2] - duration_ms) <= 1000

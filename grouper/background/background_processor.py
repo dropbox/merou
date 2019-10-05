@@ -147,11 +147,9 @@ class BackgroundProcessor(object):
 
                     session.commit()
 
-                stats.log_gauge("successful-background-update", 1)
-                stats.log_gauge("failed-background-update", 0)
+                stats.log_background_run(True)
             except Exception:
-                stats.log_gauge("successful-background-update", 0)
-                stats.log_gauge("failed-background-update", 1)
+                stats.log_background_run(False)
                 self.plugins.log_exception(None, None, *sys.exc_info())
                 self.logger.exception("Unexpected exception occurred in background thread")
                 self.crash()

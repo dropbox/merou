@@ -208,7 +208,7 @@ class GroupGraph(object):
                 self._grants_by_permission = grants_by_permission
 
             duration = datetime.utcnow() - start_time
-            stats.log_rate("graph_update_ms", int(duration.total_seconds() * 1000))
+            stats.log_graph_update_duration(int(duration.total_seconds() * 1000))
 
     @staticmethod
     def _get_checkpoint(session):

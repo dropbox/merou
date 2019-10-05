@@ -878,9 +878,7 @@ def test_request_logging(session, users, http_client, base_url):  # noqa: F811
         fe_url = url(base_url, "/users/{}".format(user.username))
         start_time = time.time()
         resp = yield http_client.fetch(
-            fe_url,
-            method="GET",
-            headers={"X-Grouper-User": user.username},
+            fe_url, method="GET", headers={"X-Grouper-User": user.username}
         )
         duration_ms = (time.time() - start_time) * 1000
         assert resp.code == 200
@@ -895,9 +893,7 @@ def test_request_logging(session, users, http_client, base_url):  # noqa: F811
         with pytest.raises(HTTPError):
             fe_url = url(base_url, "/groups/{}".format("does-not-exist"))
             resp = yield http_client.fetch(
-                fe_url,
-                method="GET",
-                headers={"X-Grouper-User": user.username},
+                fe_url, method="GET", headers={"X-Grouper-User": user.username}
             )
         duration_ms = (time.time() - start_time) * 1000
         assert mock_log_request.call_count == 1

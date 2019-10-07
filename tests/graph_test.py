@@ -282,11 +282,9 @@ class MockStats(BasePlugin):
         # type: () -> None
         self.update_ms = 0.0
 
-    def log_rate(self, key, val, count=1):
-        # type: (str, float, int) -> None
-        assert key == "graph_update_ms"
-        assert count == 1
-        self.update_ms = val
+    def log_graph_update_duration(self, duration_ms):
+        # type: (int) -> None
+        self.update_ms = duration_ms
 
 
 def test_graph_update_stats(setup):

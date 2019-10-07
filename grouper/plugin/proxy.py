@@ -79,6 +79,11 @@ class PluginProxy(object):
         for plugin in self._plugins:
             plugin.log_auditlog_entry(entry)
 
+    def log_background_run(self, success):
+        # type: (bool) -> None
+        for plugin in self._plugins:
+            plugin.log_background_run(success)
+
     def log_exception(
         self,
         request,  # type: Optional[HTTPRequest]
@@ -91,20 +96,20 @@ class PluginProxy(object):
         for plugin in self._plugins:
             plugin.log_exception(request, status, exc_type, exc_value, exc_tb)
 
-    def log_gauge(self, key, val):
-        # type: (str, float) -> None
+    def log_graph_update_duration(self, duration_ms):
+        # type: (int) -> None
         for plugin in self._plugins:
-            plugin.log_gauge(key, val)
+            plugin.log_graph_update_duration(duration_ms)
 
-    def log_rate(self, key, val, count=1):
-        # type: (str, float, int) -> None
+    def log_periodic_graph_update(self, success):
+        # type: (bool) -> None
         for plugin in self._plugins:
-            plugin.log_rate(key, val, count)
+            plugin.log_periodic_graph_update(success)
 
-    def set_default_stats_tags(self, tags):
-        # type: (Dict[str, str]) -> None
+    def log_request(self, handler, status, duration_ms):
+        # type: (str, int, int) -> None
         for plugin in self._plugins:
-            plugin.set_default_stats_tags(tags)
+            plugin.log_request(handler, status, duration_ms)
 
     def user_created(self, user, is_service_account=False):
         # type: (User, bool) -> None

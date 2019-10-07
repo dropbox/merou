@@ -10,7 +10,6 @@ from six import PY2
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 
-from grouper import stats
 from grouper.api.routes import HANDLERS
 from grouper.api.settings import ApiSettings
 from grouper.app import GrouperApplication
@@ -85,8 +84,6 @@ def start_server(args, settings, plugins):
         server.bind(port, address=address)
 
     server.start(settings.num_processes)
-
-    stats.set_defaults()
 
     try:
         IOLoop.current().start()

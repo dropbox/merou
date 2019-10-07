@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 from six import iteritems
 from sqlalchemy import and_
 
-from grouper import stats
 from grouper.audit import get_auditors_group
 from grouper.constants import PERMISSION_AUDITOR
 from grouper.email_util import (
@@ -147,9 +146,9 @@ class BackgroundProcessor(object):
 
                     session.commit()
 
-                stats.log_background_run(True)
+                self.plugins.log_background_run(success=True)
             except Exception:
-                stats.log_background_run(False)
+                self.plugins.log_background_run(success=False)
                 self.plugins.log_exception(None, None, *sys.exc_info())
                 self.logger.exception("Unexpected exception occurred in background thread")
                 self.crash()

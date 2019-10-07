@@ -10,7 +10,6 @@ from sqlalchemy import or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import label, literal
 
-from grouper import stats
 from grouper.entities.group import Group, GroupJoinPolicy
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.entities.permission import Permission
@@ -208,7 +207,7 @@ class GroupGraph(object):
                 self._grants_by_permission = grants_by_permission
 
             duration = datetime.utcnow() - start_time
-            stats.log_graph_update_duration(int(duration.total_seconds() * 1000))
+            get_plugin_proxy().log_graph_update_duration(int(duration.total_seconds() * 1000))
 
     @staticmethod
     def _get_checkpoint(session):

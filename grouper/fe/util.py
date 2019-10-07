@@ -14,7 +14,6 @@ from six import iteritems
 from six.moves.urllib.parse import quote, unquote, urlencode, urljoin
 from tornado.web import HTTPError, RequestHandler
 
-from grouper import stats
 from grouper.constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATION
 from grouper.fe.settings import settings
 from grouper.graph import Graph
@@ -208,7 +207,7 @@ class GrouperHandler(RequestHandler):
         handler = self.__class__.__name__
         duration_ms = int((datetime.utcnow() - self._request_start_time).total_seconds() * 1000)
         response_status = self.get_status()
-        stats.log_request(handler, response_status, duration_ms)
+        self.plugins.log_request(handler, response_status, duration_ms)
 
     def update_qs(self, **kwargs):
         # type: (**Any) -> str

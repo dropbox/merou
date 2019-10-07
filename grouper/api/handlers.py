@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 from six import iteritems, StringIO
 from tornado.web import HTTPError, RequestHandler
 
-from grouper import stats
 from grouper.constants import TOKEN_FORMAT
 from grouper.graph import NoSuchGroup, NoSuchUser
 from grouper.models.base.session import Session
@@ -82,7 +81,7 @@ class GraphHandler(RequestHandler):
         handler = self.__class__.__name__
         response_status = self.get_status()
         duration_ms = int((datetime.utcnow() - self._request_start_time).total_seconds() * 1000)
-        stats.log_request(handler, response_status, duration_ms)
+        self.plugins.log_request(handler, response_status, duration_ms)
 
     def log_exception(
         self,

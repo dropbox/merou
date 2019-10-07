@@ -5,7 +5,7 @@ import time
 from io import StringIO
 
 import pytest
-from mock import patch
+from mock import Mock
 from six import iteritems, itervalues
 from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
@@ -15,6 +15,7 @@ from grouper.models.counter import Counter
 from grouper.models.service_account import ServiceAccount
 from grouper.models.user_token import UserToken
 from grouper.permissions import get_permission, grant_permission_to_service_account
+from grouper.plugin import PluginProxy, get_plugin_proxy
 from grouper.public_key import add_public_key
 from grouper.user_metadata import get_user_metadata_by_key, set_user_metadata
 from grouper.user_password import add_new_user_password, delete_user_password, user_passwords
@@ -421,33 +422,33 @@ def test_public_keys(session, users, http_client, base_url):  # noqa: F811
 @pytest.mark.gen_test
 def test_request_logging(session, users, http_client, base_url):  # noqa: F811
     """Test that the api request handlers properly log stats"""
-    # It does not appear possible to add a mock plugin to the global plugins here and expect it to
-    # be called by the request handler: the server side will create its own plugin proxy
-    with patch("grouper.stats.log_request") as mock_log_request:
-        user = users["zorkian@a.co"]
-        fe_url = url(base_url, "/users/{}".format(user.username))
-        start_time = time.time()
+    mock_plugin = Mock()
+    get_plugin_proxy().add_plugin(mock_plugin)
+
+    user = users["zorkian@a.co"]
+    fe_url = url(base_url, "/users/{}".format(user.username))
+    start_time = time.time()
+    resp = yield http_client.fetch(
+        fe_url, method="GET", headers={"X-Grouper-User": user.username}
+    )
+    duration_ms = (time.time() - start_time) * 1000
+    assert resp.code == 200
+    assert mock_plugin.log_request.call_count == 1
+    assert mock_plugin.log_request.call_args_list[0][0][0] == "Users"
+    assert mock_plugin.log_request.call_args_list[0][0][1] == 200
+    # the reported value should be within 1s of our own observation
+    assert abs(mock_plugin.log_request.call_args_list[0][0][2] - duration_ms) <= 1000
+
+    mock_plugin.log_request.reset_mock()
+    start_time = time.time()
+    with pytest.raises(HTTPError):
+        fe_url = url(base_url, "/groups/{}".format("does-not-exist"))
         resp = yield http_client.fetch(
             fe_url, method="GET", headers={"X-Grouper-User": user.username}
         )
-        duration_ms = (time.time() - start_time) * 1000
-        assert resp.code == 200
-        assert mock_log_request.call_count == 1
-        assert mock_log_request.call_args_list[0][0][0] == "Users"
-        assert mock_log_request.call_args_list[0][0][1] == 200
-        # the reported value should be within 1s of our own observation
-        assert abs(mock_log_request.call_args_list[0][0][2] - duration_ms) <= 1000
-
-        mock_log_request.reset_mock()
-        start_time = time.time()
-        with pytest.raises(HTTPError):
-            fe_url = url(base_url, "/groups/{}".format("does-not-exist"))
-            resp = yield http_client.fetch(
-                fe_url, method="GET", headers={"X-Grouper-User": user.username}
-            )
-        duration_ms = (time.time() - start_time) * 1000
-        assert mock_log_request.call_count == 1
-        assert mock_log_request.call_args_list[0][0][0] == "Groups"
-        assert mock_log_request.call_args_list[0][0][1] == 404
-        # the reported value should be within 1s of our own observation
-        assert abs(mock_log_request.call_args_list[0][0][2] - duration_ms) <= 1000
+    duration_ms = (time.time() - start_time) * 1000
+    assert mock_plugin.log_request.call_count == 1
+    assert mock_plugin.log_request.call_args_list[0][0][0] == "Groups"
+    assert mock_plugin.log_request.call_args_list[0][0][1] == 404
+    # the reported value should be within 1s of our own observation
+    assert abs(mock_plugin.log_request.call_args_list[0][0][2] - duration_ms) <= 1000

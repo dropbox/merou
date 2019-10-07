@@ -317,6 +317,7 @@ def api_app(session, standard_graph):
     set_global_settings(settings)
     session_factory = SingletonSessionFactory(session)
     plugins = PluginProxy([])
+    set_global_plugin_proxy(plugins)
     usecase_factory = create_graph_usecase_factory(
         settings, plugins, session_factory, standard_graph
     )

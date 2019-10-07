@@ -6,7 +6,6 @@ from threading import Thread
 from time import sleep
 from typing import TYPE_CHECKING
 
-from grouper import stats
 from grouper.models.base.session import Session
 
 if TYPE_CHECKING:
@@ -43,9 +42,9 @@ class DbRefreshThread(Thread):
                 with closing(Session()) as session:
                     self.graph.update_from_db(session)
 
-                stats.log_periodic_graph_update(True)
+                self.plugins.log_periodic_graph_update(success=True)
             except Exception:
-                stats.log_periodic_graph_update(False)
+                self.plugins.log_periodic_graph_update(success=False)
                 self.plugins.log_exception(None, None, *sys.exc_info())
                 logging.exception("Failed to refresh graph")
                 self.crash()

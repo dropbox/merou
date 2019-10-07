@@ -878,9 +878,7 @@ def test_request_logging(session, users, http_client, base_url):  # noqa: F811
     user = users["zorkian@a.co"]
     fe_url = url(base_url, "/users")
     start_time = time.time()
-    resp = yield http_client.fetch(
-        fe_url, method="GET", headers={"X-Grouper-User": user.username}
-    )
+    resp = yield http_client.fetch(fe_url, method="GET", headers={"X-Grouper-User": user.username})
     duration_ms = (time.time() - start_time) * 1000
     assert resp.code == 200
     assert mock_plugin.log_request.call_count == 1

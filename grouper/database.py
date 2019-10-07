@@ -48,7 +48,7 @@ class DbRefreshThread(Thread):
             except Exception:
                 stats.log_gauge("successful-db-update", 0)
                 stats.log_gauge("failed-db-update", 1)
-                self.plugins.log_exception(*sys.exc_info())
+                self.plugins.log_exception(None, None, *sys.exc_info())
                 logging.exception("Failed to refresh graph")
                 self.crash()
 

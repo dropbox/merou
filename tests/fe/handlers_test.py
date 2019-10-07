@@ -2,7 +2,7 @@ import time
 from datetime import date, datetime, timedelta
 
 import pytest
-from mock import patch
+from mock import Mock, patch
 from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 
@@ -11,6 +11,7 @@ from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
 from grouper.models.request import Request
 from grouper.models.user import User
+from grouper.plugin import get_plugin_proxy
 from grouper.public_key import BadPublicKey, get_public_keys_of_user
 from grouper.role_user import (
     create_role_user,
@@ -875,7 +876,7 @@ def test_request_logging(session, users, http_client, base_url):  # noqa: F811
     get_plugin_proxy().add_plugin(mock_plugin)
 
     user = users["zorkian@a.co"]
-    fe_url = url(base_url, "/users/{}".format(user.username))
+    fe_url = url(base_url, "/users")
     start_time = time.time()
     resp = yield http_client.fetch(
         fe_url, method="GET", headers={"X-Grouper-User": user.username}
@@ -883,7 +884,7 @@ def test_request_logging(session, users, http_client, base_url):  # noqa: F811
     duration_ms = (time.time() - start_time) * 1000
     assert resp.code == 200
     assert mock_plugin.log_request.call_count == 1
-    assert mock_plugin.log_request.call_args_list[0][0][0] == "UserView"
+    assert mock_plugin.log_request.call_args_list[0][0][0] == "UsersView"
     assert mock_plugin.log_request.call_args_list[0][0][1] == 200
     # the reported value should be within 1s of our own observation
     assert abs(mock_plugin.log_request.call_args_list[0][0][2] - duration_ms) <= 1000

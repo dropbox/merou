@@ -1,0 +1,13 @@
+============================= test session starts ==============================
+platform linux -- Python 3.7.4, pytest-4.4.0, py-1.5.2, pluggy-0.12.0
+rootdir: /home/cauthu/src/merou
+plugins: forked-1.0.2, tornado-0.7.0, mock-1.10.3, xdist-1.28.0
+collected 230 items
+
+itests/api/grants_test.py ..                                             [  0%]
+itests/api/groups_test.py ..                                             [  1%]
+itests/api/permissions_test.py ..                                        [  2%]
+itests/api/service_accounts_test.py ....                                 [  4%]
+itests/api/user_metadata_test.py .                                       [  4%]
+itests/api/users_test.py ..                                              [  5%]
+itests/fe/audits_test.py 

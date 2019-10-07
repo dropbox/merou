@@ -15,7 +15,7 @@ from grouper.models.counter import Counter
 from grouper.models.service_account import ServiceAccount
 from grouper.models.user_token import UserToken
 from grouper.permissions import get_permission, grant_permission_to_service_account
-from grouper.plugin import PluginProxy, get_plugin_proxy
+from grouper.plugin import get_plugin_proxy
 from grouper.public_key import add_public_key
 from grouper.user_metadata import get_user_metadata_by_key, set_user_metadata
 from grouper.user_password import add_new_user_password, delete_user_password, user_passwords

@@ -46,7 +46,7 @@ class DbRefreshThread(Thread):
                 stats.log_periodic_graph_update(True)
             except Exception:
                 stats.log_periodic_graph_update(False)
-                self.plugins.log_exception(*sys.exc_info())
+                self.plugins.log_exception(None, None, *sys.exc_info())
                 logging.exception("Failed to refresh graph")
                 self.crash()
 

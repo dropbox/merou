@@ -52,7 +52,7 @@ def main(sys_argv=sys.argv, session=None):
 
     # Add parsers for legacy commands that have not been refactored.
     for subcommand_module in [group, oneoff, shell]:
-        subcommand_module.add_parser(subparsers)  # type: ignore
+        subcommand_module.add_parser(subparsers)  # type: ignore[attr-defined]
 
     args = parser.parse_args(sys_argv[1:])
 

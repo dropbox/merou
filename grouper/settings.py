@@ -2,6 +2,7 @@ import logging
 import os
 import subprocess
 import time
+from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
 import pytz
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
 
 # TODO(rra): Desire for a single global settings object is currently deeply embedded.  The rewrite
 # to hexagonal architecture is probably required before we can fully eliminate it.
-_GLOBAL_SETTINGS_OBJECT = None
+_GLOBAL_SETTINGS_OBJECT = None  # type: Optional[Settings]
 
 
 def default_settings_path():
@@ -86,7 +87,7 @@ class Settings(object):
         self.smtp_password = ""
         self.from_addr = "no-reply@grouper.local"
         self.service_account_email_domain = "svc.localhost"
-        self.timezone = "UTC"
+        self.timezone = "UTC"  # type: ignore[assignment]  # mypy/issues/3004
         self.url = "http://127.0.0.1:8888"
         self.user_auth_header = "X-Grouper-User"
 
@@ -170,13 +171,13 @@ class Settings(object):
         while True:
             try:
                 self._logger.debug("Getting database URL by running %s", self.database_source)
-                url = subprocess.check_output([self.database_source], stderr=subprocess.STDOUT)
-                url = url.strip()
+                raw_url = subprocess.check_output([self.database_source], stderr=subprocess.STDOUT)
+                url = str(raw_url).strip()
                 if not url:
                     raise DatabaseSourceException("Returned URL is empty")
                 self._logger.debug("New database URL is %s", self._url_without_password(url))
                 return url
-            except (DatabaseSourceException, subprocess.CalledProcessError) as e:
+            except (UnicodeDecodeError, DatabaseSourceException, CalledProcessError) as e:
                 self._logger.exception("Running %s failed", self.database_source)
                 retry += 1
                 if retry < self.DB_URL_RETRIES:
@@ -193,7 +194,7 @@ class Settings(object):
         """Parse a URL and remove any password, returning a version suitable for logging."""
         parsed_url = urlparse(url)
         if parsed_url.password is None:
-            return url
+            return url  # type: ignore[misc]  # typeshed/pull/3332
         else:
             host = parsed_url.netloc.rsplit("@", 1)[-1]
             masked_url = parsed_url._replace(netloc="{}:???@{}".format(parsed_url.username, host))

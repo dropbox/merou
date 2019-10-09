@@ -65,7 +65,7 @@ def test_update_from_config(tmpdir):
     with open(config_path, "w") as config:
         config.write(CONFIG_BOGUS)
     settings.update_from_config(config_path)
-    assert settings._logger != "bar"
+    assert settings._logger != "bar"  # type: ignore[comparison-overlap]
     assert not hasattr(settings, "foo")
 
     # A configuration that doesn't set database or database_source should raise an exception.

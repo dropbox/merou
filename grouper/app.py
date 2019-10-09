@@ -33,10 +33,10 @@ class GrouperApplication(Application):
 
         request_time = 1000.0 * handler.request.request_time()
 
-        # This is a private method of Tornado and thus isn't in typeshed.
+        # This is a private method of Tornado and thus isn't in typeshed for Python 2.
         #
         # TODO(rra): Replace this with a custom log_function setting that prepents the username.
-        summary = handler._request_summary()  # type: ignore
+        summary = handler._request_summary()  # type: ignore[attr-defined]
 
         log_method(
             "{} {} {} {:.2f}ms".format(username, handler.get_status(), summary, request_time)

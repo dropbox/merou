@@ -25,7 +25,7 @@ def get_user_metadata(session, user_id):
 
 
 def get_user_metadata_by_key(session, user_id, data_key):
-    # type: (Session, int, str) -> UserMetadata
+    # type: (Session, int, str) -> Optional[UserMetadata]
     """Return the user's metadata if it has the matching key
 
     Args:
@@ -39,7 +39,7 @@ def get_user_metadata_by_key(session, user_id, data_key):
 
 
 def set_user_metadata(session, user_id, data_key, data_value):
-    # type: (Session, int, str, str) -> Optional[UserMetadata]
+    # type: (Session, int, str, Optional[str]) -> Optional[UserMetadata]
     """Set a single piece of user metadata.
 
     Args:
@@ -66,7 +66,7 @@ def set_user_metadata(session, user_id, data_key, data_value):
     else:
         if data_value is None:
             # do nothing, a delete on a key that's not set
-            return
+            return None
         else:
             user_md = UserMetadata(user_id=user_id, data_key=data_key, data_value=data_value)
             user_md.add(session)

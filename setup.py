@@ -41,7 +41,7 @@ get_package_data("grouper", "grouper/fe/templates")
 
 kwargs = {
     "name": "grouper",
-    "version": __version__,  # type: ignore  # noqa: F821
+    "version": __version__,  # type: ignore[name-defined]  # noqa: F821
     "packages": ["grouper", "grouper.fe", "grouper.api", "grouper.ctl"],
     "package_data": package_data,
     "scripts": ["bin/grouper-api", "bin/grouper-fe", "bin/grouper-ctl"],

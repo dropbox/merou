@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
     from tornado.httpserver import HTTPRequest
     from types import TracebackType
-    from typing import Any, Dict, List, Optional, Tuple, Type, Union
+    from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 
 class BasePlugin(object):
@@ -50,7 +50,7 @@ class BasePlugin(object):
         pass
 
     def get_aliases_for_mapped_permission(self, session, permission, argument):
-        # type: (Session, str, str) -> List[Tuple[str, str]]
+        # type: (Session, str, str) -> Optional[Iterable[Tuple[str, str]]]
         """Called when building the graph to get aliases of a mapped permission.
 
         Args:
@@ -64,7 +64,7 @@ class BasePlugin(object):
         pass
 
     def get_owner_by_arg_by_perm(self, session):
-        # type: (Session) -> Dict[str, Dict[str, List[Group]]]
+        # type: (Session) -> Optional[Dict[str, Dict[str, List[Group]]]]
         """Called when determining owners for permission+arg granting.
 
         Args:
@@ -79,7 +79,7 @@ class BasePlugin(object):
         pass
 
     def get_ssl_context(self):
-        # type: () -> SSLContext
+        # type: () -> Optional[SSLContext]
         """Called to get the ssl.SSLContext for the application."""
         pass
 

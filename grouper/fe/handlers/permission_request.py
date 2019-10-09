@@ -1,4 +1,5 @@
 import json
+from typing import TYPE_CHECKING
 
 from tornado.web import HTTPError
 
@@ -11,7 +12,7 @@ from grouper.models.group import Group
 from grouper.permissions import get_grantable_permissions, get_permission
 from grouper.user_group import get_groups_by_user
 
-if False:
+if TYPE_CHECKING:
     from grouper.models.permission import Permission
     from typing import Any, Dict, Iterable, List, Optional, Tuple
 

@@ -56,6 +56,11 @@ def test_exception_plugin():
     assert str(test_logger.exc_value) == "some string"
     assert test_logger.exc_tb is not None
 
+    # Reinitializing test_logger unconfuses mypy, which otherwise thinks that test_logger.request
+    # must still be None.  See mypy/issues/4168.
+    test_logger = ExceptionLoggerTestPlugin()
+    proxy = PluginProxy([test_logger])
+
     try:
         raise RandomException("with request")
     except RandomException:

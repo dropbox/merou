@@ -129,12 +129,8 @@ def get_user_view_template_vars(session, actor, user, graph):
         # they're disabled, so we've excluded them from the in-memory graph.
         user_md = {}
 
-    shell = (
-        get_user_metadata_by_key(session, user.id, USER_METADATA_SHELL_KEY).data_value
-        if get_user_metadata_by_key(session, user.id, USER_METADATA_SHELL_KEY)
-        else "No shell configured"
-    )
-    ret["shell"] = shell
+    shell_metadata = get_user_metadata_by_key(session, user.id, USER_METADATA_SHELL_KEY)
+    ret["shell"] = shell_metadata.data_value if shell_metadata else "No shell configured"
     github_username = get_user_metadata_by_key(session, user.id, USER_METADATA_GITHUB_USERNAME_KEY)
     ret["github_username"] = github_username.data_value if github_username else "(Unset)"
     ret["open_audits"] = user_open_audits(session, user)

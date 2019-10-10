@@ -6,19 +6,22 @@ import threading
 from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
+    from argparse import Namespace
     from grouper.settings import Settings
     from typing import Any, Callable, Dict, List, Optional, Pattern
 
-T_Co = TypeVar("T_Co", covariant=True)
+T = TypeVar("T")
 
 _TRUTHY = {"true", "yes", "1", ""}
 
 
 def qp_to_bool(arg):
+    # type: (str) -> bool
     return arg.lower() in _TRUTHY
 
 
 def get_loglevel(args, base=None):
+    # type: (Namespace, Optional[int]) -> int
     if base is None:
         base = logging.getLogger().level
     verbose = args.verbose * 10
@@ -27,12 +30,14 @@ def get_loglevel(args, base=None):
 
 
 def try_update(dct, update):
+    # type: (Dict[str, Any], Dict[str, Any]) -> None
     if set(update.keys()).intersection(set(dct.keys())):
         raise Exception("Updating {} with {} would clobber keys!".format(dct, update))
     dct.update(update)
 
 
 def get_auditors_group_name(settings):
+    # type: (Settings) -> str
     return settings.auditors_group
 
 
@@ -54,7 +59,7 @@ def matches_glob(glob, text):
 
 
 def singleton(f):
-    # type: (Callable[[], T_Co]) -> Callable[[], T_Co]
+    # type: (Callable[[], T]) -> Callable[[], T]
     """Thread-safe global singleton.
 
     Decorator which ensures that a function (with no arguments) is only called once, and then all
@@ -62,11 +67,11 @@ def singleton(f):
     """
     lock = threading.Lock()
     initialized = [False]
-    value = [None]  # type: List[Optional[T_Co]]
+    value = [None]  # type: List[Optional[T]]
 
     @functools.wraps(f)
     def wrapped():
-        # type: () -> T_Co
+        # type: () -> T
         if not initialized[0]:
             with lock:
                 if not initialized[0]:

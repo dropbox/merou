@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import pytz
 import yaml
-from six import iteritems
+from six import iteritems, PY2
 from six.moves.urllib.parse import urlparse
 
 if TYPE_CHECKING:
@@ -172,7 +172,10 @@ class Settings(object):
             try:
                 self._logger.debug("Getting database URL by running %s", self.database_source)
                 raw_url = subprocess.check_output([self.database_source], stderr=subprocess.STDOUT)
-                url = str(raw_url).strip()
+                if PY2:
+                    url = raw_url.strip()
+                else:
+                    url = raw_url.decode().strip()
                 if not url:
                     raise DatabaseSourceException("Returned URL is empty")
                 self._logger.debug("New database URL is %s", self._url_without_password(url))

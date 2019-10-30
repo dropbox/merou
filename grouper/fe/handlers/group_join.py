@@ -14,7 +14,7 @@ from grouper.models.user import User
 from grouper.user_group import get_groups_by_user
 
 if TYPE_CHECKING:
-    from typing import Any, Mapping, List, Optional, Tuple, Union
+    from typing import Any, Mapping, List, Optional, Set, Tuple, Union
 
 
 class GroupJoin(GrouperHandler):
@@ -30,10 +30,11 @@ class GroupJoin(GrouperHandler):
         group_md = self.graph.get_group_details(group.name)
 
         members = group.my_members()
+        member_groups = {g for t, g in members if t == "Group"}
         user_is_member = self._is_user_a_member(group, members)
 
         form = GroupJoinForm()
-        form.member.choices = self._get_choices(group, members, user_is_member)
+        form.member.choices = self._get_choices(group, member_groups, user_is_member)
         return self.render(
             "group-join.html",
             form=form,
@@ -52,10 +53,11 @@ class GroupJoin(GrouperHandler):
             return self.notfound()
 
         members = group.my_members()
+        member_groups = {g for t, g in members if t == "Group"}
         user_is_member = self._is_user_a_member(group, members)
 
         form = GroupJoinForm(self.request.arguments)
-        form.member.choices = self._get_choices(group, members, user_is_member)
+        form.member.choices = self._get_choices(group, member_groups, user_is_member)
         if not form.validate():
             return self.render(
                 "group-join.html", form=form, group=group, alerts=self.get_form_alerts(form.errors)
@@ -186,8 +188,8 @@ class GroupJoin(GrouperHandler):
 
         return self.session.query(resource).filter_by(name=member_name, enabled=True).one()
 
-    def _get_choices(self, group, members, user_is_member):
-        # type: (Group, Mapping[Tuple[str, str], Any], bool) -> List[Tuple[str, str]]
+    def _get_choices(self, group, member_groups, user_is_member):
+        # type: (Group, Set[str], bool) -> List[Tuple[str, str]]
         choices = []
 
         if not user_is_member:
@@ -199,7 +201,7 @@ class GroupJoin(GrouperHandler):
                 continue
             if group_edge._role not in APPROVER_ROLE_INDICES:  # manager, owner, and np-owner only.
                 continue
-            if ("Group", _group.name) in members:
+            if _group.name in member_groups:
                 continue
 
             choice = "Group: {}".format(_group.name)

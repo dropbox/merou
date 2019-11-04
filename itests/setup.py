@@ -30,7 +30,7 @@ def _bind_socket():
     return s
 
 
-def _wait_until_accept(port, timeout=3.0):
+def _wait_until_accept(port, timeout=5.0):
     # type: (int, float) -> None
     """Wait until a server accepts connections on the specified port."""
     deadline = time.time() + timeout

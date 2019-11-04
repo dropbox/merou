@@ -1,8 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
-from six import with_metaclass
-
 from grouper.usecases.authorization import Authorization
 
 if TYPE_CHECKING:
@@ -14,7 +12,7 @@ if TYPE_CHECKING:
     )
 
 
-class ConvertUserToServiceAccountUI(with_metaclass(ABCMeta, object)):
+class ConvertUserToServiceAccountUI(metaclass=ABCMeta):
     """Abstract base class for UI for ConvertUserToServiceAccount."""
 
     @abstractmethod

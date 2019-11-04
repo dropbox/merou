@@ -1,13 +1,11 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
-from six import with_metaclass
-
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
 
 
-class CtlCommand(with_metaclass(ABCMeta, object)):
+class CtlCommand(metaclass=ABCMeta):
     """Implements a subcommand of grouper-ctl."""
 
     @staticmethod

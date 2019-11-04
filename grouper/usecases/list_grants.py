@@ -1,15 +1,13 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
-from six import with_metaclass
-
 if TYPE_CHECKING:
     from grouper.entities.permission_grant import UniqueGrantsOfPermission
     from grouper.usecases.interfaces import PermissionInterface
     from typing import Dict
 
 
-class ListGrantsUI(with_metaclass(ABCMeta, object)):
+class ListGrantsUI(metaclass=ABCMeta):
     """Abstract base class for UI for ListGrants."""
 
     @abstractmethod

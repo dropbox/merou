@@ -7,7 +7,6 @@ import sys
 from contextlib import closing
 from typing import TYPE_CHECKING
 
-from six import PY2
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 
@@ -71,14 +70,9 @@ def start_server(args, settings, plugins):
             "Starting application server with %d processes on stdin", settings.num_processes
         )
         server = HTTPServer(application, ssl_options=ssl_context)
-        if PY2:
-            s = socket.fromfd(sys.stdin.fileno(), socket.AF_INET, socket.SOCK_STREAM)
-            s.setblocking(False)
-            s.listen(5)
-        else:
-            s = socket.socket(fileno=sys.stdin.fileno())
-            s.setblocking(False)
-            s.listen()
+        s = socket.socket(fileno=sys.stdin.fileno())
+        s.setblocking(False)
+        s.listen()
         server.add_sockets([s])
     else:
         address = args.address or settings.address

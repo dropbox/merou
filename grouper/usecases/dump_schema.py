@@ -1,13 +1,11 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
-from six import with_metaclass
-
 if TYPE_CHECKING:
     from grouper.usecases.interfaces import SchemaInterface
 
 
-class DumpSchemaUI(with_metaclass(ABCMeta, object)):
+class DumpSchemaUI(metaclass=ABCMeta):
     """Abstract base class for UI for DumpSchema."""
 
     @abstractmethod

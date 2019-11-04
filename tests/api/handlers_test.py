@@ -3,11 +3,10 @@ import csv
 import json
 import time
 from io import StringIO
+from urllib.parse import urlencode
 
 import pytest
 from mock import Mock
-from six import iteritems, itervalues
-from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 
 from grouper.constants import USER_METADATA_GITHUB_USERNAME_KEY, USER_METADATA_SHELL_KEY
@@ -88,7 +87,7 @@ def test_multi_users(users, http_client, base_url):  # noqa: F811
     # Service Accounts should be included
     assert sorted(list(body["data"].keys())) == ["gary@a.co", "role@a.co", "tyleromeara@a.co"]
     # Verify that we return the same data as the single user endpoint
-    for username, data in iteritems(body["data"]):
+    for username, data in body["data"].items():
         r = yield http_client.fetch(url(base_url, "/users/{}".format(username)))
         rbody = json.loads(r.body)
         assert data == rbody["data"]
@@ -120,7 +119,7 @@ def test_service_accounts(session, standard_graph, users, http_client, base_url)
     assert resp.code == 200
     assert body["status"] == "ok"
     assert sorted(body["data"]["service_accounts"]) == sorted(
-        [u.name for u in itervalues(users) if u.role_user] + ["service@a.co"]
+        [u.name for u in users.values() if u.role_user] + ["service@a.co"]
     )
 
     # Retrieve a single service account and check its metadata.

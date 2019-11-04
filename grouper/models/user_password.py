@@ -3,7 +3,6 @@ import hmac
 import os
 from datetime import datetime
 
-from six import PY2
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
@@ -12,10 +11,7 @@ from grouper.models.base.model_base import Model
 
 def _make_salt():
     # type: () -> str
-    if PY2:
-        return os.urandom(20).encode("hex")
-    else:
-        return os.urandom(20).hex()
+    return os.urandom(20).hex()
 
 
 class UserPassword(Model):

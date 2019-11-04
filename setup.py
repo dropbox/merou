@@ -1,14 +1,10 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import os
 from collections import defaultdict
+from typing import Dict, List
 
 from setuptools import setup
-
-try:
-    from typing import Dict, List
-except Exception:
-    pass
 
 # this defines __version__ for use below without assuming grouper is in the
 # path or importable during build
@@ -21,7 +17,7 @@ with open("requirements.txt") as requirements:
     required = requirements.read().splitlines()
 
 # Test suite requirements.
-with open("requirements-dev2.txt") as requirements:
+with open("requirements-dev.txt") as requirements:
     test_required = requirements.read().splitlines()
 
 package_data = defaultdict(list)  # type: Dict[str, List]
@@ -57,7 +53,6 @@ kwargs = {
     "url": "https://github.com/dropbox/grouper",
     "download_url": "https://github.com/dropbox/grouper/archive/master.tar.gz",
     "classifiers": [
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.7",
         "Topic :: Software Development",
         "Topic :: Software Development :: Libraries",

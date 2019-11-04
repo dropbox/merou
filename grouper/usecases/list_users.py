@@ -1,15 +1,13 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
-from six import with_metaclass
-
 if TYPE_CHECKING:
     from grouper.entities.user import User
     from grouper.usecases.interfaces import UserInterface
     from typing import Dict
 
 
-class ListUsersUI(with_metaclass(ABCMeta, object)):
+class ListUsersUI(metaclass=ABCMeta):
     """Abstract base class for UI for ListUserMetadata."""
 
     @abstractmethod

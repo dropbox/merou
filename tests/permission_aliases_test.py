@@ -1,7 +1,6 @@
 import json
 
 import pytest
-from six import iteritems
 
 from grouper.models.counter import Counter
 from grouper.plugin import PluginProxy
@@ -80,7 +79,7 @@ def test_permissions_aliased_permissions(
 
     perms = [
         (group, p["argument"])
-        for group, g in iteritems(body["data"]["groups"])
+        for group, g in body["data"]["groups"].items()
         for p in g["permissions"]
     ]
 

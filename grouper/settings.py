@@ -4,11 +4,10 @@ import subprocess
 import time
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
+from urllib.parse import urlparse
 
 import pytz
 import yaml
-from six import iteritems, PY2
-from six.moves.urllib.parse import urlparse
 
 if TYPE_CHECKING:
     from pytz import BaseTzInfo
@@ -150,7 +149,7 @@ class Settings(object):
         # doesn't correspond to an attribute on the settings object.  The check special-cases the
         # database key because hasattr appears to run the property method, which may throw an
         # exception.
-        for key, value in iteritems(settings):
+        for key, value in settings.items():
             key = key.lower()
             if key.startswith("_"):
                 self._logger.warning("Ignoring invalid setting %s", key)
@@ -172,10 +171,7 @@ class Settings(object):
             try:
                 self._logger.debug("Getting database URL by running %s", self.database_source)
                 raw_url = subprocess.check_output([self.database_source], stderr=subprocess.STDOUT)
-                if PY2:
-                    url = raw_url.strip()
-                else:
-                    url = raw_url.decode().strip()
+                url = raw_url.decode().strip()
                 if not url:
                     raise DatabaseSourceException("Returned URL is empty")
                 self._logger.debug("New database URL is %s", self._url_without_password(url))

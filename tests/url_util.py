@@ -1,4 +1,4 @@
-from six.moves.urllib.parse import urlencode, urljoin, urlsplit, urlunsplit
+from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit
 
 
 def url(base_url, path, query_dict=None):

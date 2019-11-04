@@ -6,14 +6,12 @@ import sys
 import traceback
 from typing import TYPE_CHECKING
 
-from six import iteritems
-
 if TYPE_CHECKING:
     from types import FrameType
 
 
 signame_by_signum = {
-    v: k for k, v in iteritems(signal.__dict__) if k.startswith("SIG") and not k.startswith("SIG_")
+    v: k for k, v in signal.__dict__.items() if k.startswith("SIG") and not k.startswith("SIG_")
 }
 
 
@@ -25,7 +23,7 @@ def log_and_exit_handler(signum, frame):
 
 def dump_thread_handler(signum, frame):
     # type: (int, FrameType) -> None
-    for thread_id, thread_frame in iteritems(sys._current_frames()):
+    for thread_id, thread_frame in sys._current_frames().items():
         print("-- thread id {}:".format(thread_id))
         print("".join(traceback.format_stack(thread_frame)))
 

@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 from typing import List, NamedTuple
+from urllib.parse import urlencode
 
 import pytest
 from mock import call, Mock, patch
-from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 
 from grouper.audit import (

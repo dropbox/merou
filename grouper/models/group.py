@@ -4,7 +4,6 @@ from collections import OrderedDict
 from datetime import datetime
 from typing import Any, TYPE_CHECKING
 
-from six import iteritems
 from sqlalchemy import Boolean, Column, desc, Enum, Integer, Interval, or_, String, Text
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
@@ -227,7 +226,7 @@ class Group(Model, CommentObjectMixin):
     def my_owners(self):
         """Returns a dictionary from username to records."""
         od = OrderedDict()
-        for (member_type, name), member in iteritems(self.my_members()):
+        for (member_type, name), member in self.my_members().items():
             if member_type == "User" and member.role in OWNER_ROLE_INDICES:
                 od[name] = member
         return od

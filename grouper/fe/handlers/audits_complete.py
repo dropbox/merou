@@ -1,5 +1,3 @@
-from six import itervalues
-
 from grouper.audit import (
     get_audits,
     get_group_audit_members_infos,
@@ -23,7 +21,7 @@ class AuditsComplete(GrouperHandler):
         audit = self.session.query(Audit).filter(Audit.id == audit_id).one()
 
         # only owners can complete
-        owner_ids = {member.id for member in itervalues(audit.group.my_owners())}
+        owner_ids = {member.id for member in audit.group.my_owners().values()}
         if self.current_user.id not in owner_ids:
             return self.forbidden()
 

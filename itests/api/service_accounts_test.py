@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 from groupy.client import Groupy
-from six import iteritems
 
 from itests.fixtures import api_client, async_api_server  # noqa: F401
 from itests.setup import api_server
@@ -21,7 +20,7 @@ if TYPE_CHECKING:
 
 
 def test_get_service_accounts(api_client, users, service_accounts):  # noqa: F811
-    role_users = [username for username, u in iteritems(users) if u.role_user]
+    role_users = [username for username, u in users.items() if u.role_user]
     assert len(role_users) > 0
 
     expected = role_users + list(service_accounts.keys())

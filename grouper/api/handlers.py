@@ -4,9 +4,9 @@ import sys
 import traceback
 from contextlib import closing
 from datetime import datetime
+from io import StringIO
 from typing import TYPE_CHECKING
 
-from six import iteritems, StringIO
 from tornado.web import HTTPError, RequestHandler
 
 from grouper.constants import TOKEN_FORMAT
@@ -172,7 +172,7 @@ class Users(GraphHandler):
                     "users": sorted(
                         [
                             k
-                            for k, v in iteritems(self.graph.user_metadata)
+                            for k, v in self.graph.user_metadata.items()
                             if (
                                 include_service_accounts
                                 or not ("service_account" in v or v["role_user"])
@@ -187,7 +187,7 @@ class UserMetadata(GraphHandler, ListUsersUI):
     def listed_users(self, users):
         # type: (Dict[str, User]) -> None
         users_dict = {}  # type: Dict[str, Dict[str, Any]]
-        for user, data in iteritems(users):
+        for user, data in users.items():
             metadata = {m.key: m.value for m in data.metadata}
             public_keys = [
                 {
@@ -282,7 +282,7 @@ class Grants(GraphHandler, ListGrantsUI):
                 "role_users": v.role_users,
                 "service_accounts": v.service_accounts,
             }
-            for k, v in iteritems(grants)
+            for k, v in grants.items()
         }
         self.success({"permissions": grants_dict})
 
@@ -388,7 +388,7 @@ class ServiceAccounts(GraphHandler):
                     "service_accounts": sorted(
                         [
                             k
-                            for k, v in iteritems(self.graph.user_metadata)
+                            for k, v in self.graph.user_metadata.items()
                             if "service_account" in v or v["role_user"]
                         ]
                     )

@@ -1,9 +1,4 @@
-"""Check that the bin wrappers load properly.
-
-TODO(rra): These wrappers all start with /usr/bin/env python2 right now, so will not run properly
-in a Python 3 environment.  If we are running under Python 3, run them explicitly under the Python
-binary we're running under.
-"""
+"""Check that the bin wrappers load properly."""
 
 import subprocess
 import sys

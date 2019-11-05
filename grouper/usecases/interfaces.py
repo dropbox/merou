@@ -14,8 +14,6 @@ By convention, all class names here end in Interface or Exception.
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
-from six import with_metaclass
-
 if TYPE_CHECKING:
     from datetime import datetime
     from grouper.entities.audit_log_entry import AuditLogEntry
@@ -34,7 +32,7 @@ if TYPE_CHECKING:
     from typing import ContextManager, Dict, List, Optional, Tuple
 
 
-class AuditLogInterface(with_metaclass(ABCMeta, object)):
+class AuditLogInterface(metaclass=ABCMeta):
     """Abstract base class for the audit log.
 
     The date parameter to the log methods is primarily for use in tests, where to get a consistent
@@ -117,7 +115,7 @@ class AuditLogInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
-class GroupInterface(with_metaclass(ABCMeta, object)):
+class GroupInterface(metaclass=ABCMeta):
     """Abstract base class for group operations and queries."""
 
     @abstractmethod
@@ -141,7 +139,7 @@ class GroupInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
-class GroupRequestInterface(with_metaclass(ABCMeta, object)):
+class GroupRequestInterface(metaclass=ABCMeta):
     """Abstract base class for requests for group membership."""
 
     @abstractmethod
@@ -150,7 +148,7 @@ class GroupRequestInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
-class PermissionInterface(with_metaclass(ABCMeta, object)):
+class PermissionInterface(metaclass=ABCMeta):
     """Abstract base class for permission operations and queries."""
 
     @abstractmethod
@@ -209,7 +207,7 @@ class PermissionInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
-class SchemaInterface(with_metaclass(ABCMeta, object)):
+class SchemaInterface(metaclass=ABCMeta):
     """Abstract base class for low-level schema manipulation."""
 
     @abstractmethod
@@ -223,7 +221,7 @@ class SchemaInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
-class ServiceAccountInterface(with_metaclass(ABCMeta, object)):
+class ServiceAccountInterface(metaclass=ABCMeta):
     """Abstract base class for service account operations and queries."""
 
     @abstractmethod
@@ -262,7 +260,7 @@ class ServiceAccountInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
-class TransactionInterface(with_metaclass(ABCMeta, object)):
+class TransactionInterface(metaclass=ABCMeta):
     """Abstract base class for starting and committing transactions."""
 
     def transaction(self):
@@ -270,7 +268,7 @@ class TransactionInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
-class UserInterface(with_metaclass(ABCMeta, object)):
+class UserInterface(metaclass=ABCMeta):
     """Abstract base class for user operations and queries."""
 
     @abstractmethod

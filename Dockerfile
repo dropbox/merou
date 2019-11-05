@@ -19,7 +19,7 @@ RUN apt-get update
 
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get install -y libmysqlclient-dev mysql-client mysql-server
-RUN apt-get install -y python2.7-dev python-pip python3-pip gcc
+RUN apt-get install -y python3-dev python3-pip gcc
 RUN apt-get install -y chromium-driver
 RUN apt-get install -y procps unzip wget
 
@@ -33,7 +33,7 @@ RUN /etc/init.d/mysql start && mysql -e "\
  "
 
 RUN /etc/init.d/mysql start && \
- TRAVIS_PYTHON_VERSION=2.7 ci/setup.sh && \
+ TRAVIS_PYTHON_VERSION=3.5 ci/setup.sh && \
  pip3 install isort mypy
 
 COPY . /app
@@ -53,5 +53,5 @@ RUN ( \
 EXPOSE 8888
 
 ENV PYTHONDONTWRITEBYTECODE=PLEASE
-ENV TRAVIS_PYTHON_VERSION 2.7
+ENV TRAVIS_PYTHON_VERSION 3.5
 CMD ["/bin/bash", "-c", "/etc/init.d/mysql start && exec /bin/bash"]

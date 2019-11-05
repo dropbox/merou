@@ -5,8 +5,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import cast, TYPE_CHECKING
 
-from six import itervalues
-
 from grouper.models.async_notification import AsyncNotification
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
@@ -268,11 +266,11 @@ def notify_edge_expiration(settings, session, edge):
         subgroup = Group.get(session, pk=edge.member_pk)
         parent_owners = edge.group.my_owners()
         if parent_owners:
-            actor_id = next(itervalues(parent_owners)).id
+            actor_id = list(parent_owners.values())[0].id
         else:
             child_owners = subgroup.my_owners()
             if child_owners:
-                actor_id = next(itervalues(child_owners)).id
+                actor_id = list(child_owners.values())[0].id
             else:
                 msg = "{} and {} both have no owners during expiration of {}'s membership".format(
                     group_name, subgroup.groupname, subgroup.groupname

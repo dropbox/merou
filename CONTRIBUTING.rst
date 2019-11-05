@@ -12,10 +12,8 @@ refactorings, may drop features, may change database schemas, and will
 probably rename the project again.  You should therefore have a high
 tolerance for change if you use it today.
 
-Both Python 2.7 and Python 3 are supported.  The Travis-CI tests required
-before merging pull requests will test on both Python 2 and Python 3.  For
-most development, it's best to work primarily on Python 3 so that you can
-use mypy and black.
+Python 3 is required.  Grouper is primarily tested under Python 3.7 but
+should work with older versions.
 
 Merou used to be called Grouper and is still called Grouper internally at
 Dropbox.  We renamed the public project to avoid `a namespace conflict
@@ -45,8 +43,7 @@ Merou development uses the following static analysis and style tools:
 
 All of these tools can be run from the top of the source base on all files
 with no further configuration than that included in the repository,
-provided that you use the versions defined in `requirements3.txt`.  All
-tools are run under Python 3, even though the code is currently Python 2.
+provided that you use the versions defined in `requirements-dev.txt`.
 
 All new code must produce no output with all three tools.
 

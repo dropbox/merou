@@ -9,9 +9,9 @@ This class therefore imports *every* model to ensure SQLAlchemy has a complete v
 models are added, be sure to also add them to the import list.
 """
 
+from io import StringIO
 from typing import TYPE_CHECKING
 
-from six import StringIO
 from sqlalchemy.schema import CreateIndex, CreateTable
 
 from grouper.models.async_notification import AsyncNotification  # noqa: F401

@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
-
-from six.moves.urllib.request import urlopen
+from urllib.request import urlopen
 
 from grouper.fe.settings import FrontendSettings
 from itests.setup import frontend_server

@@ -5,13 +5,12 @@ import sys
 from datetime import datetime
 from functools import wraps
 from typing import TYPE_CHECKING
+from urllib.parse import quote, unquote, urlencode, urljoin
 from uuid import uuid4
 
 import sqlalchemy.exc
 import tornado.web
 from plop.collector import Collector
-from six import iteritems
-from six.moves.urllib.parse import quote, unquote, urlencode, urljoin
 from tornado.web import HTTPError, RequestHandler
 
 from grouper.constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATION
@@ -275,7 +274,7 @@ class GrouperHandler(RequestHandler):
     def get_form_alerts(self, errors):
         # type: (Dict[str, List[str]]) -> List[Alert]
         alerts = []
-        for field, field_errors in iteritems(errors):
+        for field, field_errors in errors.items():
             for error in field_errors:
                 alerts.append(Alert("danger", error, field))
         return alerts

@@ -1,5 +1,6 @@
+from urllib.parse import urlencode
+
 import pytest
-from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 
 from grouper.models.user import User

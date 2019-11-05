@@ -1,5 +1,3 @@
-from six import iteritems
-
 from grouper.constants import GROUP_ADMIN, PERMISSION_ADMIN, USER_ADMIN
 from itests.fixtures import api_client, async_api_server  # noqa: F401
 from tests.fixtures import (  # noqa: F401
@@ -14,7 +12,7 @@ from tests.fixtures import (  # noqa: F401
 
 
 def test_get_users(api_client, users):  # noqa: F811
-    real_users = [username for username, u in iteritems(users) if not u.role_user]
+    real_users = [username for username, u in users.items() if not u.role_user]
     assert len(real_users) > 0
 
     api_users = list(api_client.users)

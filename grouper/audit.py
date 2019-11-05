@@ -1,8 +1,6 @@
 import itertools
 from typing import List, NamedTuple, TYPE_CHECKING, Union
 
-from six import iteritems, itervalues
-
 from grouper.constants import PERMISSION_AUDITOR
 from grouper.graph import Graph, NoSuchGroup
 from grouper.models.audit import Audit
@@ -83,7 +81,7 @@ def assert_controllers_are_auditors(group):
         if cur_group in checked:
             continue
         details = graph.get_group_details(cur_group)
-        for chk_user, info in iteritems(details["users"]):
+        for chk_user, info in details["users"].items():
             if chk_user in checked:
                 continue
             # Only examine direct members of this group, because then the role is accurate.
@@ -100,7 +98,7 @@ def assert_controllers_are_auditors(group):
                         )
                     )
         # Now put subgroups into the queue to examine.
-        for chk_group, info in iteritems(details["subgroups"]):
+        for chk_group, info in details["subgroups"].items():
             if info["distance"] == 1:
                 queue.append(chk_group)
 
@@ -219,7 +217,7 @@ def get_group_audit_members_infos(session, group):
         List of AuditMemberInfo.
 
     """
-    members_edge_ids = {member.edge_id for member in itervalues(group.my_members())}
+    members_edge_ids = {member.edge_id for member in group.my_members().values()}
     user_members = (
         session.query(AuditMember, GroupEdge._role, User)
         .filter(
@@ -266,7 +264,7 @@ def group_has_pending_audit_members(session, group):
         True if the group still has memberships with "pending" audit status
 
     """
-    members_edge_ids = {member.edge_id for member in itervalues(group.my_members())}
+    members_edge_ids = {member.edge_id for member in group.my_members().values()}
     audit_members_statuses = session.query(AuditMember.status).filter(
         AuditMember.audit_id == group.audit_id,
         AuditMember.status == "pending",

@@ -1,8 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
-from six import with_metaclass
-
 from grouper.entities.group import GroupNotFoundException
 from grouper.plugin.exceptions import PluginRejectedMachineSet
 from grouper.usecases.authorization import Authorization
@@ -17,7 +15,7 @@ if TYPE_CHECKING:
     )
 
 
-class CreateServiceAccountUI(with_metaclass(ABCMeta, object)):
+class CreateServiceAccountUI(metaclass=ABCMeta):
     """Abstract base class for UI for CreateServiceAccount."""
 
     @abstractmethod

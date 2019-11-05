@@ -107,4 +107,4 @@ class ServiceAccountRepository(object):
     def service_account_is_enabled(self, name):
         # type: (str) -> bool
         user = SQLUser.get(self.session, name=name)
-        return bool(user and user.is_service_account and user.enabled)
+        return bool(user and user.is_service_account and user.enabled)  # bool() is for mypy

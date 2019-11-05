@@ -187,6 +187,18 @@ class SetupTest(object):
         )
         edge.add(self.session)
 
+    def remove_user_from_group(self, user, group):
+        # type: (str, str) -> None
+        user_obj = User.get(self.session, name=user)
+        assert user_obj
+        group_obj = Group.get(self.session, name=group)
+        assert group_obj
+        self.session.query(GroupEdge).filter(
+            GroupEdge.group_id == group_obj.id,
+            GroupEdge.member_type == OBJ_TYPES["User"],
+            GroupEdge.member_pk == user_obj.id,
+        ).delete()
+
     def grant_permission_to_group(self, permission, argument, group):
         # type: (str, str, str) -> None
         self.create_group(group)

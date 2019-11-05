@@ -1,5 +1,8 @@
 from typing import TYPE_CHECKING
 
+import pytest
+from selenium.common.exceptions import NoSuchElementException
+
 from grouper.constants import USER_ADMIN
 from itests.pages.groups import GroupViewPage
 from itests.pages.service_accounts import (
@@ -178,3 +181,49 @@ def test_permission_grant_invalid_argument(tmpdir, setup, browser):
 
         print(page.root.page_source)
         assert page.has_alert("argument")
+
+
+def test_permission_revoke_denied(tmpdir, setup, browser):
+    # type: (LocalPath, SetupTest, Chrome) -> None
+    with setup.transaction():
+        setup.create_service_account("service@svc.localhost", "some-group")
+        setup.grant_permission_to_service_account("some-permission", "*", "service@svc.localhost")
+        setup.create_user("gary@a.co")
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group/service/service@svc.localhost"))
+
+        page = ServiceAccountViewPage(browser)
+        assert page.owner == "some-group"
+        permission_rows = page.permission_rows
+        assert len(permission_rows) == 1
+        permission = permission_rows[0]
+        assert permission.permission == "some-permission"
+        assert permission.argument == "*"
+
+        # The button doesn't show for someone who can't manage the service account.
+        with pytest.raises(NoSuchElementException):
+            permission.click_revoke_button()
+
+    # Add the user to the group so that the revoke button will show up, and then revoke it before
+    # attempting to click the button.
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group")
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group/service/service@svc.localhost"))
+
+        page = ServiceAccountViewPage(browser)
+        assert page.owner == "some-group"
+        permission_rows = page.permission_rows
+        assert len(permission_rows) == 1
+        permission = permission_rows[0]
+
+        with setup.transaction():
+            setup.remove_user_from_group("gary@a.co", "some-group")
+
+        permission.click_revoke_button()
+        permission_revoke_modal = page.get_revoke_permission_modal()
+        permission_revoke_modal.confirm()
+
+        assert page.has_text("The operation you tried to complete is unauthorized")

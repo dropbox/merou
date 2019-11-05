@@ -19,17 +19,18 @@ from grouper.constants import (
 from grouper.fe.main import create_fe_application
 from grouper.fe.settings import FrontendSettings
 from grouper.graph import Graph
+from grouper.group_service_account import add_service_account
 from grouper.initialization import create_graph_usecase_factory
 from grouper.models.base.model_base import Model
 from grouper.models.base.session import get_db_engine, Session
 from grouper.models.group import Group
 from grouper.models.permission import Permission
+from grouper.models.service_account import ServiceAccount
 from grouper.models.user import User
 from grouper.permissions import enable_permission_auditing
 from grouper.plugin import set_global_plugin_proxy
 from grouper.plugin.proxy import PluginProxy
 from grouper.repositories.factory import SingletonSessionFactory
-from grouper.service_account import create_service_account
 from grouper.settings import set_global_settings, Settings
 from tests.path_util import db_url
 from tests.util import add_member, grant_permission
@@ -253,18 +254,16 @@ def groups(session):
 
 @pytest.fixture
 def service_accounts(session, users, groups):
-    service_accounts = {
-        "service@a.co": create_service_account(
-            session,
-            users["zay@a.co"],
-            "service@a.co",
-            "some service account",
-            "some machines",
-            groups["team-sre"],
-        )
-    }
-    session.commit()
-    return service_accounts
+    user = User(username="service@a.co", is_service_account=True)
+    service_account = ServiceAccount(
+        user=user, description="some service account", machine_set="some machines"
+    )
+    user.add(session)
+    service_account.add(session)
+    session.flush()
+    add_service_account(session, groups["team-sre"], service_account)
+
+    return {"service@a.co": service_account}
 
 
 @pytest.fixture

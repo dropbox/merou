@@ -3,8 +3,8 @@ import hmac
 import json
 import os
 from typing import cast, TYPE_CHECKING
+from urllib.parse import urlencode
 
-from six.moves.urllib.parse import urlencode
 from tornado import gen, httpclient
 
 from grouper.constants import USER_METADATA_GITHUB_USERNAME_KEY

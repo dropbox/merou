@@ -325,7 +325,7 @@ def test_permission_request_flow(
     # REQUEST: permission with an invalid argument
     groupname = "serving-team"
     username = "zorkian@a.co"
-    fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
+    fe_url = url(base_url, f"/permissions/request?group={groupname}")
     resp = yield http_client.fetch(
         fe_url,
         method="POST",
@@ -334,7 +334,6 @@ def test_permission_request_flow(
                 "permission_name": "grantable.one",
                 "argument": "some argument?",
                 "reason": "blah blah black sheep",
-                "argument_type": "text",
             }
         ),
         headers={"X-Grouper-User": username},
@@ -353,7 +352,6 @@ def test_permission_request_flow(
                 "permission_name": "grantable.one",
                 "argument": "some argument",
                 "reason": "blah blah black sheep",
-                "argument_type": "text",
             }
         ),
         headers={"X-Grouper-User": username},
@@ -397,7 +395,7 @@ def test_permission_request_flow(
     # (re)REQUEST: 'grantable.one', 'some argument' for 'serving-team'
     groupname = "serving-team"
     username = "zorkian@a.co"
-    fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
+    fe_url = url(base_url, f"/permissions/request?group={groupname}")
     resp = yield http_client.fetch(
         fe_url,
         method="POST",
@@ -406,7 +404,6 @@ def test_permission_request_flow(
                 "permission_name": "grantable.one",
                 "argument": "some argument",
                 "reason": "blah blah black sheep",
-                "argument_type": "text",
             }
         ),
         headers={"X-Grouper-User": username},
@@ -420,7 +417,7 @@ def test_permission_request_flow(
     # REQUEST: 'grantable.two', 'some argument' for 'serving-team'
     groupname = "serving-team"
     username = "zorkian@a.co"
-    fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
+    fe_url = url(base_url, f"/permissions/request?group={groupname}")
     resp = yield http_client.fetch(
         fe_url,
         method="POST",
@@ -429,7 +426,6 @@ def test_permission_request_flow(
                 "permission_name": "grantable.two",
                 "argument": "some argument",
                 "reason": "blah blah black sheep",
-                "argument_type": "text",
             }
         ),
         headers={"X-Grouper-User": username},
@@ -487,7 +483,7 @@ def test_limited_permissions(
     # SPECIFIC REQUEST: 'grantable.one', 'specific_arg' for 'sad-team'
     groupname = "sad-team"
     username = "zorkian@a.co"
-    fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
+    fe_url = url(base_url, f"/permissions/request?group={groupname}")
     resp = yield http_client.fetch(
         fe_url,
         method="POST",
@@ -496,7 +492,6 @@ def test_limited_permissions(
                 "permission_name": perm1.name,
                 "argument": "specific_arg",
                 "reason": "blah blah black sheep",
-                "argument_type": "text",
             }
         ),
         headers={"X-Grouper-User": username},
@@ -518,7 +513,7 @@ def test_limited_permissions_global_approvers(
     # SPECIFIC REQUEST: 'grantable.one', 'specific_arg' for 'sad-team'
     groupname = "sad-team"
     username = "zorkian@a.co"
-    fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
+    fe_url = url(base_url, f"/permissions/request?group={groupname}")
     resp = yield http_client.fetch(
         fe_url,
         method="POST",
@@ -546,7 +541,7 @@ def test_regress_permreq_global_approvers(
     perm_grant, _, perm1, _ = grantable_permissions
     groupname = "sad-team"
     username = "zorkian@a.co"
-    fe_url = url(base_url, "/groups/{}/permission/request".format(groupname))
+    fe_url = url(base_url, f"/permissions/request?group={groupname}")
     resp = yield http_client.fetch(fe_url, method="GET", headers={"X-Grouper-User": username})
     assert resp.code == 200
 

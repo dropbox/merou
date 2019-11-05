@@ -9,6 +9,8 @@ from grouper.constants import GROUP_ADMIN, PERMISSION_GRANT
 from grouper.entities.permission_grant import GroupPermissionGrant
 from itests.pages.exceptions import NoSuchElementException
 from itests.pages.groups import GroupViewPage, PermissionGrantPage
+from itests.pages.permission_request import PermissionRequestPage
+from itests.pages.permission_requests import PermissionRequestUpdatePage
 from itests.setup import frontend_server
 from plugins import group_ownership_policy
 from tests.url_util import url
@@ -162,3 +164,29 @@ def test_grant_permission(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) 
             grant_id=ANY,
         )
     ]
+
+
+def test_request_permission(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group", "owner")
+        setup.create_permission("some-permission")
+        setup.add_user_to_group("zorkian@a.co", "admins")
+        setup.grant_permission_to_group(PERMISSION_GRANT, "some-permission", "admins")
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group"))
+
+        group_page = GroupViewPage(browser)
+        group_page.click_request_permission_button()
+
+        request_page = PermissionRequestPage(browser)
+        request_page.set_select_value("permission_name", "some-permission")
+        request_page.fill_field("argument", "some-argument")
+        request_page.fill_field("reason", "testing")
+        request_page.submit_request()
+
+        assert browser.current_url.endswith("/permissions/requests/1")
+        update_page = PermissionRequestUpdatePage(browser)
+        assert update_page.has_text("some-group")
+        assert update_page.has_text("some-argument")
+        assert update_page.has_text("testing")

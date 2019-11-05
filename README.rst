@@ -13,10 +13,9 @@ merou
 Description
 -----------
 
-Merou is an application to allow users to create and manage
-memberships to their own groups.  It supports both Python 2.7 and Python 3
-(only tested with Python 3.7 currently).  Python 3 support is new and may
-still have some glitches.
+Merou is an application to allow users to create and manage memberships to
+their own groups.  It requires Python 3 (only tested with Python 3.7
+currently).
 
 **Note**: We renamed the project to avoid `a namespace conflict
 <https://github.com/Internet2/grouper>`_, but it isn't reflected in the
@@ -29,17 +28,14 @@ Installation
 ------------
 
 Standard Python package installation instructions apply. You will need
-development headers for MySQL and Python 3 available.
+Python 3 and development headers for MySQL.
 
 On Debian-based systems:
 
 .. code:: bash
 
-    apt-get install libmysqlclient-dev libpython3-dev libcurl4-openssl-dev libssl-dev
+    apt-get install libmysqlclient-dev libpython3-dev libcurl4-openssl-dev libssl-dev python3-pip
     pip3 install -e git+https://github.com/dropbox/merou#egg=grouper
-
-Alternately, you can install libpython2.7-dev and use pip2 to run Grouper
-under Python 2.
 
 Next you need to configure grouper to find a SQL-style backing database
 and stand up processes to serve the read-write web UI and read-only
@@ -120,20 +116,19 @@ chromium-driver is installed, the tests can be run using pytest:
     flake8
     mypy .
 
-`requirements-dev.txt` assumes you are using Python 3. If you are instead
-using Python 2, use `requirements-dev2.txt`, which will skip installing
-mypy and black (both of which are only available under Python 3).
-
 If you see test failures and suspect incompatible library versions (e.g.,
 an existing tornado install at a different major release than that in our
 `requirements.txt`), then you can try using a virtual environment.
 
 .. code:: bash
 
-    virtualenv ~/merou-venv
-    ~/merou-venv/bin/pip install -r requirements.txt
-    ~/merou-venv/bin/pip install -r requirements-dev.txt
-    ~/merou-venv/bin/pytest
+    $ virtualenv ~/merou-venv -p /usr/bin/python3
+    $ source ~/merou-venv/bin/activate
+    (merou-venv) $ pip install -r requirements.txt
+    (merou-venv) $ pip install -r requirements-dev.txt
+    (merou-venv) $ pytest
+    (merou-venv) $ deactivate
+    $
 
 All Merou code is formatted with black, which is installed by the
 `requirements-dev.txt` requirements file for Python 3. After installation,

@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
 
-class PermissionRequest(BasePlugin):
+class TestPermissionOwnersPlugin(BasePlugin):
     def get_owner_by_arg_by_perm(self, session):
         # type: (Session) -> Dict[str, Dict[str, List[Group]]]
         """Return a map of permissions to owners based on external information."""

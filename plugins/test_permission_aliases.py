@@ -8,7 +8,7 @@ argument to the "owner" permission.
 from grouper.plugin.base import BasePlugin
 
 
-class PermissionAliasesPlugin(BasePlugin):
+class TestPermissionAliasesPlugin(BasePlugin):
     def get_aliases_for_mapped_permission(self, session, permission, argument):
         if permission != "owner":
             return []

@@ -3,7 +3,6 @@ import hmac
 import os
 from datetime import datetime
 
-from six import PY2
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
@@ -13,10 +12,7 @@ from grouper.models.user import User
 
 def _make_secret():
     # type: () -> str
-    if PY2:
-        return os.urandom(20).encode("hex")
-    else:
-        return os.urandom(20).hex()
+    return os.urandom(20).hex()
 
 
 class UserToken(Model):

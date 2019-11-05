@@ -2,7 +2,7 @@
 
 {% from 'macros/ui.html' import group_panel, member_panel, permission_panel, log_entry_panel,
                                 help_for, account, shell_panel, tokens_panel, passwords_panel,
-                                public_key_panel %}
+                                public_key_panel, group_member_audit_status %}
 
 {% from 'macros/ui.html' import public_key_modal with context %}
 
@@ -224,19 +224,6 @@
 {% if group.audit and not group.audit.complete %}
 {# TODO(herb): audit db calls in this block #}
 
-{% macro audit_status(member) -%}
-    {% if member.member.name == current_user.name %}
-        <input type="hidden" name="audit_{{member.id}}" value="approved" />
-        approved
-    {% else %}
-        <select name="audit_{{member.id}}">
-            {% for status in statuses %}
-            <option {% if status == member.status %}selected{% endif %}>{{ status }}</option>
-            {% endfor %}
-        </select>
-    {% endif %}
-{% endmacro %}
-
 <div class="modal fade" id="auditModal" tabindex="-1" role="dialog"
       aria-labelledby="auditModal" aria-hidden="true" data-show="{{ "true" if group.audit and not group.audit.complete and current_user_role['is_owner'] else "false" }}">
     <div class="modal-dialog">
@@ -265,12 +252,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                    {% for member in group.audit.my_members() %}
+                    {% for ami in audit_members_infos %}
                         <tr>
-                            <td>{{ account(member.member) }}</td>
-                            <td>{{ member.edge.role }}</td>
+                            <td>{{ account(ami.member_obj) }}</td>
+                            <td>{{ ROLES[ami.audit_member_role] }}</td>
                             <td>
-                                {{ audit_status(member) }}
+                                {{ group_member_audit_status(current_user, ami.audit_member_obj, ami.member_obj, statuses) }}
                             </td>
                         </tr>
                     {% endfor %}

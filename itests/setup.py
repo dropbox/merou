@@ -30,7 +30,7 @@ def _bind_socket():
     return s
 
 
-def _wait_until_accept(port, timeout=3.0):
+def _wait_until_accept(port, timeout=5.0):
     # type: (int, float) -> None
     """Wait until a server accepts connections on the specified port."""
     deadline = time.time() + timeout
@@ -63,7 +63,7 @@ def api_server(tmpdir):
         sys.executable,
         src_path("bin", "grouper-api"),
         "-vvc",
-        src_path("config", "dev.yaml"),
+        src_path("config", "test.yaml"),
         "-d",
         db_url(tmpdir),
         "--listen-stdin",
@@ -95,7 +95,7 @@ def frontend_server(tmpdir, user):
         sys.executable,
         src_path("bin", "grouper-ctl"),
         "-vvc",
-        src_path("config", "dev.yaml"),
+        src_path("config", "test.yaml"),
         "user_proxy",
         "-P",
         str(fe_port),
@@ -107,7 +107,7 @@ def frontend_server(tmpdir, user):
         sys.executable,
         src_path("bin", "grouper-fe"),
         "-vvc",
-        src_path("config", "dev.yaml"),
+        src_path("config", "test.yaml"),
         "-d",
         db_url(tmpdir),
         "--listen-stdin",

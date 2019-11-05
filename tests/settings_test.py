@@ -65,7 +65,7 @@ def test_update_from_config(tmpdir):
     with open(config_path, "w") as config:
         config.write(CONFIG_BOGUS)
     settings.update_from_config(config_path)
-    assert settings._logger != "bar"
+    assert settings._logger != "bar"  # type: ignore[comparison-overlap]
     assert not hasattr(settings, "foo")
 
     # A configuration that doesn't set database or database_source should raise an exception.
@@ -94,7 +94,7 @@ def test_database():
     settings.database = ""
     settings.database_source = "/path/to/program"
     with patch("subprocess.check_output") as mock_subprocess:
-        mock_subprocess.return_value = "sqlite:///other.sqlite\n"
+        mock_subprocess.return_value = b"sqlite:///other.sqlite\n"
         assert settings.database == "sqlite:///other.sqlite"
         assert mock_subprocess.call_args_list == [
             call(["/path/to/program"], stderr=subprocess.STDOUT)
@@ -106,7 +106,7 @@ def test_database():
     with patch.object(Settings, "DB_URL_RETRY_DELAY", new=0):
         with patch("subprocess.check_output") as mock_subprocess:
             exception = subprocess.CalledProcessError(1, "/path/to/program")
-            mock_subprocess.side_effect = [exception, "sqlite:///third.sqlite"]
+            mock_subprocess.side_effect = [exception, b"sqlite:///third.sqlite"]
             assert settings.database == "sqlite:///third.sqlite"
             assert mock_subprocess.call_count == 2
 
@@ -115,7 +115,7 @@ def test_database():
     settings.database_source = "/path/to/program"
     with patch.object(Settings, "DB_URL_RETRY_DELAY", new=0):
         with patch("subprocess.check_output") as mock_subprocess:
-            mock_subprocess.side_effect = ["", "sqlite:///notempty.sqlite"]
+            mock_subprocess.side_effect = [b"", b"sqlite:///notempty.sqlite"]
             assert settings.database == "sqlite:///notempty.sqlite"
             assert mock_subprocess.call_count == 2
 
@@ -124,7 +124,7 @@ def test_database():
     settings.database_source = "/path/to/program"
     with patch.object(Settings, "DB_URL_RETRY_DELAY", new=0):
         with patch("subprocess.check_output") as mock_subprocess:
-            mock_subprocess.return_value = ""
+            mock_subprocess.return_value = b""
             with pytest.raises(DatabaseSourceException):
                 assert settings.database
 
@@ -139,7 +139,7 @@ def test_mask_passsword_in_logs(caplog):
 
     # Reading settings.database will run the external program and trigger the logging.
     with patch("subprocess.check_output") as mock_subprocess:
-        mock_subprocess.return_value = "mysql://user:password@example.com:8888/merou"
+        mock_subprocess.return_value = b"mysql://user:password@example.com:8888/merou"
         assert settings.database == test_url
 
     assert test_url not in caplog.text

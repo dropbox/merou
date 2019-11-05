@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from grouper.audit import get_group_audit_members_infos
 from grouper.fe.handlers.template_variables import get_role_user_view_template_vars
 from grouper.fe.util import GrouperHandler
 from grouper.models.group import Group
@@ -29,5 +30,6 @@ class RoleUserView(GrouperHandler):
             "service.html",
             user=user,
             group=group,
+            audit_members_infos=get_group_audit_members_infos(self.session, group),
             **get_role_user_view_template_vars(session, actor, user, group, graph)
         )

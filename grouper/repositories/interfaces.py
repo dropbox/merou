@@ -1,8 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
-from six import with_metaclass
-
 if TYPE_CHECKING:
     from datetime import datetime
     from grouper.entities.pagination import PaginatedList, Pagination
@@ -24,7 +22,7 @@ if TYPE_CHECKING:
     from typing import Dict, List, Optional
 
 
-class GroupEdgeRepository(with_metaclass(ABCMeta, object)):
+class GroupEdgeRepository(metaclass=ABCMeta):
     """Abstract base class for group edge repositories."""
 
     @abstractmethod
@@ -33,7 +31,7 @@ class GroupEdgeRepository(with_metaclass(ABCMeta, object)):
         pass
 
 
-class PermissionRepository(with_metaclass(ABCMeta, object)):
+class PermissionRepository(metaclass=ABCMeta):
     """Abstract base class for permission repositories."""
 
     @abstractmethod
@@ -59,7 +57,7 @@ class PermissionRepository(with_metaclass(ABCMeta, object)):
         pass
 
 
-class PermissionGrantRepository(with_metaclass(ABCMeta, object)):
+class PermissionGrantRepository(metaclass=ABCMeta):
     """Abstract base class for permission grant repositories."""
 
     @abstractmethod
@@ -88,6 +86,11 @@ class PermissionGrantRepository(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
+    def permission_grants_for_service_account(self, name):
+        # type: (str) -> List[ServiceAccountPermissionGrant]
+        pass
+
+    @abstractmethod
     def permission_grants_for_user(self, user):
         # type: (str) -> List[GroupPermissionGrant]
         pass
@@ -103,12 +106,17 @@ class PermissionGrantRepository(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
+    def service_account_has_permission(self, service, permission):
+        # type: (str, str) -> bool
+        pass
+
+    @abstractmethod
     def user_has_permission(self, user, permission):
         # type: (str, str) -> bool
         pass
 
 
-class UserRepository(with_metaclass(ABCMeta, object)):
+class UserRepository(metaclass=ABCMeta):
     """Abstract base class for user repositories."""
 
     @abstractmethod
@@ -122,12 +130,17 @@ class UserRepository(with_metaclass(ABCMeta, object)):
         pass
 
     @abstractmethod
+    def user_exists(self, name):
+        # type: (str) -> bool
+        pass
+
+    @abstractmethod
     def user_is_enabled(self, name):
         # type: (str) -> bool
         pass
 
 
-class RepositoryFactory(with_metaclass(ABCMeta, object)):
+class RepositoryFactory(metaclass=ABCMeta):
     """Abstract base class for repository factories."""
 
     @abstractmethod

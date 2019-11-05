@@ -7,13 +7,14 @@ from grouper.entities.group_edge import APPROVER_ROLE_INDICES, GROUP_EDGE_ROLES
 from grouper.fe.forms import GroupJoinForm
 from grouper.fe.settings import settings
 from grouper.fe.util import Alert, GrouperHandler
+from grouper.group_requests import count_requests_by_group
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group, GROUP_JOIN_CHOICES
 from grouper.models.user import User
 from grouper.user_group import get_groups_by_user
 
 if TYPE_CHECKING:
-    from typing import Any, List, Optional, Tuple, Union
+    from typing import Any, Mapping, List, Optional, Set, Tuple, Union
 
 
 class GroupJoin(GrouperHandler):
@@ -28,9 +29,19 @@ class GroupJoin(GrouperHandler):
 
         group_md = self.graph.get_group_details(group.name)
 
+        members = group.my_members()
+        member_groups = {g for t, g in members if t == "Group"}
+        user_is_member = self._is_user_a_member(group, members)
+
         form = GroupJoinForm()
-        form.member.choices = self._get_choices(group)
-        return self.render("group-join.html", form=form, group=group, audited=group_md["audited"])
+        form.member.choices = self._get_choices(group, member_groups, user_is_member)
+        return self.render(
+            "group-join.html",
+            form=form,
+            group=group,
+            audited=group_md["audited"],
+            user_is_member=user_is_member,
+        )
 
     def post(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
@@ -41,8 +52,12 @@ class GroupJoin(GrouperHandler):
         if not group or not group.enabled:
             return self.notfound()
 
+        members = group.my_members()
+        member_groups = {g for t, g in members if t == "Group"}
+        user_is_member = self._is_user_a_member(group, members)
+
         form = GroupJoinForm(self.request.arguments)
-        form.member.choices = self._get_choices(group)
+        form.member.choices = self._get_choices(group, member_groups, user_is_member)
         if not form.validate():
             return self.render(
                 "group-join.html", form=form, group=group, alerts=self.get_form_alerts(form.errors)
@@ -173,24 +188,38 @@ class GroupJoin(GrouperHandler):
 
         return self.session.query(resource).filter_by(name=member_name, enabled=True).one()
 
-    def _get_choices(self, group):
-        # type: (Group) -> List[Tuple[str, ...]]
-        # This returns List[Tuple[str, str]], but mypy is confused by the * 2 syntax.
+    def _get_choices(self, group, member_groups, user_is_member):
+        # type: (Group, Set[str], bool) -> List[Tuple[str, str]]
         choices = []
 
-        members = group.my_members()
-
-        if ("User", self.current_user.name) not in members:
-            choices.append(("User: {}".format(self.current_user.name),) * 2)
+        if not user_is_member:
+            choice = "User: {}".format(self.current_user.name)
+            choices.append((choice, choice))
 
         for _group, group_edge in get_groups_by_user(self.session, self.current_user):
             if group.name == _group.name:  # Don't add self.
                 continue
             if group_edge._role not in APPROVER_ROLE_INDICES:  # manager, owner, and np-owner only.
                 continue
-            if ("Group", _group.name) in members:
+            if _group.name in member_groups:
                 continue
 
-            choices.append(("Group: {}".format(_group.name),) * 2)
+            choice = "Group: {}".format(_group.name)
+            choices.append((choice, choice))
+
+        # If there are some choices but the user is already a member or has a pending request, add
+        # a blank option as the first choice to avoid the user requesting membership on behalf of a
+        # group by mistake.
+        if choices and user_is_member:
+            choices.insert(0, ("", ""))
 
         return choices
+
+    def _is_user_a_member(self, group, members):
+        # type: (Group, Mapping[Tuple[str, str], Any]) -> bool
+        """Returns whether the current user is a member or has a pending membership request."""
+        if ("User", self.current_user.name) in members:
+            return True
+        if count_requests_by_group(self.session, group, "pending", self.current_user) > 0:
+            return True
+        return False

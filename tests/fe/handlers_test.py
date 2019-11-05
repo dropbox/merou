@@ -1,8 +1,9 @@
+import time
 from datetime import date, datetime, timedelta
+from urllib.parse import urlencode
 
 import pytest
-from mock import patch
-from six.moves.urllib.parse import urlencode
+from mock import Mock, patch
 from tornado.httpclient import HTTPError
 
 from grouper.models.async_notification import AsyncNotification
@@ -10,6 +11,7 @@ from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
 from grouper.models.request import Request
 from grouper.models.user import User
+from grouper.plugin import get_plugin_proxy
 from grouper.public_key import BadPublicKey, get_public_keys_of_user
 from grouper.role_user import (
     create_role_user,
@@ -865,3 +867,36 @@ def test_group_request_cancelled(session, users, groups, http_client, base_url):
 
     request = Request.get(session, requester_id=user.id, requesting_id=group.id)
     assert request.status == "cancelled"
+
+
+@pytest.mark.gen_test
+def test_request_logging(session, users, http_client, base_url):  # noqa: F811
+    """Test that the fe request handlers properly log stats"""
+    mock_plugin = Mock()
+    get_plugin_proxy().add_plugin(mock_plugin)
+
+    user = users["zorkian@a.co"]
+    fe_url = url(base_url, "/users")
+    start_time = time.time()
+    resp = yield http_client.fetch(fe_url, method="GET", headers={"X-Grouper-User": user.username})
+    duration_ms = (time.time() - start_time) * 1000
+    assert resp.code == 200
+    assert mock_plugin.log_request.call_count == 1
+    assert mock_plugin.log_request.call_args_list[0][0][0] == "UsersView"
+    assert mock_plugin.log_request.call_args_list[0][0][1] == 200
+    # the reported value should be within 1s of our own observation
+    assert abs(mock_plugin.log_request.call_args_list[0][0][2] - duration_ms) <= 1000
+
+    mock_plugin.log_request.reset_mock()
+    start_time = time.time()
+    with pytest.raises(HTTPError):
+        fe_url = url(base_url, "/groups/{}".format("does-not-exist"))
+        resp = yield http_client.fetch(
+            fe_url, method="GET", headers={"X-Grouper-User": user.username}
+        )
+    duration_ms = (time.time() - start_time) * 1000
+    assert mock_plugin.log_request.call_count == 1
+    assert mock_plugin.log_request.call_args_list[0][0][0] == "GroupView"
+    assert mock_plugin.log_request.call_args_list[0][0][1] == 404
+    # the reported value should be within 1s of our own observation
+    assert abs(mock_plugin.log_request.call_args_list[0][0][2] - duration_ms) <= 1000

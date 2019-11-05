@@ -1,8 +1,6 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from six import iteritems
-
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.comment import Comment
@@ -35,7 +33,7 @@ class MemberNotFound(Exception):
 
 def _serialize_changes(edge, **updates):
     changes = {}
-    for key, value in iteritems(updates):
+    for key, value in updates.items():
         if key not in ("role", "expiration", "active"):
             continue
         if getattr(edge, key) != value:

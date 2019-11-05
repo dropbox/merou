@@ -84,6 +84,7 @@ HANDLERS = [
     (r"/github/link_begin/(?P<user_id>[0-9]+)", GitHubLinkBeginView),
     (r"/github/link_complete/(?P<user_id>[0-9]+)", GitHubLinkCompleteView),
     (r"/groups", GroupsView),
+    (r"/groups/{}/service/create".format(NAME_VALIDATION), ServiceAccountCreate),
     (r"/permissions/create", PermissionsCreate),
     (r"/permissions/request", PermissionRequest),
     (r"/permissions/requests", PermissionsRequests),
@@ -106,6 +107,9 @@ HANDLERS = [
     (r"/user/requests", UserRequests),
 ]  # type: List[Tuple[str, Type[RequestHandler]]]
 
+# We currently allow users to be referenced by either the name or the user ID, but it's not clear
+# the latter is ever useful and it leaks database user IDs into the UI.  Consider moving any new
+# routes into the HANDLERS definition above using only USERNAME_VALIDATION.
 for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
     HANDLERS.extend(
         [
@@ -125,6 +129,9 @@ for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
         ]
     )
 
+# We currently allow groups to be referenced by either the name or the group ID, but it's not clear
+# the latter is ever useful and it leaks database group IDs into the UI.  Consider moving any new
+# routes into the HANDLERS definition above using only NAME_VALIDATION.
 for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
     HANDLERS.extend(
         [
@@ -143,10 +150,13 @@ for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
             (r"/groups/{}/requests".format(regex), GroupRequests),
             (r"/groups/{}/requests/(?P<request_id>[0-9]+)".format(regex), GroupRequestUpdate),
             (r"/groups/{}/permission/request".format(regex), GroupPermissionRequest),
-            (r"/groups/{}/service/create".format(regex), ServiceAccountCreate),
         ]
     )
 
+# We currently allow groups and service accounts to be referenced by either the name or the group
+# or user ID, but it's not clear the latter is ever useful and it leaks database group and user IDs
+# into the UI.  Consider moving any new routes into the HANDLERS definition above using only
+# NAME_VALIDATION and SERVICE_ACCOUNT_VALIDATION.
 for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
     for service_regex in (r"(?P<account_id>[0-9]+)", SERVICE_ACCOUNT_VALIDATION):
         HANDLERS.extend(

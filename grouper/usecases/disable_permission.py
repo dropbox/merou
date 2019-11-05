@@ -1,8 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
-from six import with_metaclass
-
 from grouper.usecases.authorization import Authorization
 
 if TYPE_CHECKING:
@@ -18,7 +16,7 @@ if TYPE_CHECKING:
     from typing import List
 
 
-class DisablePermissionUI(with_metaclass(ABCMeta, object)):
+class DisablePermissionUI(metaclass=ABCMeta):
     """Abstract base class for UI for DisablePermission."""
 
     @abstractmethod

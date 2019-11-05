@@ -258,4 +258,12 @@ $(function () {
         $(".join-group-form .clickthru-checkbox").prop("checked", true);
         $(".join-group-form").submit();
     });
+
+    // The form with id submitOnce disables itself after being clicked and
+    // switches the cursor to the progress cursor.
+    $('#submitOnce').one('submit', function() {
+        $('body').addClass('waiting');
+        $(this).addClass('waiting');
+        $(this).find(':submit').prop('disabled', true);
+    });
 });

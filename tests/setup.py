@@ -32,7 +32,6 @@ from grouper.graph import GroupGraph
 from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
-from grouper.models.group_service_accounts import GroupServiceAccount
 from grouper.models.permission import Permission
 from grouper.models.permission_map import PermissionMap
 from grouper.models.public_key import PublicKey
@@ -72,7 +71,7 @@ class SetupTest(object):
         settings: Settings object for tests (only the database is configured)
         graph: Underlying graph (not refreshed from the database automatically!)
         session: The underlying database session
-        plugin_proxy: The plugin proxy used for the tests
+        plugins: The plugin proxy used for the tests
         repository_factory: Factory for repository objects
         sql_repository_factory: Factory that returns only SQL repository objects (no graph)
         service_factory: Factory for service objects
@@ -83,25 +82,25 @@ class SetupTest(object):
         # type: (LocalPath) -> None
         self.settings = Settings()
         self.settings.database = db_url(tmpdir)
-        self.plugin_proxy = PluginProxy([])
+        self.plugins = PluginProxy([])
 
         # Reinitialize the global plugin proxy with an empty set of plugins in case a previous test
         # initialized plugins.  This can go away once a plugin proxy is injected into everything
         # that needs it instead of maintained as a global.
-        set_global_plugin_proxy(self.plugin_proxy)
+        set_global_plugin_proxy(self.plugins)
 
         self.initialize_database()
         self.session = SessionFactory(self.settings).create_session()
         self.graph = GroupGraph()
         session_factory = SingletonSessionFactory(self.session)
         self.repository_factory = GraphRepositoryFactory(
-            self.settings, self.plugin_proxy, session_factory, self.graph
+            self.settings, self.plugins, session_factory, self.graph
         )
         self.sql_repository_factory = SQLRepositoryFactory(
-            self.settings, self.plugin_proxy, session_factory
+            self.settings, self.plugins, session_factory
         )
-        self.service_factory = ServiceFactory(self.repository_factory)
-        self.usecase_factory = UseCaseFactory(self.settings, self.service_factory)
+        self.service_factory = ServiceFactory(self.settings, self.plugins, self.repository_factory)
+        self.usecase_factory = UseCaseFactory(self.settings, self.plugins, self.service_factory)
         self._transaction_service = self.service_factory.create_transaction_service()
 
     def initialize_database(self):
@@ -223,27 +222,13 @@ class SetupTest(object):
             requester=user_obj, user_or_group=user_obj, reason="", status="pending", role=role
         )
 
-    def create_service_account(self, service_account, owner, description="", machine_set=""):
+    def create_service_account(self, service_account, owner, machine_set="", description=""):
         # type: (str, str, str, str) -> None
         self.create_group(owner)
-        group_obj = Group.get(self.session, name=owner)
-        assert group_obj
-
-        if User.get(self.session, name=service_account):
-            return
-        user = User(username=service_account)
-        user.add(self.session)
-        service_account_obj = ServiceAccount(
-            user_id=user.id, description=description, machine_set=machine_set
+        service_account_repository = self.repository_factory.create_service_account_repository()
+        service_account_repository.create_service_account(
+            service_account, owner, machine_set, description
         )
-        service_account_obj.add(self.session)
-        user.is_service_account = True
-
-        self.session.flush()
-        owner_map = GroupServiceAccount(
-            group_id=group_obj.id, service_account_id=service_account_obj.id
-        )
-        owner_map.add(self.session)
 
     def grant_permission_to_service_account(self, permission, argument, service_account):
         # type: (str, str, str) -> None

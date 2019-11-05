@@ -4,7 +4,7 @@ import sys
 from typing import TYPE_CHECKING
 
 from grouper import __version__
-from grouper.ctl import group, oneoff, service_account, shell
+from grouper.ctl import group, oneoff, shell
 from grouper.ctl.factory import CtlCommandFactory
 from grouper.ctl.settings import CtlSettings
 from grouper.initialization import create_sql_usecase_factory
@@ -51,8 +51,8 @@ def main(sys_argv=sys.argv, session=None):
     CtlCommandFactory.add_all_parsers(subparsers)
 
     # Add parsers for legacy commands that have not been refactored.
-    for subcommand_module in [group, oneoff, service_account, shell]:
-        subcommand_module.add_parser(subparsers)  # type: ignore
+    for subcommand_module in [group, oneoff, shell]:
+        subcommand_module.add_parser(subparsers)  # type: ignore[attr-defined]
 
     args = parser.parse_args(sys_argv[1:])
 

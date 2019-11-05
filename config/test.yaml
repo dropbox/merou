@@ -1,0 +1,63 @@
+# This is a stripped-down configuration file intended for use by the
+# integration test suite, with some special settings such as enabled test
+# plugins.  See dev.yaml for a sample configuration file for a production
+# instance and a configuration intended for use when testing locally.
+#
+# Keep attributes here in the same order as in config/dev.yaml.
+
+common:
+    auditors_group: "grouper-auditors"
+    database: "sqlite:///grouper.sqlite"
+    database_source: ""
+    date_format: "%Y-%m-%d %I:%M %p"
+    expiration_notice_days: 7
+    log_format: "%(asctime)-15s\t%(levelname)s\t%(message)s  [%(name)s]"
+    plugin_dirs: []
+    plugin_module_paths:
+      - plugins.group_ownership_policy
+      - plugins.ssh_key_policy
+      - plugins.test_machine_set
+      - plugins.test_permission_aliases
+      - plugins.test_permission_owners
+    restricted_ownership_permissions:
+      - "sample.permission"
+    send_emails: false
+    smtp_server: "localhost"
+    smtp_use_ssl: false
+    smtp_username: ""
+    smtp_password: ""
+    from_addr: "no-reply@grouper.local"
+    service_account_email_domain: "svc.localhost"
+    timezone: "UTC"
+    url: "http://127.0.0.1:8888"
+    user_auth_header: "X-Grouper-User"
+
+api:
+    address: "127.0.0.1"
+    port: 8990
+    debug: true
+    num_processes: 1
+    refresh_interval: 1
+
+background:
+    sleep_interval: 60
+
+ctl:
+    oneoff_dirs: []
+    oneoff_module_paths:
+      - oneoffs.check_public_keys
+      - oneoffs.refresh_public_keys
+
+fe:
+    address: "127.0.0.1"
+    port: 8989
+    cdnjs_prefix: "https://cdnjs.cloudflare.com"
+    debug: true
+    how_to_get_help: "if this is prod, ask someone to fix the how_to_get_help setting"
+    num_processes: 1
+    permission_request_dropdown_help: ""
+    permission_request_text_help: ""
+    refresh_interval: 1
+    shell:
+        - [/bin/false, Your administrator has not configured Grouper for shell management]
+    site_docs: []

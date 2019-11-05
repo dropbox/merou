@@ -1,7 +1,7 @@
 from datetime import date, timedelta
+from urllib.parse import urlencode
 
 import pytest
-from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 
 from grouper.graph import NoSuchGroup

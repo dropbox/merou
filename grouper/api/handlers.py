@@ -4,14 +4,12 @@ import sys
 import traceback
 from contextlib import closing
 from datetime import datetime
+from io import StringIO
 from typing import TYPE_CHECKING
 
-from six import iteritems, StringIO
-from tornado.web import HTTPError
+from tornado.web import HTTPError, RequestHandler
 
-from grouper import stats
 from grouper.constants import TOKEN_FORMAT
-from grouper.error_reporting import SentryHandler
 from grouper.graph import NoSuchGroup, NoSuchUser
 from grouper.models.base.session import Session
 from grouper.models.public_key import PublicKey
@@ -28,8 +26,10 @@ if TYPE_CHECKING:
     from grouper.entities.permission_grant import UniqueGrantsOfPermission
     from grouper.entities.user import User
     from grouper.graph import GroupGraph
+    from grouper.plugin.proxy import PluginProxy
     from grouper.usecases.factory import UseCaseFactory
-    from typing import Any, Dict, Iterable, Optional, Tuple
+    from types import TracebackType
+    from typing import Any, Dict, Iterable, Optional, Tuple, Type
 
 
 def get_individual_user_info(handler, name, service_account):
@@ -67,31 +67,35 @@ def get_individual_user_info(handler, name, service_account):
         return out
 
 
-class GraphHandler(SentryHandler):
+class GraphHandler(RequestHandler):
     def initialize(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         self.graph = kwargs["graph"]  # type: GroupGraph
         self.usecase_factory = kwargs["usecase_factory"]  # type: UseCaseFactory
+        self.plugins = kwargs["plugins"]  # type: PluginProxy
 
         self._request_start_time = datetime.utcnow()
 
-        stats.log_rate("requests", 1)
-        stats.log_rate("requests_{}".format(self.__class__.__name__), 1)
-
     def on_finish(self):
         # type: () -> None
-        # log request duration
-        duration = datetime.utcnow() - self._request_start_time
-        duration_ms = int(duration.total_seconds() * 1000)
-
-        stats.log_rate("duration_ms", duration_ms)
-        stats.log_rate("duration_ms_{}".format(self.__class__.__name__), duration_ms)
-
-        # log response status code
+        handler = self.__class__.__name__
         response_status = self.get_status()
+        duration_ms = int((datetime.utcnow() - self._request_start_time).total_seconds() * 1000)
+        self.plugins.log_request(handler, response_status, duration_ms)
 
-        stats.log_rate("response_status_{}".format(response_status), 1)
-        stats.log_rate("response_status_{}_{}".format(self.__class__.__name__, response_status), 1)
+    def log_exception(
+        self,
+        exc_type,  # type: Optional[Type[BaseException]]
+        exc_value,  # type: Optional[BaseException]
+        exc_tb,  # type: Optional[TracebackType]
+    ):
+        # type: (...) -> None
+        if isinstance(exc_value, HTTPError):
+            status_code = exc_value.status_code
+        else:
+            status_code = 500
+        self.plugins.log_exception(self.request, status_code, exc_type, exc_value, exc_tb)
+        super(GraphHandler, self).log_exception(exc_type, exc_value, exc_tb)
 
     def error(self, errors):
         # type: (Iterable[Tuple[int, Any]]) -> None
@@ -168,7 +172,7 @@ class Users(GraphHandler):
                     "users": sorted(
                         [
                             k
-                            for k, v in iteritems(self.graph.user_metadata)
+                            for k, v in self.graph.user_metadata.items()
                             if (
                                 include_service_accounts
                                 or not ("service_account" in v or v["role_user"])
@@ -183,7 +187,7 @@ class UserMetadata(GraphHandler, ListUsersUI):
     def listed_users(self, users):
         # type: (Dict[str, User]) -> None
         users_dict = {}  # type: Dict[str, Dict[str, Any]]
-        for user, data in iteritems(users):
+        for user, data in users.items():
             metadata = {m.key: m.value for m in data.metadata}
             public_keys = [
                 {
@@ -278,7 +282,7 @@ class Grants(GraphHandler, ListGrantsUI):
                 "role_users": v.role_users,
                 "service_accounts": v.service_accounts,
             }
-            for k, v in iteritems(grants)
+            for k, v in grants.items()
         }
         self.success({"permissions": grants_dict})
 
@@ -384,7 +388,7 @@ class ServiceAccounts(GraphHandler):
                     "service_accounts": sorted(
                         [
                             k
-                            for k, v in iteritems(self.graph.user_metadata)
+                            for k, v in self.graph.user_metadata.items()
                             if "service_account" in v or v["role_user"]
                         ]
                     )

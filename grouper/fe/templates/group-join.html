@@ -21,13 +21,21 @@
                 <h3 class="panel-title">Join Group</h3>
            </div>
             <div class="panel-body">
+                {% if user_is_member %}
+                <div class="alert alert-warning">
+                    You are either already a member of this group or have a pending membership
+                    request. You can also request membership on behalf of a group in order to nest
+                    a group inside another, but be sure this is what you intended to do. (It
+                    usually is not.)
+                </div>
+                {% endif %}
                 {% if audited %}
                 <div class="alert alert-warning">
                     <strong>Membership in this group is audited.</strong> Your access to this
                     group will be regularly reviewed according to the production access policy.
                 </div>
                 {% endif %}
-                <form class="form-horizontal join-group-form" role="form"
+                <form id="submitOnce" class="form-horizontal join-group-form" role="form"
                       method="post" action="/groups/{{group.name}}/join">
                     {% include "forms/group-join.html" %}
                     {% if group.require_clickthru_tojoin %}
@@ -54,9 +62,9 @@
 {% else %}
     <div class="col-md-8 col-md-offset-2">
         <div class="alert alert-danger" role="alert">
-            You and all Groups you are a manager/owner/np-owner of are already members of
-            the <em>{{group.name}}</em> Group. You can modify memberships from the member
-            list <a href="/groups/{{group.name}}">here</a>.
+            You and all groups you are a manager/owner/np-owner of are either already members of
+            the <em>{{group.name}}</em> group or have pending requests to join. You can modify
+            memberships from the member list <a href="/groups/{{group.name}}">here</a>.
         </div>
     </div>
 {% endif %}

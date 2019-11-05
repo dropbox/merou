@@ -1,9 +1,9 @@
-from collections import namedtuple
 from datetime import datetime, timedelta
+from typing import List, NamedTuple
+from urllib.parse import urlencode
 
 import pytest
 from mock import call, Mock, patch
-from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 
 from grouper.audit import (
@@ -11,6 +11,7 @@ from grouper.audit import (
     assert_controllers_are_auditors,
     get_auditors_group,
     get_audits,
+    get_group_audit_members_infos,
     GroupDoesNotHaveAuditPermission,
     user_is_auditor,
     UserNotAuditor,
@@ -170,15 +171,33 @@ def test_audit_end_to_end(session, users, groups, http_client, base_url, graph):
     assert groupname in [x.group.name for x in open_audits], "group we expect also gets audit"
 
     # pull all the info we need to resolve audits, avoids detached sqlalchemy sessions
-    AuditMember = namedtuple("AuditMember", "am_id, edge_type, edge_id")
-    Audit = namedtuple("Audit", "audit_id, owner_name, group_name, audit_members")
+    # (DetachedInstanceError)
+    MyAuditMemberInfo = NamedTuple(
+        "MyAuditMemberInfo", [("am_id", int), ("edge_type", int), ("edge_id", int)]
+    )
+    Audit = NamedTuple(
+        "Audit",
+        [
+            ("audit_id", int),
+            ("owner_name", str),
+            ("group_name", str),
+            ("audit_members_infos", List[MyAuditMemberInfo]),
+        ],
+    )
     all_group_ids = [x.group.id for x in open_audits]
     open_audits = [
         Audit(
             x.id,
             next(iter(x.group.my_owners())),
             x.group.name,
-            [AuditMember(am.id, am.edge.member_type, am.edge_id) for am in x.my_members()],
+            [
+                MyAuditMemberInfo(
+                    ami.audit_member_obj.id,
+                    ami.audit_member_obj.edge.member_type,
+                    ami.audit_member_obj.edge_id,
+                )
+                for ami in get_group_audit_members_infos(session, x.group)
+            ],
         )
         for x in open_audits
     ]
@@ -192,7 +211,7 @@ def test_audit_end_to_end(session, users, groups, http_client, base_url, graph):
 
         # blanket approval
         body = urlencode(
-            {"audit_{}".format(am.am_id): "approved" for am in one_audit.audit_members}
+            {"audit_{}".format(ami.am_id): "approved" for ami in one_audit.audit_members_infos}
         )
 
         resp = yield http_client.fetch(
@@ -207,13 +226,13 @@ def test_audit_end_to_end(session, users, groups, http_client, base_url, graph):
     one_audit.id
 
     body_dict = {}
-    for am in one_audit.my_members():
-        if gary_id == am.member.id:
+    for ami in get_group_audit_members_infos(session, one_audit.group):
+        if gary_id == ami.member_obj.id:
             # deny
-            body_dict["audit_{}".format(am.id)] = "remove"
+            body_dict["audit_{}".format(ami.audit_member_obj.id)] = "remove"
         else:
             # approve
-            body_dict["audit_{}".format(am.id)] = "approved"
+            body_dict["audit_{}".format(ami.audit_member_obj.id)] = "approved"
 
     owner_name = next(iter(one_audit.group.my_owners()))
     fe_url = url(base_url, "/audits/{}/complete".format(one_audit.id))

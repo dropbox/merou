@@ -2,11 +2,10 @@ from __future__ import print_function
 
 import getpass
 import logging
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import cast, TYPE_CHECKING
-
-from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-from six.moves.urllib.error import HTTPError, URLError
-from six.moves.urllib.request import build_opener, HTTPErrorProcessor, Request
+from urllib.error import HTTPError, URLError
+from urllib.request import build_opener, HTTPErrorProcessor, Request
 
 from grouper.ctl.base import CtlCommand
 

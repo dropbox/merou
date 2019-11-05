@@ -5,17 +5,15 @@ import sys
 from datetime import datetime
 from functools import wraps
 from typing import TYPE_CHECKING
+from urllib.parse import quote, unquote, urlencode, urljoin
 from uuid import uuid4
 
 import sqlalchemy.exc
 import tornado.web
 from plop.collector import Collector
-from six import iteritems
-from six.moves.urllib.parse import quote, unquote, urlencode, urljoin
+from tornado.web import HTTPError, RequestHandler
 
-from grouper import stats
 from grouper.constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATION
-from grouper.error_reporting import SentryHandler
 from grouper.fe.settings import settings
 from grouper.graph import Graph
 from grouper.initialization import create_graph_usecase_factory
@@ -28,7 +26,8 @@ from grouper.user_permissions import user_permissions
 
 if TYPE_CHECKING:
     from grouper.fe.templating import FrontendTemplateEngine
-    from typing import Any, Callable, Dict, List, Optional, Text
+    from types import TracebackType
+    from typing import Any, Callable, Dict, List, Optional, Text, Type
 
 
 class Alert(object):
@@ -49,7 +48,7 @@ class InvalidUser(Exception):
     pass
 
 
-class GrouperHandler(SentryHandler):
+class GrouperHandler(RequestHandler):
     def initialize(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         self.graph = Graph()
@@ -71,13 +70,24 @@ class GrouperHandler(SentryHandler):
 
         self._request_start_time = datetime.utcnow()
 
-        stats.log_rate("requests", 1)
-        stats.log_rate("requests_{}".format(self.__class__.__name__), 1)
-
     def set_default_headers(self):
         # type: () -> None
         self.set_header("Content-Security-Policy", self.settings["template_engine"].csp_header())
         self.set_header("Referrer-Policy", "same-origin")
+
+    def log_exception(
+        self,
+        exc_type,  # type: Optional[Type[BaseException]]
+        exc_value,  # type: Optional[BaseException]
+        exc_tb,  # type: Optional[TracebackType]
+    ):
+        # type: (...) -> None
+        if isinstance(exc_value, HTTPError):
+            status_code = exc_value.status_code
+        else:
+            status_code = 500
+        self.plugins.log_exception(self.request, status_code, exc_type, exc_value, exc_tb)
+        super(GrouperHandler, self).log_exception(exc_type, exc_value, exc_tb)
 
     def write_error(self, status_code, **kwargs):
         # type: (int, **Any) -> None
@@ -193,18 +203,10 @@ class GrouperHandler(SentryHandler):
 
         self.session.close()
 
-        # log request duration
-        duration = datetime.utcnow() - self._request_start_time
-        duration_ms = int(duration.total_seconds() * 1000)
-
-        stats.log_rate("duration_ms", duration_ms)
-        stats.log_rate("duration_ms_{}".format(self.__class__.__name__), duration_ms)
-
-        # log response status code
+        handler = self.__class__.__name__
+        duration_ms = int((datetime.utcnow() - self._request_start_time).total_seconds() * 1000)
         response_status = self.get_status()
-
-        stats.log_rate("response_status_{}".format(response_status), 1)
-        stats.log_rate("response_status_{}_{}".format(self.__class__.__name__, response_status), 1)
+        self.plugins.log_request(handler, response_status, duration_ms)
 
     def update_qs(self, **kwargs):
         # type: (**Any) -> str
@@ -272,7 +274,7 @@ class GrouperHandler(SentryHandler):
     def get_form_alerts(self, errors):
         # type: (Dict[str, List[str]]) -> List[Alert]
         alerts = []
-        for field, field_errors in iteritems(errors):
+        for field, field_errors in errors.items():
             for error in field_errors:
                 alerts.append(Alert("danger", error, field))
         return alerts
@@ -286,10 +288,7 @@ class GrouperHandler(SentryHandler):
 
     def log_message(self, message, **kwargs):
         # type: (str, **Any) -> None
-        if getattr(self, "captureMessage", None):
-            self.captureMessage(message, **kwargs)
-        else:
-            logging.info("{}, kwargs={}".format(message, kwargs))
+        logging.info("{}, kwargs={}".format(message, kwargs))
 
     def badrequest(self):
         # type: () -> None
@@ -315,13 +314,6 @@ class GrouperHandler(SentryHandler):
         self.set_status(404)
         self.raise_and_log_exception(tornado.web.HTTPError(404))
         self.render("errors/notfound.html")
-
-    def get_sentry_user_info(self):
-        # type: () -> Dict[str, Optional[str]]
-        if self.current_user:
-            return {"username": self.current_user.username}
-        else:
-            return {"username": None}
 
 
 def test_reserved_names(permission_name):

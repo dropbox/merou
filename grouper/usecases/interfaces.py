@@ -14,8 +14,6 @@ By convention, all class names here end in Interface or Exception.
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
-from six import with_metaclass
-
 if TYPE_CHECKING:
     from datetime import datetime
     from grouper.entities.audit_log_entry import AuditLogEntry
@@ -31,10 +29,10 @@ if TYPE_CHECKING:
     from grouper.entities.user import User
     from grouper.usecases.authorization import Authorization
     from grouper.usecases.list_permissions import ListPermissionsSortKey
-    from typing import ContextManager, Dict, List, Optional
+    from typing import ContextManager, Dict, List, Optional, Tuple
 
 
-class AuditLogInterface(with_metaclass(ABCMeta, object)):
+class AuditLogInterface(metaclass=ABCMeta):
     """Abstract base class for the audit log.
 
     The date parameter to the log methods is primarily for use in tests, where to get a consistent
@@ -55,6 +53,11 @@ class AuditLogInterface(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def entries_affecting_user(self, user, limit):
         # type: (str, int) -> List[AuditLogEntry]
+        pass
+
+    @abstractmethod
+    def log_create_service_account(self, service, owner, authorization, date=None):
+        # type: (str, str, Authorization, Optional[datetime]) -> None
         pass
 
     @abstractmethod
@@ -112,7 +115,7 @@ class AuditLogInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
-class GroupInterface(with_metaclass(ABCMeta, object)):
+class GroupInterface(metaclass=ABCMeta):
     """Abstract base class for group operations and queries."""
 
     @abstractmethod
@@ -136,7 +139,7 @@ class GroupInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
-class GroupRequestInterface(with_metaclass(ABCMeta, object)):
+class GroupRequestInterface(metaclass=ABCMeta):
     """Abstract base class for requests for group membership."""
 
     @abstractmethod
@@ -145,7 +148,7 @@ class GroupRequestInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
-class PermissionInterface(with_metaclass(ABCMeta, object)):
+class PermissionInterface(metaclass=ABCMeta):
     """Abstract base class for permission operations and queries."""
 
     @abstractmethod
@@ -204,7 +207,7 @@ class PermissionInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
-class SchemaInterface(with_metaclass(ABCMeta, object)):
+class SchemaInterface(metaclass=ABCMeta):
     """Abstract base class for low-level schema manipulation."""
 
     @abstractmethod
@@ -218,8 +221,13 @@ class SchemaInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
-class ServiceAccountInterface(with_metaclass(ABCMeta, object)):
+class ServiceAccountInterface(metaclass=ABCMeta):
     """Abstract base class for service account operations and queries."""
+
+    @abstractmethod
+    def create_service_account(self, service, owner, machine_set, description, authorization):
+        # type: (str, str, str, str, Authorization) -> None
+        pass
 
     @abstractmethod
     def create_service_account_from_disabled_user(self, user, authorization):
@@ -231,8 +239,28 @@ class ServiceAccountInterface(with_metaclass(ABCMeta, object)):
         # type: (str, str, Authorization) -> None
         pass
 
+    @abstractmethod
+    def is_valid_service_account_name(self, name):
+        # type: (str) -> Tuple[bool, Optional[str]]
+        pass
 
-class TransactionInterface(with_metaclass(ABCMeta, object)):
+    @abstractmethod
+    def permission_grants_for_service_account(self, user):
+        # type: (str) -> List[ServiceAccountPermissionGrant]
+        pass
+
+    @abstractmethod
+    def service_account_exists(self, service):
+        # type: (str) -> bool
+        pass
+
+    @abstractmethod
+    def service_account_is_user_admin(self, user):
+        # type: (str) -> bool
+        pass
+
+
+class TransactionInterface(metaclass=ABCMeta):
     """Abstract base class for starting and committing transactions."""
 
     def transaction(self):
@@ -240,7 +268,7 @@ class TransactionInterface(with_metaclass(ABCMeta, object)):
         pass
 
 
-class UserInterface(with_metaclass(ABCMeta, object)):
+class UserInterface(metaclass=ABCMeta):
     """Abstract base class for user operations and queries."""
 
     @abstractmethod
@@ -270,6 +298,11 @@ class UserInterface(with_metaclass(ABCMeta, object)):
 
     @abstractmethod
     def user_can_create_permissions(self, user):
+        # type: (str) -> bool
+        pass
+
+    @abstractmethod
+    def user_exists(self, user):
         # type: (str) -> bool
         pass
 

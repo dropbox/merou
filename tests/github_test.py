@@ -1,9 +1,9 @@
 import io
 import json
 import operator
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import pytest
-from six.moves.urllib.parse import parse_qs, urlparse
 from tornado.concurrent import Future
 from tornado.httpclient import HTTPError, HTTPResponse
 

@@ -5,12 +5,10 @@ from threading import RLock
 from typing import TYPE_CHECKING
 
 from networkx import DiGraph, single_source_shortest_path
-from six import iteritems, itervalues
 from sqlalchemy import or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import label, literal
 
-from grouper import stats
 from grouper.entities.group import Group, GroupJoinPolicy
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
 from grouper.entities.permission import Permission
@@ -152,7 +150,7 @@ class GroupGraph(object):
     def users(self):
         # type: () -> List[str]
         with self.lock:
-            return [u for u, d in iteritems(self.user_metadata) if d["enabled"]]
+            return [u for u, d in self.user_metadata.items() if d["enabled"]]
 
     def update_from_db(self, session):
         # type: (Session) -> None
@@ -208,7 +206,7 @@ class GroupGraph(object):
                 self._grants_by_permission = grants_by_permission
 
             duration = datetime.utcnow() - start_time
-            stats.log_rate("graph_update_ms", int(duration.total_seconds() * 1000))
+            get_plugin_proxy().log_graph_update_duration(int(duration.total_seconds() * 1000))
 
     @staticmethod
     def _get_checkpoint(session):
@@ -463,7 +461,7 @@ class GroupGraph(object):
         service_grants = defaultdict(
             lambda: defaultdict(set)
         )  # type: Dict[str, Dict[str, Set[str]]]
-        for account, service_grant_list in iteritems(service_account_grants):
+        for account, service_grant_list in service_account_grants.items():
             for service_grant in service_grant_list:
                 service_grants[service_grant.permission][account].add(service_grant.argument)
 
@@ -484,10 +482,10 @@ class GroupGraph(object):
             lambda: defaultdict(set)
         )  # type: Dict[str, Dict[str, Set[str]]]
         user_grants = defaultdict(lambda: defaultdict(set))  # type: Dict[str, Dict[str, Set[str]]]
-        for group, grant_list in iteritems(group_grants):
+        for group, grant_list in group_grants.items():
             members = set()  # type: Set[str]
             paths = single_source_shortest_path(permission_graph, ("Group", group))
-            for member, path in iteritems(paths):
+            for member, path in paths.items():
                 member_type, member_name = member
                 if member_type != "User":
                     continue
@@ -509,9 +507,9 @@ class GroupGraph(object):
         all_grants = {}  # type: Dict[str, UniqueGrantsOfPermission]
         for permission in set(user_grants.keys()) | set(service_grants.keys()):
             grants = UniqueGrantsOfPermission(
-                users={k: sorted(v) for k, v in iteritems(user_grants[permission])},
-                role_users={k: sorted(v) for k, v in iteritems(role_user_grants[permission])},
-                service_accounts={k: sorted(v) for k, v in iteritems(service_grants[permission])},
+                users={k: sorted(v) for k, v in user_grants[permission].items()},
+                role_users={k: sorted(v) for k, v in role_user_grants[permission].items()},
+                service_accounts={k: sorted(v) for k, v in service_grants[permission].items()},
             )
             all_grants[permission] = grants
 
@@ -530,7 +528,7 @@ class GroupGraph(object):
         # type: () -> Dict[str, User]
         users = {}  # type: Dict[str, User]
         with self.lock:
-            for user, data in iteritems(self.user_metadata):
+            for user, data in self.user_metadata.items():
                 if not data["enabled"]:
                     continue
                 if "service_account" in data:
@@ -554,7 +552,7 @@ class GroupGraph(object):
         """Get the list of permissions as Permission instances."""
         with self.lock:
             if audited:
-                permissions = [p for p in itervalues(self._permissions) if p.audited]
+                permissions = [p for p in self._permissions.values() if p.audited]
             else:
                 permissions = list(self._permissions.values())
         return sorted(permissions, key=lambda p: p.name)
@@ -567,7 +565,7 @@ class GroupGraph(object):
 
             # Get all mapped versions of the permission. This is only direct relationships.
             direct_groups = set()
-            for groupname, grants in iteritems(self._group_grants):
+            for groupname, grants in self._group_grants.items():
                 for grant in grants:
                     if grant.permission == name:
                         data["groups"][groupname] = self.get_group_details(
@@ -581,7 +579,7 @@ class GroupGraph(object):
             for groupname in direct_groups:
                 group = ("Group", groupname)
                 paths = single_source_shortest_path(self._graph, group, None)
-                for member, path in iteritems(paths):
+                for member, path in paths.items():
                     if member == group:
                         continue
                     member_type, member_name = member
@@ -595,7 +593,7 @@ class GroupGraph(object):
                     )
 
             # Finally, add all service accounts.
-            for account, service_grants in iteritems(self._service_account_grants):
+            for account, service_grants in self._service_account_grants.items():
                 for service_grant in service_grants:
                     if service_grant.permission == name:
                         details = {
@@ -683,7 +681,7 @@ class GroupGraph(object):
             paths = single_source_shortest_path(self._graph, group)
             rpaths = single_source_shortest_path(self._rgraph, group)
 
-            for member, path in iteritems(paths):
+            for member, path in paths.items():
                 if member == group:
                     continue
                 member_type, member_name = member
@@ -696,7 +694,7 @@ class GroupGraph(object):
                     "rolename": GROUP_EDGE_ROLES[role],
                 }
 
-            for parent, path in iteritems(rpaths):
+            for parent, path in rpaths.items():
                 if parent == group:
                     continue
                 parent_type, parent_name = parent
@@ -800,11 +798,11 @@ class GroupGraph(object):
                     }
                     continue
                 new_rpaths = single_source_shortest_path(self._rgraph, group)
-                for parent, path in iteritems(new_rpaths):
+                for parent, path in new_rpaths.items():
                     if parent not in rpaths or 1 + len(path) < len(rpaths[parent]):
                         rpaths[parent] = [user] + path
 
-            for parent, path in iteritems(rpaths):
+            for parent, path in rpaths.items():
                 if parent == user:
                     continue
                 parent_type, parent_name = parent

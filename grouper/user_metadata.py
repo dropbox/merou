@@ -25,7 +25,7 @@ def get_user_metadata(session, user_id):
 
 
 def get_user_metadata_by_key(session, user_id, data_key):
-    # type: (Session, int, str) -> UserMetadata
+    # type: (Session, int, str) -> Optional[UserMetadata]
     """Return the user's metadata if it has the matching key
 
     Args:

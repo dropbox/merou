@@ -1,15 +1,14 @@
 import logging
 import os
+import sys
 from collections import defaultdict
 from contextlib import closing
 from datetime import datetime
 from time import sleep
 from typing import TYPE_CHECKING
 
-from six import iteritems
 from sqlalchemy import and_
 
-from grouper import stats
 from grouper.audit import get_auditors_group
 from grouper.constants import PERMISSION_AUDITOR
 from grouper.email_util import (
@@ -27,7 +26,7 @@ from grouper.perf_profile import prune_old_traces
 
 if TYPE_CHECKING:
     from grouper.background.settings import BackgroundSettings
-    from grouper.error_reporting import SentryProxy
+    from grouper.plugin.proxy import PluginProxy
     from typing import Dict, NoReturn, Set
 
 
@@ -37,18 +36,12 @@ class BackgroundProcessor(object):
     Currently, this sends asynchronous mail messages and handles edge expiration and notification.
     """
 
-    def __init__(self, settings, sentry_client):
-        # type: (BackgroundSettings, SentryProxy) -> None
+    def __init__(self, settings, plugins):
+        # type: (BackgroundSettings, PluginProxy) -> None
         """Initialize new BackgroundProcessor"""
-
         self.settings = settings
-        self.sentry_client = sentry_client
+        self.plugins = plugins
         self.logger = logging.getLogger(__name__)
-
-    def _capture_exception(self):
-        # type: () -> None
-        if self.sentry_client:
-            self.sentry_client.captureException()
 
     def crash(self):
         # type: () -> NoReturn
@@ -102,7 +95,7 @@ class BackgroundProcessor(object):
         user_is_auditor = {}  # type: Dict[str, bool]
         for group_tuple in graph.get_groups(audited=True, directly_audited=False):
             group_md = graph.get_group_details(group_tuple.name, expose_aliases=False)
-            for username, user_md in iteritems(group_md["users"]):
+            for username, user_md in group_md["users"].items():
                 if username not in user_is_auditor:
                     user_perms = graph.get_user_details(username)["permissions"]
                     user_is_auditor[username] = any(
@@ -117,7 +110,7 @@ class BackgroundProcessor(object):
 
         if nonauditor_approver_to_groups:
             auditors_group = get_auditors_group(self.settings, session)
-            for username, group_names in iteritems(nonauditor_approver_to_groups):
+            for username, group_names in nonauditor_approver_to_groups.items():
                 reason = "auto-added due to having approver role(s) in group(s): {}".format(
                     ", ".join(group_names)
                 )
@@ -152,13 +145,11 @@ class BackgroundProcessor(object):
 
                     session.commit()
 
-                stats.log_gauge("successful-background-update", 1)
-                stats.log_gauge("failed-background-update", 0)
+                self.plugins.log_background_run(success=True)
             except Exception:
-                stats.log_gauge("successful-background-update", 0)
-                stats.log_gauge("failed-background-update", 1)
-                self._capture_exception()
-                self.logger.exception("Unexpected exception occurred in background thread.")
+                self.plugins.log_background_run(success=False)
+                self.plugins.log_exception(None, None, *sys.exc_info())
+                self.logger.exception("Unexpected exception occurred in background thread")
                 self.crash()
 
             self.logger.debug("Sleeping for {} seconds...".format(self.settings.sleep_interval))

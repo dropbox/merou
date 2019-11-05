@@ -1,127 +1,155 @@
+from typing import TYPE_CHECKING
+
+import pytest
+
+from grouper.constants import USER_ADMIN
 from grouper.group_service_account import get_service_accounts
 from grouper.models.group import Group
 from grouper.models.service_account import ServiceAccount
-from tests.ctl_util import call_main
-from tests.fixtures import (  # noqa: F401
-    graph,
-    groups,
-    service_accounts,
-    session,
-    standard_graph,
-    users,
-)
+from tests.ctl_util import run_ctl
+
+if TYPE_CHECKING:
+    from tests.setup import SetupTest
 
 
-def test_service_account_create(groups, service_accounts, session, tmpdir, users):  # noqa: F811
-    machine_set = "foo +bar -(org)"
-    description = "this is a service account.\n\n it is for testing"
-    security_team_group = Group.get(session, name="security-team")
-    good_actor_username = "gary@a.co"
-    good_service_account_name = "good-service@a.co"
+def test_create(setup):
+    # type: (SetupTest) -> None
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group")
+        setup.add_user_to_group("gary@a.co", "other-group")
 
-    assert ServiceAccount.get(session, name=good_service_account_name) is None
-    assert get_service_accounts(session, security_team_group) == []
-    # no-op if non-existing actor
-    call_main(
-        session,
-        tmpdir,
+    run_ctl(
+        setup,
         "service_account",
         "--actor",
-        "no-such-actor@a.co",
+        "gary@a.co",
         "create",
-        good_service_account_name,
-        security_team_group.groupname,
-        machine_set,
-        description,
+        "good-service@svc.localhost",
+        "some-group",
+        "foo +bar -(org)",
+        "this is a service account.\n\n it is for testing",
     )
-    # ... or if bad account name
-    call_main(
-        session,
-        tmpdir,
-        "service_account",
-        "--actor",
-        good_actor_username,
-        "create",
-        "bad-service-account-name",
-        security_team_group.groupname,
-        machine_set,
-        description,
-    )
-    # ... or non-existing owner group
-    call_main(
-        session,
-        tmpdir,
-        "service_account",
-        "--actor",
-        good_actor_username,
-        "create",
-        good_service_account_name,
-        "non-such-owner-group",
-        machine_set,
-        description,
-    )
-    # make sure no change was made
-    assert ServiceAccount.get(session, name=good_service_account_name) is None
-    assert get_service_accounts(session, security_team_group) == []
+    service_account = ServiceAccount.get(setup.session, name="good-service@svc.localhost")
+    assert service_account is not None
+    assert service_account.user.name == "good-service@svc.localhost"
+    assert service_account.machine_set == "foo +bar -(org)"
+    assert service_account.description == "this is a service account.\n\n it is for testing"
+    group = Group.get(setup.session, name="some-group")
+    assert get_service_accounts(setup.session, group) == [service_account]
 
-    # now it works
-    call_main(
-        session,
-        tmpdir,
-        "service_account",
-        "--actor",
-        good_actor_username,
-        "create",
-        good_service_account_name,
-        security_team_group.groupname,
-        machine_set,
-        description,
-    )
-    service_account = ServiceAccount.get(session, name=good_service_account_name)
-    assert service_account, "non-existing account should be created"
-    assert service_account.user.name == good_service_account_name
-    assert service_account.machine_set == machine_set
-    assert service_account.description == description
-    assert get_service_accounts(session, security_team_group) == [service_account]
+    # If the account already exists, creating it again returns an error and does nothing.
+    with pytest.raises(SystemExit):
+        run_ctl(
+            setup,
+            "service_account",
+            "--actor",
+            "gary@a.co",
+            "create",
+            "good-service@svc.localhost",
+            "other-group",
+            "foo",
+            "another test",
+        )
+    service_account = ServiceAccount.get(setup.session, name="good-service@svc.localhost")
+    assert service_account is not None
+    assert service_account.machine_set == "foo +bar -(org)"
+    assert service_account.description == "this is a service account.\n\n it is for testing"
+    group = Group.get(setup.session, name="some-group")
+    assert get_service_accounts(setup.session, group) == [service_account]
 
-    # no-op if account name already exists
-    call_main(
-        session,
-        tmpdir,
-        "service_account",
-        "--actor",
-        good_actor_username,
-        "create",
-        good_service_account_name,
-        security_team_group.groupname,
-        machine_set,
-        description,
-    )
-    service_account = ServiceAccount.get(session, name=good_service_account_name)
-    assert service_account, "non-account should be created"
-    assert service_account.user.name == good_service_account_name
-    assert service_account.machine_set == machine_set
-    assert service_account.description == description
-    assert get_service_accounts(session, security_team_group) == [service_account]
 
-    # actor can be a service account as well
-    call_main(
-        session,
-        tmpdir,
+def test_create_as_service_account(setup):
+    """Test that a service account can create another service account."""
+    with setup.transaction():
+        setup.create_group("some-group")
+        setup.create_service_account("creator@a.co", "another-group")
+        setup.grant_permission_to_service_account(USER_ADMIN, "", "creator@a.co")
+
+    run_ctl(
+        setup,
         "service_account",
         "--actor",
-        "service@a.co",
+        "creator@a.co",
         "create",
-        "service-2@a.co",
-        security_team_group.groupname,
-        machine_set + "2",
-        description + "2",
+        "good-service@svc.localhost",
+        "some-group",
+        "foo +bar -(org)",
+        "this is a service account.\n\n it is for testing",
     )
-    service_account_2 = ServiceAccount.get(session, name="service-2@a.co")
-    assert service_account_2, "non-existing account should be created"
-    assert service_account_2.user.name == "service-2@a.co"
-    assert service_account_2.machine_set == (machine_set + "2")
-    assert service_account_2.description == (description + "2")
-    assert set(get_service_accounts(session, security_team_group)) == set(
-        [service_account, service_account_2]
-    )
+    service_account = ServiceAccount.get(setup.session, name="good-service@svc.localhost")
+    assert service_account is not None
+    assert service_account.user.name == "good-service@svc.localhost"
+    assert service_account.machine_set == "foo +bar -(org)"
+    assert service_account.description == "this is a service account.\n\n it is for testing"
+    group = Group.get(setup.session, name="some-group")
+    assert get_service_accounts(setup.session, group) == [service_account]
+
+
+def test_create_invalid_actor(setup):
+    # type: (SetupTest) -> None
+    with setup.transaction():
+        setup.create_group("some-group")
+
+    with pytest.raises(SystemExit):
+        run_ctl(
+            setup,
+            "service_account",
+            "--actor",
+            "gary@a.co",
+            "create",
+            "good-service@svc.localhost",
+            "some-group",
+            "foo",
+            "another test",
+        )
+
+    assert ServiceAccount.get(setup.session, name="good-service@a.co") is None
+    group = Group.get(setup.session, name="some-group")
+    assert get_service_accounts(setup.session, group) == []
+
+
+def test_create_bad_name(setup):
+    # type: (SetupTest) -> None
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group")
+
+    with pytest.raises(SystemExit):
+        run_ctl(
+            setup,
+            "service_account",
+            "--actor",
+            "gary@a.co",
+            "create",
+            "good-service@a.co",
+            "some-group",
+            "foo",
+            "another test",
+        )
+
+    assert ServiceAccount.get(setup.session, name="good-service@a.co") is None
+    group = Group.get(setup.session, name="some-group")
+    assert get_service_accounts(setup.session, group) == []
+
+
+def test_create_bad_owner(setup):
+    # type: (SetupTest) -> None
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group")
+
+    with pytest.raises(SystemExit):
+        run_ctl(
+            setup,
+            "service_account",
+            "--actor",
+            "gary@a.co",
+            "create",
+            "good-service@svc.localhost",
+            "nonexistent-group",
+            "foo",
+            "another test",
+        )
+
+    assert ServiceAccount.get(setup.session, name="good-service@svc.localhost") is None
+    group = Group.get(setup.session, name="some-group")
+    assert get_service_accounts(setup.session, group) == []
+    assert Group.get(setup.session, name="nonexistent-group") is None

@@ -55,6 +55,27 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
         # type: (str) -> List[ServiceAccountPermissionGrant]
         return self.repository.service_account_grants_for_permission(name)
 
+    def permission_grants_for_service_account(self, name):
+        # type: (str) -> List[ServiceAccountPermissionGrant]
+        """Return all permission grants for a service account.
+
+        TODO(rra): Currently does not expand permission aliases because they are not expanded by
+        the graph.
+        """
+        user_details = self.graph.get_user_details(name)
+        permissions = []
+        for permission_data in user_details["permissions"]:
+            permission = ServiceAccountPermissionGrant(
+                service_account=name,
+                permission=permission_data["permission"],
+                argument=permission_data["argument"],
+                granted_on=datetime.utcfromtimestamp(permission_data["granted_on"]),
+                is_alias=False,
+                grant_id=None,
+            )
+            permissions.append(permission)
+        return permissions
+
     def permission_grants_for_user(self, name):
         # type: (str) -> List[GroupPermissionGrant]
         user_details = self.graph.get_user_details(name)
@@ -78,6 +99,13 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
     def revoke_all_service_account_grants(self, permission):
         # type: (str) -> List[ServiceAccountPermissionGrant]
         return self.repository.revoke_all_service_account_grants(permission)
+
+    def service_account_has_permission(self, service, permission):
+        # type: (str, str) -> bool
+        for grant in self.permission_grants_for_service_account(service):
+            if permission == grant.permission:
+                return True
+        return False
 
     def user_has_permission(self, user, permission):
         # type: (str, str) -> bool
@@ -167,6 +195,36 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
             ServiceAccountPermissionGrant(
                 service_account=g.username,
                 permission=name,
+                argument=g.argument,
+                granted_on=g.granted_on,
+                is_alias=False,
+                grant_id=g.id,
+            )
+            for g in grants.all()
+        ]
+
+    def permission_grants_for_service_account(self, name):
+        # type: (str) -> List[ServiceAccountPermissionGrant]
+        """Return all permission grants for a service account.
+
+        TODO(rra): Currently does not expand permission aliases.
+        """
+        grants = self.session.query(
+            Permission.name,
+            ServiceAccountPermissionMap.argument,
+            ServiceAccountPermissionMap.granted_on,
+            ServiceAccountPermissionMap.id,
+        ).filter(
+            User.username == name,
+            User.enabled == True,
+            ServiceAccount.user_id == User.id,
+            Permission.id == ServiceAccountPermissionMap.permission_id,
+            ServiceAccountPermissionMap.service_account_id == ServiceAccount.id,
+        )
+        return [
+            ServiceAccountPermissionGrant(
+                service_account=name,
+                permission=g.name,
                 argument=g.argument,
                 granted_on=g.granted_on,
                 is_alias=False,
@@ -322,6 +380,13 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
             )
             for g in grants
         ]
+
+    def service_account_has_permission(self, service, permission):
+        # type: (str, str) -> bool
+        for grant in self.permission_grants_for_service_account(service):
+            if permission == grant.permission:
+                return True
+        return False
 
     def user_has_permission(self, user, permission):
         # type: (str, str) -> bool

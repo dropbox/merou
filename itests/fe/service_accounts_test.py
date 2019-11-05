@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from itests.fixtures import async_server  # noqa: F401
+from grouper.constants import USER_ADMIN
 from itests.pages.groups import GroupViewPage
 from itests.pages.service_accounts import (
     ServiceAccountCreatePage,
@@ -10,15 +10,6 @@ from itests.pages.service_accounts import (
 )
 from itests.pages.users import UsersViewPage
 from itests.setup import frontend_server
-from tests.fixtures import (  # noqa: F401
-    graph,
-    groups,
-    permissions,
-    service_accounts,
-    session,
-    standard_graph,
-    users,
-)
 from tests.url_util import url
 
 if TYPE_CHECKING:
@@ -27,37 +18,79 @@ if TYPE_CHECKING:
     from tests.setup import SetupTest
 
 
-def test_service_account_lifecycle(async_server, browser):  # noqa: F811
-    browser.get(url(async_server, "/groups/user-admins"))
+def test_service_account_lifecycle(tmpdir, setup, browser):
+    # type: (LocalPath, SetupTest, Chrome) -> None
+    with setup.transaction():
+        setup.add_user_to_group("cbguder@a.co", "user-admins")
+        setup.add_user_to_group("cbguder@a.co", "some-group")
+        setup.grant_permission_to_group(USER_ADMIN, "", "user-admins")
 
-    page = GroupViewPage(browser)
-    page.click_add_service_account_button()
+    with frontend_server(tmpdir, "cbguder@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/user-admins"))
 
-    page = ServiceAccountCreatePage(browser)
-    page.set_name("my-special-service-account")
-    page.submit()
+        group_page = GroupViewPage(browser)
+        group_page.click_add_service_account_button()
 
-    page = ServiceAccountViewPage(browser)
-    page.click_disable_button()
+        # Test with an invalid machine set.
+        create_page = ServiceAccountCreatePage(browser)
+        create_page.set_name("my-special-service-account")
+        create_page.set_description("some description")
+        create_page.set_machine_set("some machines bad-machine")
+        create_page.submit()
+        assert create_page.has_alert("machine_set")
+        expected = "my-special-service-account@svc.localhost has invalid machine set"
+        assert create_page.has_alert(expected)
 
-    disable_modal = page.get_disable_modal()
-    disable_modal.confirm()
+        # Fix the machine set but test with an invalid name.
+        create_page.set_name("service@service@service")
+        create_page.set_machine_set("some machines")
+        create_page.submit()
+        assert create_page.has_alert("name")
 
-    browser.get(url(async_server, "/users"))
+        # Fix the name and then creation should succeed.
+        create_page.set_name("my-special-service-account")
+        create_page.submit()
 
-    page = UsersViewPage(browser)
-    page.click_show_disabled_users_button()
-    page.click_show_service_accounts_button()
+        view_page = ServiceAccountViewPage(browser)
+        assert view_page.owner == "user-admins"
+        assert view_page.description == "some description"
+        assert view_page.machine_set == "some machines"
+        view_page.click_disable_button()
+        disable_modal = view_page.get_disable_modal()
+        disable_modal.confirm()
 
-    user_row = page.find_user_row("my-special-service-account@svc.localhost (service)")
-    user_row.click()
+        browser.get(url(frontend_url, "/users"))
 
-    page = ServiceAccountViewPage(browser)
-    page.click_enable_button()
+        users_page = UsersViewPage(browser)
+        users_page.click_show_disabled_users_button()
+        users_page.click_show_service_accounts_button()
+        user_row = users_page.find_user_row("my-special-service-account@svc.localhost (service)")
+        user_row.click()
 
-    page = ServiceAccountEnablePage(browser)
-    page.select_owner("Group: user-admins")
-    page.submit()
+        view_page = ServiceAccountViewPage(browser)
+        view_page.click_enable_button()
+
+        enable_page = ServiceAccountEnablePage(browser)
+        enable_page.select_owner("Group: some-group")
+        enable_page.submit()
+
+        view_page = ServiceAccountViewPage(browser)
+        assert view_page.owner == "some-group"
+
+
+def test_create_duplicate(tmpdir, setup, browser):
+    # type: (LocalPath, SetupTest, Chrome) -> None
+    with setup.transaction():
+        setup.add_user_to_group("cbguder@a.co", "some-group")
+        setup.create_service_account("service@svc.localhost", "some-group")
+
+    with frontend_server(tmpdir, "cbguder@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group/service/create"))
+        page = ServiceAccountCreatePage(browser)
+        page.set_name("service")
+        page.submit()
+        assert page.has_alert("name")
+        assert page.has_alert("service account with name service@svc.localhost already exists")
 
 
 def test_permission_grant_revoke(tmpdir, setup, browser):

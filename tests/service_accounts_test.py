@@ -1,13 +1,14 @@
+from urllib.parse import urlencode
+
 import pytest
-from six.moves.urllib.parse import urlencode
 from tornado.httpclient import HTTPError
 
 from grouper.group_service_account import get_service_accounts
 from grouper.models.service_account import ServiceAccount
 from grouper.permissions import grant_permission_to_service_account
+from grouper.plugin import get_plugin_proxy
 from grouper.plugin.base import BasePlugin
 from grouper.plugin.exceptions import PluginRejectedMachineSet
-from grouper.plugin.proxy import PluginProxy
 from grouper.service_account import (
     can_manage_service_account,
     create_service_account,
@@ -332,12 +333,8 @@ class MachineSetPlugin(BasePlugin):
 
 
 @pytest.mark.gen_test
-def test_machine_set_plugin(
-    mocker, session, standard_graph, graph, http_client, base_url  # noqa: F811
-):
-    mocker.patch(
-        "grouper.service_account.get_plugin_proxy", return_value=PluginProxy([MachineSetPlugin()])
-    )
+def test_machine_set_plugin(session, standard_graph, graph, http_client, base_url):  # noqa: F811
+    get_plugin_proxy().add_plugin(MachineSetPlugin())
     admin = "zorkian@a.co"
 
     # Edit the metadata of an existing service account.  This should fail (although return 200)
@@ -361,30 +358,4 @@ def test_machine_set_plugin(
     assert resp.code == 200
     graph.update_from_db(session)
     metadata = graph.user_metadata["service@a.co"]
-    assert metadata["service_account"]["machine_set"] == "is okay"
-
-    # Try creating a new service account with an invalid machine set.
-    data = {
-        "name": "other@svc.localhost",
-        "description": "some other service account",
-        "machine_set": "not valid",
-    }
-    fe_url = url(base_url, "/groups/team-sre/service/create")
-    resp = yield http_client.fetch(
-        fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode(data)
-    )
-    assert resp.code == 200
-    assert b"other@svc.localhost has invalid machine set" in resp.body
-    graph.update_from_db(session)
-    assert "other@svc.localhost" not in graph.users
-
-    # But this should go through with a valid machine set.
-    data["machine_set"] = "is okay"
-    resp = yield http_client.fetch(
-        fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode(data)
-    )
-    assert resp.code == 200
-    graph.update_from_db(session)
-    metadata = graph.user_metadata["other@svc.localhost"]
-    assert metadata["service_account"]["description"] == "some other service account"
     assert metadata["service_account"]["machine_set"] == "is okay"

@@ -61,16 +61,13 @@ common:
     # Type: List[str]
     plugin_module_paths:
       - plugins.group_ownership_policy
-      - plugins.permission_aliases
       - plugins.ssh_key_policy
-      - plugins.sample_permission
 
     # Name of permissions for which we restrict ownership calculations to
     # exclude wildcard ownership if any non-wildcard owners are avaiable.
     #
     # Type: List[str]
-    restricted_ownership_permissions:
-      - "sample.permission"
+    restricted_ownership_permissions: []
 
     # Whether to send notification e-mails.
     #
@@ -104,11 +101,6 @@ common:
     #
     # Type: str
     from_addr: "no-reply@grouper.local"
-
-    # Sentry DSN for logging exceptions.
-    #
-    # Type: str
-    sentry_dsn:
 
     # The email domain that all service accounts must have.  This will also be
     # used as the domain when constructing message IDs when Grouper sends email.
@@ -165,17 +157,7 @@ api:
     # Type: int
     refresh_interval: 1
 
-    # Sentry DSN for logging exceptions.
-    #
-    # Type: str
-    sentry_dsn:
-
 background:
-    # Sentry DSN for logging exceptions.
-    #
-    # Type: str
-    sentry_dsn:
-
     # How long to wait between iterations.
     #
     # Type: int
@@ -192,8 +174,8 @@ ctl:
     #
     # Type: List[str]
     oneoff_module_paths:
-      - oneoffs.refresh_public_keys
       - oneoffs.check_public_keys
+      - oneoffs.refresh_public_keys
 
 fe:
     # The IP address to listen to requests on, or leave empty to listen to

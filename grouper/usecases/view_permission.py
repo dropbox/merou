@@ -1,8 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
-from six import with_metaclass
-
 if TYPE_CHECKING:
     from grouper.entities.audit_log_entry import AuditLogEntry
     from grouper.entities.permission import Permission, PermissionAccess
@@ -14,7 +12,7 @@ if TYPE_CHECKING:
     from typing import List
 
 
-class ViewPermissionUI(with_metaclass(ABCMeta, object)):
+class ViewPermissionUI(metaclass=ABCMeta):
     """Abstract base class for UI for ListPermissions."""
 
     @abstractmethod

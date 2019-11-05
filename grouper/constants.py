@@ -13,7 +13,7 @@ NAME2_VALIDATION = _NAME_VALIDATION.format("name2")
 # These regexes are specifically to validate usernames.  SERVICE_ACCOUNT_VALIDATION is the same as
 # USERNAME_VALIDATION but with a distinct capture group name so that it doesn't conflict with a
 # NAME_VALIDATION regex in the same URL.
-USERNAME_VALIDATION = r"(?P<name>[\w-]+@\w+[\.\w]+)"
+USERNAME_VALIDATION = r"(?P<name>[\w-]+@(?:[\w\-]+\.)+\w{2,})"
 SERVICE_ACCOUNT_VALIDATION = r"(?P<accountname>[\w-]+@\w+[\.\w]+)"
 
 # UserToken validators

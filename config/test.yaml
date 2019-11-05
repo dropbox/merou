@@ -11,6 +11,9 @@ common:
     database_source: ""
     date_format: "%Y-%m-%d %I:%M %p"
     expiration_notice_days: 7
+    github_app_client_id: null
+    http_proxy_host: null
+    http_proxy_port: null
     log_format: "%(asctime)-15s\t%(levelname)s\t%(message)s  [%(name)s]"
     plugin_dirs: []
     plugin_module_paths:

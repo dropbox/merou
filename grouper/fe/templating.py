@@ -117,7 +117,7 @@ class FrontendTemplateEngine(BaseTemplateEngine):
 
     def __init__(self, settings, deployment_name, static_path, package="grouper.fe"):
         # type: (FrontendSettings, str, str, str) -> None
-        super(FrontendTemplateEngine, self).__init__(settings, package)
+        super().__init__(settings, package)
         self.static_path = static_path
         template_globals = {
             "cdnjs_prefix": settings.cdnjs_prefix,

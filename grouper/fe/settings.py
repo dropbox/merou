@@ -20,7 +20,7 @@ class FrontendSettings(Settings):
 
     def __init__(self):
         """Set up frontend defaults."""
-        super(FrontendSettings, self).__init__()
+        super().__init__()
 
         # Keep attributes here in the same order as in config/dev.yaml.
         self.address = None  # type: Optional[str]
@@ -39,7 +39,7 @@ class FrontendSettings(Settings):
 
     def update_from_config(self, filename=None, section="fe"):
         # type: (Optional[str], Optional[str]) -> None
-        super(FrontendSettings, self).update_from_config(filename, section)
+        super().update_from_config(filename, section)
 
 
 # See grouper.settings for more information about why this nonsense is here.

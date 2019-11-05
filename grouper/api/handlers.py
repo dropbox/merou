@@ -95,7 +95,7 @@ class GraphHandler(RequestHandler):
         else:
             status_code = 500
         self.plugins.log_exception(self.request, status_code, exc_type, exc_value, exc_tb)
-        super(GraphHandler, self).log_exception(exc_type, exc_value, exc_tb)
+        super().log_exception(exc_type, exc_value, exc_tb)
 
     def error(self, errors):
         # type: (Iterable[Tuple[int, Any]]) -> None

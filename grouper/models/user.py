@@ -57,7 +57,7 @@ class User(Model, CommentObjectMixin):
 
     def add(self, session):
         # type: (Session) -> User
-        super(User, self).add(session)
+        super().add(session)
         Counter.incr(session, "updates")
         return self
 

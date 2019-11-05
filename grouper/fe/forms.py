@@ -52,7 +52,7 @@ class DaysTimeDeltaField(IntegerField):
     def process_formdata(self, valuelist):
         # We need to support None values for groups with no expiration
         if valuelist and valuelist[0]:
-            super(DaysTimeDeltaField, self).process_formdata(valuelist)
+            super().process_formdata(valuelist)
             self.data = timedelta(days=self.data)
         else:
             self.data = None

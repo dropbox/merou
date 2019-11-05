@@ -20,7 +20,7 @@ class ApiSettings(Settings):
 
     def __init__(self):
         """Set up API defaults."""
-        super(ApiSettings, self).__init__()
+        super().__init__()
 
         # Keep attributes here in the same order as in config/dev.yaml.
         self.address = None  # type: Optional[str]
@@ -31,4 +31,4 @@ class ApiSettings(Settings):
 
     def update_from_config(self, filename=None, section="api"):
         # type: (Optional[str], Optional[str]) -> None
-        super(ApiSettings, self).update_from_config(filename, section)
+        super().update_from_config(filename, section)

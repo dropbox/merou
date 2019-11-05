@@ -348,7 +348,7 @@ class Group(Model, CommentObjectMixin):
         return None
 
     def add(self, session):
-        super(Group, self).add(session)
+        super().add(session)
         Counter.incr(session, "updates")
         return self
 

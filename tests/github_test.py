@@ -1,7 +1,7 @@
 import io
 import json
 import operator
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 from tornado.concurrent import Future

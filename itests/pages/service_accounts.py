@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 
 from itests.pages.base import BaseElement, BaseModal, BasePage
@@ -120,8 +121,10 @@ class ServiceAccountGrantPermissionPage(BasePage):
     def select_permission(self, permission):
         # type: (str) -> None
         form = self._get_grant_permission_form()
-        permission_select = form.find_element_by_name("permission")
-        Select(permission_select).select_by_visible_text(permission)
+        permission_select = form.find_element_by_id("permission_chosen")
+        permission_select.click()
+        permission_search = permission_select.find_element_by_tag_name("input")
+        permission_search.send_keys(permission, Keys.ENTER)
 
     def set_argument(self, argument):
         # type: (str) -> None

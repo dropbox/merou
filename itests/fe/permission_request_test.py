@@ -39,13 +39,13 @@ def test_requesting_permission(tmpdir, setup, browser):
         page2 = PermissionRequestPage(browser)
         assert page2.heading == "Permissions"
         assert page2.subheading == "Request Permission"
-        assert page2.get_option_values("group_name") == ["", "front-end"]
-        assert page2.get_option_values("permission_name") == ["git.repo.read"]
+        assert page2.get_group_values() == ["", "front-end"]
+        assert page2.get_permission_values() == ["git.repo.read"]
 
-        page2.set_select_value("group_name", "front-end")
-        page2.fill_field("argument", "server")
-        page2.fill_field("reason", "So they can do development")
-        page2.submit_request()
+        page2.set_group("front-end")
+        page2.set_argument_freeform("server")
+        page2.set_reason("So they can do development")
+        page2.submit()
 
         text = " ".join(browser.find_element_by_tag_name("body").text.split())
         assert browser.current_url.endswith("/permissions/requests/1")
@@ -68,10 +68,10 @@ def test_limited_arguments(tmpdir, setup, browser):
         browser.get(url(frontend_url, "/permissions/request?permission=sample.permission"))
         page = PermissionRequestPage(browser)
 
-        page.set_select_value("group_name", "test-group")
-        page.set_select_value("argument", "Option A")
-        page.fill_field("reason", "Some testing reason")
-        page.submit_request()
+        page.set_group("test-group")
+        page.set_argument_dropdown("Option A")
+        page.set_reason("Some testing reason")
+        page.submit()
 
         assert browser.current_url.endswith("/permissions/requests/1")
 
@@ -93,10 +93,10 @@ def test_end_to_end_whitespace_in_argument(tmpdir, setup, browser):
         permission_page.button_to_request_this_permission.click()
 
         permission_request_page = PermissionRequestPage(browser)
-        permission_request_page.set_select_value("group_name", "some-group")
-        permission_request_page.fill_field("argument", "  arg u  ment  ")
-        permission_request_page.fill_field("reason", "testing whitespace")
-        permission_request_page.submit_request()
+        permission_request_page.set_group("some-group")
+        permission_request_page.set_argument_freeform("  arg u  ment  ")
+        permission_request_page.set_reason("testing whitespace")
+        permission_request_page.submit()
 
     with frontend_server(tmpdir, "zorkian@a.co") as frontend_url:
         browser.get(url(frontend_url, "/permissions/requests?status=pending"))

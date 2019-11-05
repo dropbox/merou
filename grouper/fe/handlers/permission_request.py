@@ -44,7 +44,7 @@ class PermissionRequest(GrouperHandler):
         if group is None:
             raise HTTPError(status_code=400, reason="that group does not exist")
 
-        permission = get_permission(self.session, form.permission_name.data)
+        permission = get_permission(self.session, form.permission.data)
         if permission is None:
             raise HTTPError(status_code=400, reason="that permission does not exist")
 
@@ -71,7 +71,7 @@ class PermissionRequest(GrouperHandler):
             self.log_message(
                 "prefilled perm+arg have no owner",
                 group_name=group.name,
-                permission_name=permission.name,
+                permission=permission.name,
                 argument=argument,
             )
             alerts = [
@@ -139,11 +139,11 @@ class PermissionRequest(GrouperHandler):
                 raise HTTPError(
                     status_code=404, reason="an unrecognized permission is specified in the URL"
                 )
-            form.permission_name.choices = pairs([permission_param])
-            form.permission_name.render_kw = {"readonly": "readonly"}
-            form.permission_name.data = permission_param
+            form.permission.choices = pairs([permission_param])
+            form.permission.render_kw = {"readonly": "readonly"}
+            form.permission.data = permission_param
         else:
-            form.permission_name.choices = pairs([""] + sorted(permission_names))
+            form.permission.choices = pairs(sorted(permission_names))
 
         argument_param = self.get_argument("argument", "")
         if argument_param:

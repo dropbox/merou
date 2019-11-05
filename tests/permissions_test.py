@@ -331,7 +331,7 @@ def test_permission_request_flow(
         method="POST",
         body=urlencode(
             {
-                "permission_name": "grantable.one",
+                "permission": "grantable.one",
                 "argument": "some argument?",
                 "reason": "blah blah black sheep",
             }
@@ -349,7 +349,7 @@ def test_permission_request_flow(
         method="POST",
         body=urlencode(
             {
-                "permission_name": "grantable.one",
+                "permission": "grantable.one",
                 "argument": "some argument",
                 "reason": "blah blah black sheep",
             }
@@ -401,7 +401,7 @@ def test_permission_request_flow(
         method="POST",
         body=urlencode(
             {
-                "permission_name": "grantable.one",
+                "permission": "grantable.one",
                 "argument": "some argument",
                 "reason": "blah blah black sheep",
             }
@@ -423,7 +423,7 @@ def test_permission_request_flow(
         method="POST",
         body=urlencode(
             {
-                "permission_name": "grantable.two",
+                "permission": "grantable.two",
                 "argument": "some argument",
                 "reason": "blah blah black sheep",
             }
@@ -489,7 +489,7 @@ def test_limited_permissions(
         method="POST",
         body=urlencode(
             {
-                "permission_name": perm1.name,
+                "permission": perm1.name,
                 "argument": "specific_arg",
                 "reason": "blah blah black sheep",
             }
@@ -519,7 +519,7 @@ def test_limited_permissions_global_approvers(
         method="POST",
         body=urlencode(
             {
-                "permission_name": perm1.name,
+                "permission": perm1.name,
                 "argument": "specific_arg",
                 "reason": "blah blah black sheep",
                 "argument_type": "text",

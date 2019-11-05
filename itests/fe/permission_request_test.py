@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from mock import ANY
 
+from grouper.constants import PERMISSION_GRANT
 from grouper.entities.permission_grant import GroupPermissionGrant
 from itests.pages.groups import GroupViewPage
 from itests.pages.permission import PermissionPage
@@ -25,7 +26,7 @@ def test_requesting_permission(tmpdir, setup, browser):
         setup.create_user("brhodes@a.co")
 
         setup.add_user_to_group("brhodes@a.co", "front-end")
-        setup.grant_permission_to_group("grouper.permission.grant", "git.repo.read", "dev-infra")
+        setup.grant_permission_to_group(PERMISSION_GRANT, "git.repo.read", "dev-infra")
 
     with frontend_server(tmpdir, "brhodes@a.co") as frontend_url:
         browser.get(url(frontend_url, "/permissions/git.repo.read"))
@@ -82,7 +83,7 @@ def test_end_to_end_whitespace_in_argument(tmpdir, setup, browser):
         setup.create_permission("some-permission")
         setup.add_user_to_group("gary@a.co", "some-group", "owner")
         setup.add_user_to_group("zorkian@a.co", "admins")
-        setup.grant_permission_to_group("grouper.permission.grant", "some-permission", "admins")
+        setup.grant_permission_to_group(PERMISSION_GRANT, "some-permission", "admins")
 
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
         browser.get(url(frontend_url, "/permissions/some-permission"))

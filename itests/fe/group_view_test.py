@@ -1,10 +1,14 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import pytest
+from mock import ANY
 
-from grouper.constants import GROUP_ADMIN
+from grouper.constants import GROUP_ADMIN, PERMISSION_GRANT
+from grouper.entities.permission_grant import GroupPermissionGrant
 from itests.pages.exceptions import NoSuchElementException
-from itests.pages.groups import GroupViewPage
+from itests.pages.groups import GroupViewPage, PermissionGrantPage
 from itests.setup import frontend_server
 from plugins import group_ownership_policy
 from tests.url_util import url
@@ -15,8 +19,7 @@ if TYPE_CHECKING:
     from tests.setup import SetupTest
 
 
-def test_show_group(tmpdir, setup, browser):
-    # type: (LocalPath, SetupTest, Chrome) -> None
+def test_show_group(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "team-sre", role="owner")
         setup.add_user_to_group("zorkian@a.co", "team-sre")
@@ -45,8 +48,9 @@ def test_show_group(tmpdir, setup, browser):
         assert sorted([r.argument for r in rows]) == ["bar", "foo"]
 
 
-def test_show_group_hides_aliased_permissions(tmpdir, setup, browser):
-    # type: (LocalPath, SetupTest, Chrome) -> None
+def test_show_group_hides_aliased_permissions(
+    tmpdir: LocalPath, setup: SetupTest, browser: Chrome
+) -> None:
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "sad-team", role="owner")
         setup.create_permission("ssh")
@@ -62,8 +66,7 @@ def test_show_group_hides_aliased_permissions(tmpdir, setup, browser):
         assert page.find_permission_rows("sudo", "sad-team") == []
 
 
-def test_remove_member(tmpdir, setup, browser):
-    # type: (LocalPath, SetupTest, Chrome) -> None
+def test_remove_member(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "team-sre", role="owner")
         setup.add_user_to_group("zorkian@a.co", "team-sre")
@@ -85,8 +88,7 @@ def test_remove_member(tmpdir, setup, browser):
             assert page.find_member_row("zorkian@a.co")
 
 
-def test_remove_last_owner(tmpdir, setup, browser):
-    # type: (LocalPath, SetupTest, Chrome) -> None
+def test_remove_last_owner(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("zorkian@a.co", "team-sre", role="owner")
         setup.add_user_to_group("gary@a.co", "admins")
@@ -106,3 +108,55 @@ def test_remove_last_owner(tmpdir, setup, browser):
         row = page.find_member_row("zorkian@a.co")
         assert row.role == "owner"
         assert page.has_alert(group_ownership_policy.EXCEPTION_MESSAGE)
+
+
+def test_grant_permission(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group")
+        setup.grant_permission_to_group(PERMISSION_GRANT, "some-permission", "some-group")
+        setup.create_permission("some-permission")
+        setup.create_group("other-group")
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group"))
+
+        group_page = GroupViewPage(browser)
+        assert group_page.find_permission_rows("some-permission") == []
+        group_page.click_add_permission_button()
+
+        grant_page = PermissionGrantPage(browser)
+        grant_page.set_permission("some-permission")
+        grant_page.set_argument("foo")
+        grant_page.submit()
+
+        rows = group_page.find_permission_rows("some-permission")
+        assert len(rows) == 1
+        assert rows[0].argument == "foo"
+
+        # Grant a permission with surrounding and internal whitespace to test whitespace handling.
+        browser.get(url(frontend_url, "/groups/other-group"))
+        assert group_page.find_permission_rows("some-permission") == []
+        group_page.click_add_permission_button()
+
+        grant_page.set_permission("some-permission")
+        grant_page.set_argument("  arg u  ment  ")
+        grant_page.submit()
+
+        rows = group_page.find_permission_rows("some-permission")
+        assert len(rows) == 1
+        assert rows[0].argument in ("arg u ment", "arg u  ment")  # browser messes with whitespace
+
+    # Check directly in the database to make sure the whitespace is stripped, since we may not be
+    # able to see it via the browser.
+    permission_grant_repository = setup.sql_repository_factory.create_permission_grant_repository()
+    grants = permission_grant_repository.permission_grants_for_group("other-group")
+    assert grants == [
+        GroupPermissionGrant(
+            group="other-group",
+            permission="some-permission",
+            argument="arg u  ment",
+            granted_on=ANY,
+            is_alias=False,
+            grant_id=ANY,
+        )
+    ]

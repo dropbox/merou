@@ -26,4 +26,4 @@ class UserGroupRequestNotFoundException(Exception):
     def __init__(self, request):
         # type: (UserGroupRequest) -> None
         msg = "Group membership request {} not found".format(request.id)
-        super(UserGroupRequestNotFoundException, self).__init__(msg)
+        super().__init__(msg)

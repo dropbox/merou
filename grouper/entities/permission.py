@@ -24,4 +24,4 @@ class PermissionNotFoundException(Exception):
     def __init__(self, name):
         # type: (str) -> None
         msg = "Permission {} not found".format(name)
-        super(PermissionNotFoundException, self).__init__(msg)
+        super().__init__(msg)

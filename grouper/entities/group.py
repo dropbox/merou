@@ -29,7 +29,7 @@ class GroupNotFoundException(Exception):
     def __init__(self, name):
         # type: (str) -> None
         msg = "Group {} not found".format(name)
-        super(GroupNotFoundException, self).__init__(msg)
+        super().__init__(msg)
 
 
 class InvalidGroupNameException(Exception):
@@ -38,4 +38,4 @@ class InvalidGroupNameException(Exception):
     def __init__(self, name):
         # type: (str) -> None
         msg = "Group name {} does not match validation regex {}".format(name, NAME_VALIDATION)
-        super(InvalidGroupNameException, self).__init__(msg)
+        super().__init__(msg)

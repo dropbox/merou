@@ -42,7 +42,7 @@ class ProxyServer(HTTPServer, object):
         self.user_auth_header = settings.user_auth_header
         self.username = username
         self.opener = build_opener(NoRedirectHandler)
-        super(ProxyServer, self).__init__(address, handler_class)
+        super().__init__(address, handler_class)
 
 
 class ProxyHandler(BaseHTTPRequestHandler):

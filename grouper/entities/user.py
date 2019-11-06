@@ -27,7 +27,7 @@ class UserNotFoundException(Exception):
     def __init__(self, name):
         # type: (str) -> None
         msg = "User {} not found".format(name)
-        super(UserNotFoundException, self).__init__(msg)
+        super().__init__(msg)
 
 
 class UserIsEnabledException(Exception):
@@ -36,7 +36,7 @@ class UserIsEnabledException(Exception):
     def __init__(self, name):
         # type: (str) -> None
         msg = "User {} is enabled".format(name)
-        super(UserIsEnabledException, self).__init__(msg)
+        super().__init__(msg)
 
 
 class UserIsMemberOfGroupsException(Exception):
@@ -45,7 +45,7 @@ class UserIsMemberOfGroupsException(Exception):
     def __init__(self, name):
         # type: (str) -> None
         msg = "User {} is a member of one or more groups".format(name)
-        super(UserIsMemberOfGroupsException, self).__init__(msg)
+        super().__init__(msg)
 
 
 class UserHasPendingRequestsException(Exception):
@@ -54,4 +54,4 @@ class UserHasPendingRequestsException(Exception):
     def __init__(self, name):
         # type: (str) -> None
         msg = "User {} has one or more pending requests".format(name)
-        super(UserHasPendingRequestsException, self).__init__(msg)
+        super().__init__(msg)

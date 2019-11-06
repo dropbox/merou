@@ -59,6 +59,6 @@ class ServiceAccount(Model):
 
     def add(self, session):
         # type: (Session) -> ServiceAccount
-        super(ServiceAccount, self).add(session)
+        super().add(session)
         Counter.incr(session, "updates")
         return self

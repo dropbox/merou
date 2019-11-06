@@ -38,7 +38,7 @@ class EmailTemplateEngine(BaseTemplateEngine):
     def __init__(self, settings):
         # type: (Settings) -> None
         # TODO(rra): Move email templates out of the grouper.fe package into their own.
-        super(EmailTemplateEngine, self).__init__(settings, "grouper.fe")
+        super().__init__(settings, "grouper.fe")
 
 
 def send_email(

@@ -20,7 +20,7 @@ class CtlSettings(Settings):
 
     def __init__(self):
         # type: () -> None
-        super(CtlSettings, self).__init__()
+        super().__init__()
 
         # Keep attributes here in the same order as in config/dev.yaml.
         self.oneoff_dirs = []  # type: List[str]
@@ -28,4 +28,4 @@ class CtlSettings(Settings):
 
     def update_from_config(self, filename=None, section="ctl"):
         # type: (Optional[str], Optional[str]) -> None
-        super(CtlSettings, self).update_from_config(filename, section)
+        super().update_from_config(filename, section)

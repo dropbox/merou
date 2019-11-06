@@ -87,7 +87,7 @@ class GrouperHandler(RequestHandler):
         else:
             status_code = 500
         self.plugins.log_exception(self.request, status_code, exc_type, exc_value, exc_tb)
-        super(GrouperHandler, self).log_exception(exc_type, exc_value, exc_tb)
+        super().log_exception(exc_type, exc_value, exc_tb)
 
     def write_error(self, status_code, **kwargs):
         # type: (int, **Any) -> None
@@ -138,7 +138,7 @@ class GrouperHandler(RequestHandler):
             url = urljoin(url, "?refresh=yes")
         alerts = kwargs.pop("alerts", [])  # type: List[Alert]
         self.set_alerts(alerts)
-        super(GrouperHandler, self).redirect(url, *args, **kwargs)
+        super().redirect(url, *args, **kwargs)
 
     def get_or_create_user(self, username):
         # type: (str) -> Optional[User]
@@ -223,7 +223,7 @@ class GrouperHandler(RequestHandler):
 
     def get_template_namespace(self):
         # type: () -> Dict[str, Any]
-        namespace = super(GrouperHandler, self).get_template_namespace()
+        namespace = super().get_template_namespace()
         namespace.update(
             {
                 "update_qs": self.update_qs,

@@ -4,4 +4,4 @@ class ServiceAccountNotFoundException(Exception):
     def __init__(self, name):
         # type: (str) -> None
         msg = "Service account {} not found".format(name)
-        super(ServiceAccountNotFoundException, self).__init__(msg)
+        super().__init__(msg)

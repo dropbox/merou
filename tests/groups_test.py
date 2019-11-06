@@ -256,7 +256,7 @@ def test_graph_cycle_indirect(session, graph, users, groups):  # noqa: F811
 @pytest.mark.gen_test
 def test_graph_disable(session, graph, groups, http_client, base_url):  # noqa: F811
     """ Test that disabled groups work with the graph as expected."""
-    groupname = u"serving-team"
+    groupname = "serving-team"
 
     graph.update_from_db(session)
     old_groups = graph.groups

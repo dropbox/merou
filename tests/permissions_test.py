@@ -361,7 +361,7 @@ def test_permission_request_flow(
     assert resp.code == 200
 
     emails = _get_unsent_and_mark_as_sent_emails(session)
-    assert_same_recipients(emails, [u"testuser@a.co", u"security-team@a.co"])
+    assert_same_recipients(emails, ["testuser@a.co", "security-team@a.co"])
 
     perms = _load_permissions_by_group_name(session, "serving-team")
     assert len(perms) == 1
@@ -392,7 +392,7 @@ def test_permission_request_flow(
     assert "grantable.one" in perms, "requested permission shouldn't be granted immediately"
 
     emails = _get_unsent_and_mark_as_sent_emails(session)
-    assert_same_recipients(emails, [u"zorkian@a.co"])
+    assert_same_recipients(emails, ["zorkian@a.co"])
 
     # (re)REQUEST: 'grantable.one', 'some argument' for 'serving-team'
     groupname = "serving-team"
@@ -438,9 +438,7 @@ def test_permission_request_flow(
 
     emails = _get_unsent_and_mark_as_sent_emails(session)
     # because tech-ops team doesn't have an email, all of its members should get emailed instead
-    assert_same_recipients(
-        emails, [u"testuser@a.co", u"zay@a.co", u"gary@a.co", u"figurehead@a.co"]
-    )
+    assert_same_recipients(emails, ["testuser@a.co", "zay@a.co", "gary@a.co", "figurehead@a.co"])
 
     perms = _load_permissions_by_group_name(session, "serving-team")
     assert len(perms) == 2
@@ -466,7 +464,7 @@ def test_permission_request_flow(
     assert resp.code == 200
 
     emails = _get_unsent_and_mark_as_sent_emails(session)
-    assert_same_recipients(emails, [u"zorkian@a.co"])
+    assert_same_recipients(emails, ["zorkian@a.co"])
 
     perms = _load_permissions_by_group_name(session, "serving-team")
     assert len(perms) == 2
@@ -506,7 +504,7 @@ def test_limited_permissions(
     assert resp.code == 200
 
     emails = _get_unsent_and_mark_as_sent_emails(session)
-    assert_same_recipients(emails, [u"security-team@a.co"])
+    assert_same_recipients(emails, ["security-team@a.co"])
 
 
 @pytest.mark.gen_test
@@ -537,7 +535,7 @@ def test_limited_permissions_global_approvers(
     assert resp.code == 200
 
     emails = _get_unsent_and_mark_as_sent_emails(session)
-    assert_same_recipients(emails, [u"security-team@a.co"])
+    assert_same_recipients(emails, ["security-team@a.co"])
 
 
 @pytest.mark.gen_test

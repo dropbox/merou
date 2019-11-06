@@ -17,16 +17,16 @@ def test_group_add_remove_member(session, tmpdir, users, groups):  # noqa: F811
     groupname = "team-sre"
 
     # add
-    assert (u"User", username) not in groups[groupname].my_members()
+    assert ("User", username) not in groups[groupname].my_members()
     call_main(session, tmpdir, "group", "add_member", "--member", groupname, username)
     all_members = Group.get(session, name=groupname).my_members()
-    assert (u"User", username) in all_members
-    _, _, _, role, _, _ = all_members[(u"User", username)]
+    assert ("User", username) in all_members
+    _, _, _, role, _, _ = all_members[("User", username)]
     assert GROUP_EDGE_ROLES[role] == "member"
 
     # remove
     call_main(session, tmpdir, "group", "remove_member", groupname, username)
-    assert (u"User", username) not in Group.get(session, name=groupname).my_members()
+    assert ("User", username) not in Group.get(session, name=groupname).my_members()
 
 
 @patch("grouper.group_member.get_plugin_proxy")
@@ -37,16 +37,16 @@ def test_group_add_remove_owner(get_plugin_proxy, session, tmpdir, users, groups
     groupname = "team-sre"
 
     # add
-    assert (u"User", username) not in groups[groupname].my_members()
+    assert ("User", username) not in groups[groupname].my_members()
     call_main(session, tmpdir, "group", "add_member", "--owner", groupname, username)
     all_members = Group.get(session, name=groupname).my_members()
-    assert (u"User", username) in all_members
-    _, _, _, role, _, _ = all_members[(u"User", username)]
+    assert ("User", username) in all_members
+    _, _, _, role, _, _ = all_members[("User", username)]
     assert GROUP_EDGE_ROLES[role] == "owner"
 
     # remove (fails)
     call_main(session, tmpdir, "group", "remove_member", groupname, username)
-    assert (u"User", username) in Group.get(session, name=groupname).my_members()
+    assert ("User", username) in Group.get(session, name=groupname).my_members()
 
 
 def test_group_bulk_add_remove(session, tmpdir, users, groups):  # noqa: F811
@@ -70,11 +70,11 @@ def test_group_name_checks(session, tmpdir, users, groups):  # noqa: F811
 
     # check user/group name
     call_main(session, tmpdir, "group", "add_member", "--member", "invalid group name", username)
-    assert (u"User", username) not in Group.get(session, name=groupname).my_members()
+    assert ("User", username) not in Group.get(session, name=groupname).my_members()
 
     bad_username = "not_a_valid_username"
     call_main(session, tmpdir, "group", "add_member", "--member", groupname, bad_username)
-    assert (u"User", bad_username) not in Group.get(session, name=groupname).my_members()
+    assert ("User", bad_username) not in Group.get(session, name=groupname).my_members()
 
 
 def test_group_logdump(session, tmpdir, users, groups):  # noqa: F811

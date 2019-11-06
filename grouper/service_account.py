@@ -13,8 +13,6 @@ service_account boolean field.
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
-from sqlalchemy.exc import IntegrityError
-
 from grouper.entities.permission_grant import ServiceAccountPermissionGrant
 from grouper.group_service_account import add_service_account
 from grouper.models.audit_log import AuditLog
@@ -39,12 +37,6 @@ class BadMachineSet(Exception):
     pass
 
 
-class DuplicateServiceAccount(Exception):
-    """Creating a service account failed because it duplicates an existing user."""
-
-    pass
-
-
 def _check_machine_set(service_account, machine_set):
     # type: (ServiceAccount, str) -> None
     """Verify a service account machine set with plugins.
@@ -56,51 +48,6 @@ def _check_machine_set(service_account, machine_set):
         get_plugin_proxy().check_machine_set(service_account.user.username, machine_set)
     except PluginRejectedMachineSet as e:
         raise BadMachineSet(str(e))
-
-
-def can_create_service_account(session, actor, group):
-    # type: (Session, User, Group) -> bool
-    return actor.is_member(group.my_members())
-
-
-def create_service_account(session, actor, name, description, machine_set, owner):
-    # type: (Session, User, str, str, str, Group) -> ServiceAccount
-    """Creates a service account and its underlying user.
-
-    Also adds the service account to the list of accounts managed by the owning group.
-
-    Throws:
-        BadMachineSet: if some plugin rejected the machine set
-        DuplicateServiceAccount: if a user with the given name already exists
-    """
-    user = User(username=name, is_service_account=True)
-    service_account = ServiceAccount(user=user, description=description, machine_set=machine_set)
-
-    if machine_set is not None:
-        _check_machine_set(service_account, machine_set)
-
-    try:
-        user.add(session)
-        service_account.add(session)
-        session.flush()
-    except IntegrityError:
-        session.rollback()
-        raise DuplicateServiceAccount("User {} already exists".format(name))
-
-    # Counter is updated here and the session is committed, so we don't need an additional update
-    # or commit for the account creation.
-    add_service_account(session, owner, service_account)
-
-    AuditLog.log(
-        session,
-        actor.id,
-        "create_service_account",
-        "Created new service account.",
-        on_group_id=owner.id,
-        on_user_id=service_account.user_id,
-    )
-
-    return service_account
 
 
 def edit_service_account(session, actor, service_account, description, machine_set):
@@ -126,15 +73,6 @@ def edit_service_account(session, actor, service_account, description, machine_s
         "Edited service account.",
         on_user_id=service_account.user.id,
     )
-
-
-def is_service_account(session, user):
-    # type: (Session, User) -> bool
-    """Returns whether a User is a service account.
-
-    Also returns True for role users until they have been retired.
-    """
-    return user.is_service_account or user.role_user
 
 
 def can_manage_service_account(session, target, user):

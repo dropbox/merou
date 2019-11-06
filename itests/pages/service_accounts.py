@@ -113,6 +113,10 @@ class ServiceAccountGrantPermissionPage(BasePage):
         # type: () -> WebElement
         return self.find_element_by_id("grant-permission-form")
 
+    def get_alerts(self):
+        # type: () -> List[WebElement]
+        return self.find_elements_by_class_name("alert")
+
     def select_permission(self, permission):
         # type: (str) -> None
         form = self._get_grant_permission_form()

@@ -1,7 +1,12 @@
 import re
 from typing import TYPE_CHECKING
 
-from grouper.constants import MAX_NAME_LENGTH, SERVICE_ACCOUNT_VALIDATION, USER_ADMIN
+from grouper.constants import (
+    MAX_NAME_LENGTH,
+    PERMISSION_ADMIN,
+    SERVICE_ACCOUNT_VALIDATION,
+    USER_ADMIN,
+)
 from grouper.entities.user import (
     UserHasPendingRequestsException,
     UserIsEnabledException,
@@ -79,6 +84,15 @@ class ServiceAccountService(ServiceAccountInterface):
 
         self.audit_log.log_enable_service_account(user, owner, authorization)
 
+    def grant_permission_to_service_account(self, permission, argument, service, authorization):
+        # type: (str, str, str, Authorization) -> None
+        self.permission_grant_repository.grant_permission_to_service_account(
+            permission, argument, service
+        )
+        self.audit_log.log_grant_permission_to_service_account(
+            permission, argument, service, authorization
+        )
+
     def is_valid_service_account_name(self, name):
         # type: (str) -> Tuple[bool, Optional[str]]
         """Check if the given name is valid for use as a service account.
@@ -110,6 +124,10 @@ class ServiceAccountService(ServiceAccountInterface):
 
         return (True, None)
 
+    def owner_of_service_account(self, service):
+        # type: (str) -> str
+        return self.service_account_repository.owner_of_service_account(service)
+
     def permission_grants_for_service_account(self, service):
         # type: (str) -> List[ServiceAccountPermissionGrant]
         return self.permission_grant_repository.permission_grants_for_service_account(service)
@@ -117,6 +135,16 @@ class ServiceAccountService(ServiceAccountInterface):
     def service_account_exists(self, service):
         # type: (str) -> bool
         return self.service_account_repository.service_account_exists(service)
+
+    def service_account_is_enabled(self, service):
+        # type: (str) -> bool
+        return self.service_account_repository.service_account_is_enabled(service)
+
+    def service_account_is_permission_admin(self, service):
+        # type: (str) -> bool
+        return self.permission_grant_repository.service_account_has_permission(
+            service, PERMISSION_ADMIN
+        )
 
     def service_account_is_user_admin(self, service):
         # type: (str) -> bool

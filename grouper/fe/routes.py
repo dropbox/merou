@@ -85,6 +85,10 @@ HANDLERS = [
     (r"/github/link_complete/(?P<user_id>[0-9]+)", GitHubLinkCompleteView),
     (r"/groups", GroupsView),
     (r"/groups/{}/service/create".format(NAME_VALIDATION), ServiceAccountCreate),
+    (
+        r"/groups/{}/service/{}/grant".format(NAME_VALIDATION, SERVICE_ACCOUNT_VALIDATION),
+        ServiceAccountPermissionGrant,
+    ),
     (r"/permissions/create", PermissionsCreate),
     (r"/permissions/request", PermissionRequest),
     (r"/permissions/requests", PermissionsRequests),
@@ -167,10 +171,6 @@ for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
                     ServiceAccountDisable,
                 ),
                 (r"/groups/{}/service/{}/edit".format(regex, service_regex), ServiceAccountEdit),
-                (
-                    r"/groups/{}/service/{}/grant".format(regex, service_regex),
-                    ServiceAccountPermissionGrant,
-                ),
                 (
                     r"/groups/{}/service/{}/revoke/(?P<mapping_id>[0-9]+)".format(
                         regex, service_regex

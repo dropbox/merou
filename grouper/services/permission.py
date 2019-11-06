@@ -1,6 +1,7 @@
+import re
 from typing import TYPE_CHECKING
 
-from grouper.constants import SYSTEM_PERMISSIONS
+from grouper.constants import ARGUMENT_VALIDATION, SYSTEM_PERMISSIONS
 from grouper.usecases.interfaces import PermissionInterface
 
 if TYPE_CHECKING:
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     from grouper.usecases.authorization import Authorization
     from grouper.usecases.list_permissions import ListPermissionsSortKey
     from grouper.usecases.interfaces import AuditLogInterface
-    from typing import Dict, List, Optional
+    from typing import Dict, List, Optional, Tuple
 
 
 class PermissionService(PermissionInterface):
@@ -82,6 +83,21 @@ class PermissionService(PermissionInterface):
     def is_system_permission(self, name):
         # type: (str) -> bool
         return name in (entry[0] for entry in SYSTEM_PERMISSIONS)
+
+    def is_valid_permission_argument(self, permission, argument):
+        # type: (str, str) -> Tuple[bool, Optional[str]]
+        """Check whether a permission argument is valid.
+
+        Returns:
+            Tuple of a bool (whether or not the permission argument is valid) and, if False, a
+            string error message explaining why it isn't valid.
+        """
+        if not re.match(ARGUMENT_VALIDATION + r"$", argument):
+            error = "Permission argument is not valid (does not match {})".format(
+                ARGUMENT_VALIDATION
+            )
+            return (False, error)
+        return (True, None)
 
     def list_permissions(self, pagination, audited_only):
         # type: (Pagination[ListPermissionsSortKey], bool) -> PaginatedList[Permission]

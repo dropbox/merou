@@ -84,6 +84,27 @@ class ServiceAccountRepository(object):
 
         user.is_service_account = True
 
+    def owner_of_service_account(self, name):
+        # type: (str) -> str
+        owner = (
+            self.session.query(Group.groupname)
+            .filter(
+                SQLServiceAccount.user_id == SQLUser.id,
+                SQLUser.name == name,
+                GroupServiceAccount.service_account_id == SQLServiceAccount.id,
+                Group.id == GroupServiceAccount.group_id,
+            )
+            .scalar()
+        )
+        if not owner:
+            raise ServiceAccountNotFoundException(name)
+        return owner
+
     def service_account_exists(self, name):
         # type: (str) -> bool
         return SQLServiceAccount.get(self.session, name=name) is not None
+
+    def service_account_is_enabled(self, name):
+        # type: (str) -> bool
+        user = SQLUser.get(self.session, name=name)
+        return bool(user and user.is_service_account and user.enabled)  # bool() is for mypy

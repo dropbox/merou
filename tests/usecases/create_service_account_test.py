@@ -79,6 +79,16 @@ def test_success(setup):
     assert linkage is not None
     assert linkage.group_id == group.id
 
+    # Check that the user appears in the graph.
+    setup.graph.update_from_db(setup.session)
+    metadata = setup.graph.user_metadata["service@svc.localhost"]
+    assert metadata["enabled"]
+    assert metadata["service_account"]["description"] == "description"
+    assert metadata["service_account"]["machine_set"] == "machine-set"
+    assert metadata["service_account"]["owner"] == "some-group"
+    group_details = setup.graph.get_group_details("some-group")
+    assert group_details["service_accounts"] == ["service@svc.localhost"]
+
 
 def test_add_domain(setup):
     # type: (SetupTest) -> None

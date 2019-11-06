@@ -1,18 +1,25 @@
 import re
 
-from grouper.constants import USERNAME_VALIDATION
+from grouper.constants import SERVICE_ACCOUNT_VALIDATION, USERNAME_VALIDATION
 
 
 def test_username_validation() -> None:
-    regex = f"^{USERNAME_VALIDATION}$"
+    user_regex = f"^{USERNAME_VALIDATION}$"
+    service_regex = f"^{SERVICE_ACCOUNT_VALIDATION}$"
 
     good_users = [
         "example@example.com",
         "jane@a.b.c.d.co",  # subdomains
         "bobby@yahoo-inc.com",  # dashes in domains
+        "under_sco_re@a.co",  # underscores
     ]
     for user in good_users:
-        assert re.match(regex, user)
+        match = re.match(user_regex, user)
+        assert match
+        assert match.group("name") == user
+        match = re.match(service_regex, user)
+        assert match
+        assert match.group("accountname") == user
 
     bad_users = [
         "nodomain",  # no domain part
@@ -24,4 +31,5 @@ def test_username_validation() -> None:
         "example@.example.com",  # period after @
     ]
     for user in bad_users:
-        assert not re.match(regex, user)
+        assert not re.match(user_regex, user)
+        assert not re.match(service_regex, user)

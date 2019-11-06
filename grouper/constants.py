@@ -13,8 +13,16 @@ NAME2_VALIDATION = _NAME_VALIDATION.format("name2")
 # These regexes are specifically to validate usernames.  SERVICE_ACCOUNT_VALIDATION is the same as
 # USERNAME_VALIDATION but with a distinct capture group name so that it doesn't conflict with a
 # NAME_VALIDATION regex in the same URL.
-USERNAME_VALIDATION = r"(?P<name>[\w-]+@\w+[\.\w]+)"
-SERVICE_ACCOUNT_VALIDATION = r"(?P<accountname>[\w-]+@\w+[\.\w]+)"
+#
+# This matches a subset of valid email addresses, currently matching Dropbox internal needs, and
+# may need to become more flexible in the future (via configuration, for instance).  It disallows
+# periods in the LHS of the identity for Dropbox policy reasons.
+#
+# + is disallowed in the LHS of the email address on the grounds that for the internal corporate
+# use case, it doesn't make sense to allow people to create a user whose identity is an alias, or
+# to allow people to potentially create multiple users mapping to the same underlying account.
+USERNAME_VALIDATION = r"(?P<name>[\w-]+@(?:[\w\-]+\.)+\w{2,})"
+SERVICE_ACCOUNT_VALIDATION = r"(?P<accountname>[\w-]+@(?:[\w\-]+\.)+\w{2,})"
 
 # UserToken validators
 TOKEN_SECRET_VALIDATION = r"(?P<token_secret>[a-f0-9]{40})"

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import binascii
 import hmac
 import json
@@ -5,7 +7,8 @@ import os
 from typing import cast, TYPE_CHECKING
 from urllib.parse import urlencode
 
-from tornado import gen, httpclient
+from tornado import gen
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse
 
 from grouper.constants import USER_METADATA_GITHUB_USERNAME_KEY
 from grouper.fe.settings import settings
@@ -18,26 +21,27 @@ from grouper.user_metadata import set_user_metadata
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
     from tornado.concurrent import Future
-    from typing import Any, Iterator, Optional, Text
+    from typing import Any, Iterator, Optional
 
 
-def _get_github_http_client():
-    # type: () -> httpclient.AsyncHTTPClient
-    return httpclient.AsyncHTTPClient()
+def _get_github_http_client() -> AsyncHTTPClient:
+    return AsyncHTTPClient()
 
 
 class GitHubClient(object):
-    def __init__(self, http_client, proxy_host, proxy_port):
-        # type: (httpclient.AsyncHTTPClient, Optional[str], Optional[int]) -> None
+    def __init__(
+        self, http_client: AsyncHTTPClient, proxy_host: Optional[str], proxy_port: Optional[int]
+    ) -> None:
         self.http_client = http_client
         self.proxy_host = proxy_host
         self.proxy_port = proxy_port
 
     @gen.coroutine
-    def get_oauth_access_token(self, client_id, client_secret, code, state):
-        # type: (bytes, Text, bytes, bytes) -> Iterator[Future]
+    def get_oauth_access_token(
+        self, client_id: bytes, client_secret: str, code: bytes, state: bytes
+    ) -> Iterator[Future]:
         "Turn a temporary oauth code into an access token."
-        request = httpclient.HTTPRequest(
+        request = HTTPRequest(
             "https://github.com/login/oauth/access_token",
             "POST",
             {"Accept": "application/json", "User-Agent": "github.com/dropbox/merou"},
@@ -52,17 +56,16 @@ class GitHubClient(object):
             proxy_host=self.proxy_host,
             proxy_port=self.proxy_port,
         )
-        response = cast(httpclient.HTTPResponse, (yield self.http_client.fetch(request)))
+        response = cast(HTTPResponse, (yield self.http_client.fetch(request)))
         response_data = json.loads(response.body.decode("utf-8"))
         if "error" in response_data:
             raise ValueError("GitHub returned an error: {!r}".format(response_data))
         raise gen.Return(response_data["access_token"])
 
     @gen.coroutine
-    def get_username(self, oauth_token):
-        # type: (Text) -> Iterator[Future]
+    def get_username(self, oauth_token: str) -> Iterator[Future]:
         "Get the GitHub username associated with an oauth token."
-        request = httpclient.HTTPRequest(
+        request = HTTPRequest(
             "https://api.github.com/user",
             "GET",
             {
@@ -73,14 +76,13 @@ class GitHubClient(object):
             proxy_host=self.proxy_host,
             proxy_port=self.proxy_port,
         )
-        response = cast(httpclient.HTTPResponse, (yield self.http_client.fetch(request)))
+        response = cast(HTTPResponse, (yield self.http_client.fetch(request)))
         response_data = json.loads(response.body.decode("utf-8"))
         raise gen.Return(response_data["login"])
 
 
 class GitHubLinkBeginView(GrouperHandler):
-    def get(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
+    def get(self, *args: Any, **kwargs: Any) -> None:
         # Redirect the user to GitHub to authorize our app.
         state = binascii.hexlify(os.urandom(16))
         self.set_cookie("github-link-state", state, httponly=True)
@@ -94,8 +96,7 @@ class GitHubLinkBeginView(GrouperHandler):
 
 class GitHubLinkCompleteView(GrouperHandler):
     @gen.coroutine
-    def get(self, *args, **kwargs):
-        # type: (*Any, **Any) -> Iterator[Future]
+    def get(self, *args: Any, **kwargs: Any) -> Iterator[Future]:
         # Check that the state parameter is correct.
         state = self.request.query_arguments.get("state", [b""])[-1]
         expected_state = self.get_cookie("github-link-state", "").encode("utf-8")
@@ -141,14 +142,12 @@ class GitHubLinkCompleteView(GrouperHandler):
 
 class UserClearGitHub(GrouperHandler):
     @staticmethod
-    def check_access(session, actor, target):
-        # type: (Session, User, User) -> bool
+    def check_access(session: Session, actor: User, target: User) -> bool:
         return actor.name == target.name
 
-    def post(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        user_id = kwargs.get("user_id")  # type: Optional[int]
-        name = kwargs.get("name")  # type: Optional[str]
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        user_id: Optional[int] = kwargs.get("user_id")
+        name: Optional[str] = kwargs.get("name")
 
         user = User.get(self.session, user_id, name)
         if not user:

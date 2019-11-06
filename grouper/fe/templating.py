@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import os
 from base64 import b64encode
 from hashlib import sha256
-from typing import cast, NamedTuple, Optional, Text, TYPE_CHECKING
+from typing import cast, NamedTuple, Optional, TYPE_CHECKING
 
 from grouper.fe.settings import FrontendSettings
 from grouper.templating import BaseTemplateEngine
@@ -10,7 +12,7 @@ if TYPE_CHECKING:
     from typing import Iterable, List
 
 # A web resource that needs to be included in CSP headers.
-Resource = NamedTuple("Resource", [("url", str), ("integrity", Optional[Text])])
+Resource = NamedTuple("Resource", [("url", str), ("integrity", Optional[str])])
 
 # External CSS loaded on every Grouper page.  All URLs are relative to a CDNJS mirror.
 EXTERNAL_CSS = [

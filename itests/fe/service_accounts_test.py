@@ -206,7 +206,9 @@ def test_permission_revoke_denied(tmpdir, setup, browser):
             permission.click_revoke_button()
 
     # Add the user to the group so that the revoke button will show up, and then revoke it before
-    # attempting to click the button.
+    # attempting to click the button.  We can't just directly initiate a request to the revoke URL
+    # without making the button appear because Python Selenium doesn't support a test-initiated
+    # POST (only GET).
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group")
 

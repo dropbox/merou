@@ -7,6 +7,7 @@ from grouper.entities.group_edge import APPROVER_ROLE_INDICES, GROUP_EDGE_ROLES
 from grouper.fe.forms import GroupJoinForm
 from grouper.fe.settings import settings
 from grouper.fe.util import Alert, GrouperHandler
+from grouper.group_member import InvalidRoleForMember
 from grouper.group_requests import count_requests_by_group
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group, GROUP_JOIN_CHOICES
@@ -119,14 +120,22 @@ class GroupJoin(GrouperHandler):
         elif group.auto_expire:
             expiration = datetime.utcnow() + group.auto_expire
 
-        request = group.add_member(
-            requester=self.current_user,
-            user_or_group=member,
-            reason=form.data["reason"],
-            status=GROUP_JOIN_CHOICES[group.canjoin],
-            expiration=expiration,
-            role=form.data["role"],
-        )
+        try:
+            request = group.add_member(
+                requester=self.current_user,
+                user_or_group=member,
+                reason=form.data["reason"],
+                status=GROUP_JOIN_CHOICES[group.canjoin],
+                expiration=expiration,
+                role=form.data["role"],
+            )
+        except InvalidRoleForMember as e:
+            return self.render(
+                "group-join.html",
+                form=form,
+                group=group,
+                alerts=[Alert("danger", str(e), "Invalid Role")],
+            )
         self.session.commit()
 
         if group.canjoin == "canask":

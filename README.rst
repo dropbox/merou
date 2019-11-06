@@ -34,7 +34,7 @@ On Debian-based systems:
 
 .. code:: bash
 
-    apt-get install libmysqlclient-dev libpython3-dev python3-pip
+    apt-get install libmysqlclient-dev libpython3-dev libcurl4-openssl-dev libssl-dev python3-pip
     pip3 install -e git+https://github.com/dropbox/merou#egg=grouper
 
 Next you need to configure grouper to find a SQL-style backing database

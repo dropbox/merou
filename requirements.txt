@@ -7,6 +7,7 @@ enum34==1.1.6
 mysqlclient==1.4.2.post1
 networkx==2.2
 plop==0.3.0
+pycurl==7.43.0.3
 python-dateutil==2.8.0
 pytz==2018.9
 setuptools==40.8.0

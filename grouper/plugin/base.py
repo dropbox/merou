@@ -63,6 +63,10 @@ class BasePlugin(object):
         """
         pass
 
+    def get_github_app_client_secret(self):
+        # type: () -> bytes
+        "Return the client secret for the GitHub app used to authorize users."
+
     def get_owner_by_arg_by_perm(self, session):
         # type: (Session) -> Optional[Dict[str, Dict[str, List[Group]]]]
         """Called when determining owners for permission+arg granting.

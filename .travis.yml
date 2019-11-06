@@ -1,5 +1,9 @@
 language: python
 addons:
+  apt:
+    packages:
+      - libcurl4-openssl-dev
+      - libssl-dev
   chrome: stable
 services:
   - mysql

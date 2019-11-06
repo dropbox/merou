@@ -122,7 +122,9 @@ def test_end_to_end_whitespace_in_argument(tmpdir, setup, browser):
         assert grant.source == "(direct)"
 
     # Check directly in the database to make sure the whitespace is stripped, since we may not be
-    # able to see it via the browser.
+    # able to see it via the browser.  We need to explicitly reopen the database since otherwise
+    # SQLite doesn't always see changes written by the frontend.
+    setup.reopen_database()
     permission_grant_repository = setup.sql_repository_factory.create_permission_grant_repository()
     grants = permission_grant_repository.permission_grants_for_group("some-group")
     assert grants == [

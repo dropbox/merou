@@ -55,7 +55,6 @@ from tests.path_util import db_url
 
 if TYPE_CHECKING:
     from datetime import datetime
-    from grouper.models.base.session import Session
     from py.local import LocalPath
     from typing import Iterator, Optional
 
@@ -83,6 +82,7 @@ class SetupTest(object):
         self.settings = Settings()
         self.settings.database = db_url(tmpdir)
         self.plugins = PluginProxy([])
+        self.graph = GroupGraph()
 
         # Reinitialize the global plugin proxy with an empty set of plugins in case a previous test
         # initialized plugins.  This can go away once a plugin proxy is injected into everything
@@ -90,8 +90,21 @@ class SetupTest(object):
         set_global_plugin_proxy(self.plugins)
 
         self.initialize_database()
+        self.open_database()
+
+    def initialize_database(self):
+        # type: () -> None
+        schema_repository = SchemaRepository(self.settings)
+
+        # If using a persistent database, clear the database first.
+        if "MEROU_TEST_DATABASE" in os.environ:
+            schema_repository.drop_schema()
+
+        # Create the database schema.
+        schema_repository.initialize_schema()
+
+    def open_database(self) -> None:
         self.session = SessionFactory(self.settings).create_session()
-        self.graph = GroupGraph()
         session_factory = SingletonSessionFactory(self.session)
         self.repository_factory = GraphRepositoryFactory(
             self.settings, self.plugins, session_factory, self.graph
@@ -103,16 +116,15 @@ class SetupTest(object):
         self.usecase_factory = UseCaseFactory(self.settings, self.plugins, self.service_factory)
         self._transaction_service = self.service_factory.create_transaction_service()
 
-    def initialize_database(self):
-        # type: () -> Session
-        schema_repository = SchemaRepository(self.settings)
+    def reopen_database(self) -> None:
+        """Reopen the database (sometimes needed to synchronize SQLite.
 
-        # If using a persistent database, clear the database first.
-        if "MEROU_TEST_DATABASE" in os.environ:
-            schema_repository.drop_schema()
-
-        # Create the database schema.
-        schema_repository.initialize_schema()
+        This will invalidate all existing factories and any objects created from them.  The caller
+        is responsible for discarding any objects using the previous session and creating new
+        objects as needed.
+        """
+        self.close()
+        self.open_database()
 
     def close(self):
         # type: () -> None

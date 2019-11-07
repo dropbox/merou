@@ -1,87 +1,90 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 from selenium.common.exceptions import NoSuchElementException
 
-from grouper.constants import AUDIT_SECURITY
+from grouper.constants import AUDIT_SECURITY, USER_ADMIN
 from grouper.models.public_key import PublicKey
-from grouper.permissions import get_or_create_permission
-from itests.fixtures import async_server  # noqa: F401
+from grouper.models.user import User
 from itests.pages.users import PublicKeysPage, UserViewPage
+from itests.setup import frontend_server
 from plugins import group_ownership_policy
-from tests.fixtures import (  # noqa: F401
-    fe_app as app,
-    graph,
-    groups,
-    permissions,
-    service_accounts,
-    session,
-    standard_graph,
-    users,
-)
 from tests.url_util import url
-from tests.util import add_member, grant_permission
+
+if TYPE_CHECKING:
+    from py.path import LocalPath
+    from selenium.webdriver import Chrome
+    from tests.setup import SetupTest
 
 
-def test_disable_last_owner(async_server, browser):  # noqa: F811
-    fe_url = url(async_server, "/users/gary@a.co")
-    browser.get(fe_url)
+def test_disable_last_owner(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group", role="owner")
+        setup.add_user_to_group("cbguder@a.co", "admins")
+        setup.grant_permission_to_group(USER_ADMIN, "", "admins")
 
-    page = UserViewPage(browser)
+    with frontend_server(tmpdir, "cbguder@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/users/gary@a.co"))
+        page = UserViewPage(browser)
 
-    page.click_disable_button()
+        page.click_disable_button()
+        modal = page.get_disable_user_modal()
+        modal.confirm()
 
-    modal = page.get_disable_user_modal()
-    modal.confirm()
-
-    assert page.current_url.endswith("/users/gary@a.co")
-    assert page.has_text(group_ownership_policy.EXCEPTION_MESSAGE)
+        assert page.current_url.endswith("/users/gary@a.co")
+        assert page.has_alert(group_ownership_policy.EXCEPTION_MESSAGE)
 
 
-def test_list_public_keys(async_server, browser, session, users, groups):  # noqa: F811
-    permission = get_or_create_permission(session, AUDIT_SECURITY)[0]
-    user = users["cbguder@a.co"]
-    group = groups["group-admins"]
+def test_list_public_keys(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("cbguder@a.co", "admins")
+        setup.grant_permission_to_group(AUDIT_SECURITY, "public_keys", "admins")
 
-    add_member(group, user, role="owner")
-    grant_permission(group, permission, "public_keys")
+    user = User.get(setup.session, name="cbguder@a.co")
+    assert user
 
     # Pagination defaults to 100 keys per page
-    for i in range(120):
-        key = PublicKey(
-            user=user,
-            public_key="KEY:{}".format(i),
-            fingerprint="MD5:{}".format(i),
-            fingerprint_sha256="SHA256:{}".format(i),
-            key_size=4096,
-            key_type="ssh-rsa",
-            comment="",
-        )
-        key.add(session)
+    with setup.transaction():
+        for i in range(120):
+            key = PublicKey(
+                user=user,
+                public_key="KEY:{}".format(i),
+                fingerprint="MD5:{}".format(i),
+                fingerprint_sha256="SHA256:{}".format(i),
+                key_size=4096,
+                key_type="ssh-rsa",
+                comment="",
+            )
+            key.add(setup.session)
 
-    session.commit()
+    with frontend_server(tmpdir, "cbguder@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/users/public-keys"))
+        page = PublicKeysPage(browser)
 
-    fe_url = url(async_server, "/users/public-keys")
-    browser.get(fe_url)
+        row = page.find_public_key_row("SHA256:0")
+        assert row.user == user.username
+        assert row.key_size == "4096"
+        assert row.key_type == "ssh-rsa"
 
-    page = PublicKeysPage(browser)
+        assert page.find_public_key_row("SHA256:99")
 
-    row = page.find_public_key_row("SHA256:0")
-    assert row.user == user.username
-    assert row.key_size == "4096"
-    assert row.key_type == "ssh-rsa"
-
-    assert page.find_public_key_row("SHA256:99")
-
-    with pytest.raises(NoSuchElementException):
-        page.find_public_key_row("SHA256:100")
+        with pytest.raises(NoSuchElementException):
+            page.find_public_key_row("SHA256:100")
 
 
-def test_show_user_hides_aliased_permissions(async_server, browser):  # noqa: F811
-    fe_url = url(async_server, "/users/oliver@a.co")
-    browser.get(fe_url)
+def test_user_view_hides_aliased_permissions(
+    tmpdir: LocalPath, setup: SetupTest, browser: Chrome
+) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("oliver@a.co", "sad-team")
+        setup.grant_permission_to_group("owner", "sad-team", "sad-team")
 
-    page = UserViewPage(browser)
+    with frontend_server(tmpdir, "cbguder@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/users/oliver@a.co"))
+        page = UserViewPage(browser)
 
-    assert len(page.find_permission_rows("owner", "sad-team")) == 1
-
-    assert page.find_permission_rows("ssh", "owner=sad-team") == []
-    assert page.find_permission_rows("sudo", "sad-team") == []
+        assert len(page.find_permission_rows("owner", "sad-team")) == 1
+        assert page.find_permission_rows("ssh", "owner=sad-team") == []
+        assert page.find_permission_rows("sudo", "sad-team") == []

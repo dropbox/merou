@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING
 
 import pytest
 from mock import ANY
+from selenium.common.exceptions import NoSuchElementException
 
 from grouper.constants import GROUP_ADMIN, PERMISSION_GRANT
 from grouper.entities.permission_grant import GroupPermissionGrant
-from itests.pages.exceptions import NoSuchElementException
-from itests.pages.groups import GroupViewPage, PermissionGrantPage
+from itests.pages.groups import GroupEditMemberPage, GroupViewPage, PermissionGrantPage
 from itests.pages.permission_request import PermissionRequestPage
 from itests.pages.permission_requests import PermissionRequestUpdatePage
 from itests.setup import frontend_server
@@ -66,6 +66,24 @@ def test_show_group_hides_aliased_permissions(
         assert len(page.find_permission_rows("owner", "sad-team")) == 1
         assert page.find_permission_rows("ssh", "owner=sad-team") == []
         assert page.find_permission_rows("sudo", "sad-team") == []
+
+
+def test_edit_member_group_role(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group", role="owner")
+        setup.add_group_to_group("other-group", "some-group")
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group"))
+
+        view_page = GroupViewPage(browser)
+        row = view_page.find_member_row("other-group")
+        assert row.role == "member"
+        row.click_edit_button()
+
+        edit_page = GroupEditMemberPage(browser)
+        with pytest.raises(NoSuchElementException):
+            edit_page.set_role("Owner")
 
 
 def test_remove_member(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:

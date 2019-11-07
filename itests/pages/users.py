@@ -1,5 +1,6 @@
+from selenium.common.exceptions import NoSuchElementException
+
 from itests.pages.base import BaseElement, BaseModal, BasePage
-from itests.pages.exceptions import NoSuchElementException
 from itests.pages.permissions import PermissionGrantRow
 
 

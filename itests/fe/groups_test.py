@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING
 
 import pytest
+from selenium.common.exceptions import NoSuchElementException
 
 from grouper.entities.group import GroupJoinPolicy
-from itests.pages.exceptions import NoSuchElementException
 from itests.pages.groups import GroupsViewPage
 from itests.setup import frontend_server
 from tests.url_util import url

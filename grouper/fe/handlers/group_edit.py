@@ -48,14 +48,15 @@ class GroupEdit(GrouperHandler):
             )
 
         new_name = form.data["groupname"]
+        renamed = group.groupname != new_name
 
-        if group.groupname != new_name and is_role_user(self.session, group=group):
+        if renamed and is_role_user(self.session, group=group):
             form.groupname.errors.append("You cannot change the name of service account groups")
             return self.render(
                 "group-edit.html", group=group, form=form, alerts=self.get_form_alerts(form.errors)
             )
 
-        if group.groupname != new_name and Group.get(self.session, name=new_name):
+        if renamed and Group.get(self.session, name=new_name):
             message = f"A group named '{new_name}' already exists (possibly disabled)"
             form.groupname.errors.append(message)
             return self.render(
@@ -75,4 +76,7 @@ class GroupEdit(GrouperHandler):
             self.session, self.current_user.id, "edit_group", "Edited group.", on_group_id=group.id
         )
 
-        return self.redirect("/groups/{}".format(group.name))
+        url = f"/groups/{group.name}"
+        if renamed:
+            url += "?refresh=yes"
+        self.redirect(url)

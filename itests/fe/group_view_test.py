@@ -91,6 +91,24 @@ def test_edit_member_group_role(tmpdir: LocalPath, setup: SetupTest, browser: Ch
             edit_page.set_role("Owner")
 
 
+def test_rename(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group", role="owner")
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group"))
+
+        view_page = GroupViewPage(browser)
+        view_page.click_edit_button()
+
+        edit_page = GroupEditPage(browser)
+        edit_page.set_name("other-group")
+        edit_page.submit()
+
+        assert browser.current_url.endswith("?refresh=yes")
+        assert view_page.subheading == "other-group"
+
+
 def test_rename_name_conflict(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group", role="owner")

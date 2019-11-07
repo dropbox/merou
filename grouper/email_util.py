@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from grouper.models.group import Group
     from grouper.models.group_edge import GroupEdge
     from grouper.settings import Settings
-    from typing import Dict, Iterable, Optional, Set, Union
+    from typing import Dict, Iterable, Optional, Union
 
     Context = Dict[str, Union[bool, int, str, Optional[datetime]]]
 
@@ -313,7 +313,7 @@ def notify_edge_expiration(settings: Settings, session: Session, edge: GroupEdge
 
 
 def notify_nonauditor_promoted(
-    settings: Settings, session: Session, user: User, auditors_group: Group, group_names: Set[str]
+    settings: Settings, session: Session, user: User, auditors_group: Group
 ) -> None:
     """Send notification that a nonauditor has been promoted to be an auditor.
 
@@ -324,7 +324,6 @@ def notify_nonauditor_promoted(
         session: Object for db session.
         user: The user that has been promoted.
         auditors_group: The auditors group
-        group_names: The audited groups in which the user was previously a non-auditor approver.
     """
     member_name = user.username
     recipients = [member_name]

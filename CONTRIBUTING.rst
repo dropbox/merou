@@ -12,8 +12,7 @@ refactorings, may drop features, may change database schemas, and will
 probably rename the project again.  You should therefore have a high
 tolerance for change if you use it today.
 
-Python 3 is required.  Grouper is primarily tested under Python 3.7 but
-should work with older versions.
+Python 3.7 or later is required.
 
 Merou used to be called Grouper and is still called Grouper internally at
 Dropbox.  We renamed the public project to avoid `a namespace conflict
@@ -129,11 +128,10 @@ results to a user without relying on method return values.)
 
 If the use case needs to pass more complex data back to the UI, such as
 lists of objects, that data is represented by a data transfer object
-defined in `grouper.entities`.  These are mypy `NamedTuples` so that we
-have type checking of their attributes.  Always use data transfer objects
-like this, rather than objects that are artifacts of the underlying
-repository or have any behavior attached (in other words, don't return
-SQLAlchemy models).
+defined in `grouper.entities`.  These should be frozen dataclass objects.
+Always use data transfer objects like this, rather than objects that are
+artifacts of the underlying repository or have any behavior attached (in
+other words, don't return SQLAlchemy models).
 
 For paginated lists of objects, define an `Enum` to represent the possible
 sort keys and then use the generic types defined in

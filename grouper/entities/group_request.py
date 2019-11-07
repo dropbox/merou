@@ -1,5 +1,7 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
 from enum import Enum
-from typing import NamedTuple
 
 
 class GroupRequestStatus(Enum):
@@ -8,22 +10,17 @@ class GroupRequestStatus(Enum):
     CANCELLED = "cancelled"
 
 
-UserGroupRequest = NamedTuple(
-    "GroupRequest",
-    [
-        ("id", int),
-        ("user", str),
-        ("group", str),
-        ("requester", str),
-        ("status", GroupRequestStatus),
-    ],
-)
+@dataclass(frozen=True)
+class UserGroupRequest:
+    id: int
+    user: str
+    group: str
+    requester: str
+    status: GroupRequestStatus
 
 
 class UserGroupRequestNotFoundException(Exception):
     """Attempt to operate on a UserGroupRequest not found in the storage layer."""
 
-    def __init__(self, request):
-        # type: (UserGroupRequest) -> None
-        msg = "Group membership request {} not found".format(request.id)
-        super().__init__(msg)
+    def __init__(self, request: UserGroupRequest) -> None:
+        super().__init__(f"Group membership request {request.id} not found")

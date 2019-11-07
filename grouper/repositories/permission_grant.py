@@ -67,7 +67,6 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
                 argument=permission_data["argument"],
                 granted_on=datetime.utcfromtimestamp(permission_data["granted_on"]),
                 is_alias=permission_data["alias"],
-                grant_id=None,
             )
             permissions.append(permission)
         return permissions
@@ -88,7 +87,6 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
                 argument=permission_data["argument"],
                 granted_on=datetime.utcfromtimestamp(permission_data["granted_on"]),
                 is_alias=False,
-                grant_id=None,
             )
             permissions.append(permission)
         return permissions
@@ -104,7 +102,6 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
                 argument=permission_data["argument"],
                 granted_on=datetime.utcfromtimestamp(permission_data["granted_on"]),
                 is_alias=permission_data["alias"],
-                grant_id=None,
             )
             permissions.append(permission)
         return permissions

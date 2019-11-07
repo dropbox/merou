@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import datetime
 from time import time
 from typing import TYPE_CHECKING
@@ -13,15 +14,14 @@ if TYPE_CHECKING:
 
 
 class MockUI(ListPermissionsUI):
-    def __init__(self, sort=False):
-        # type: (bool) -> None
+    def __init__(self, sort: bool = False) -> None:
         self.sort = sort
 
-    def listed_permissions(self, permissions, can_create):
-        # type: (PaginatedList[Permission], bool) -> None
-        self.permissions = permissions
+    def listed_permissions(self, permissions: PaginatedList[Permission], can_create: bool) -> None:
         if self.sort:
-            self.permissions.values = sorted(self.permissions.values)
+            self.permissions = replace(permissions, values=sorted(permissions.values))
+        else:
+            self.permissions = permissions
         self.can_create = can_create
 
 

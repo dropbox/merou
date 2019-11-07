@@ -1,4 +1,6 @@
-from sqlalchemy.exc import IntegrityError
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from grouper.fe.forms import GroupEditForm
 from grouper.fe.util import GrouperHandler
@@ -8,9 +10,15 @@ from grouper.models.group import Group
 from grouper.role_user import is_role_user
 from grouper.user_group import user_can_manage_group
 
+if TYPE_CHECKING:
+    from typing import Any, Optional
+
 
 class GroupEdit(GrouperHandler):
-    def get(self, group_id=None, name=None):
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        group_id: Optional[int] = kwargs.get("group_id")
+        name: Optional[str] = kwargs.get("name")
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -22,7 +30,10 @@ class GroupEdit(GrouperHandler):
 
         self.render("group-edit.html", group=group, form=form)
 
-    def post(self, group_id=None, name=None):
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        group_id: Optional[int] = kwargs.get("group_id")
+        name: Optional[str] = kwargs.get("name")
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -36,28 +47,29 @@ class GroupEdit(GrouperHandler):
                 "group-edit.html", group=group, form=form, alerts=self.get_form_alerts(form.errors)
             )
 
-        if group.groupname != form.data["groupname"] and is_role_user(self.session, group=group):
+        new_name = form.data["groupname"]
+
+        if group.groupname != new_name and is_role_user(self.session, group=group):
             form.groupname.errors.append("You cannot change the name of service account groups")
             return self.render(
                 "group-edit.html", group=group, form=form, alerts=self.get_form_alerts(form.errors)
             )
 
-        group.groupname = form.data["groupname"]
+        if group.groupname != new_name and Group.get(self.session, name=new_name):
+            message = f"A group named '{new_name}' already exists (possibly disabled)"
+            form.groupname.errors.append(message)
+            return self.render(
+                "group-edit.html", group=group, form=form, alerts=self.get_form_alerts(form.errors)
+            )
+
+        group.groupname = new_name
         group.email_address = form.data["email_address"]
         group.description = form.data["description"]
         group.canjoin = form.data["canjoin"]
         group.auto_expire = form.data["auto_expire"]
         group.require_clickthru_tojoin = form.data["require_clickthru_tojoin"]
         Counter.incr(self.session, "updates")
-
-        try:
-            self.session.commit()
-        except IntegrityError:
-            self.session.rollback()
-            form.groupname.errors.append("{} already exists".format(form.data["groupname"]))
-            return self.render(
-                "group-edit.html", group=group, form=form, alerts=self.get_form_alerts(form.errors)
-            )
+        self.session.commit()
 
         AuditLog.log(
             self.session, self.current_user.id, "edit_group", "Edited group.", on_group_id=group.id

@@ -8,7 +8,12 @@ from selenium.common.exceptions import NoSuchElementException
 
 from grouper.constants import GROUP_ADMIN, PERMISSION_GRANT
 from grouper.entities.permission_grant import GroupPermissionGrant
-from itests.pages.groups import GroupEditMemberPage, GroupViewPage, PermissionGrantPage
+from itests.pages.groups import (
+    GroupEditMemberPage,
+    GroupEditPage,
+    GroupViewPage,
+    PermissionGrantPage,
+)
 from itests.pages.permission_request import PermissionRequestPage
 from itests.pages.permission_requests import PermissionRequestUpdatePage
 from itests.setup import frontend_server
@@ -84,6 +89,24 @@ def test_edit_member_group_role(tmpdir: LocalPath, setup: SetupTest, browser: Ch
         edit_page = GroupEditMemberPage(browser)
         with pytest.raises(NoSuchElementException):
             edit_page.set_role("Owner")
+
+
+def test_rename_name_conflict(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group", role="owner")
+        setup.create_group("other-group")
+        setup.disable_group("other-group")
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group"))
+
+        view_page = GroupViewPage(browser)
+        view_page.click_edit_button()
+
+        edit_page = GroupEditPage(browser)
+        edit_page.set_name("other-group")
+        edit_page.submit()
+        assert edit_page.has_alert("A group named 'other-group' already exists")
 
 
 def test_remove_member(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:

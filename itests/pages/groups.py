@@ -15,6 +15,20 @@ if TYPE_CHECKING:
     from typing import List, Optional
 
 
+class GroupEditPage(BasePage):
+    @property
+    def form(self) -> WebElement:
+        return self.find_element_by_id("edit-form")
+
+    def set_name(self, name: str) -> None:
+        field = self.form.find_element_by_name("groupname")
+        field.clear()
+        field.send_keys(name)
+
+    def submit(self) -> None:
+        self.form.submit()
+
+
 class GroupEditMemberPage(BasePage):
     @property
     def form(self) -> WebElement:
@@ -93,6 +107,10 @@ class GroupViewPage(BasePage):
         element = self.find_element_by_id("auditModal")
         self.wait_until_visible(element)
         return AuditModal(element)
+
+    def click_edit_button(self) -> None:
+        button = self.find_element_by_id("edit-group")
+        button.click()
 
     def click_add_permission_button(self) -> None:
         button = self.find_element_by_id("add-permission")

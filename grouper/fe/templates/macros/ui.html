@@ -295,7 +295,7 @@ enabled. Membership in this group is regularly reviewed.
         </div>
         {% if can_control %}
         <div class="panel-footer">
-            <a class="btn btn-default btn-sm add-service-account"
+            <a id="add-service-account" class="btn btn-default btn-sm add-service-account"
                href="/groups/{{ groupname }}/service/create">
                 <span class="glyphicon glyphicon-plus"></span> Add Service Account
             </a>
@@ -594,12 +594,14 @@ enabled. Membership in this group is regularly reviewed.
         {% if group and (can_grant or is_member) %}
         <div class='panel-footer'>
             {% if can_grant %}
-            <a class="btn btn-default btn-sm" href="/permissions/grant/{{ group.name }}">
+            <a id="add-permission" class="btn btn-default btn-sm"
+               href="/permissions/grant/{{ group.name }}">
                 <span class="glyphicon glyphicon-plus"></span> Add Permission
             </a>
             {% endif %}
             {% if is_member%}
-            <a class="btn btn-default btn-sm" href="/groups/{{ group.name }}/permission/request">
+            <a id="request-permission" class="btn btn-default btn-sm"
+               href="/groups/{{ group.name }}/permission/request">
                 <span class="glyphicon glyphicon-plus"></span> Request Permission
             </a>
             {% endif %}

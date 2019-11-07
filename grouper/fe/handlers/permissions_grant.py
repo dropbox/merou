@@ -55,10 +55,12 @@ class PermissionsGrant(GrouperHandler):
         if not permission:
             return self.notfound()  # Shouldn't happen.
 
+        argument = form.argument.data.strip()
+
         allowed = False
         for perm in grantable:
             if perm[0].name == permission.name:
-                if matches_glob(perm[1], form.data["argument"]):
+                if matches_glob(perm[1], argument):
                     allowed = True
                     break
         if not allowed:
@@ -93,7 +95,7 @@ class PermissionsGrant(GrouperHandler):
                 )
 
         try:
-            grant_permission(self.session, group.id, permission.id, argument=form.data["argument"])
+            grant_permission(self.session, group.id, permission.id, argument=argument)
         except IntegrityError:
             self.session.rollback()
             form.argument.errors.append("Permission and Argument already mapped to this group.")

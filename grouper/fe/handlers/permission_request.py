@@ -51,15 +51,12 @@ class PermissionRequest(GrouperHandler):
         if permission.name not in args_by_perm:
             raise HTTPError(status_code=400, reason="that permission was not in the form")
 
+        argument = form.argument.data.strip()
+
         # save off request
         try:
             request = permissions.create_request(
-                self.session,
-                self.current_user,
-                group,
-                permission,
-                form.argument.data,
-                form.reason.data,
+                self.session, self.current_user, group, permission, argument, form.reason.data
             )
         except permissions.RequestAlreadyGranted:
             alerts = [Alert("danger", "This group already has this permission and argument.")]
@@ -75,7 +72,7 @@ class PermissionRequest(GrouperHandler):
                 "prefilled perm+arg have no owner",
                 group_name=group.name,
                 permission_name=permission.name,
-                argument=form.argument.data,
+                argument=argument,
             )
             alerts = [
                 Alert(

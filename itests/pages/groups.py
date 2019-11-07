@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from selenium.webdriver.support.select import Select
@@ -63,8 +65,7 @@ class GroupsViewPage(BasePage):
 
 
 class GroupViewPage(BasePage):
-    def find_member_row(self, name):
-        # type: (str) -> MemberRow
+    def find_member_row(self, name: str) -> MemberRow:
         for row in self.find_elements_by_class_name("member-row"):
             member_row = MemberRow(row)
             if member_row.name == name:
@@ -72,8 +73,9 @@ class GroupViewPage(BasePage):
 
         raise NoSuchElementException("Can't find member with name {}".format(name))
 
-    def find_permission_rows(self, name, argument=None):
-        # type: (str, Optional[str]) -> List[PermissionGrantRow]
+    def find_permission_rows(
+        self, name: str, argument: Optional[str] = None
+    ) -> List[PermissionGrantRow]:
         elements = self.find_elements_by_class_name("permission-row")
         rows = [PermissionGrantRow(el) for el in elements]
 
@@ -84,20 +86,21 @@ class GroupViewPage(BasePage):
 
         return rows
 
-    def get_remove_user_modal(self):
-        # type: () -> RemoveMemberModal
+    def get_remove_user_modal(self) -> RemoveMemberModal:
         element = self.find_element_by_id("removeUserModal")
         return RemoveMemberModal(element)
 
-    def get_audit_modal(self):
-        # type: () -> AuditModal
+    def get_audit_modal(self) -> AuditModal:
         element = self.find_element_by_id("auditModal")
         self.wait_until_visible(element)
         return AuditModal(element)
 
-    def click_add_service_account_button(self):
-        # type: () -> None
-        button = self.find_element_by_class_name("add-service-account")
+    def click_add_permission_button(self) -> None:
+        button = self.find_element_by_id("add-permission")
+        button.click()
+
+    def click_add_service_account_button(self) -> None:
+        button = self.find_element_by_id("add-service-account")
         button.click()
 
 
@@ -139,6 +142,23 @@ class GroupJoinPage(BasePage):
     def submit(self):
         # type: () -> None
         self.form.find_element_by_id("join-btn").click()
+
+
+class PermissionGrantPage(BasePage):
+    @property
+    def form(self) -> WebElement:
+        return self.find_element_by_id("grant-form")
+
+    def set_permission(self, permission: str) -> None:
+        field = Select(self.form.find_element_by_name("permission"))
+        field.select_by_value(permission)
+
+    def set_argument(self, argument: str) -> None:
+        field = self.form.find_element_by_name("argument")
+        field.send_keys(argument)
+
+    def submit(self) -> None:
+        self.form.submit()
 
 
 class GroupRequestsPage(BasePage):

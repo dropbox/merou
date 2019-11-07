@@ -79,7 +79,7 @@ def api_server(tmpdir):
 
     yield "localhost:{}".format(api_port)
 
-    p.kill()
+    p.terminate()
 
 
 @contextmanager
@@ -140,7 +140,7 @@ def frontend_server(tmpdir, user):
     yield "http://localhost:{}".format(proxy_port)
 
     for p in subprocesses:
-        p.kill()
+        p.terminate()
 
 
 def selenium_browser():

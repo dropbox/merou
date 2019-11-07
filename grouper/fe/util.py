@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 from urllib.parse import quote, unquote, urlencode, urljoin
 from uuid import uuid4
 
-import sqlalchemy.exc
 import tornado.web
 from plop.collector import Collector
 from tornado.web import HTTPError, RequestHandler
@@ -19,7 +18,6 @@ from grouper.constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATIO
 from grouper.fe.settings import settings
 from grouper.graph import Graph
 from grouper.initialization import create_graph_usecase_factory
-from grouper.models.base.session import get_db_engine, Session
 from grouper.models.user import User
 from grouper.perf_profile import record_trace
 from grouper.plugin import get_plugin_proxy
@@ -28,6 +26,7 @@ from grouper.user_permissions import user_permissions
 
 if TYPE_CHECKING:
     from grouper.fe.templating import FrontendTemplateEngine
+    from grouper.models.base.session import Session
     from types import TracebackType
     from typing import Any, Callable, Dict, List, Optional, Sequence, Type
 
@@ -151,20 +150,14 @@ class GrouperHandler(RequestHandler):
             raise InvalidUser("{} does not match {}".format(username, USERNAME_VALIDATION))
 
         # User must exist in the database and be active
-        try:
-            user, created = User.get_or_create(self.session, username=username)
-            if created:
-                logging.info("Created new user %s", username)
-                self.session.commit()
-                # Because the graph doesn't initialize until the updates table
-                # is populated, we need to refresh the graph here in case this
-                # is the first update.
-                self.graph.update_from_db(self.session)
-        except sqlalchemy.exc.OperationalError:
-            # Failed to connect to database or create user, try to reconfigure the db. This invokes
-            # the fetcher to try to see if our URL string has changed.
-            Session.configure(bind=get_db_engine(settings().database))
-            raise DatabaseFailure()
+        user, created = User.get_or_create(self.session, username=username)
+        if created:
+            logging.info("Created new user %s", username)
+            self.session.commit()
+
+            # Because the graph doesn't initialize until the updates table is populated, we need to
+            # refresh the graph here in case this is the first update.
+            self.graph.update_from_db(self.session)
 
         # service accounts are, by definition, not interactive users
         if user.is_service_account:

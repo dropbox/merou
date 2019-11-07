@@ -15,6 +15,20 @@ if TYPE_CHECKING:
     from typing import List, Optional
 
 
+class GroupCreatePage(BasePage):
+    @property
+    def form(self) -> WebElement:
+        return self.find_element_by_id("create-form")
+
+    def set_group_name(self, name: str) -> None:
+        field = self.form.find_element_by_name("groupname")
+        field.clear()
+        field.send_keys(name)
+
+    def submit(self) -> None:
+        self.form.submit()
+
+
 class GroupEditPage(BasePage):
     @property
     def form(self) -> WebElement:
@@ -232,6 +246,11 @@ class CreateGroupModal(BaseModal):
         # type: (str) -> None
         field = self.form.find_element_by_name("groupname")
         field.send_keys(name)
+
+    def set_description(self, description):
+        # type: (str) -> None
+        field = self.form.find_element_by_name("description")
+        field.send_keys(description)
 
     def set_join_policy(self, join_policy):
         # type: (GroupJoinPolicy) -> None

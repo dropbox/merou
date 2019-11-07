@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import logging
 import re
@@ -27,11 +29,11 @@ from grouper.user_permissions import user_permissions
 if TYPE_CHECKING:
     from grouper.fe.templating import FrontendTemplateEngine
     from types import TracebackType
-    from typing import Any, Callable, Dict, List, Optional, Text, Type
+    from typing import Any, Callable, Dict, List, Optional, Sequence, Type
 
 
 class Alert(object):
-    def __init__(self, severity, message, heading=None):
+    def __init__(self, severity: str, message: str, heading: str = None) -> None:
         self.severity = severity
         self.message = message
         if heading is None:
@@ -49,8 +51,7 @@ class InvalidUser(Exception):
 
 
 class GrouperHandler(RequestHandler):
-    def initialize(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
+    def initialize(self, *args: Any, **kwargs: Any) -> None:
         self.graph = Graph()
         self.session = self.settings["session"]()  # type: Session
         self.template_engine = self.settings["template_engine"]  # type: FrontendTemplateEngine
@@ -70,18 +71,16 @@ class GrouperHandler(RequestHandler):
 
         self._request_start_time = datetime.utcnow()
 
-    def set_default_headers(self):
-        # type: () -> None
+    def set_default_headers(self) -> None:
         self.set_header("Content-Security-Policy", self.settings["template_engine"].csp_header())
         self.set_header("Referrer-Policy", "same-origin")
 
     def log_exception(
         self,
-        exc_type,  # type: Optional[Type[BaseException]]
-        exc_value,  # type: Optional[BaseException]
-        exc_tb,  # type: Optional[TracebackType]
-    ):
-        # type: (...) -> None
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
         if isinstance(exc_value, HTTPError):
             status_code = exc_value.status_code
         else:
@@ -89,8 +88,7 @@ class GrouperHandler(RequestHandler):
         self.plugins.log_exception(self.request, status_code, exc_type, exc_value, exc_tb)
         super().log_exception(exc_type, exc_value, exc_tb)
 
-    def write_error(self, status_code, **kwargs):
-        # type: (int, **Any) -> None
+    def write_error(self, status_code: int, **kwargs: Any) -> None:
         """Override for custom error page."""
         message = kwargs.get("message", "Unknown error")
         if status_code >= 500 and status_code < 600:
@@ -113,8 +111,7 @@ class GrouperHandler(RequestHandler):
             )
         self.finish()
 
-    def is_refresh(self):
-        # type: () -> bool
+    def is_refresh(self) -> bool:
         """Indicates whether the refresh argument for this handler has been
         set to yes. This is used to force a refresh of the cached graph so
         that we don't show inconsistent state to the user.
@@ -127,21 +124,18 @@ class GrouperHandler(RequestHandler):
     # The refresh argument can be added to any page.  If the handler for that
     # route calls this function, it will sync its graph from the database if
     # requested.
-    def handle_refresh(self):
-        # type: () -> None
+    def handle_refresh(self) -> None:
         if self.is_refresh():
             self.graph.update_from_db(self.session)
 
-    def redirect(self, url, *args, **kwargs):
-        # type: (str, *Any, **Any) -> None
+    def redirect(self, url: str, *args: Any, **kwargs: Any) -> None:
         if self.is_refresh():
             url = urljoin(url, "?refresh=yes")
         alerts = kwargs.pop("alerts", [])  # type: List[Alert]
         self.set_alerts(alerts)
         super().redirect(url, *args, **kwargs)
 
-    def get_or_create_user(self, username):
-        # type: (str) -> Optional[User]
+    def get_or_create_user(self, username: str) -> Optional[User]:
         """Retrieve or create the User object for the authenticated user.
 
         This is done in a separate method called by prepare instead of in the magic Tornado
@@ -178,8 +172,7 @@ class GrouperHandler(RequestHandler):
 
         return user
 
-    def prepare(self):
-        # type: () -> None
+    def prepare(self) -> None:
         username = self.request.headers.get(settings().user_auth_header)
 
         try:
@@ -195,8 +188,7 @@ class GrouperHandler(RequestHandler):
             self.baduser("{} is not an active account".format(username))
             self.finish()
 
-    def on_finish(self):
-        # type: () -> None
+    def on_finish(self) -> None:
         if self.perf_collector:
             self.perf_collector.stop()
             record_trace(self.session, self.perf_collector, self.perf_trace_uuid)
@@ -208,21 +200,18 @@ class GrouperHandler(RequestHandler):
         response_status = self.get_status()
         self.plugins.log_request(handler, response_status, duration_ms)
 
-    def update_qs(self, **kwargs):
-        # type: (**Any) -> str
+    def update_qs(self, **kwargs: Any) -> str:
         qs = self.request.arguments.copy()
         qs.update(kwargs)
         return "?" + urlencode(sorted(qs.items()), True)
 
-    def is_active(self, test_path):
-        # type: (str) -> str
+    def is_active(self, test_path: str) -> str:
         path = self.request.path
         if path == test_path:
             return "active"
         return ""
 
-    def get_template_namespace(self):
-        # type: () -> Dict[str, Any]
+    def get_template_namespace(self) -> Dict[str, Any]:
         namespace = super().get_template_namespace()
         namespace.update(
             {
@@ -236,14 +225,12 @@ class GrouperHandler(RequestHandler):
         )
         return namespace
 
-    def render_template(self, template_name, **kwargs):
-        # type: (str, **Any) -> Text
+    def render_template(self, template_name: str, **kwargs: Any) -> str:
         template = self.template_engine.get_template(template_name)
         content = template.render(kwargs)
         return content
 
-    def render(self, template_name, **kwargs):
-        # type: (str, **Any) -> None
+    def render(self, template_name: str, **kwargs: Any) -> None:
         defaults = self.get_template_namespace()
 
         context = {}
@@ -257,67 +244,57 @@ class GrouperHandler(RequestHandler):
 
         self.write(self.render_template(template_name, **context))
 
-    def set_alerts(self, alerts):
-        # type: (List[Alert]) -> None
+    def set_alerts(self, alerts: Sequence[Alert]) -> None:
         if len(alerts) > 0:
             self.set_cookie("_alerts", _serialize_alerts(alerts))
         else:
             self.clear_cookie("_alerts")
 
-    def get_alerts(self):
-        # type: () -> List[Alert]
+    def get_alerts(self) -> List[Alert]:
         serialized_alerts = self.get_cookie("_alerts", default="[]")
         alerts = _deserialize_alerts(serialized_alerts)
         self.clear_cookie("_alerts")
         return alerts
 
-    def get_form_alerts(self, errors):
-        # type: (Dict[str, List[str]]) -> List[Alert]
+    def get_form_alerts(self, errors: Dict[str, List[str]]) -> List[Alert]:
         alerts = []
         for field, field_errors in errors.items():
             for error in field_errors:
                 alerts.append(Alert("danger", error, field))
         return alerts
 
-    def raise_and_log_exception(self, exc):
-        # type: (Exception) -> None
+    def raise_and_log_exception(self, exc: Exception) -> None:
         try:
             raise exc
         except Exception:
             self.log_exception(*sys.exc_info())
 
-    def log_message(self, message, **kwargs):
-        # type: (str, **Any) -> None
+    def log_message(self, message: str, **kwargs: Any) -> None:
         logging.info("{}, kwargs={}".format(message, kwargs))
 
-    def badrequest(self):
-        # type: () -> None
+    def badrequest(self) -> None:
         self.set_status(400)
         self.raise_and_log_exception(tornado.web.HTTPError(400))
         self.render("errors/badrequest.html")
 
-    def baduser(self, message):
-        # type: (str) -> None
+    def baduser(self, message) -> None:
         self.set_status(403)
         self.raise_and_log_exception(tornado.web.HTTPError(403))
         how_to_get_help = settings().how_to_get_help
         self.render("errors/baduser.html", message=message, how_to_get_help=how_to_get_help)
 
-    def forbidden(self):
-        # type: () -> None
+    def forbidden(self) -> None:
         self.set_status(403)
         self.raise_and_log_exception(tornado.web.HTTPError(403))
         self.render("errors/forbidden.html", how_to_get_help=settings().how_to_get_help)
 
-    def notfound(self):
-        # type: () -> None
+    def notfound(self) -> None:
         self.set_status(404)
         self.raise_and_log_exception(tornado.web.HTTPError(404))
         self.render("errors/notfound.html")
 
 
-def test_reserved_names(permission_name):
-    # type: (str) -> List[str]
+def test_reserved_names(permission_name: str) -> List[str]:
     """Returns a list of strings explaining which reserved regexes match a
     proposed permission name.
     """
@@ -330,8 +307,7 @@ def test_reserved_names(permission_name):
     return failure_messages
 
 
-def ensure_audit_security(perm_arg):
-    # type: (Text) -> Callable[[Callable[..., None]], Callable[..., None]]
+def ensure_audit_security(perm_arg: str) -> Callable[[Callable[..., None]], Callable[..., None]]:
     """Decorator for web handler methods to ensure the current_user has the
     AUDIT_SECURITY permission with the specified argument.
 
@@ -339,10 +315,8 @@ def ensure_audit_security(perm_arg):
         perm_arg: the argument required for the audit permission. only 'public_keys' at this point.
     """
 
-    def _wrapper(f):
-        # type: (Callable[..., None]) -> Callable[..., None]
-        def _decorator(self, *args, **kwargs):
-            # type: (GrouperHandler, *Any, **Any) -> None
+    def _wrapper(f: Callable[..., None]) -> Callable[..., None]:
+        def _decorator(self: GrouperHandler, *args: Any, **kwargs: Any) -> None:
             if not any(
                 [
                     name == AUDIT_SECURITY and argument == perm_arg
@@ -358,13 +332,11 @@ def ensure_audit_security(perm_arg):
     return _wrapper
 
 
-def _serialize_alert(alert):
-    # type: (Alert) -> Dict[str, str]
+def _serialize_alert(alert: Alert) -> Dict[str, str]:
     return {"severity": alert.severity, "message": alert.message, "heading": alert.heading}
 
 
-def _deserialize_alert(alert_dict):
-    # type: (Dict[str, str]) -> Alert
+def _deserialize_alert(alert_dict: Dict[str, str]) -> Alert:
     return Alert(
         severity=alert_dict["severity"],
         message=alert_dict["message"],
@@ -372,15 +344,13 @@ def _deserialize_alert(alert_dict):
     )
 
 
-def _serialize_alerts(alerts):
-    # type: (List[Alert]) -> str
+def _serialize_alerts(alerts: Sequence[Alert]) -> str:
     alert_dicts = list(map(_serialize_alert, alerts))
     alerts_json = json.dumps(alert_dicts, separators=(",", ":"))
     return quote(alerts_json)
 
 
-def _deserialize_alerts(quoted_alerts_json):
-    # type: (str) -> List[Alert]
+def _deserialize_alerts(quoted_alerts_json: str) -> List[Alert]:
     try:
         alerts_json = unquote(quoted_alerts_json)
         alert_dicts = json.loads(alerts_json)

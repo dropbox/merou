@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import smtplib
 from datetime import datetime
@@ -16,7 +18,7 @@ if TYPE_CHECKING:
     from grouper.models.group import Group
     from grouper.models.group_edge import GroupEdge
     from grouper.settings import Settings
-    from typing import Dict, Iterable, Optional, Set, Text, Union
+    from typing import Dict, Iterable, Optional, Set, Union
 
     Context = Dict[str, Union[bool, int, str, Optional[datetime]]]
 
@@ -35,36 +37,34 @@ class UnknownActorDuringExpirationException(Exception):
 class EmailTemplateEngine(BaseTemplateEngine):
     """Email-specific template engine."""
 
-    def __init__(self, settings):
-        # type: (Settings) -> None
+    def __init__(self, settings: Settings) -> None:
         # TODO(rra): Move email templates out of the grouper.fe package into their own.
         super().__init__(settings, "grouper.fe")
 
 
 def send_email(
-    session,  # type: Session
-    recipients,  # type: Iterable[str]
-    subject,  # type: Text
-    template,  # type: str
-    settings,  # type: Settings
-    context,  # type: Context
-):
-    return send_async_email(
+    session: Session,
+    recipients: Iterable[str],
+    subject: str,
+    template: str,
+    settings: Settings,
+    context: Context,
+) -> None:
+    send_async_email(
         session, recipients, subject, template, settings, context, send_after=datetime.utcnow()
     )
 
 
 def send_async_email(
-    session,  # type: Session
-    recipients,  # type: Iterable[str]
-    subject,  # type: Text
-    template,  # type: str
-    settings,  # type: Settings
-    context,  # type: Context
-    send_after,  # type: datetime
-    async_key=None,  # type: Optional[str]
-):
-    # type: (...) -> None
+    session: Session,
+    recipients: Iterable[str],
+    subject: str,
+    template: str,
+    settings: Settings,
+    context: Context,
+    send_after: datetime,
+    async_key: Optional[str] = None,
+) -> None:
     """Construct a message object from a template and schedule it
 
     This is the main email sending method to send out a templated email. This is used to
@@ -79,9 +79,6 @@ def send_async_email(
         send_after: Schedule the email to go out after this point in time.
         async_key: If you set this, it will be inserted into the db so that you can find this email
             in the future.
-
-    Returns:
-        Nothing.
     """
     msg = get_email_from_template(recipients, subject, template, settings, context)
 
@@ -93,8 +90,7 @@ def send_async_email(
     session.commit()
 
 
-def cancel_async_emails(session, async_key):
-    # type: (Session, str) -> None
+def cancel_async_emails(session: Session, async_key: str) -> None:
     """Cancel pending async emails by key
 
     If you scheduled an asynchronous email with an async_key previously, this method can be
@@ -108,8 +104,9 @@ def cancel_async_emails(session, async_key):
     ).update({"sent": True})
 
 
-def process_async_emails(settings, session, now_ts, dry_run=False):
-    # type: (Settings, Session, datetime, bool) -> int
+def process_async_emails(
+    settings: Settings, session: Session, now_ts: datetime, dry_run: bool = False
+) -> int:
     """Send emails due before now
 
     This method finds and immediately sends any emails that have been scheduled to be sent before
@@ -156,8 +153,13 @@ def process_async_emails(settings, session, now_ts, dry_run=False):
     return sent_ct
 
 
-def get_email_from_template(recipient_list, subject, template, settings, context):
-    # type: (Iterable[str], Text, str, Settings, Context) -> MIMEMultipart
+def get_email_from_template(
+    recipient_list: Iterable[str],
+    subject: str,
+    template: str,
+    settings: Settings,
+    context: Context,
+) -> MIMEMultipart:
     """Construct a message object from a template
 
     This creates the full MIME object that can be used to send an email with mixed HTML
@@ -199,8 +201,7 @@ def get_email_from_template(recipient_list, subject, template, settings, context
     return msg
 
 
-def send_email_raw(settings, recipient_list, msg_raw):
-    # type: (Settings, Iterable[str], str) -> None
+def send_email_raw(settings: Settings, recipient_list: Iterable[str], msg_raw: str) -> None:
     """Send raw email (from string)
 
     Given some recipients and the string version of a message, this sends it immediately
@@ -231,8 +232,7 @@ def send_email_raw(settings, recipient_list, msg_raw):
     smtp.quit()
 
 
-def notify_edge_expiration(settings, session, edge):
-    # type: (Settings, Session, GroupEdge) -> None
+def notify_edge_expiration(settings: Settings, session: Session, edge: GroupEdge) -> None:
     """Send notification that an edge has expired.
 
     Handles email notification and audit logging.
@@ -312,8 +312,9 @@ def notify_edge_expiration(settings, session, edge):
     )
 
 
-def notify_nonauditor_promoted(settings, session, user, auditors_group, group_names):
-    # type: (Settings, Session, User, Group, Set[str]) -> None
+def notify_nonauditor_promoted(
+    settings: Settings, session: Session, user: User, auditors_group: Group, group_names: Set[str]
+) -> None:
     """Send notification that a nonauditor has been promoted to be an auditor.
 
     Handles email notification and audit logging.

@@ -1,23 +1,35 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from grouper.constants import USER_ADMIN, USER_DISABLE
+from grouper.email_util import cancel_async_emails
 from grouper.fe.util import Alert, GrouperHandler
 from grouper.models.audit_log import AuditLog
+from grouper.models.group import Group
 from grouper.models.user import User
 from grouper.plugin.exceptions import PluginRejectedDisablingUser
 from grouper.role_user import disable_role_user, is_owner_of_role_user
 from grouper.user import disable_user
 from grouper.user_permissions import user_has_permission
 
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from typing import Any, Optional
+
 
 class UserDisable(GrouperHandler):
     @staticmethod
-    def check_access(session, actor, target):
+    def check_access(session: Session, actor: User, target: User) -> bool:
         return (
             user_has_permission(session, actor, USER_ADMIN)
             or user_has_permission(session, actor, USER_DISABLE, argument=target.name)
             or (target.role_user and is_owner_of_role_user(session, actor, tuser=target))
         )
 
-    def post(self, user_id=None, name=None):
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        user_id: Optional[int] = kwargs.get("user_id")
+        name: Optional[str] = kwargs.get("name")
 
         user = User.get(self.session, user_id, name)
         if not user:
@@ -44,5 +56,22 @@ class UserDisable(GrouperHandler):
             "Disabled user.",
             on_user_id=user.id,
         )
+
+        if user.role_user:
+            group = Group.get(self.session, name=user.username)
+            if group and group.audit:
+                # complete the audit
+                group.audit.complete = True
+                self.session.commit()
+
+                cancel_async_emails(self.session, f"audit-{group.id}")
+
+                AuditLog.log(
+                    self.session,
+                    self.current_user.id,
+                    "complete_audit",
+                    "Disabling group completes group audit.",
+                    on_group_id=group.id,
+                )
 
         return self.redirect("/users/{}?refresh=yes".format(user.name))

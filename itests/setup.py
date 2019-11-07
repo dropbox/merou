@@ -6,6 +6,7 @@ managing Selenium.  More general test setup code goes in tests.setup.
 
 import errno
 import logging
+import os
 import socket
 import subprocess
 import sys
@@ -146,7 +147,8 @@ def frontend_server(tmpdir, user):
 def selenium_browser():
     # type: () -> Chrome
     options = ChromeOptions()
-    options.add_argument("headless")
+    if os.environ.get("HEADLESS", "true") != "false":
+        options.add_argument("headless")
     options.add_argument("no-sandbox")
     options.add_argument("window-size=1920,1080")
     return Chrome(options=options)

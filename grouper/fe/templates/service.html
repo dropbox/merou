@@ -26,7 +26,8 @@
     <!-- Enable/Disable button. -->
     {% if current_user_role['is_owner'] %}
         {% if group.enabled %}
-            <button class="btn btn-danger" data-toggle="modal" data-target="#disableModal">
+            <button id="disable-role-user" class="btn btn-danger" data-toggle="modal"
+                    data-target="#disableModal">
                 <i class="fa fa-minus"></i> Disable
             </button>
         {% else %}

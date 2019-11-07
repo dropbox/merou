@@ -1,12 +1,23 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from grouper.email_util import cancel_async_emails
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
 from grouper.role_user import is_role_user
 from grouper.user import user_role
 
+if TYPE_CHECKING:
+    from typing import Any, Optional
+
 
 class GroupDisable(GrouperHandler):
-    def post(self, group_id=None, name=None):
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        group_id: Optional[int] = kwargs.get("group_id")
+        name: Optional[str] = kwargs.get("name")
+
         group = Group.get(self.session, group_id, name)
         if not group:
             return self.notfound()
@@ -37,6 +48,8 @@ class GroupDisable(GrouperHandler):
             # complete the audit
             group.audit.complete = True
             self.session.commit()
+
+            cancel_async_emails(self.session, f"audit-{group.id}")
 
             AuditLog.log(
                 self.session,

@@ -144,7 +144,7 @@ def test_graph_disable(
     assert sorted(old_users) == sorted(list(users.keys()) + ["service@a.co"])
 
     # disable a user
-    username = u"oliver@a.co"
+    username = "oliver@a.co"
     fe_url = url(base_url, "/users/{}/disable".format(username))
     resp = yield http_client.fetch(
         fe_url, method="POST", headers={"X-Grouper-User": "zorkian@a.co"}, body=urlencode({})
@@ -166,7 +166,7 @@ def test_user_enable_disable(
     http_client,
     base_url,
 ):
-    username = u"oliver@a.co"
+    username = "oliver@a.co"
     old_groups = sorted(get_groups(graph, username))
     headers_admin = {"X-Grouper-User": "zorkian@a.co"}
     headers_enable = {"X-Grouper-User": "zay@a.co"}

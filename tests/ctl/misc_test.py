@@ -54,7 +54,7 @@ def test_user_status_changes(session, tmpdir, users, groups):  # noqa: F811
     # re-enable the account, preserving memberships
     call_main(session, tmpdir, "user", "enable", "--preserve-membership", username)
     assert User.get(session, name=username).enabled
-    assert (u"User", username) in groups[groupname].my_members()
+    assert ("User", username) in groups[groupname].my_members()
 
     # enabling an active account is a no-op
     call_main(session, tmpdir, "user", "enable", username)
@@ -64,7 +64,7 @@ def test_user_status_changes(session, tmpdir, users, groups):  # noqa: F811
     call_main(session, tmpdir, "user", "disable", username)
     call_main(session, tmpdir, "user", "enable", username)
     assert User.get(session, name=username).enabled
-    assert (u"User", username) not in groups[groupname].my_members()
+    assert ("User", username) not in groups[groupname].my_members()
 
 
 def test_user_public_key(session, tmpdir, users):  # noqa: F811

@@ -5,7 +5,7 @@ from grouper.models.user import User
 
 
 class UsersPublicKey(GrouperHandler):
-    @ensure_audit_security(u"public_keys")
+    @ensure_audit_security("public_keys")
     def get(self):
         form = UsersPublicKeyForm(self.request.arguments)
 

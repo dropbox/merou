@@ -5,7 +5,7 @@ from grouper.models.user_token import UserToken
 
 
 class UsersUserTokens(GrouperHandler):
-    @ensure_audit_security(u"user_tokens")
+    @ensure_audit_security("user_tokens")
     def get(self):
         form = UsersUserTokenForm(self.request.arguments)
 

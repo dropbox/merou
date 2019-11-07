@@ -16,8 +16,8 @@ def test_group_disable_group_owner(get_plugin_proxy, session, tmpdir, users, gro
 
     # add
     call_main(session, tmpdir, "group", "add_member", "--owner", groupname, username)
-    assert (u"User", username) in Group.get(session, name=groupname).my_members()
+    assert ("User", username) in Group.get(session, name=groupname).my_members()
 
     # disable (fails)
     call_main(session, tmpdir, "user", "disable", username)
-    assert (u"User", username) in Group.get(session, name=groupname).my_members()
+    assert ("User", username) in Group.get(session, name=groupname).my_members()

@@ -39,8 +39,8 @@ def test_requesting_permission(tmpdir, setup, browser):
         page2 = PermissionRequestPage(browser)
         assert page2.heading == "Permissions"
         assert page2.subheading == "Request Permission"
-        assert page2.get_option_values("group_name") == [u"", u"front-end"]
-        assert page2.get_option_values("permission_name") == [u"git.repo.read"]
+        assert page2.get_option_values("group_name") == ["", "front-end"]
+        assert page2.get_option_values("permission_name") == ["git.repo.read"]
 
         page2.set_select_value("group_name", "front-end")
         page2.fill_field("argument", "server")

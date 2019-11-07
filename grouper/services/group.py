@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from grouper.entities.permission_grant import GroupPermissionGrant
     from grouper.repositories.group import GroupRepository
     from grouper.repositories.interfaces import PermissionGrantRepository
-    from typing import List
+    from typing import List, Optional
 
 
 class GroupService(GroupInterface):
@@ -21,11 +21,11 @@ class GroupService(GroupInterface):
         self.group_repository = group_repository
         self.permission_grant_repository = permission_grant_repository
 
-    def create_group(self, name, description, join_policy):
-        # type: (str, str, GroupJoinPolicy) -> None
+    def create_group(self, name, description, join_policy, email=None):
+        # type: (str, str, GroupJoinPolicy, Optional[str]) -> None
         if not self.is_valid_group_name(name):
             raise InvalidGroupNameException(name)
-        self.group_repository.create_group(name, description, join_policy)
+        self.group_repository.create_group(name, description, join_policy, email)
 
     def group_has_matching_permission_grant(self, group, permission, argument):
         # type: (str, str, str) -> bool

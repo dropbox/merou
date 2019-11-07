@@ -20,6 +20,8 @@ instead of directly manipulating the model.  Eventually, it should just be anoth
 service and repository layers.
 """
 
+from __future__ import annotations
+
 import os
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
@@ -137,12 +139,17 @@ class SetupTest(object):
             yield
         self.graph.update_from_db(self.session)
 
-    def create_group(self, name, description="", join_policy=GroupJoinPolicy.CAN_ASK):
-        # type: (str, str, GroupJoinPolicy) -> None
+    def create_group(
+        self,
+        name: str,
+        description: str = "",
+        join_policy: GroupJoinPolicy = GroupJoinPolicy.CAN_ASK,
+        email: Optional[str] = None,
+    ) -> None:
         """Create a group, does nothing if it already exists."""
         group_service = self.service_factory.create_group_service()
         if not group_service.group_exists(name):
-            group_service.create_group(name, description, join_policy)
+            group_service.create_group(name, description, join_policy, email)
 
     def create_permission(
         self, name, description="", audited=False, enabled=True, created_on=None

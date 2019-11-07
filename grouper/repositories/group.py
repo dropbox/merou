@@ -16,9 +16,11 @@ class GroupRepository(object):
         # type: (Session) -> None
         self.session = session
 
-    def create_group(self, name, description, join_policy):
-        # type: (str, str, GroupJoinPolicy) -> None
-        group = SQLGroup(groupname=name, description=description, canjoin=join_policy.value)
+    def create_group(self, name, description, join_policy, email):
+        # type: (str, str, GroupJoinPolicy, Optional[str]) -> None
+        group = SQLGroup(
+            groupname=name, description=description, canjoin=join_policy.value, email_address=email
+        )
         group.add(self.session)
 
     def get_group(self, name):

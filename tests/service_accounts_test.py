@@ -172,7 +172,7 @@ def test_service_account_fe_edit(
     plebe = "oliver@a.co"
 
     # Unrelated people cannot edit the service account.
-    fe_url = url(base_url, "/groups/security-team/service/service@a.co/edit")
+    fe_url = url(base_url, "/groups/team-sre/service/service@a.co/edit")
     update = {"description": "desc", "machine_set": "machines"}
     with pytest.raises(HTTPError):
         yield http_client.fetch(

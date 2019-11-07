@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import pytest
 from selenium.common.exceptions import NoSuchElementException
 
 from grouper.constants import USER_ADMIN
+from itests.pages.base import BasePage
 from itests.pages.groups import GroupViewPage
 from itests.pages.service_accounts import (
     ServiceAccountCreatePage,
@@ -21,8 +24,7 @@ if TYPE_CHECKING:
     from tests.setup import SetupTest
 
 
-def test_service_account_lifecycle(tmpdir, setup, browser):
-    # type: (LocalPath, SetupTest, Chrome) -> None
+def test_service_account_lifecycle(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("cbguder@a.co", "user-admins")
         setup.add_user_to_group("cbguder@a.co", "some-group")
@@ -81,8 +83,20 @@ def test_service_account_lifecycle(tmpdir, setup, browser):
         assert view_page.owner == "some-group"
 
 
-def test_create_duplicate(tmpdir, setup, browser):
-    # type: (LocalPath, SetupTest, Chrome) -> None
+def test_wrong_owner(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group")
+        setup.create_service_account("service@svc.localhost", "some-group")
+        setup.create_group("other-group")
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/other-group/service/service@svc.localhost"))
+        page = BasePage(browser)
+        assert page.subheading == "404 Not Found"
+        assert page.has_text("whatever you were looking for wasn't found")
+
+
+def test_create_duplicate(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("cbguder@a.co", "some-group")
         setup.create_service_account("service@svc.localhost", "some-group")
@@ -96,8 +110,7 @@ def test_create_duplicate(tmpdir, setup, browser):
         assert page.has_alert("service account with name service@svc.localhost already exists")
 
 
-def test_permission_grant_revoke(tmpdir, setup, browser):
-    # type: (LocalPath, SetupTest, Chrome) -> None
+def test_permission_grant_revoke(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group")
         setup.grant_permission_to_group("some-permission", "foo", "some-group")
@@ -147,8 +160,7 @@ def test_permission_grant_revoke(tmpdir, setup, browser):
         assert permission.argument == "bar"
 
 
-def test_permission_grant_denied(tmpdir, setup, browser):
-    # type: (LocalPath, SetupTest, Chrome) -> None
+def test_permission_grant_denied(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group")
         setup.grant_permission_to_group("some-permission", "foo", "some-group")
@@ -165,7 +177,9 @@ def test_permission_grant_denied(tmpdir, setup, browser):
         assert page.has_alert("The group some-group does not have that permission")
 
 
-def test_permission_grant_invalid_argument(tmpdir, setup, browser):
+def test_permission_grant_invalid_argument(
+    tmpdir: LocalPath, setup: SetupTest, browser: Chrome
+) -> None:
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group")
         setup.grant_permission_to_group("some-permission", "foo", "some-group")
@@ -183,8 +197,7 @@ def test_permission_grant_invalid_argument(tmpdir, setup, browser):
         assert page.has_alert("argument")
 
 
-def test_permission_revoke_denied(tmpdir, setup, browser):
-    # type: (LocalPath, SetupTest, Chrome) -> None
+def test_permission_revoke_denied(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.create_service_account("service@svc.localhost", "some-group")
         setup.grant_permission_to_service_account("some-permission", "*", "service@svc.localhost")

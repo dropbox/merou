@@ -33,7 +33,7 @@ class ViewPermissionUI(metaclass=ABCMeta):
         pass
 
 
-class ViewPermission(object):
+class ViewPermission:
     """View a single permission."""
 
     def __init__(self, ui, permission_service, user_service, audit_log_service):

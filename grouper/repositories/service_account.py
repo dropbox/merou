@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from grouper.models.base.session import Session
 
 
-class ServiceAccountRepository(object):
+class ServiceAccountRepository:
     """Storage layer for service accounts."""
 
     def __init__(self, session):

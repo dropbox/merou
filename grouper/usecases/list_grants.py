@@ -21,7 +21,7 @@ class ListGrantsUI(metaclass=ABCMeta):
         pass
 
 
-class ListGrants(object):
+class ListGrants:
     """List all permission grants by permission, expanding the graph."""
 
     def __init__(self, ui, permission_service):

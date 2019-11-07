@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from typing import Any, Callable, Dict, List, Optional, Sequence, Type
 
 
-class Alert(object):
+class Alert:
     def __init__(self, severity: str, message: str, heading: str = None) -> None:
         self.severity = severity
         self.message = message

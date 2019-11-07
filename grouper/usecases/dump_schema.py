@@ -14,7 +14,7 @@ class DumpSchemaUI(metaclass=ABCMeta):
         pass
 
 
-class DumpSchema(object):
+class DumpSchema:
     """Dump the database schema as a string."""
 
     def __init__(self, ui, schema_service):

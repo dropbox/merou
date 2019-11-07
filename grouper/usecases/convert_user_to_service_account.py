@@ -31,7 +31,7 @@ class ConvertUserToServiceAccountUI(metaclass=ABCMeta):
         pass
 
 
-class ConvertUserToServiceAccount(object):
+class ConvertUserToServiceAccount:
     """Delete a user and create a service account with the same name.
 
     The use case doesn't exactly do that now due to limitations of the data model, but semantically

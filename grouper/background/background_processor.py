@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from typing import Dict, NoReturn, Set
 
 
-class BackgroundProcessor(object):
+class BackgroundProcessor:
     """Background process for running periodic tasks.
 
     Currently, this sends asynchronous mail messages and handles edge expiration and notification.

@@ -2,7 +2,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import object_session
 
 
-class _Model(object):
+class _Model:
     """ Custom model mixin with helper methods. """
 
     @property

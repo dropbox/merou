@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from typing import List, Optional
 
 
-class AuditLogRepository(object):
+class AuditLogRepository:
     """SQL storage layer for audit log entries."""
 
     def __init__(self, session, plugins):

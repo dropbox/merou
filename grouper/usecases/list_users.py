@@ -16,7 +16,7 @@ class ListUsersUI(metaclass=ABCMeta):
         pass
 
 
-class ListUsers(object):
+class ListUsers:
     """List all users."""
 
     def __init__(self, ui, user_service):

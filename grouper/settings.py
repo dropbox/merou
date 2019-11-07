@@ -35,7 +35,7 @@ class InvalidSettingsError(Exception):
     pass
 
 
-class Settings(object):
+class Settings:
     """Grouper configuration settings.
 
     Provides a parent class for settings objects, machinery for reading settings from the YAML

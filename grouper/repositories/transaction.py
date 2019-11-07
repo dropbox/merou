@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from typing import Optional
 
 
-class SQLTransaction(object):
+class SQLTransaction:
     """Returned by a TransactionRepository as a context manager."""
 
     def __init__(self, session):
@@ -26,7 +26,7 @@ class SQLTransaction(object):
         return False
 
 
-class TransactionRepository(object):
+class TransactionRepository:
     """Manage storage layer transactions."""
 
     def __init__(self, session):

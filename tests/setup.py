@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     from typing import Iterator, Optional
 
 
-class SetupTest(object):
+class SetupTest:
     """Set up the environment for a test.
 
     Most actions should be done inside of a transaction, created via the transaction() method and

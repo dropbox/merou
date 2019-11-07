@@ -25,7 +25,7 @@ class ListPermissionsUI(metaclass=ABCMeta):
         pass
 
 
-class ListPermissions(object):
+class ListPermissions:
     """List all permissions."""
 
     def __init__(self, ui, permission_service, user_service):

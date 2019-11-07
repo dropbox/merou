@@ -56,7 +56,7 @@ class NoSuchGroup(Exception):
     pass
 
 
-class GroupGraph(object):
+class GroupGraph:
     """The cached permission graph.
 
     The graph is internally represented by four major components: the users, groups, and

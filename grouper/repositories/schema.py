@@ -46,7 +46,7 @@ if TYPE_CHECKING:
     from grouper.settings import Settings
 
 
-class SchemaRepository(object):
+class SchemaRepository:
     """Manipulate the database schema."""
 
     def __init__(self, settings):

@@ -20,7 +20,7 @@ class UnknownCommand(Exception):
     pass
 
 
-class CtlCommandFactory(object):
+class CtlCommandFactory:
     """Construct and add parsers for grouper-ctl commands."""
 
     @staticmethod

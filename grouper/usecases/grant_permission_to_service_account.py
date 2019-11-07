@@ -47,7 +47,7 @@ class GrantPermissionToServiceAccountUI(metaclass=ABCMeta):
         pass
 
 
-class GrantPermissionToServiceAccount(object):
+class GrantPermissionToServiceAccount:
     def __init__(
         self,
         actor,  # type: str

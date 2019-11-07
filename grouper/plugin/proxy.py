@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from typing import Any, Dict, List, Iterable, Optional, Type, Tuple, Union
 
 
-class PluginProxy(object):
+class PluginProxy:
     """Wrapper to proxy a plugin method call to all loaded plugins."""
 
     @classmethod

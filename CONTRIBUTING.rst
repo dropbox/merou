@@ -286,10 +286,7 @@ Testing
 Most testing, including exercising the failures, can be done at the use
 case level using a mock UI.  Often, a `MagicMock` object is sufficient;
 sometimes it will be easier to define a class that implements the UI to
-make comparing returned data against expected data easier.  (Note that
-mypy `NamedTuple` objects unfortunately can't be compared directly with
-`==`, so you may need to write helper functions to compare their
-components.)
+make comparing returned data against expected data easier.
 
 The `setup` fixture provides a `SetupTest` object, which provides a test
 database session, methods to quickly assemble a test environment, and

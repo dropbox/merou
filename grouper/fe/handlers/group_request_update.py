@@ -111,15 +111,9 @@ class GroupRequestUpdate(GrouperHandler):
         # We have to test this here, too, to ensure that someone can't sneak in with a pending
         # request that used to be allowed.
         if form.data["status"] != "cancelled":
-            fail_message = "This join is denied with this role at this time."
             try:
-                user_can_join = assert_can_join(
-                    request.requesting, on_behalf, role=request.edge.role
-                )
+                assert_can_join(request.requesting, on_behalf, role=request.edge.role)
             except UserNotAuditor as e:
-                user_can_join = False
-                fail_message = str(e)
-            if not user_can_join:
                 return self.render(
                     "group-request-update.html",
                     group=group,
@@ -129,7 +123,7 @@ class GroupRequestUpdate(GrouperHandler):
                     form=form,
                     statuses=REQUEST_STATUS_CHOICES,
                     updates=updates,
-                    alerts=[Alert("danger", fail_message, "Audit Policy Enforcement")],
+                    alerts=[Alert("danger", str(e), "Audit Policy Enforcement")],
                 )
 
         request.update_status(self.current_user, form.data["status"], form.data["reason"])

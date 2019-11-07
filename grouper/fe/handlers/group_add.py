@@ -100,14 +100,10 @@ class GroupAdd(GrouperHandler):
             form.member.errors.append("By definition, this group is a member of itself already.")
 
         # Ensure this doesn't violate auditing constraints
-        fail_message = "This join is denied with this role at this time."
         try:
-            user_can_join = assert_can_join(group, member, role=form.data["role"])
+            assert_can_join(group, member, role=form.data["role"])
         except UserNotAuditor as e:
-            user_can_join = False
-            fail_message = str(e)
-        if not user_can_join:
-            form.member.errors.append(fail_message)
+            form.member.errors.append(str(e))
 
         if form.member.errors:
             return self.render(

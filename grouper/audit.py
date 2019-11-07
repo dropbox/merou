@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import itertools
-from typing import List, NamedTuple, TYPE_CHECKING, Union
+from dataclasses import dataclass
+from typing import List, TYPE_CHECKING, Union
 
 from grouper.constants import PERMISSION_AUDITOR
 from grouper.graph import Graph, NoSuchGroup
@@ -26,30 +29,26 @@ class GroupDoesNotHaveAuditPermission(Exception):
     pass
 
 
-# Contains audit information about members of a group, mostly to avoid latencies of individual
-# queries due to lazy loading when looking up fields of group members.
-AuditMemberInfo = NamedTuple(
-    "AuditMemberInfo",
-    [
-        ("audit_member_obj", AuditMember),  # To allow updating of the audit status
-        ("audit_member_role", int),  # use this to avoid a lazy lookup of `AuditMember.edge`
-        ("member_obj", Union[User, Group]),
-    ],
-)
+@dataclass(frozen=True)
+class AuditMemberInfo:
+    """Information about one member of an audit.
 
+    Contains audit information about members of a group, mostly to avoid latencies of individual
+    queries due to lazy loading when looking up fields of group members.
 
-def user_is_auditor(username):
-    # type: (str) -> bool
-    """Check if a user is an auditor
-
-    This is defined as the user having the audit permission.
-
-    Args:
-        username (str): The account name to check.
-
-    Returns:
-        bool: True/False.
+    Attributes:
+        audit_member_obj: AuditMember model to allow updating of the audit status
+        audit_member_role: Role as an int to avoid a lazy lookup of AuditMember.edge
+        member_obj: Either a User or a Group corresponding to the audited member
     """
+
+    audit_member_obj: AuditMember
+    audit_member_role: int
+    member_obj: Union[User, Group]
+
+
+def user_is_auditor(username: str) -> bool:
+    """Check if a user is an auditor, defined as having the audit permission."""
     graph = Graph()
     user_md = graph.get_user_details(username)
     for perm in user_md["permissions"]:
@@ -58,23 +57,17 @@ def user_is_auditor(username):
     return False
 
 
-def assert_controllers_are_auditors(group):
-    # type: (Group) -> bool
+def assert_controllers_are_auditors(group: Group) -> None:
     """Return whether not all owners/np-owners/managers in a group (and below) are auditors
 
-    This is used to ensure that all of the people who can control a group
-    (owners, np-owners, managers) and all subgroups (all the way down the tree)
-    have audit permissions.
+    This is used to ensure that all of the people who can control a group (owners, np-owners,
+    managers) and all subgroups (all the way down the tree) have audit permissions.
 
     Raises:
-        UserNotAuditor: If a user is found that violates the audit training policy, then this
-            exception is raised.
-
-    Returns:
-        bool: True if the tree is completely controlled by auditors, else it will raise as above.
+        UserNotAuditor: If a user is found that violates the audit training policy
     """
     graph = Graph()
-    checked = set()  # type: Set[str]
+    checked: Set[str] = set()
     queue = [group.name]
     while queue:
         cur_group = queue.pop()
@@ -102,44 +95,36 @@ def assert_controllers_are_auditors(group):
             if info["distance"] == 1:
                 queue.append(chk_group)
 
-    # If we didn't raise, we're valid.
-    return True
 
-
-def assert_can_join(group, user_or_group, role="member"):
-    # type: (Group, Union[Group, User], str) -> bool
+def assert_can_join(group: Group, user_or_group: Union[Group, User], role: str = "member") -> None:
     """Enforce audit rules on joining a group
 
     This applies the auditing rules to determine whether or not a given user can join the given
     group with the given role.
 
     Args:
-        group (models.Group): The group to test against.
-        user (models.User): The user attempting to join.
-        role (str): The role being tested.
+        group: The group to test against.
+        user: The user attempting to join.
+        role: The role being tested.
 
     Raises:
-        UserNotAuditor: If a user is found that violates the audit training policy, then this
-            exception is raised.
-
-    Returns:
-        bool: True if the user should be allowed per policy, else it will raise as above.
+        UserNotAuditor: If a user is found that violates the audit training policy
     """
     # By definition, any user can join as a member to any group.
     if user_or_group.type == "User" and role == "member":
-        return True
+        return
 
     # Else, we have to check if the group is audited. If not, anybody can join.
     graph = Graph()
     group_md = graph.get_group_details(group.name)
     if not group_md["audited"]:
-        return True
+        return
 
     # Audited group. Easy case, let's see if we're checking a user. If so, the user must be
     # considered an auditor.
     if user_or_group.type == "User":
         if user_is_auditor(user_or_group.name):
-            return True
+            return
         raise UserNotAuditor(
             "User {} lacks the auditing permission ('{}') so may only have the "
             "'member' role in this audited group.".format(user_or_group.name, PERMISSION_AUDITOR)
@@ -151,45 +136,36 @@ def assert_can_join(group, user_or_group, role="member"):
     #
     # We have to fetch each group's details individually though to figure out what someone's role
     # is in that particular group.
-    return assert_controllers_are_auditors(user_or_group)
+    assert_controllers_are_auditors(user_or_group)
 
 
-def get_audits(session, only_open):
-    # type: (Session, bool) -> Query
+def get_audits(session: Session, only_open: bool) -> Query:
     """Return audits in the system.
 
     Args:
-        session (session): database session
-        only_open (bool): whether to filter by open audits
+        session: Database session
+        only_open: Whether to filter by open audits
     """
     query = session.query(Audit).order_by(Audit.started_at)
-
     if only_open:
         query = query.filter(Audit.complete == False)
-
     return query
 
 
-def get_auditors_group(settings, session):
-    # type: (Settings, Session) -> Group
+def get_auditors_group(settings: Settings, session: Session) -> Group:
     """Retrieve the group for auditors
 
-    Arg(s):
-        settings (settings): settings, to get the `auditors_group` name
-        session (session): database session
-
     Return:
-        Group object for the group for Grouper auditors, whose name is
-        specified with `auditors_group` settings.
+        Group object for the group for Grouper auditors, whose name is specified with the
+        auditors_group setting.
 
     Raise:
-        Raise NoSuchGroup exception if either the name for the
-        auditors group is not configured, or the group does not exist
-        in the database. Raise GroupDoesNotHaveAuditPermission if the group
-        does not actually have the PERMISSION_AUDITOR permission.
+        NoSuchGroup: Either the name for the auditors group is not configured, or
+            the group does not exist in the database
+        GroupDoesNotHaveAuditPermission: Group does not actually have the PERMISSION_AUDITOR
+            permission
     """
-    # TODO: switch to exc.NoSuchGroup to remove one source dependency
-    # on graph.py
+    # TODO(rra): Use a different exception to avoid a dependency on grouper.graph
     group_name = get_auditors_group_name(settings)
     if not group_name:
         raise NoSuchGroup("Please ask your admin to configure the `auditors_group` settings")
@@ -201,21 +177,12 @@ def get_auditors_group(settings, session):
     return group
 
 
-def get_group_audit_members_infos(session, group):
-    # type: (Session, Group) -> List[AuditMemberInfo]
+def get_group_audit_members_infos(session: Session, group: Group) -> List[AuditMemberInfo]:
     """Get audit information about the members of a group.
 
     Note that only current members of the group are relevant, i.e., members of the group at the
     time the current audit was started but are no longer part of the group are excluded, as are
     members of the group added after the audit was started.
-
-    Arg(s):
-        session: The SQL session
-        group: The group
-
-    Return:
-        List of AuditMemberInfo.
-
     """
     members_edge_ids = {member.edge_id for member in group.my_members().values()}
     user_members = (
@@ -252,18 +219,8 @@ def get_group_audit_members_infos(session, group):
     ]
 
 
-def group_has_pending_audit_members(session, group):
-    # type: (Session, Group) -> bool
-    """Check if a group still has memberships with "pending" audit status
-
-    Arg(s):
-        session: The SQL session
-        group: The group
-
-    Return:
-        True if the group still has memberships with "pending" audit status
-
-    """
+def group_has_pending_audit_members(session: Session, group: Group) -> bool:
+    """Check if a group still has memberships with "pending" audit status."""
     members_edge_ids = {member.edge_id for member in group.my_members().values()}
     audit_members_statuses = session.query(AuditMember.status).filter(
         AuditMember.audit_id == group.audit_id,

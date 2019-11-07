@@ -1,5 +1,8 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import List, NamedTuple
+from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
 import pytest
@@ -39,6 +42,9 @@ from tests.fixtures import (  # noqa: F401
 from tests.url_util import url
 from tests.util import add_member, get_users, grant_permission
 
+if TYPE_CHECKING:
+    from typing import List
+
 
 def test_group_audited(standard_graph, graph, session, groups, permissions):  # noqa: F811
     """ Ensure that the audited flag gets set appropriate only groups and inherited down the
@@ -59,42 +65,42 @@ def test_assert_can_join(standard_graph, users, groups):  # noqa: F811
     """ Test various audit constraints to ensure that users can/can't join as appropriate. """
 
     # Non-auditor can join non-audited group as owner.
-    assert assert_can_join(groups["team-infra"], users["zay@a.co"], role="owner")
+    assert_can_join(groups["team-infra"], users["zay@a.co"], role="owner")
 
     # Auditor can join non-audited group as owner.
-    assert assert_can_join(groups["team-infra"], users["zorkian@a.co"], role="owner")
+    assert_can_join(groups["team-infra"], users["zorkian@a.co"], role="owner")
 
     # Non-auditor can NOT join audited group as owner.
     with pytest.raises(UserNotAuditor):
-        assert not assert_can_join(groups["serving-team"], users["zay@a.co"], role="owner")
+        assert_can_join(groups["serving-team"], users["zay@a.co"], role="owner")
 
     # Non-auditor can join audited group as member.
-    assert assert_can_join(groups["serving-team"], users["zay@a.co"])
+    assert_can_join(groups["serving-team"], users["zay@a.co"])
 
     # Group with non-auditor owner can NOT join audited group.
     with pytest.raises(UserNotAuditor):
-        assert not assert_can_join(groups["serving-team"], groups["tech-ops"])
+        assert_can_join(groups["serving-team"], groups["tech-ops"])
 
     # Group with auditor owner can join audited group.
-    assert assert_can_join(groups["serving-team"], groups["sad-team"])
+    assert_can_join(groups["serving-team"], groups["sad-team"])
 
     # Group with non-auditor owner can join non-audited group.
-    assert assert_can_join(groups["team-infra"], groups["tech-ops"])
+    assert_can_join(groups["team-infra"], groups["tech-ops"])
 
     # Group with auditor owner, but sub-group with non-auditor owner, can NOT join audited group.
     with pytest.raises(UserNotAuditor):
-        assert not assert_can_join(groups["audited-team"], groups["serving-team"])
+        assert_can_join(groups["audited-team"], groups["serving-team"])
 
 
 def test_assert_controllers_are_auditors(standard_graph, groups):  # noqa: F811
     """ Test the method that determines if a subtree is controlled by auditors. """
 
     # Group is safely controlled by auditors.
-    assert assert_controllers_are_auditors(groups["sad-team"])
+    assert_controllers_are_auditors(groups["sad-team"])
 
     # Group with non-auditor owner should fail this test.
     with pytest.raises(UserNotAuditor):
-        assert not assert_controllers_are_auditors(groups["team-infra"])
+        assert_controllers_are_auditors(groups["team-infra"])
 
 
 @pytest.mark.gen_test
@@ -135,6 +141,21 @@ def test_toggle_perm_audited(groups, permissions, http_client, base_url):  # noq
     # Perm audited again
 
 
+@dataclass(frozen=True)
+class MyAuditMemberInfo:
+    am_id: int
+    edge_type: int
+    edge_id: int
+
+
+@dataclass(frozen=True)
+class Audit:
+    audit_id: int
+    owner_name: str
+    group_name: str
+    audit_members_infos: List[MyAuditMemberInfo]
+
+
 @pytest.mark.gen_test
 def test_audit_end_to_end(session, users, groups, http_client, base_url, graph):  # noqa: F811
     """ Tests an end-to-end audit cycle. """
@@ -172,18 +193,6 @@ def test_audit_end_to_end(session, users, groups, http_client, base_url, graph):
 
     # pull all the info we need to resolve audits, avoids detached sqlalchemy sessions
     # (DetachedInstanceError)
-    MyAuditMemberInfo = NamedTuple(
-        "MyAuditMemberInfo", [("am_id", int), ("edge_type", int), ("edge_id", int)]
-    )
-    Audit = NamedTuple(
-        "Audit",
-        [
-            ("audit_id", int),
-            ("owner_name", str),
-            ("group_name", str),
-            ("audit_members_infos", List[MyAuditMemberInfo]),
-        ],
-    )
     all_group_ids = [x.group.id for x in open_audits]
     open_audits = [
         Audit(

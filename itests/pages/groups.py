@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 
 from grouper.entities.group import GroupJoinPolicy
@@ -128,6 +129,18 @@ class GroupJoinPage(BasePage):
         # type: () -> List[WebElement]
         element = self.find_element_by_name("member")
         return element.find_elements_by_tag_name("option")
+
+    def set_member(self, member):
+        # type: (str) -> None
+        member_select = self.form.find_element_by_id("member_chosen")
+        member_select.click()
+        member_search = member_select.find_element_by_tag_name("input")
+        member_search.send_keys(member, Keys.ENTER)
+
+    def set_role(self, role):
+        # type: (str) -> None
+        field = Select(self.form.find_element_by_name("role"))
+        field.select_by_visible_text(role)
 
     def set_expiration(self, expiration):
         # type: (str) -> None

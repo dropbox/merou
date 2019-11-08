@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import pytest
@@ -14,8 +16,7 @@ if TYPE_CHECKING:
     from tests.setup import SetupTest
 
 
-def test_request_to_join_group(tmpdir, setup, browser):
-    # type: (LocalPath, SetupTest, Chrome) -> None
+def test_request_to_join_group(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("zorkian@a.co", "sad-team", role="owner")
         setup.create_user("cbguder@a.co")
@@ -39,8 +40,7 @@ def test_request_to_join_group(tmpdir, setup, browser):
         assert request_row.reason == "Testing"
 
 
-def test_request_already_member(tmpdir, setup, browser):
-    # type: (LocalPath, SetupTest, Chrome) -> None
+def test_request_already_member(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group", role="owner")
         setup.add_group_to_group("some-group", "other-group")
@@ -57,8 +57,7 @@ def test_request_already_member(tmpdir, setup, browser):
             page.set_reason("Testing")
 
 
-def test_request_options(tmpdir, setup, browser):
-    # type: (LocalPath, SetupTest, Chrome) -> None
+def test_request_options(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group", role="owner")
         setup.create_group("other-group")
@@ -88,8 +87,7 @@ def test_request_options(tmpdir, setup, browser):
         assert page.current_url == url(frontend_url, "/groups/other-group/join")
 
 
-def test_require_clickthru(tmpdir, setup, browser):
-    # type: (LocalPath, SetupTest, Chrome) -> None
+def test_require_clickthru(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
         browser.get(url(frontend_url, "/groups"))
         groups_page = GroupsViewPage(browser)
@@ -113,3 +111,37 @@ def test_require_clickthru(tmpdir, setup, browser):
         group_page = GroupViewPage(browser)
         assert group_page.current_url.endswith("/groups/test-group?refresh=yes")
         assert group_page.find_member_row("rra@a.co")
+
+
+def test_group_join_group(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group", "owner")
+        setup.create_group("parent-group", join_policy=GroupJoinPolicy.CAN_JOIN)
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/parent-group/join"))
+        join_page = GroupJoinPage(browser)
+
+        join_page.set_member("some-group")
+        join_page.set_reason("Testing")
+        join_page.submit()
+
+        group_page = GroupViewPage(browser)
+        assert group_page.find_member_row("some-group")
+
+
+def test_group_join_group_as_owner(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group", "owner")
+        setup.create_group("parent-group", join_policy=GroupJoinPolicy.CAN_JOIN)
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/parent-group/join"))
+        join_page = GroupJoinPage(browser)
+
+        join_page.set_member("some-group")
+        join_page.set_reason("Testing")
+        for role in ("Manager", "Owner", "Np-Owner"):
+            join_page.set_role(role)
+            join_page.submit()
+            assert join_page.has_alert("Groups can only have the role of 'member'")

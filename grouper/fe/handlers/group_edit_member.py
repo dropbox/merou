@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING
+from urllib.parse import unquote
 
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.fe.forms import GroupEditMemberForm
@@ -15,17 +16,16 @@ from grouper.plugin.exceptions import PluginRejectedGroupMembershipUpdate
 from grouper.user import user_role
 
 if TYPE_CHECKING:
-    from typing import Any, Optional
+    from typing import Any
 
 
 class GroupEditMember(GrouperHandler):
     def get(self, *args: Any, **kwargs: Any) -> None:
-        group_id: Optional[int] = kwargs.get("group_id")
-        group_name: Optional[str] = kwargs.get("name")
-        user: str = kwargs["name2"]
+        name: str = unquote(kwargs["name"])
+        member_name: str = unquote(kwargs["member_name"])
         member_type: str = kwargs["member_type"]
 
-        group = Group.get(self.session, group_id, group_name)
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 
@@ -34,7 +34,7 @@ class GroupEditMember(GrouperHandler):
         if my_role not in ("manager", "owner", "np-owner"):
             return self.forbidden()
 
-        member = members.get((member_type.capitalize(), user), None)
+        member = members.get((member_type.capitalize(), member_name), None)
         if not member:
             return self.notfound()
 
@@ -47,19 +47,18 @@ class GroupEditMember(GrouperHandler):
         if not edge:
             return self.notfound()
 
-        form = self._get_form(user, my_role, member_type)
+        form = self._get_form(member_name, my_role, member_type)
         form.role.data = edge.role
         form.expiration.data = edge.expiration.strftime("%m/%d/%Y") if edge.expiration else None
 
         self.render("group-edit-member.html", group=group, member=member, edge=edge, form=form)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        group_id: Optional[int] = kwargs.get("group_id")
-        group_name: Optional[str] = kwargs.get("name")
-        user: str = kwargs["name2"]
+        name: str = unquote(kwargs["name"])
+        member_name: str = unquote(kwargs["member_name"])
         member_type: str = kwargs["member_type"]
 
-        group = Group.get(self.session, group_id, group_name)
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 
@@ -68,7 +67,7 @@ class GroupEditMember(GrouperHandler):
         if my_role not in ("manager", "owner", "np-owner"):
             return self.forbidden()
 
-        member = members.get((member_type.capitalize(), user), None)
+        member = members.get((member_type.capitalize(), member_name), None)
         if not member:
             return self.notfound()
 
@@ -88,7 +87,7 @@ class GroupEditMember(GrouperHandler):
         if not edge:
             return self.notfound()
 
-        form = self._get_form(user, my_role, member_type)
+        form = self._get_form(member_name, my_role, member_type)
         if not form.validate():
             return self.render(
                 "group-edit-member.html",

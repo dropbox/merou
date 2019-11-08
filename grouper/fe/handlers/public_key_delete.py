@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
+from urllib.parse import unquote
 
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
@@ -12,13 +15,12 @@ from grouper.user_permissions import user_is_user_admin
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
-    from typing import Any, Optional
+    from typing import Any
 
 
 class PublicKeyDelete(GrouperHandler):
     @staticmethod
-    def check_access(session, actor, target):
-        # type: (Session, User, User) -> bool
+    def check_access(session: Session, actor: User, target: User) -> bool:
         return (
             actor.name == target.name
             or user_is_user_admin(session, actor)
@@ -26,13 +28,11 @@ class PublicKeyDelete(GrouperHandler):
             or (target.is_service_account and can_manage_service_account(session, target, actor))
         )
 
-    def get(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        user_id = kwargs.get("user_id")  # type: Optional[int]
-        name = kwargs.get("name")  # type: Optional[str]
-        key_id = kwargs["key_id"]  # type: int
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        name: str = unquote(kwargs["name"])
+        key_id = int(kwargs["key_id"])
 
-        user = User.get(self.session, user_id, name)
+        user = User.get(self.session, name=name)
         if not user:
             return self.notfound()
 
@@ -46,13 +46,11 @@ class PublicKeyDelete(GrouperHandler):
 
         self.render("public-key-delete.html", user=user, key=key)
 
-    def post(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        user_id = kwargs.get("user_id")  # type: Optional[int]
-        name = kwargs.get("name")  # type: Optional[str]
-        key_id = kwargs["key_id"]  # type: int
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        name: str = unquote(kwargs["name"])
+        key_id = int(kwargs["key_id"])
 
-        user = User.get(self.session, user_id, name)
+        user = User.get(self.session, name=name)
         if not user:
             return self.notfound()
 

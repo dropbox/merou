@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+from urllib.parse import unquote
+
 from grouper.constants import USER_ADMIN
 from grouper.fe.util import GrouperHandler
 from grouper.models.group import Group
@@ -5,19 +10,27 @@ from grouper.models.service_account import ServiceAccount
 from grouper.service_account import can_manage_service_account, disable_service_account
 from grouper.user_permissions import user_has_permission
 
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from grouper.models.user import User
+    from typing import Any
+
 
 class ServiceAccountDisable(GrouperHandler):
     @staticmethod
-    def check_access(session, actor, target):
+    def check_access(session: Session, actor: User, target: ServiceAccount) -> bool:
         if user_has_permission(session, actor, USER_ADMIN):
             return True
         return can_manage_service_account(session, target, actor)
 
-    def post(self, group_id=None, name=None, account_id=None, accountname=None):
-        group = Group.get(self.session, group_id, name)
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        name: str = unquote(kwargs["name"])
+        accountname: str = unquote(kwargs["accountname"])
+
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
-        service_account = ServiceAccount.get(self.session, account_id, accountname)
+        service_account = ServiceAccount.get(self.session, name=accountname)
         if not service_account:
             return self.notfound()
 

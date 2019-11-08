@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from grouper.fe.util import GrouperHandler
@@ -14,15 +16,17 @@ if TYPE_CHECKING:
 
 
 class PermissionView(GrouperHandler, ViewPermissionUI):
+    def view_permission_failed_not_found(self, name: str) -> None:
+        self.notfound()
+
     def viewed_permission(
         self,
-        permission,  # type: Permission
-        group_grants,  # type: List[GroupPermissionGrant]
-        service_account_grants,  # type: List[ServiceAccountPermissionGrant]
-        access,  # type: PermissionAccess
-        audit_log_entries,  # type: List[AuditLogEntry]
-    ):
-        # type (...) -> None
+        permission: Permission,
+        group_grants: List[GroupPermissionGrant],
+        service_account_grants: List[ServiceAccountPermissionGrant],
+        access: PermissionAccess,
+        audit_log_entries: List[AuditLogEntry],
+    ) -> None:
         self.render(
             "permission.html",
             permission=permission,
@@ -32,12 +36,7 @@ class PermissionView(GrouperHandler, ViewPermissionUI):
             audit_log_entries=audit_log_entries,
         )
 
-    def view_permission_failed_not_found(self, name):
-        # type: (str) -> None
-        self.notfound()
-
-    def get(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        name = kwargs["name"]  # type: str
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        name: str = kwargs["name"]
         usecase = self.usecase_factory.create_view_permission_usecase(self)
         usecase.view_permission(name, self.current_user.username, audit_log_limit=20)

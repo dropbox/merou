@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
+from urllib.parse import unquote
 
 from grouper.audit import get_group_audit_members_infos
 from grouper.fe.handlers.template_variables import get_group_view_template_vars
@@ -7,17 +10,15 @@ from grouper.models.group import Group
 from grouper.role_user import is_role_user
 
 if TYPE_CHECKING:
-    from typing import Any, Optional
+    from typing import Any
 
 
 class GroupView(GrouperHandler):
-    def get(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        group_id = kwargs.get("group_id")  # type: Optional[int]
-        name = kwargs.get("name")  # type: Optional[str]
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        name: str = unquote(kwargs["name"])
 
         self.handle_refresh()
-        group = Group.get(self.session, group_id, name)
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 

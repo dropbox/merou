@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
+from urllib.parse import unquote
 
 from grouper.fe.forms import GroupRemoveForm
 from grouper.fe.util import Alert, GrouperHandler
@@ -10,15 +13,14 @@ from grouper.user import get_user_or_group
 from grouper.user_group import user_can_manage_group
 
 if TYPE_CHECKING:
-    from typing import Any, Optional
+    from typing import Any
 
 
 class GroupRemove(GrouperHandler):
-    def post(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        group_id = kwargs.get("group_id", None)  # type: Optional[int]
-        name = kwargs.get("name", None)  # type: Optional[str]
-        group = Group.get(self.session, group_id, name)
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        name: str = unquote(kwargs["name"])
+
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 

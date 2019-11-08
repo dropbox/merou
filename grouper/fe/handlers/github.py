@@ -5,7 +5,7 @@ import hmac
 import json
 import os
 from typing import cast, TYPE_CHECKING
-from urllib.parse import urlencode
+from urllib.parse import unquote, urlencode
 
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse
@@ -146,10 +146,9 @@ class UserClearGitHub(GrouperHandler):
         return actor.name == target.name
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        user_id: Optional[int] = kwargs.get("user_id")
-        name: Optional[str] = kwargs.get("name")
+        name: str = unquote(kwargs["name"])
 
-        user = User.get(self.session, user_id, name)
+        user = User.get(self.session, name=name)
         if not user:
             return self.notfound()
 

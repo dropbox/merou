@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from grouper.fe.util import Alert, GrouperHandler
@@ -8,23 +10,21 @@ if TYPE_CHECKING:
         GroupPermissionGrant,
         ServiceAccountPermissionGrant,
     )
-    from typing import List
+    from typing import Any, List
 
 
 class PermissionDisable(GrouperHandler, DisablePermissionUI):
     """Disable a permission via the browser UI."""
 
-    def disabled_permission(self, name):
-        # type: (str) -> None
+    def disabled_permission(self, name: str) -> None:
         self.redirect("/permissions/{}".format(name))
 
     def disable_permission_failed_existing_grants(
         self,
-        name,  # type: str
-        group_grants,  # type: List[GroupPermissionGrant]
-        service_account_grants,  # type: List[ServiceAccountPermissionGrant]
-    ):
-        # type: (...) -> None
+        name: str,
+        group_grants: List[GroupPermissionGrant],
+        service_account_grants: List[ServiceAccountPermissionGrant],
+    ) -> None:
         """The permission view page will show the grants, so we don't include them in the error."""
         alert = Alert(
             "danger",
@@ -35,21 +35,17 @@ class PermissionDisable(GrouperHandler, DisablePermissionUI):
         )
         self.redirect("/permissions/{}".format(name), alerts=[alert])
 
-    def disable_permission_failed_not_found(self, name):
-        # type: (str) -> None
+    def disable_permission_failed_not_found(self, name: str) -> None:
         return self.notfound()
 
-    def disable_permission_failed_permission_denied(self, name):
-        # type: (str) -> None
+    def disable_permission_failed_permission_denied(self, name: str) -> None:
         return self.forbidden()
 
-    def disable_permission_failed_system_permission(self, name):
-        # type: (str) -> None
+    def disable_permission_failed_system_permission(self, name: str) -> None:
         return self.forbidden()
 
-    def post(self, *args, **kwargs):
-        # type: (*str, **str) -> None
-        name = kwargs["name"]
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        name: str = kwargs["name"]
         usecase = self.usecase_factory.create_disable_permission_usecase(
             self.current_user.username, self
         )

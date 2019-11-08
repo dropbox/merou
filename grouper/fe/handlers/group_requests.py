@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+from urllib.parse import unquote
+
 from grouper.entities.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.fe.util import GrouperHandler
 from grouper.group_requests import get_requests_by_group
@@ -6,10 +11,15 @@ from grouper.models.group import Group
 from grouper.models.request import Request
 from grouper.user import user_role, user_role_index
 
+if TYPE_CHECKING:
+    from typing import Any
+
 
 class GroupRequests(GrouperHandler):
-    def get(self, group_id=None, name=None):
-        group = Group.get(self.session, group_id, name)
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        name: str = unquote(kwargs["name"])
+
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 

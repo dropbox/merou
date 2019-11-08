@@ -1,12 +1,22 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+from urllib.parse import unquote
+
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
 from grouper.user import user_role
 
+if TYPE_CHECKING:
+    from typing import Any
+
 
 class GroupLeave(GrouperHandler):
-    def get(self, group_id=None, name=None):
-        group = Group.get(self.session, group_id, name)
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        name: str = unquote(kwargs["name"])
+
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 
@@ -16,8 +26,10 @@ class GroupLeave(GrouperHandler):
 
         return self.render("group-leave.html", group=group)
 
-    def post(self, group_id=None, name=None):
-        group = Group.get(self.session, group_id, name)
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        name: str = unquote(kwargs["name"])
+
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 

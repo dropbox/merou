@@ -132,7 +132,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-default"
                         data-dismiss="modal">Close</button>
-                <form action="/groups/{{group.id}}/enable" method="post"
+                <form action="/groups/{{group.groupname}}/enable" method="post"
                       class="inline">
                     {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Enable</button>
@@ -162,7 +162,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-default"
                         data-dismiss="modal">Close</button>
-                <form action="/groups/{{group.id}}/disable" method="post"
+                <form action="/groups/{{group.groupname}}/disable" method="post"
                       class="inline">
                     {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Disable</button>
@@ -172,8 +172,8 @@
     </div>
 </div>
 
-<div class="modal fade" id="removeUserModal" tabindex="-1" role="dialog" data-group-id="{{ group.id }}"
-      aria-labelledby="removeUserModal" aria-hidden="true">
+<div class="modal fade" id="removeUserModal" tabindex="-1" role="dialog"
+     data-group-name="{{ group.groupname }}" aria-labelledby="removeUserModal" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">

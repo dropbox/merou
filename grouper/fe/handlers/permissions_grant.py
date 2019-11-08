@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+from urllib.parse import unquote
+
 from sqlalchemy.exc import IntegrityError
 
 from grouper.audit import assert_controllers_are_auditors, UserNotAuditor
@@ -9,14 +14,19 @@ from grouper.permissions import get_permission, grant_permission
 from grouper.user_permissions import user_grantable_permissions
 from grouper.util import matches_glob
 
+if TYPE_CHECKING:
+    from typing import Any
+
 
 class PermissionsGrant(GrouperHandler):
-    def get(self, name=None):
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        name: str = unquote(kwargs["name"])
+
         grantable = user_grantable_permissions(self.session, self.current_user)
         if not grantable:
             return self.forbidden()
 
-        group = Group.get(self.session, None, name)
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 
@@ -28,12 +38,14 @@ class PermissionsGrant(GrouperHandler):
 
         return self.render("permission-grant.html", form=form, group=group)
 
-    def post(self, name=None):
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        name: str = unquote(kwargs["name"])
+
         grantable = user_grantable_permissions(self.session, self.current_user)
         if not grantable:
             return self.forbidden()
 
-        group = Group.get(self.session, None, name)
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 

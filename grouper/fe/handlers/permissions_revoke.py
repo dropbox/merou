@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.counter import Counter
@@ -6,10 +10,15 @@ from grouper.user_group import user_is_owner_of_group
 from grouper.user_permissions import user_grantable_permissions
 from grouper.util import matches_glob
 
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from grouper.models.user import User
+    from typing import Any
+
 
 class PermissionsRevoke(GrouperHandler):
     @staticmethod
-    def check_access(session, mapping, user):
+    def check_access(session: Session, mapping: PermissionMap, user: User):
         user_is_owner = user_is_owner_of_group(session, mapping.group, user)
 
         if user_is_owner:
@@ -24,7 +33,8 @@ class PermissionsRevoke(GrouperHandler):
 
         return False
 
-    def get(self, name=None, mapping_id=None):
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        mapping_id = int(kwargs["mapping_id"])
         mapping = PermissionMap.get(self.session, id=mapping_id)
 
         if not mapping:
@@ -35,7 +45,8 @@ class PermissionsRevoke(GrouperHandler):
 
         self.render("permission-revoke.html", mapping=mapping)
 
-    def post(self, name=None, mapping_id=None):
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        mapping_id = int(kwargs["mapping_id"])
         mapping = PermissionMap.get(self.session, id=mapping_id)
 
         if not mapping:

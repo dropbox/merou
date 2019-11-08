@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import operator
+from typing import TYPE_CHECKING
+from urllib.parse import unquote
 
 from grouper.constants import USER_ADMIN
 from grouper.fe.forms import ServiceAccountEnableForm
@@ -9,20 +13,22 @@ from grouper.models.service_account import ServiceAccount
 from grouper.service_account import enable_service_account
 from grouper.user_permissions import user_has_permission
 
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from grouper.models.user import User
+    from typing import Any
+
 
 class ServiceAccountEnable(GrouperHandler):
     @staticmethod
-    def check_access(session, actor, target):
+    def check_access(session: Session, actor: User, target: ServiceAccount) -> bool:
         return user_has_permission(session, actor, USER_ADMIN)
 
-    def get_form(self):
+    def get_form(self) -> ServiceAccountEnableForm:
         """Helper to create a ServiceAccountEnableForm populated with all groups.
 
         Note that the first choice is blank so the first user alphabetically
         isn't always selected.
-
-        Returns:
-            ServiceAccountEnableForm object.
         """
         form = ServiceAccountEnableForm(self.request.arguments)
 
@@ -35,8 +41,10 @@ class ServiceAccountEnable(GrouperHandler):
 
         return form
 
-    def get(self, user_id=None, name=None):
-        service_account = ServiceAccount.get(self.session, user_id, name)
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        name: str = unquote(kwargs["name"])
+
+        service_account = ServiceAccount.get(self.session, name=name)
         if not service_account:
             return self.notfound()
 
@@ -46,8 +54,10 @@ class ServiceAccountEnable(GrouperHandler):
         form = self.get_form()
         return self.render("service-account-enable.html", form=form, user=service_account.user)
 
-    def post(self, user_id=None, name=None):
-        service_account = ServiceAccount.get(self.session, user_id, name)
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        name: str = unquote(kwargs["name"])
+
+        service_account = ServiceAccount.get(self.session, name=name)
         if not service_account:
             return self.notfound()
 

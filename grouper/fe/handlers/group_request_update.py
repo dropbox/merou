@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
+from urllib.parse import unquote
 
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.email_util import send_email
@@ -14,17 +17,15 @@ from grouper.request import get_on_behalf_by_request
 from grouper.user import user_role
 
 if TYPE_CHECKING:
-    from typing import Any, Optional
+    from typing import Any, List, Tuple
 
 
 class GroupRequestUpdate(GrouperHandler):
-    def get(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        request_id = kwargs["request_id"]  # type: int
-        group_id = kwargs.get("group_id")  # type: Optional[int]
-        name = kwargs.get("name")  # type: Optional[str]
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        request_id: str = kwargs["request_id"]
+        name: str = unquote(kwargs["name"])
 
-        group = Group.get(self.session, group_id, name)
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 
@@ -55,13 +56,11 @@ class GroupRequestUpdate(GrouperHandler):
             updates=updates,
         )
 
-    def post(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        request_id = kwargs["request_id"]  # type: int
-        group_id = kwargs.get("group_id")  # type: Optional[int]
-        name = kwargs.get("name")  # type: Optional[str]
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        request_id: str = kwargs["request_id"]
+        name: str = unquote(kwargs["name"])
 
-        group = Group.get(self.session, group_id, name)
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 
@@ -204,5 +203,5 @@ class GroupRequestUpdate(GrouperHandler):
         else:
             return self.redirect("/groups/{}/requests".format(group.name))
 
-    def _get_choices(self, current_status):
-        return [[status] * 2 for status in REQUEST_STATUS_CHOICES[current_status]]
+    def _get_choices(self, current_status: str) -> List[Tuple[str, str]]:
+        return [(status, status) for status in REQUEST_STATUS_CHOICES[current_status]]

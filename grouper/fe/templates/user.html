@@ -140,7 +140,7 @@
                 </button>
                 <h4 class="modal-title">Enable User</h4>
            </div>
-            <form action="/users/{{user.id}}/enable" method="post">
+            <form action="/users/{{user.username}}/enable" method="post">
                 <div class="modal-body">
                     <p>Are you sure you want to enable this user?</p>
 		    {% if can_enable_preserving_membership %}
@@ -178,7 +178,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-default"
                         data-dismiss="modal">Close</button>
-                <form action="/users/{{user.id}}/disable" method="post"
+                <form action="/users/{{user.username}}/disable" method="post"
                       class="inline">
                     {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Disable</button>

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from urllib.parse import unquote
 
 from grouper.email_util import cancel_async_emails
 from grouper.fe.util import GrouperHandler
@@ -10,15 +11,14 @@ from grouper.role_user import is_role_user
 from grouper.user import user_role
 
 if TYPE_CHECKING:
-    from typing import Any, Optional
+    from typing import Any
 
 
 class GroupDisable(GrouperHandler):
     def post(self, *args: Any, **kwargs: Any) -> None:
-        group_id: Optional[int] = kwargs.get("group_id")
-        name: Optional[str] = kwargs.get("name")
+        name: str = unquote(kwargs["name"])
 
-        group = Group.get(self.session, group_id, name)
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 

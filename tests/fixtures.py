@@ -243,6 +243,7 @@ def groups(session):
             "user-admins",
             "group-admins",
             "permission-admins",
+            "role@a.co",  # group for a role user
         )
     }
     groups_with_emails = ("team-sre", "serving-team", "security-team")

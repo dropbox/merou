@@ -1,5 +1,4 @@
 import unittest
-from collections import namedtuple
 from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
@@ -17,7 +16,7 @@ from grouper.constants import (
     PERMISSION_GRANT,
     PERMISSION_VALIDATION,
 )
-from grouper.fe.forms import ValidateRegex
+from grouper.fe.forms import PermissionGrantForm, ValidateRegex
 from grouper.models.async_notification import AsyncNotification
 from grouper.models.group import Group
 from grouper.models.permission_map import PermissionMap
@@ -153,10 +152,10 @@ class PermissionTests(unittest.TestCase):
         self.assertEqual(len(grouper.fe.util.test_reserved_names("admin.prefix.reserved")), 1)
         self.assertEqual(len(grouper.fe.util.test_reserved_names("test.prefix.reserved")), 1)
 
-        Field = namedtuple("field", "data")
-
         def eval_permission(perm):
-            ValidateRegex(PERMISSION_VALIDATION)(form=None, field=Field(data=perm))
+            form = PermissionGrantForm()
+            form.permission.data = perm
+            ValidateRegex(PERMISSION_VALIDATION)(form=None, field=form.permission)
 
         self.assertIsNone(eval_permission("foo.bar"))
         self.assertIsNone(eval_permission("foobar"))
@@ -166,7 +165,9 @@ class PermissionTests(unittest.TestCase):
         self.assertRaises(ValidationError, eval_permission, "foo._bar")
 
         def eval_argument(arg):
-            ValidateRegex(ARGUMENT_VALIDATION)(form=None, field=Field(data=arg))
+            form = PermissionGrantForm()
+            form.argument.data = arg
+            ValidateRegex(ARGUMENT_VALIDATION)(form=None, field=form.argument)
 
         self.assertIsNone(eval_argument("foo.bar"))
         self.assertIsNone(eval_argument("foobar"))

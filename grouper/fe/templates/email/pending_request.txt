@@ -10,7 +10,7 @@
     Reason: {{ reason }}
 
 Take action:
-    {{url}}/groups/{{group_name}}/requests/requests/{{ request_id }}
+    {{url}}/groups/{{group_name}}/requests/{{ request_id }}
 
 {% if requester != requested_by %}This request was made by {{ requested_by }}.{% endif %}
 {% endblock %}

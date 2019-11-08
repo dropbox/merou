@@ -48,6 +48,11 @@ class GroupEditMemberPage(BasePage):
     def form(self) -> WebElement:
         return self.find_element_by_class_name("edit-member-form")
 
+    def get_role_options(self) -> List[str]:
+        element = self.form.find_element_by_name("role")
+        options = element.find_elements_by_tag_name("option")
+        return [o.get_attribute("value") for o in options]
+
     def set_role(self, role: str) -> None:
         field = Select(self.form.find_element_by_name("role"))
         field.select_by_visible_text(role)

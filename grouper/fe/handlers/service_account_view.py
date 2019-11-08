@@ -25,6 +25,12 @@ class ServiceAccountView(GrouperHandler):
         if not service_account:
             return self.notfound()
 
+        # We don't need the group to be valid to find the service account, but ensure that the
+        # group is the owner of the service account so that we don't generate confusing URLs and
+        # broken information on the view page.
+        if service_account.owner.group_id != group.id:
+            return self.notfound()
+
         user = service_account.user
         self.render(
             "service-account.html",

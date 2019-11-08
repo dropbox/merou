@@ -63,7 +63,7 @@
     {% endif %}
 
     {% if can_leave %}
-        <a href="/groups/{{group.name}}/leave"
+        <a id="leave-group" href="/groups/{{group.name}}/leave"
            class="btn btn-danger"><i class="fa fa-sign-out"></i> Leave</a>
     {% endif %}
 {% endblock %}

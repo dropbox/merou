@@ -138,6 +138,10 @@ class GroupViewPage(BasePage):
         button = self.find_element_by_id("disable-group")
         button.click()
 
+    def click_leave_button(self) -> None:
+        button = self.find_element_by_id("leave-group")
+        button.click()
+
     def click_request_permission_button(self) -> None:
         button = self.find_element_by_id("request-permission")
         button.click()
@@ -202,6 +206,15 @@ class GroupJoinPage(BasePage):
     def submit(self):
         # type: () -> None
         self.form.find_element_by_id("join-btn").click()
+
+
+class GroupLeavePage(BasePage):
+    @property
+    def form(self) -> WebElement:
+        return self.find_element_by_id("leave-group-form")
+
+    def submit(self) -> None:
+        self.form.submit()
 
 
 class PermissionGrantPage(BasePage):

@@ -68,10 +68,15 @@ def get_group_view_template_vars(session, actor, group, graph):
         "is_member": user_role(actor, ret["members"]) is not None,
         "role": user_role(actor, ret["members"]),
     }
-    ret["can_leave"] = (
-        ret["current_user_role"]["is_member"] and not ret["current_user_role"]["is_owner"]
-    )
     ret["statuses"] = AUDIT_STATUS_CHOICES
+
+    # The user can leave if they're a normal member, or if they're not the only owner.
+    number_of_owners = len(
+        [m for (t, m), o in ret["members"].items() if t == "User" and o.role in OWNER_ROLE_INDICES]
+    )
+    ret["can_leave"] = ret["current_user_role"]["is_member"] and (
+        not ret["current_user_role"]["is_owner"] or number_of_owners > 1
+    )
 
     # Add mapping_id to permissions structure
     ret["my_permissions"] = group.my_permissions()

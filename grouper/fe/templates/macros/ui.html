@@ -601,7 +601,7 @@ enabled. Membership in this group is regularly reviewed.
             {% endif %}
             {% if is_member%}
             <a id="request-permission" class="btn btn-default btn-sm"
-               href="/groups/{{ group.name }}/permission/request">
+               href="/permissions/request?group={{ group.name }}">
                 <span class="glyphicon glyphicon-plus"></span> Request Permission
             </a>
             {% endif %}

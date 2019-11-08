@@ -103,6 +103,10 @@ class GroupViewPage(BasePage):
         button = self.find_element_by_id("add-service-account")
         button.click()
 
+    def click_request_permission_button(self) -> None:
+        button = self.find_element_by_id("request-permission")
+        button.click()
+
 
 class GroupJoinPage(BasePage):
     @property

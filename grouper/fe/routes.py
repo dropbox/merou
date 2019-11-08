@@ -25,7 +25,6 @@ from grouper.fe.handlers.group_edit_member import GroupEditMember
 from grouper.fe.handlers.group_enable import GroupEnable
 from grouper.fe.handlers.group_join import GroupJoin
 from grouper.fe.handlers.group_leave import GroupLeave
-from grouper.fe.handlers.group_permission_request import GroupPermissionRequest
 from grouper.fe.handlers.group_remove import GroupRemove
 from grouper.fe.handlers.group_request_update import GroupRequestUpdate
 from grouper.fe.handlers.group_requests import GroupRequests
@@ -153,7 +152,6 @@ for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
             (r"/groups/{}/leave".format(regex), GroupLeave),
             (r"/groups/{}/requests".format(regex), GroupRequests),
             (r"/groups/{}/requests/(?P<request_id>[0-9]+)".format(regex), GroupRequestUpdate),
-            (r"/groups/{}/permission/request".format(regex), GroupPermissionRequest),
         ]
     )
 

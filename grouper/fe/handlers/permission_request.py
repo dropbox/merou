@@ -129,6 +129,7 @@ class PermissionRequest(GrouperHandler):
                 )
             form.group_name.choices = pairs([group_param])
             form.group_name.render_kw = {"readonly": "readonly"}
+            form.group_name.data = group_param
         else:
             form.group_name.choices = pairs([""] + sorted(group_names))
 
@@ -140,6 +141,7 @@ class PermissionRequest(GrouperHandler):
                 )
             form.permission_name.choices = pairs([permission_param])
             form.permission_name.render_kw = {"readonly": "readonly"}
+            form.permission_name.data = permission_param
         else:
             form.permission_name.choices = pairs([""] + sorted(permission_names))
 

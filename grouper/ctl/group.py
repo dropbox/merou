@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import csv
 import logging
 import sys
@@ -11,7 +13,7 @@ from grouper.models.user import User
 from grouper.plugin.exceptions import PluginRejectedGroupMembershipUpdate
 
 if TYPE_CHECKING:
-    from argparse import Namespace
+    from argparse import Namespace, _SubParsersAction
     from grouper.ctl.settings import CtlSettings
     from grouper.models.base.session import Session
     from grouper.repositories.factory import SessionFactory
@@ -19,20 +21,20 @@ if TYPE_CHECKING:
 
 
 @ensure_valid_groupname
-def group_command(args, settings, session_factory):
-    # type: (Namespace, CtlSettings, SessionFactory) -> None
+def group_command(args: Namespace, settings: CtlSettings, session_factory: SessionFactory) -> None:
     session = session_factory.create_session()
     group = session.query(Group).filter_by(groupname=args.groupname).scalar()
     if not group:
-        logging.error("No such group %s".format(args.groupname))
+        logging.error("No such group %s", args.groupname)
         return
 
     if args.subcommand in ["add_member", "remove_member"]:
-        # somewhat hacky: using function instance to use # `ensure_valid_username` only on
+        # somewhat hacky: using function instance to use `ensure_valid_username` only on
         # these subcommands
         @ensure_valid_username
-        def call_mutate(args, settings, session_factory):
-            # type: (Namespace, CtlSettings, SessionFactory) -> None
+        def call_mutate(
+            args: Namespace, settings: CtlSettings, session_factory: SessionFactory
+        ) -> None:
             mutate_group_command(session, group, args)
 
         call_mutate(args, settings, session_factory)
@@ -41,8 +43,7 @@ def group_command(args, settings, session_factory):
         logdump_group_command(session, group, args)
 
 
-def mutate_group_command(session, group, args):
-    # type: (Session, Group, Namespace) -> None
+def mutate_group_command(session: Session, group: Group, args: Namespace) -> None:
     for username in args.username:
         user = User.get(session, name=username)
         if not user:
@@ -90,8 +91,7 @@ def mutate_group_command(session, group, args):
 
 
 @contextmanager
-def open_file_or_stdout_for_write(fn):
-    # type: (str) -> Iterator[IO[str]]
+def open_file_or_stdout_for_write(fn: str) -> Iterator[IO[str]]:
     """mimic standard library `open` function to support stdout if None is
     specified as the filename."""
     if not fn or fn == "--":
@@ -106,8 +106,7 @@ def open_file_or_stdout_for_write(fn):
             fh.close()
 
 
-def logdump_group_command(session, group, args):
-    # type: (Session, Group, Namespace) -> None
+def logdump_group_command(session: Session, group: Group, args: Namespace) -> None:
     log_entries = session.query(AuditLog).filter(
         AuditLog.on_group_id == group.id, AuditLog.log_time > args.start_date
     )
@@ -136,7 +135,7 @@ def logdump_group_command(session, group, args):
             )
 
 
-def add_parser(subparsers):
+def add_parser(subparsers: _SubParsersAction) -> None:
     group_parser = subparsers.add_parser("group", help="Edit groups and membership")
     group_parser.set_defaults(func=group_command)
     group_subparser = group_parser.add_subparsers(dest="subcommand")

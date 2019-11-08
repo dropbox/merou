@@ -50,6 +50,7 @@ class AuditsCreate(GrouperHandler):
             if not self.graph.get_group_details(groupname)["audited"]:
                 continue
             group = Group.get(self.session, name=groupname)
+            assert group, f"Graph contains nonexistent group {groupname}"
             audit = Audit(group_id=group.id, ends_at=ends_at)
             try:
                 audit.add(self.session)

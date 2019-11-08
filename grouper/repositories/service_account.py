@@ -44,7 +44,7 @@ class ServiceAccountRepository:
         # type: (str, str, str, str) -> None
         group = Group.get(self.session, name=owner)
         if not group:
-            raise GroupNotFoundException(group)
+            raise GroupNotFoundException(owner)
 
         # Create the service account in the database.
         user = SQLUser(username=name, is_service_account=True)

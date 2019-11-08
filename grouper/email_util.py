@@ -264,6 +264,7 @@ def notify_edge_expiration(settings: Settings, session: Session, edge: GroupEdge
         member_is_user = True
     else:
         subgroup = Group.get(session, pk=edge.member_pk)
+        assert subgroup, "Group edge refers to nonexistent group"
         parent_owners = edge.group.my_owners()
         if parent_owners:
             actor_id = list(parent_owners.values())[0].id
@@ -293,6 +294,7 @@ def notify_edge_expiration(settings: Settings, session: Session, edge: GroupEdge
     else:
         # Make an audit log entry for both the subgroup and the parent group so that it will show
         # up in the FE view for both groups.
+        assert subgroup
         AuditLog.log(session, on_group_id=edge.group_id, **audit_data)
         AuditLog.log(session, on_group_id=subgroup.id, **audit_data)
 

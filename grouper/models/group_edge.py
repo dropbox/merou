@@ -102,6 +102,7 @@ class GroupEdge(Model):
                 else:
                     # Otherwise, affected member is a group, notify its owners.
                     subgroup = Group.get(self.session, pk=self.member_pk)
+                    assert subgroup, "Group edge refers to nonexistent group"
                     member_name = subgroup.groupname
                     recipients = subgroup.my_owners_as_strings()
                     member_is_user = False

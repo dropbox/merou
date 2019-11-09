@@ -9,7 +9,7 @@ export PATH="${PWD}/chromedriver:$PATH"
 # static analysis (no need to run it twice).
 case "$DB" in
     mysql)
-        MEROU_TEST_DATABASE='mysql://travis:@localhost/merou' pytest -x -v
+        MEROU_TEST_DATABASE='mysql://travis:@localhost/merou?charset=utf8mb4' pytest -x -v
         ;;
     sqlite)
         pytest -x -v

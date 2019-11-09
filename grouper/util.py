@@ -15,11 +15,6 @@ T = TypeVar("T")
 _TRUTHY = {"true", "yes", "1", ""}
 
 
-def qp_to_bool(arg):
-    # type: (str) -> bool
-    return arg.lower() in _TRUTHY
-
-
 def get_loglevel(args, base=None):
     # type: (Namespace, Optional[int]) -> int
     if base is None:

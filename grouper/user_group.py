@@ -30,19 +30,6 @@ def get_groups_by_user(session, user):
     )
 
 
-def get_all_groups_by_user(session, user):
-    # type: (Session, User) -> List[Tuple[Group, int]]
-    """Return groups a given user is a member of along with the user's role.
-
-    This includes groups inherited from other groups, unlike get_groups_by_user.
-    """
-    from grouper.graph import Graph
-
-    grps = Graph().get_user_details(username=user.name)["groups"]
-    groups = session.query(Group).filter(Group.name.in_(grps.keys())).all()
-    return [(group, grps[group.name]["role"]) for group in groups]
-
-
 def user_can_manage_group(session, group, user):
     # type: (Session, Group, User) -> bool
     """Determine if this user can manage the given group

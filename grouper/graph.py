@@ -696,7 +696,7 @@ class GroupGraph:
             for parent, path in rpaths.items():
                 if parent == group:
                     continue
-                parent_type, parent_name = parent
+                _, parent_name = parent
                 role = self._rgraph[path[-2]][parent]["role"]
                 data["groups"][parent_name] = {
                     "name": parent_name,
@@ -804,7 +804,7 @@ class GroupGraph:
             for parent, path in rpaths.items():
                 if parent == user:
                     continue
-                parent_type, parent_name = parent
+                _, parent_name = parent
                 role = self._rgraph[path[-2]][parent]["role"]
                 groups[parent_name] = {
                     "name": parent_name,

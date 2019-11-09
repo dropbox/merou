@@ -41,10 +41,6 @@ class Alert:
             self.heading = heading
 
 
-class DatabaseFailure(Exception):
-    pass
-
-
 class InvalidUser(Exception):
     pass
 

@@ -51,18 +51,6 @@ class NoSuchPermission(Exception):
         self.name = name
 
 
-class CannotDisableASystemPermission(Exception):
-    """Cannot disable key system permissions."""
-
-    def __init__(self, name):
-        # type: (str) -> None
-        """
-        Arg(s):
-            name(str): name of the permission being disabled
-        """
-        self.name = name
-
-
 def create_permission(session, name, description=""):
     # type: (Session, str, Optional[str]) -> Permission
     """Create and add a new permission to database
@@ -264,17 +252,6 @@ def get_groups_by_permission(session, permission):
     )
 
 
-def get_log_entries_by_permission(session, permission, limit=20):
-    """For a given permission, return the audit logs that pertain.
-
-    Args:
-        session(models.base.session.Session): database session
-        permission_name(Permission): permission in question
-        limit(int): number of results to return
-    """
-    return AuditLog.get_entries(session, on_permission_id=permission.id, limit=limit)
-
-
 def filter_grantable_permissions(session, grants, all_permissions=None):
     """For a given set of PERMISSION_GRANT permissions, return all enabled
     permissions that are grantable.
@@ -450,15 +427,6 @@ class NoOwnersAvailable(PermissionRequestException):
 
 class RequestAlreadyGranted(PermissionRequestException):
     """Group already has requested permission + argument pair."""
-
-
-# hmm maybe don't need this. people can do things to the permission,
-# e.g., grant it to groups, request grants for it, revoke it from
-# groups, etc. and we kind of don't care, as long as the permission's
-# disabled state prevents it from being used, which is the important
-# bit
-class PermissionIsDisabled(PermissionRequestException):
-    """Trying to operate on a permission that is disabled."""
 
 
 def create_request(session, user, group, permission, argument, reason):

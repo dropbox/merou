@@ -33,7 +33,6 @@ TOKEN_FORMAT = r"^{}/{}:{}$".format(
 
 # Regexes for validating permission/argument names
 PERMISSION_VALIDATION = r"(?P<name>(?:[a-z0-9]+[_\-\.])*[a-z0-9]+)"
-PERMISSION_WILDCARD_VALIDATION = r"(?P<name>(?:[a-z0-9]+[_\-\.])*[a-z0-9]+(?:\.\*)?)"
 ARGUMENT_VALIDATION = r"(?P<argument>|[\^\*\w\[\]\$=+/.: -]+)"
 
 # Global permission names to prevent stringly typed things

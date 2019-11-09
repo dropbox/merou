@@ -9,10 +9,6 @@ from tests.ctl_util import call_main
 from tests.fixtures import graph, groups, permissions, session, standard_graph, users  # noqa: F401
 
 
-def noop(*k):
-    None
-
-
 def test_user_create(session, tmpdir, users):  # noqa: F811
     # simple
     username = "john@a.co"

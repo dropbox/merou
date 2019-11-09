@@ -1,7 +1,8 @@
 from grouper import permissions
 from grouper.audit import UserNotAuditor
+from grouper.fe.alerts import Alert
 from grouper.fe.forms import PermissionRequestUpdateForm
-from grouper.fe.util import Alert, GrouperHandler
+from grouper.fe.util import GrouperHandler
 from grouper.models.base.constants import REQUEST_STATUS_CHOICES
 
 

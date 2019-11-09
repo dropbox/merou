@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING
 
 from grouper.constants import USER_ADMIN, USER_DISABLE
 from grouper.email_util import cancel_async_emails
-from grouper.fe.util import Alert, GrouperHandler
+from grouper.fe.alerts import Alert
+from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
 from grouper.models.user import User

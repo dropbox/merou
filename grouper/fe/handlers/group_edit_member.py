@@ -4,8 +4,9 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from grouper.audit import assert_can_join, UserNotAuditor
+from grouper.fe.alerts import Alert
 from grouper.fe.forms import GroupEditMemberForm
-from grouper.fe.util import Alert, GrouperHandler
+from grouper.fe.util import GrouperHandler
 from grouper.group_member import InvalidRoleForMember
 from grouper.models.comment import OBJ_TYPES
 from grouper.models.group import Group

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from grouper.fe.templates import PermissionTemplate
 from grouper.fe.util import GrouperHandler
 from grouper.usecases.view_permission import ViewPermissionUI
 
@@ -27,14 +28,14 @@ class PermissionView(GrouperHandler, ViewPermissionUI):
         access: PermissionAccess,
         audit_log_entries: List[AuditLogEntry],
     ) -> None:
-        self.render(
-            "permission.html",
+        template = PermissionTemplate(
             permission=permission,
             access=access,
             group_grants=group_grants,
             service_account_grants=service_account_grants,
             audit_log_entries=audit_log_entries,
         )
+        self.render_template_class(template)
 
     def get(self, *args: Any, **kwargs: Any) -> None:
         name = self.get_path_argument("name")

@@ -204,7 +204,6 @@ def test_permission_grant_invalid_argument(
         page.set_argument("@@@@")
         page.submit()
 
-        print(page.root.page_source)
         assert page.has_alert("argument")
 
 

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from grouper.constants import USER_METADATA_GITHUB_USERNAME_KEY, USER_METADATA_SHELL_KEY
 from grouper.entities.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
-from grouper.fe.util import Alert
+from grouper.fe.alerts import Alert
 from grouper.graph import NoSuchGroup, NoSuchUser
 from grouper.group_requests import count_requests_by_group
 from grouper.group_service_account import get_service_accounts

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from grouper.fe.alerts import Alert
 from grouper.fe.forms import GroupRemoveForm
-from grouper.fe.util import Alert, GrouperHandler
+from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
 from grouper.plugin.exceptions import PluginRejectedGroupMembershipUpdate

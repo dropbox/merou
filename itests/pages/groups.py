@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 
 from grouper.entities.group import GroupJoinPolicy
 from itests.pages.base import BaseElement, BaseModal, BasePage
-from itests.pages.exceptions import NoSuchElementException
 from itests.pages.permissions import PermissionGrantRow
 
 if TYPE_CHECKING:
@@ -16,26 +16,24 @@ if TYPE_CHECKING:
 
 
 class GroupEditMemberPage(BasePage):
-    def _get_edit_member_form(self):
-        # type: () -> WebElement
+    @property
+    def form(self) -> WebElement:
         return self.find_element_by_class_name("edit-member-form")
 
-    def set_expiration(self, expiration):
-        # type: (str) -> None
-        form = self._get_edit_member_form()
-        field = form.find_element_by_name("expiration")
+    def set_role(self, role: str) -> None:
+        field = Select(self.form.find_element_by_name("role"))
+        field.select_by_visible_text(role)
+
+    def set_expiration(self, expiration: str) -> None:
+        field = self.form.find_element_by_name("expiration")
         field.send_keys(expiration)
 
-    def set_reason(self, reason):
-        # type: (str) -> None
-        form = self._get_edit_member_form()
-        field = form.find_element_by_name("reason")
+    def set_reason(self, reason: str) -> None:
+        field = self.form.find_element_by_name("reason")
         field.send_keys(reason)
 
-    def submit(self):
-        # type: () -> None
-        form = self._get_edit_member_form()
-        form.submit()
+    def submit(self) -> None:
+        self.form.submit()
 
 
 class GroupsViewPage(BasePage):

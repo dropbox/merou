@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.fe.forms import GroupEditMemberForm
@@ -11,14 +14,22 @@ from grouper.models.user import User
 from grouper.plugin.exceptions import PluginRejectedGroupMembershipUpdate
 from grouper.user import user_role
 
+if TYPE_CHECKING:
+    from typing import Any, Optional
+
 
 class GroupEditMember(GrouperHandler):
-    def get(self, group_id=None, name=None, name2=None, member_type=None):
-        group = Group.get(self.session, group_id, name)
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        group_id: Optional[int] = kwargs.get("group_id")
+        group_name: Optional[str] = kwargs.get("name")
+        user: str = kwargs["name2"]
+        member_type: str = kwargs["member_type"]
+
+        group = Group.get(self.session, group_id, group_name)
         if not group:
             return self.notfound()
 
-        if self.current_user.name == name2:
+        if self.current_user.name == user:
             return self.forbidden()
 
         members = group.my_members()
@@ -26,7 +37,7 @@ class GroupEditMember(GrouperHandler):
         if my_role not in ("manager", "owner", "np-owner"):
             return self.forbidden()
 
-        member = members.get((member_type.capitalize(), name2), None)
+        member = members.get((member_type.capitalize(), user), None)
         if not member:
             return self.notfound()
 
@@ -41,22 +52,29 @@ class GroupEditMember(GrouperHandler):
 
         form = GroupEditMemberForm(self.request.arguments)
         form.role.choices = [["member", "Member"]]
-        if my_role in ("owner", "np-owner"):
+        if my_role in ("owner", "np-owner") and member_type != "group":
             form.role.choices.append(["manager", "Manager"])
             form.role.choices.append(["owner", "Owner"])
             form.role.choices.append(["np-owner", "No-Permissions Owner"])
+        else:
+            form.role.render_kw = {"readonly": "readonly"}
 
         form.role.data = edge.role
         form.expiration.data = edge.expiration.strftime("%m/%d/%Y") if edge.expiration else None
 
         self.render("group-edit-member.html", group=group, member=member, edge=edge, form=form)
 
-    def post(self, group_id=None, name=None, name2=None, member_type=None):
-        group = Group.get(self.session, group_id, name)
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        group_id: Optional[int] = kwargs.get("group_id")
+        group_name: Optional[str] = kwargs.get("name")
+        user: str = kwargs["name2"]
+        member_type: str = kwargs["member_type"]
+
+        group = Group.get(self.session, group_id, group_name)
         if not group:
             return self.notfound()
 
-        if self.current_user.name == name2:
+        if self.current_user.name == user:
             return self.forbidden()
 
         members = group.my_members()
@@ -64,7 +82,7 @@ class GroupEditMember(GrouperHandler):
         if my_role not in ("manager", "owner", "np-owner"):
             return self.forbidden()
 
-        member = members.get((member_type.capitalize(), name2), None)
+        member = members.get((member_type.capitalize(), user), None)
         if not member:
             return self.notfound()
 
@@ -86,10 +104,12 @@ class GroupEditMember(GrouperHandler):
 
         form = GroupEditMemberForm(self.request.arguments)
         form.role.choices = [["member", "Member"]]
-        if my_role in ("owner", "np-owner"):
+        if my_role in ("owner", "np-owner") and member_type != "group":
             form.role.choices.append(["manager", "Manager"])
             form.role.choices.append(["owner", "Owner"])
             form.role.choices.append(["np-owner", "No-Permissions Owner"])
+        else:
+            form.role.render_kw = {"readonly": "readonly"}
 
         if not form.validate():
             return self.render(
@@ -106,7 +126,7 @@ class GroupEditMember(GrouperHandler):
             user_can_join = assert_can_join(group, user_or_group, role=form.data["role"])
         except UserNotAuditor as e:
             user_can_join = False
-            fail_message = e
+            fail_message = str(e)
         if not user_can_join:
             return self.render(
                 "group-edit-member.html",

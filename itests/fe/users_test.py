@@ -1,10 +1,10 @@
 import pytest
+from selenium.common.exceptions import NoSuchElementException
 
 from grouper.constants import AUDIT_SECURITY
 from grouper.models.public_key import PublicKey
 from grouper.permissions import get_or_create_permission
 from itests.fixtures import async_server  # noqa: F401
-from itests.pages.exceptions import NoSuchElementException
 from itests.pages.users import PublicKeysPage, UserViewPage
 from plugins import group_ownership_policy
 from tests.fixtures import (  # noqa: F401

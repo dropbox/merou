@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy.exc import IntegrityError
@@ -12,8 +14,7 @@ if TYPE_CHECKING:
 
 
 class GroupsView(GrouperHandler):
-    def get(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
+    def get(self, *args: Any, **kwargs: Any) -> None:
         self.handle_refresh()
         offset = int(self.get_argument("offset", 0))
         limit = int(self.get_argument("limit", 100))
@@ -51,10 +52,15 @@ class GroupsView(GrouperHandler):
             enabled=enabled,
         )
 
-    def post(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
+    def post(self, *args: Any, **kwargs: Any) -> None:
         form = GroupCreateForm(self.request.arguments)
         if not form.validate():
+            return self.render(
+                "group-create.html", form=form, alerts=self.get_form_alerts(form.errors)
+            )
+
+        if "@" in form.data["groupname"]:
+            form.groupname.errors.append("Group names cannot contain @")
             return self.render(
                 "group-create.html", form=form, alerts=self.get_form_alerts(form.errors)
             )

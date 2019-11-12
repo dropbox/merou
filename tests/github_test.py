@@ -74,7 +74,7 @@ def test_github(session, users, http_client, base_url, mocker):  # noqa: F811
     assert redir_url.path == "/login/oauth/authorize"
     query_params = parse_qs(redir_url.query)
     assert query_params["client_id"] == ["a-client-id"]
-    state, = query_params["state"]
+    (state,) = query_params["state"]
     assert "github-link-state={}".format(state) in resp.headers["Set-cookie"]
     assert query_params["redirect_uri"] == [
         "http://127.0.0.1:8888/github/link_complete/{}".format(user.id)

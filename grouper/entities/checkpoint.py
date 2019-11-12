@@ -1,3 +1,7 @@
-from typing import NamedTuple
+from dataclasses import dataclass
 
-Checkpoint = NamedTuple("Checkpoint", [("checkpoint", int), ("time", int)])
+
+@dataclass(frozen=True)
+class Checkpoint:
+    checkpoint: int
+    time: int

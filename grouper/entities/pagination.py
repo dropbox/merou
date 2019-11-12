@@ -9,11 +9,18 @@ PaginatedList is the corresponding generic type for the value returned by the re
 list of some other entity along with the total entity count and information about the pagination.
 """
 
-from typing import Generic, List, Optional, TypeVar
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Generic, TYPE_CHECKING, TypeVar
+
+if TYPE_CHECKING:
+    from typing import List, Optional
 
 T = TypeVar("T")
 
 
+@dataclass(frozen=True)
 class Pagination(Generic[T]):
     """Type for a pagination request.
 
@@ -24,14 +31,13 @@ class Pagination(Generic[T]):
         limit: Total number of items to return
     """
 
-    def __init__(self, sort_key, reverse_sort, offset, limit):
-        # type: (T, bool, int, Optional[int]) -> None
-        self.sort_key = sort_key
-        self.reverse_sort = reverse_sort
-        self.offset = offset
-        self.limit = limit
+    sort_key: T
+    reverse_sort: bool
+    offset: int
+    limit: Optional[int]
 
 
+@dataclass(frozen=True)
 class PaginatedList(Generic[T]):
     """Type for a paginated list.
 
@@ -42,9 +48,7 @@ class PaginatedList(Generic[T]):
         limit: Requested limit on total number of items to return (actual items may be fewer)
     """
 
-    def __init__(self, values, total, offset, limit):
-        # type: (List[T], int, int, Optional[int]) -> None
-        self.values = values
-        self.total = total
-        self.offset = offset
-        self.limit = limit
+    values: List[T]
+    total: int
+    offset: int
+    limit: Optional[int]

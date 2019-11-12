@@ -332,7 +332,6 @@ class GroupGraph(object):
                         argument=arg,
                         granted_on=permission_map.granted_on,
                         is_alias=True,
-                        grant_id=None,
                     )
                 )
 

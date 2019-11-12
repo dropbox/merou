@@ -1,7 +1,13 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import TYPE_CHECKING
 
 from grouper.constants import NAME_VALIDATION
+
+if TYPE_CHECKING:
+    from typing import Optional
 
 
 class GroupJoinPolicy(Enum):
@@ -10,32 +16,25 @@ class GroupJoinPolicy(Enum):
     NOBODY = "nobody"
 
 
-Group = NamedTuple(
-    "Group",
-    [
-        ("name", str),
-        ("description", str),
-        ("email_address", Optional[str]),
-        ("join_policy", GroupJoinPolicy),
-        ("enabled", bool),
-        ("is_role_user", bool),
-    ],
-)
+@dataclass(frozen=True)
+class Group:
+    name: str
+    description: str
+    email_address: Optional[str]
+    join_policy: GroupJoinPolicy
+    enabled: bool
+    is_role_user: bool
 
 
 class GroupNotFoundException(Exception):
     """Attempt to operate on a group not found in the storage layer."""
 
-    def __init__(self, name):
-        # type: (str) -> None
-        msg = "Group {} not found".format(name)
-        super().__init__(msg)
+    def __init__(self, name: str) -> None:
+        super().__init__(f"Group {name} not found")
 
 
 class InvalidGroupNameException(Exception):
     """A group name does not match the validation regex."""
 
-    def __init__(self, name):
-        # type: (str) -> None
-        msg = "Group name {} does not match validation regex {}".format(name, NAME_VALIDATION)
-        super().__init__(msg)
+    def __init__(self, name: str) -> None:
+        super().__init__(f"Group name {name} does not match validation regex {NAME_VALIDATION}")

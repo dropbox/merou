@@ -14,8 +14,7 @@ Description
 -----------
 
 Merou is an application to allow users to create and manage memberships to
-their own groups.  It requires Python 3 (only tested with Python 3.7
-currently).
+their own groups.  It requires Python 3.7 or later.
 
 **Note**: We renamed the project to avoid `a namespace conflict
 <https://github.com/Internet2/grouper>`_, but it isn't reflected in the

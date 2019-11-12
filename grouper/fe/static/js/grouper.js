@@ -21,6 +21,7 @@ $(function () {
     }
 
     $("select#member").attr("data-placeholder", "Select a user or group").chosen();
+    $("select#permission").attr("data-placeholder", "Select a permission").chosen();
 
     $('#add-form-expiration').datetimepicker({
         pickTime: false,
@@ -126,7 +127,7 @@ $(function () {
         var $reason_div = $form.find('.form-group-reason');
 
         var $group_input = $form.find('#group_name');
-        var $permission_input = $form.find('#permission_name');
+        var $permission_input = $form.find('#permission');
         var $argument_input = $form.find('#argument');
 
         // Supplement the <input> "argument" field with an adjacent

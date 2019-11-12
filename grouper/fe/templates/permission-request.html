@@ -22,7 +22,7 @@
                   method="post" action="{{ uri }}"
                   {{ { "data-permission" : args_by_perm_json } | xmlattr }}>
                 {{ form_field(form.group_name, 3, 8, class_="form-control") }}
-                {{ form_field(form.permission_name, 3, 8, class_="form-control") }}
+                {{ form_field(form.permission, 3, 8, class_="form-control") }}
                 {{ form_field(form.argument, 3, 8, class_="form-control") }}
                 {{ form_field(form.reason, 3, 8, class_="form-control") }}
                 {{ xsrf_form() | safe }}

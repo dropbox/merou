@@ -197,8 +197,10 @@ class PermissionGrantPage(BasePage):
         return self.find_element_by_id("grant-form")
 
     def set_permission(self, permission: str) -> None:
-        field = Select(self.form.find_element_by_name("permission"))
-        field.select_by_value(permission)
+        permission_select = self.form.find_element_by_id("permission_chosen")
+        permission_select.click()
+        permission_search = permission_select.find_element_by_tag_name("input")
+        permission_search.send_keys(permission, Keys.ENTER)
 
     def set_argument(self, argument: str) -> None:
         field = self.form.find_element_by_name("argument")

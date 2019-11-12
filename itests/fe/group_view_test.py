@@ -221,10 +221,10 @@ def test_request_permission(tmpdir: LocalPath, setup: SetupTest, browser: Chrome
         group_page.click_request_permission_button()
 
         request_page = PermissionRequestPage(browser)
-        request_page.set_select_value("permission_name", "some-permission")
-        request_page.fill_field("argument", "some-argument")
-        request_page.fill_field("reason", "testing")
-        request_page.submit_request()
+        request_page.set_permission("some-permission")
+        request_page.set_argument_freeform("some-argument")
+        request_page.set_reason("testing")
+        request_page.submit()
 
         assert browser.current_url.endswith("/permissions/requests/1")
         update_page = PermissionRequestUpdatePage(browser)

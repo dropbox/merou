@@ -209,7 +209,7 @@ class GroupPermissionRequestDropdownForm(Form):
     """permission request form using a dropdown field for the argument."""
 
     # Caller of form will add permission choices.
-    permission_name = SelectField("Permission", [validators.DataRequired()])
+    permission = SelectField("Permission", [validators.DataRequired()])
     argument = SelectField(
         "Argument",
         [
@@ -226,7 +226,7 @@ class GroupPermissionRequestTextForm(Form):
     """permission request form using a text field for the argument."""
 
     # Caller of form will add permission choices.
-    permission_name = SelectField("Permission", [validators.DataRequired()])
+    permission = SelectField("Permission", [validators.DataRequired()])
     argument = StringField(
         "Argument",
         [
@@ -242,7 +242,7 @@ class GroupPermissionRequestTextForm(Form):
 class PermissionRequestForm(Form):
     # Caller will add <select> field choices.
     group_name = SelectField("Group", [validators.DataRequired()])
-    permission_name = SelectField("Permission", [validators.DataRequired()])
+    permission = SelectField("Permission", [validators.DataRequired()])
     argument = StringField(
         "Argument",
         [

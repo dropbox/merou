@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
 
 from itests.pages.base import BasePage
@@ -11,25 +14,38 @@ if TYPE_CHECKING:
 
 class PermissionRequestPage(BasePage):
     @property
-    def permission_request_form(self):
-        # type: () -> WebElement
+    def form(self) -> WebElement:
         return self.find_element_by_id("permission-request")
 
-    def get_option_values(self, name):
-        # type: (str) -> List[str]
-        select = Select(self.permission_request_form.find_element_by_name(name))
-        return [option.get_attribute("value") for option in select.options]
+    def get_group_values(self) -> List[str]:
+        field = Select(self.form.find_element_by_name("group_name"))
+        return [option.get_attribute("value") for option in field.options]
 
-    def set_select_value(self, name, value):
-        # type: (str, str) -> None
-        select = Select(self.permission_request_form.find_element_by_name(name))
-        select.select_by_value(value)
+    def get_permission_values(self) -> List[str]:
+        field = Select(self.form.find_element_by_name("permission"))
+        return [option.get_attribute("value") for option in field.options]
 
-    def fill_field(self, name, value):
-        # type: (str, str) -> None
-        self.permission_request_form.find_element_by_name(name).send_keys(value)
+    def set_group(self, group: str) -> None:
+        field = Select(self.form.find_element_by_name("group_name"))
+        field.select_by_value(group)
 
-    def submit_request(self):
-        # type: () -> None
-        button = self.permission_request_form.find_element_by_tag_name("button")
-        button.click()
+    def set_permission(self, permission: str) -> None:
+        permission_select = self.form.find_element_by_id("permission_chosen")
+        permission_select.click()
+        permission_search = permission_select.find_element_by_tag_name("input")
+        permission_search.send_keys(permission, Keys.ENTER)
+
+    def set_argument_dropdown(self, argument: str) -> None:
+        field = Select(self.form.find_element_by_name("argument"))
+        field.select_by_value(argument)
+
+    def set_argument_freeform(self, argument: str) -> None:
+        field = self.form.find_element_by_name("argument")
+        field.send_keys(argument)
+
+    def set_reason(self, reason: str) -> None:
+        field = self.form.find_element_by_name("reason")
+        field.send_keys(reason)
+
+    def submit(self) -> None:
+        self.form.submit()

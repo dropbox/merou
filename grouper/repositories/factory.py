@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from typing import Optional
 
 
-class SessionFactory(object):
+class SessionFactory:
     """Create database sessions.
 
     Eventually this will be used only by the RepositoryFactory to get a session to inject into

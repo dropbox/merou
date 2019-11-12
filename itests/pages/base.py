@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from selenium.webdriver.remote.webelement import WebElement
 
 
-class BaseFinder(object):
+class BaseFinder:
     def __init__(self, root):
         # type: (Chrome) -> None
         self.root = root

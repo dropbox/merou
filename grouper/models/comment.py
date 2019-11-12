@@ -8,7 +8,7 @@ from grouper.models.base.constants import OBJ_TYPES
 from grouper.models.base.model_base import Model
 
 
-class CommentObjectMixin(object):
+class CommentObjectMixin:
     """Mixin used by models which show up as objects referenced by Comment entries."""
 
     @property

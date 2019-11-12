@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from typing import Any
 
 
-class BaseOneOff(object):
+class BaseOneOff:
     def configure(self, service_name):
         # type: (str) -> None
         """

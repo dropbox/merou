@@ -1,4 +1,8 @@
-class Authorization(object):
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class Authorization:
     """Indicates that an action has been authorized.
 
     This object is a required parameter to any write action on a backend service.  This pattern is
@@ -10,6 +14,4 @@ class Authorization(object):
         actor: Identity of the user performing the action
     """
 
-    def __init__(self, actor):
-        # type: (str) -> None
-        self.actor = actor
+    actor: str

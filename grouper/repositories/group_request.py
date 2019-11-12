@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from typing import List
 
 
-class GroupRequestRepository(object):
+class GroupRequestRepository:
     """SQL storage layer for requests to join groups."""
 
     def __init__(self, session):

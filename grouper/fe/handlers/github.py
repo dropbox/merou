@@ -28,7 +28,7 @@ def _get_github_http_client() -> AsyncHTTPClient:
     return AsyncHTTPClient()
 
 
-class GitHubClient(object):
+class GitHubClient:
     def __init__(
         self, http_client: AsyncHTTPClient, proxy_host: Optional[str], proxy_port: Optional[int]
     ) -> None:

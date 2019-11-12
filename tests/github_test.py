@@ -26,7 +26,7 @@ from tests.fixtures import (  # noqa: F401
 from tests.url_util import url
 
 
-class FakeGitHubHttpClient(object):
+class FakeGitHubHttpClient:
     def __init__(self):
         self.requests = []
 
@@ -48,7 +48,7 @@ class FakeGitHubHttpClient(object):
         return f
 
 
-class SecretPlugin(object):
+class SecretPlugin:
     def get_github_app_client_secret(self):
         return b"client-secret"
 

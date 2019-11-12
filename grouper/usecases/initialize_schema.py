@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from grouper.usecases.interfaces import TransactionInterface
 
 
-class InitializeSchema(object):
+class InitializeSchema:
     """Initialize the schema for a fresh database."""
 
     def __init__(

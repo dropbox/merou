@@ -51,7 +51,7 @@ class CreateServiceAccountUI(metaclass=ABCMeta):
         pass
 
 
-class CreateServiceAccount(object):
+class CreateServiceAccount:
     """Create a new service account."""
 
     def __init__(

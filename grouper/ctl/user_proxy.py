@@ -29,7 +29,7 @@ class NoRedirectHandler(HTTPErrorProcessor):
         return response
 
 
-class ProxyServer(HTTPServer, object):
+class ProxyServer(HTTPServer):
     """Very simple proxy that adds the X-Grouper-User header.
 
     This is not intended for production use and should not be exposed to hostile requests.  It's

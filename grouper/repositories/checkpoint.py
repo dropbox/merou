@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from grouper.models.base.session import Session
 
 
-class CheckpointRepository(object):
+class CheckpointRepository:
     """Manage the checkpoint counter used for graph reloading.
 
     On every change to any Grouper data, increment an updates counter stored in the database.  This

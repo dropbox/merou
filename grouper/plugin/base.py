@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 
-class BasePlugin(object):
+class BasePlugin:
     def configure(self, service_name):
         # type: (str) -> None
         """Configure the plugin.

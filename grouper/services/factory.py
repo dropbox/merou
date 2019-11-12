@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     )
 
 
-class ServiceFactory(object):
+class ServiceFactory:
     """Construct backend services."""
 
     def __init__(self, settings, plugins, repository_factory):

@@ -23,7 +23,7 @@ def _utcnow():
     return datetime.now(UTC)
 
 
-class BaseTemplateEngine(object):
+class BaseTemplateEngine:
     """Lightweight wrapper around the Jinja2 template engine.
 
     Provides some date-formatting filters that honor global settings, and some global variables.

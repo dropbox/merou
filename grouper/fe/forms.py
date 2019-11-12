@@ -20,7 +20,7 @@ from grouper.entities.group_edge import GROUP_EDGE_ROLES
 GROUP_CANJOIN_CHOICES = [("canjoin", "Anyone"), ("canask", "Must Ask"), ("nobody", "Nobody")]
 
 
-class ValidateRegex(object):
+class ValidateRegex:
     def __init__(self, regex):
         # We assume any regex passed to us does not have line anchors.
         self.regex = r"^" + regex + r"$"
@@ -31,7 +31,7 @@ class ValidateRegex(object):
             raise ValidationError("Field must match '{}'".format(self.regex))
 
 
-class ValidateDate(object):
+class ValidateDate:
     def __call__(self, form, field):
         try:
             if field.data:

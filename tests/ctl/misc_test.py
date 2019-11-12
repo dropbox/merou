@@ -98,7 +98,7 @@ def test_oneoff(mock_load_plugins, session, tmpdir):  # noqa: F811
     other_username = "fake_user2@a.co"
     groupname = "fake_group"
 
-    class FakeOneOff(object):
+    class FakeOneOff:
         def configure(self, service_name):
             pass
 

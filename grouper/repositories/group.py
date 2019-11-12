@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from typing import Optional
 
 
-class GroupRepository(object):
+class GroupRepository:
     """Storage layer for groups."""
 
     def __init__(self, session):

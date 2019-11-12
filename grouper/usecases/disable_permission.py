@@ -50,7 +50,7 @@ class DisablePermissionUI(metaclass=ABCMeta):
         pass
 
 
-class DisablePermission(object):
+class DisablePermission:
     """Disable a permission."""
 
     def __init__(

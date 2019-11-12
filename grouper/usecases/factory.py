@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from grouper.usecases.view_permission import ViewPermissionUI
 
 
-class UseCaseFactory(object):
+class UseCaseFactory:
     """Create use cases with dependency injection."""
 
     def __init__(self, settings, plugins, service_factory):

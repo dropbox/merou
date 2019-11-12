@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -145,3 +147,17 @@ def test_group_join_group_as_owner(tmpdir: LocalPath, setup: SetupTest, browser:
             join_page.set_role(role)
             join_page.submit()
             assert join_page.has_alert("Groups can only have the role of 'member'")
+
+
+def test_request_join_unicode(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group", "owner")
+
+    with frontend_server(tmpdir, "cbguder@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group/join"))
+        page = GroupJoinPage(browser)
+
+        page.set_reason("защото причини")
+        page.submit()
+
+        assert browser.current_url.endswith("/groups/some-group?refresh=yes")

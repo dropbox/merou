@@ -131,8 +131,8 @@ class GroupInterface(metaclass=ABCMeta):
     """Abstract base class for group operations and queries."""
 
     @abstractmethod
-    def create_group(self, name, description, join_policy):
-        # type: (str, str, GroupJoinPolicy) -> None
+    def create_group(self, name, description, join_policy, email=None):
+        # type: (str, str, GroupJoinPolicy, Optional[str]) -> None
         pass
 
     @abstractmethod

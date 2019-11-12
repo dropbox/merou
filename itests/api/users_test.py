@@ -1,33 +1,58 @@
-from grouper.constants import GROUP_ADMIN, PERMISSION_ADMIN, USER_ADMIN
-from itests.fixtures import api_client, async_api_server  # noqa: F401
-from tests.fixtures import (  # noqa: F401
-    graph,
-    groups,
-    permissions,
-    service_accounts,
-    session,
-    standard_graph,
-    users,
-)
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from groupy.client import Groupy
+
+from grouper.constants import GROUP_ADMIN, USER_ADMIN
+from itests.setup import api_server
+
+if TYPE_CHECKING:
+    from py.local import LocalPath
+    from tests.setup import SetupTest
 
 
-def test_get_users(api_client, users):  # noqa: F811
-    real_users = [username for username, u in users.items() if not u.role_user]
-    assert len(real_users) > 0
+def test_get_users(tmpdir: LocalPath, setup: SetupTest) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group")
+        setup.create_user("zorkian@a.co")
+        setup.create_user("disabled@a.co")
+        setup.disable_user("disabled@a.co")
+        setup.create_service_account("service@a.co", "some-group")
+        setup.create_role_user("role@a.co")
 
-    api_users = list(api_client.users)
-    assert sorted(api_users) == sorted(real_users)
+    with api_server(tmpdir) as api_url:
+        api_client = Groupy(api_url)
+        assert sorted(api_client.users) == ["disabled@a.co", "gary@a.co", "zorkian@a.co"]
 
 
-def test_get_user(api_client):  # noqa: F811
-    user = api_client.users.get("cbguder@a.co")
-    assert sorted(user.groups) == ["group-admins", "permission-admins", "user-admins"]
-    assert user.passwords == []
-    assert user.public_keys == []
-    assert user.enabled
-    assert user.service_account is None
+def test_get_user(tmpdir: LocalPath, setup: SetupTest) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("cbguder@a.co", "admins")
+        setup.grant_permission_to_group(GROUP_ADMIN, "", "admins")
+        setup.grant_permission_to_group(USER_ADMIN, "", "admins")
+        setup.add_user_to_group("cbguder@a.co", "some-group")
+        setup.grant_permission_to_group("some-permission", "one", "some-group")
+        setup.add_group_to_group("some-group", "parent-group")
+        setup.grant_permission_to_group("some-permission", "two", "some-group")
 
-    perms = [(p.permission, p.argument) for p in user.permissions]
-    assert sorted(perms) == [(GROUP_ADMIN, ""), (PERMISSION_ADMIN, ""), (USER_ADMIN, "")]
+    with api_server(tmpdir) as api_url:
+        api_client = Groupy(api_url)
+        user = api_client.users.get("cbguder@a.co")
 
-    assert user.metadata == {}
+        assert sorted(user.groups) == ["admins", "parent-group", "some-group"]
+        assert user.passwords == []
+        assert user.public_keys == []
+        assert user.enabled
+        assert user.service_account is None
+        assert user.metadata == {}
+
+        permissions = [(p.permission, p.argument) for p in user.permissions]
+        assert sorted(permissions) == sorted(
+            [
+                (GROUP_ADMIN, ""),
+                (USER_ADMIN, ""),
+                ("some-permission", "one"),
+                ("some-permission", "two"),
+            ]
+        )

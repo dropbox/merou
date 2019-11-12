@@ -8,9 +8,8 @@ functions to provide them as fixtures for older tests until the refactoring is c
 from typing import TYPE_CHECKING
 
 import pytest
-from groupy.client import Groupy
 
-from itests.setup import api_server, frontend_server
+from itests.setup import frontend_server
 
 if TYPE_CHECKING:
     from grouper.graph import GroupGraph
@@ -23,14 +22,3 @@ def async_server(standard_graph, tmpdir):
     # type: (GroupGraph, LocalPath) -> Iterator[str]
     with frontend_server(tmpdir, "cbguder@a.co") as frontend_url:
         yield frontend_url
-
-
-@pytest.fixture
-def async_api_server(standard_graph, tmpdir):
-    with api_server(tmpdir) as api_url:
-        yield api_url
-
-
-@pytest.fixture
-def api_client(async_api_server):
-    return Groupy(async_api_server)

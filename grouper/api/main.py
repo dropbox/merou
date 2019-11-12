@@ -40,7 +40,7 @@ def create_api_application(graph, settings, plugins, usecase_factory):
 def start_server(args, settings, plugins):
     # type: (Namespace, ApiSettings, PluginProxy) -> None
     log_level = logging.getLevelName(logging.getLogger().level)
-    logging.info("begin. log_level={}".format(log_level))
+    logging.info("begin. log_level=%s", log_level)
 
     assert not (
         settings.debug and settings.num_processes > 1
@@ -101,7 +101,7 @@ def main(sys_argv=sys.argv):
         plugins = PluginProxy.load_plugins(settings, "grouper-api")
         set_global_plugin_proxy(plugins)
     except PluginsDirectoryDoesNotExist as e:
-        logging.fatal("Plugin directory does not exist: {}".format(e))
+        logging.fatal("Plugin directory does not exist: %s", e)
         sys.exit(1)
     except Exception:
         logging.exception("Uncaught exception in startup")

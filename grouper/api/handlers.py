@@ -164,7 +164,7 @@ class Users(GraphHandler):
             try:
                 return self.success(get_individual_user_info(self, name, service_account=None))
             except NoSuchUser:
-                return self.notfound("User ({}) not found.".format(name))
+                return self.notfound(f"User ({name}) not found.")
 
         with self.graph.lock:
             return self.success(
@@ -380,7 +380,7 @@ class ServiceAccounts(GraphHandler):
             try:
                 return self.success(get_individual_user_info(self, name, service_account=True))
             except NoSuchUser:
-                return self.notfound("User ({}) not found.".format(name))
+                return self.notfound(f"User ({name}) not found.")
 
         with self.graph.lock:
             return self.success(

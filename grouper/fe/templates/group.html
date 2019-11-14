@@ -25,7 +25,8 @@
     <!-- Enable/Disable button. -->
     {% if current_user_role['is_owner'] %}
         {% if group.enabled %}
-            <button class="btn btn-danger" data-toggle="modal" data-target="#disableModal">
+            <button id="disable-group" class="btn btn-danger" data-toggle="modal"
+                    data-target="#disableModal">
                 <i class="fa fa-minus"></i> Disable
             </button>
         {% else %}
@@ -246,7 +247,7 @@
                 </table>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default"
+                <button id="audit-close" type="button" class="btn btn-default"
                         data-dismiss="modal">Close</button>
                     {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Complete Audit</button>

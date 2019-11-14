@@ -134,9 +134,22 @@ class GroupViewPage(BasePage):
         button = self.find_element_by_id("add-service-account")
         button.click()
 
+    def click_disable_button(self) -> None:
+        button = self.find_element_by_id("disable-group")
+        button.click()
+
     def click_request_permission_button(self) -> None:
         button = self.find_element_by_id("request-permission")
         button.click()
+
+    def get_disable_modal(self) -> DisableGroupModal:
+        element = self.find_element_by_id("disableModal")
+        self.wait_until_visible(element)
+        return DisableGroupModal(element)
+
+    def wait_until_audit_modal_clears(self) -> None:
+        audit_modal = self.find_element_by_id("auditModal")
+        self.wait_until_invisible(audit_modal)
 
 
 class GroupJoinPage(BasePage):
@@ -224,14 +237,16 @@ class GroupRequestsPage(BasePage):
 
 
 class AuditModal(BaseModal):
-    def find_member_row(self, name):
-        # type: (str) -> AuditMemberRow
+    def click_close_button(self) -> None:
+        button = self.find_element_by_id("audit-close")
+        button.click()
+
+    def find_member_row(self, name: str) -> AuditMemberRow:
         for row in self.find_elements_by_class_name("audit-member-row"):
             member_row = AuditMemberRow(row)
             if member_row.name == name:
                 return member_row
-
-        raise NoSuchElementException("Can't find audit member with name {}".format(name))
+        raise NoSuchElementException(f"Can't find audit member with name {name}")
 
 
 class CreateGroupModal(BaseModal):
@@ -258,6 +273,10 @@ class CreateGroupModal(BaseModal):
         # type: (GroupJoinPolicy) -> None
         field = Select(self.form.find_element_by_name("canjoin"))
         field.select_by_value(join_policy.value)
+
+
+class DisableGroupModal(BaseModal):
+    pass
 
 
 class GroupJoinClickthruModal(BaseModal):

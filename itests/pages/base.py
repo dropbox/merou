@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from selenium.webdriver.support import expected_conditions as EC
@@ -73,6 +75,9 @@ class BasePage(BaseFinder):
 
     def has_text(self, text):
         return text in self.root.page_source
+
+    def wait_until_invisible(self, element: WebElement) -> None:
+        WebDriverWait(self.root, 10).until(EC.invisibility_of_element(element))
 
     def wait_until_visible(self, element):
         WebDriverWait(self.root, 10).until(EC.visibility_of(element))

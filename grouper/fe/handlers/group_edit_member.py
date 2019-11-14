@@ -121,20 +121,16 @@ class GroupEditMember(GrouperHandler):
                 alerts=self.get_form_alerts(form.errors),
             )
 
-        fail_message = "This join is denied with this role at this time."
         try:
-            user_can_join = assert_can_join(group, user_or_group, role=form.data["role"])
+            assert_can_join(group, user_or_group, role=form.data["role"])
         except UserNotAuditor as e:
-            user_can_join = False
-            fail_message = str(e)
-        if not user_can_join:
             return self.render(
                 "group-edit-member.html",
                 form=form,
                 group=group,
                 member=member,
                 edge=edge,
-                alerts=[Alert("danger", fail_message, "Audit Policy Enforcement")],
+                alerts=[Alert("danger", str(e), "Audit Policy Enforcement")],
             )
 
         expiration = None

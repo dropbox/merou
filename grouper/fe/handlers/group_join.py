@@ -73,18 +73,14 @@ class GroupJoin(GrouperHandler):
                 alerts=[Alert("danger", "Unknown user or group: {}".format(form.data["member"]))],
             )
 
-        fail_message = "This join is denied with this role at this time."
         try:
-            user_can_join = assert_can_join(group, member, role=form.data["role"])
+            assert_can_join(group, member, role=form.data["role"])
         except UserNotAuditor as e:
-            user_can_join = False
-            fail_message = str(e)
-        if not user_can_join:
             return self.render(
                 "group-join.html",
                 form=form,
                 group=group,
-                alerts=[Alert("danger", fail_message, "Audit Policy Enforcement")],
+                alerts=[Alert("danger", str(e), "Audit Policy Enforcement")],
             )
 
         if group.canjoin == "nobody":

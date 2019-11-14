@@ -10,7 +10,7 @@ from grouper.usecases.list_permissions import ListPermissionsSortKey, ListPermis
 
 if TYPE_CHECKING:
     from tests.setup import SetupTest
-    from typing import Any, List
+    from typing import List
 
 
 class MockUI(ListPermissionsUI):
@@ -23,14 +23,6 @@ class MockUI(ListPermissionsUI):
         else:
             self.permissions = permissions
         self.can_create = can_create
-
-
-def assert_paginated_list_equal(left, right):
-    # type: (PaginatedList[Any], PaginatedList[Any]) -> None
-    """mypy NamedTuples don't compare with simple equality."""
-    assert left.values == right.values
-    assert left.total == right.total
-    assert left.offset == right.offset
 
 
 def create_test_data(setup):
@@ -83,7 +75,7 @@ def test_simple_list_permissions(setup):
     usecase.simple_list_permissions()
     assert not mock_ui.can_create
     expected = PaginatedList(values=sorted(permissions), total=3, offset=0, limit=None)
-    assert_paginated_list_equal(mock_ui.permissions, expected)
+    assert mock_ui.permissions == expected
 
 
 def test_list_permissions_pagination(setup):
@@ -98,7 +90,7 @@ def test_list_permissions_pagination(setup):
     )
     usecase.list_permissions("gary@a.co", pagination, audited_only=False)
     expected = PaginatedList(values=sorted(permissions)[:2], total=3, offset=0, limit=2)
-    assert_paginated_list_equal(mock_ui.permissions, expected)
+    assert mock_ui.permissions == expected
 
     # Sorted by date, using offset, limit longer than remaining items.
     pagination = Pagination(
@@ -107,7 +99,7 @@ def test_list_permissions_pagination(setup):
     usecase.list_permissions("gary@a.co", pagination, audited_only=False)
     expected_values = sorted(permissions, key=lambda p: p.created_on)[2:]
     expected = PaginatedList(values=expected_values, total=3, offset=2, limit=10)
-    assert_paginated_list_equal(mock_ui.permissions, expected)
+    assert mock_ui.permissions == expected
 
     # Sorted by name, reversed, limit of one 1 and offset of 1.
     pagination = Pagination(
@@ -116,7 +108,7 @@ def test_list_permissions_pagination(setup):
     usecase.list_permissions("gary@a.co", pagination, audited_only=False)
     expected_values = sorted(permissions, reverse=True)[1:2]
     expected = PaginatedList(values=expected_values, total=3, offset=1, limit=1)
-    assert_paginated_list_equal(mock_ui.permissions, expected)
+    assert mock_ui.permissions == expected
 
 
 def test_list_permissions_audited_only(setup):
@@ -130,7 +122,7 @@ def test_list_permissions_audited_only(setup):
     usecase.list_permissions("gary@a.co", pagination, audited_only=True)
     expected_values = [p for p in permissions if p.name == "audited-permission"]
     expected = PaginatedList(values=expected_values, total=1, offset=0, limit=None)
-    assert_paginated_list_equal(mock_ui.permissions, expected)
+    assert mock_ui.permissions == expected
 
 
 def test_list_permissions_can_create(setup):

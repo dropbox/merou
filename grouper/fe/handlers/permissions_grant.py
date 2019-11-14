@@ -76,17 +76,10 @@ class PermissionsGrant(GrouperHandler):
 
         # If the permission is audited, then see if the subtree meets auditing requirements.
         if permission.audited:
-            fail_message = (
-                "Permission is audited and this group (or a subgroup) contains "
-                + "owners, np-owners, or managers who have not received audit training."
-            )
             try:
-                permission_ok = assert_controllers_are_auditors(group)
+                assert_controllers_are_auditors(group)
             except UserNotAuditor as e:
-                permission_ok = False
-                fail_message = e
-            if not permission_ok:
-                form.permission.errors.append(fail_message)
+                form.permission.errors.append(str(e))
                 return self.render(
                     "permission-grant.html",
                     form=form,

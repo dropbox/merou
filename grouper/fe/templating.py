@@ -2,17 +2,24 @@ from __future__ import annotations
 
 import os
 from base64 import b64encode
+from dataclasses import dataclass
 from hashlib import sha256
-from typing import cast, NamedTuple, Optional, TYPE_CHECKING
+from typing import cast, TYPE_CHECKING
 
 from grouper.fe.settings import FrontendSettings
 from grouper.templating import BaseTemplateEngine
 
 if TYPE_CHECKING:
-    from typing import Iterable, List
+    from typing import Iterable, List, Optional
 
-# A web resource that needs to be included in CSP headers.
-Resource = NamedTuple("Resource", [("url", str), ("integrity", Optional[str])])
+
+@dataclass(frozen=True)
+class Resource:
+    """A web resource that needs to be included in CSP headers."""
+
+    url: str
+    integrity: Optional[str]
+
 
 # External CSS loaded on every Grouper page.  All URLs are relative to a CDNJS mirror.
 EXTERNAL_CSS = [
@@ -117,8 +124,13 @@ INTERNAL_JS = ["js/grouper.js"]
 class FrontendTemplateEngine(BaseTemplateEngine):
     """Frontend-specific template engine."""
 
-    def __init__(self, settings, deployment_name, static_path, package="grouper.fe"):
-        # type: (FrontendSettings, str, str, str) -> None
+    def __init__(
+        self,
+        settings: FrontendSettings,
+        deployment_name: str,
+        static_path: str,
+        package: str = "grouper.fe",
+    ) -> None:
         super().__init__(settings, package)
         self.static_path = static_path
         template_globals = {
@@ -131,8 +143,7 @@ class FrontendTemplateEngine(BaseTemplateEngine):
         }
         self.environment.globals.update(template_globals)
 
-    def csp_header(self):
-        # type: () -> str
+    def csp_header(self) -> str:
         """Return the value for the Content-Security-Policy header."""
         policy = "frame-ancestors 'none'; form-action 'self'; default-src 'none'"
         policy += "; img-src 'self' " + " ".join(self._cdnjs_urls(EXTERNAL_IMG))
@@ -142,14 +153,12 @@ class FrontendTemplateEngine(BaseTemplateEngine):
         policy += "; require-sri-for script style"
         return policy
 
-    def _cdnjs_urls(self, resources):
-        # type: (Iterable[Resource]) -> List[str]
+    def _cdnjs_urls(self, resources: Iterable[Resource]) -> List[str]:
         """Return the URLs on the preferred CDNJS mirror for the given resources."""
         cdnjs_prefix = cast(FrontendSettings, self.settings).cdnjs_prefix
-        return ["{}{}".format(cdnjs_prefix, r.url) for r in resources]
+        return [f"{cdnjs_prefix}{r.url}" for r in resources]
 
-    def _static_path_to_resource(self, url):
-        # type: (str) -> Resource
+    def _static_path_to_resource(self, url: str) -> Resource:
         """Convert a path to a static resource into a Resource.
 
         Loads the contents of the file and computes the hash, and then returns a Resource with the

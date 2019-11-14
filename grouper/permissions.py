@@ -551,14 +551,25 @@ def can_approve_request(
     owner: User,
     group_ids: Optional[Set[int]] = None,
     owners_by_arg_by_perm: Optional[Dict[object, Dict[str, List[Group]]]] = None,
-) -> Set[int]:
+) -> bool:
+    """Determine whether the given owner can approve a permission request.
+
+    Args:
+        session: Database session
+        request: Pending permission request
+        owner: User who may or may not be able to approve the request
+        group_ids: If given, the IDs of the groups of which the user is a member (solely so that we
+            can avoid another database query if this information is already available)
+        owners_by_arg_by_perm: List of permission granters by permission and argument (solely so
+            that we can avoid another database query if this information is already available)
+    """
     owner_arg_list = get_owner_arg_list(
         session, request.permission, request.argument, owners_by_arg_by_perm
     )
     if group_ids is None:
         group_ids = {g.id for g, _ in get_groups_by_user(session, owner)}
 
-    return group_ids.intersection([o.id for o, arg in owner_arg_list])
+    return bool(group_ids.intersection([o.id for o, arg in owner_arg_list]))
 
 
 def get_requests(

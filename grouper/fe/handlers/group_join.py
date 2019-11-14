@@ -116,12 +116,23 @@ class GroupJoin(GrouperHandler):
         elif group.auto_expire:
             expiration = datetime.utcnow() + group.auto_expire
 
+        # If the requested role is member, set the status based on the group's canjoin setting,
+        # which automatically actions the request if the group can be joined by anyone and
+        # otherwise sets it pending.
+        #
+        # However, we don't want to let people autojoin as owner or np-owner even to otherwise open
+        # groups, so if the role is not member, force the status to pending.
+        if form.data["role"] == "member":
+            status = GROUP_JOIN_CHOICES[group.canjoin]
+        else:
+            status = "pending"
+
         try:
             request = group.add_member(
                 requester=self.current_user,
                 user_or_group=member,
                 reason=form.data["reason"],
-                status=GROUP_JOIN_CHOICES[group.canjoin],
+                status=status,
                 expiration=expiration,
                 role=form.data["role"],
             )
@@ -134,7 +145,7 @@ class GroupJoin(GrouperHandler):
             )
         self.session.commit()
 
-        if group.canjoin == "canask":
+        if status == "pending":
             AuditLog.log(
                 self.session,
                 self.current_user.id,
@@ -165,7 +176,7 @@ class GroupJoin(GrouperHandler):
             )
             send_email(self.session, mail_to, subj, "pending_request", settings(), email_context)
 
-        elif group.canjoin == "canjoin":
+        elif status == "actioned":
             AuditLog.log(
                 self.session,
                 self.current_user.id,
@@ -174,7 +185,7 @@ class GroupJoin(GrouperHandler):
                 on_group_id=group.id,
             )
         else:
-            raise Exception("Need to update the GroupJoin.post audit logging")
+            raise Exception(f"Unknown join status {status}")
 
         return self.redirect("/groups/{}?refresh=yes".format(group.name))
 

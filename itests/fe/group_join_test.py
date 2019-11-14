@@ -132,6 +132,23 @@ def test_group_join_group(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) 
         assert group_page.find_member_row("some-group")
 
 
+def test_group_join_as_owner(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with setup.transaction():
+        setup.create_group("some-group", join_policy=GroupJoinPolicy.CAN_JOIN)
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group/join"))
+        join_page = GroupJoinPage(browser)
+
+        join_page.set_role("Owner")
+        join_page.set_reason("Testing")
+        join_page.submit()
+
+        view_page = GroupViewPage(browser)
+        with pytest.raises(NoSuchElementException):
+            view_page.find_member_row("gary@a.co")
+
+
 def test_group_join_group_as_owner(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group", "owner")

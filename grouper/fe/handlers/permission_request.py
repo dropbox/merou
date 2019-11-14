@@ -13,7 +13,6 @@ from grouper.permissions import get_grantable_permissions, get_permission
 from grouper.user_group import get_groups_by_user
 
 if TYPE_CHECKING:
-    from grouper.models.permission import Permission
     from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 
@@ -97,7 +96,7 @@ class PermissionRequest(GrouperHandler):
             return self.redirect("/permissions/requests/{}".format(request.id))
 
     def _build_form(self, data):
-        # type: (Optional[int]) -> Tuple[PermissionRequestForm, Dict[Permission, List[str]]]
+        # type: (Optional[int]) -> Tuple[PermissionRequestForm, Dict[str, List[str]]]
         """Build the permission request form given the request and POST data.
 
         Normally all fields of the form will be editable.  But if the URL

@@ -27,7 +27,7 @@ class RoleUserView(GrouperHandler):
         graph = self.graph
         session = self.session
         self.render(
-            "service.html",
+            "role-user.html",
             user=user,
             group=group,
             audit_members_infos=get_group_audit_members_infos(self.session, group),

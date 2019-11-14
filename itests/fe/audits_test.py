@@ -70,7 +70,8 @@ def test_disabling_group_clears_audit(
 
         assert page.subheading == "some-group (disabled)"
 
-    # And now all of the email messages should be marked sent except the non-async one.
+    # And now all of the email messages should be marked sent except the immediate one (the one
+    # that wasn't created with async_send_email).
     setup.reopen_database()
     emails = setup.session.query(AsyncNotification).filter_by(sent=False, email="gary@a.co").all()
     assert len(emails) == 1

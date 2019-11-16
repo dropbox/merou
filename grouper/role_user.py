@@ -4,7 +4,7 @@ FIXME(rra): Role users are deprecated and will be replaced by a new service acco
 not add any more logic to role users in the meantime.
 """
 
-from collections import namedtuple
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from grouper.constants import USER_ADMIN
@@ -23,7 +23,10 @@ class RoleUserNotFound(Exception):
     pass
 
 
-RoleUser = namedtuple("RoleUser", ["user", "group"])
+@dataclass(frozen=True)
+class RoleUser:
+    user: User
+    group: Group
 
 
 def create_role_user(session, actor, name, description, canjoin):
@@ -117,7 +120,11 @@ def get_role_user(session, user=None, group=None):
     else:
         assert group is not None
         name = group.name
-    return RoleUser(User.get(session, name=name), Group.get(session, name=name))
+    user_obj = User.get(session, name=name)
+    assert user_obj, "User object for role user not found"
+    group_obj = Group.get(session, name=name)
+    assert group_obj, "Group object for role user not found"
+    return RoleUser(user_obj, group_obj)
 
 
 def can_manage_role_user(session, user, tuser=None, tgroup=None):

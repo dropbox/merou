@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -33,8 +35,7 @@ class BaseTemplateEngine:
     from which templates should be loaded.
     """
 
-    def __init__(self, settings, package):
-        # type: (Settings, str) -> None
+    def __init__(self, settings: Settings, package: str) -> None:
         self.settings = settings
         loader = PackageLoader(package, "templates")
         self.environment = Environment(loader=loader, autoescape=select_autoescape(["html"]))
@@ -49,12 +50,10 @@ class BaseTemplateEngine:
         template_globals = {"ROLES": GROUP_EDGE_ROLES, "TYPES": OBJ_TYPES_IDX}
         self.environment.globals.update(template_globals)
 
-    def get_template(self, name):
-        # type: (str) -> Template
+    def get_template(self, name: str) -> Template:
         return self.environment.get_template(name)
 
-    def print_date(self, date):
-        # type: (Optional[datetime]) -> str
+    def print_date(self, date: Optional[datetime]) -> str:
         """Format a human readable datetime string, respecting configuration settings."""
         if date is None:
             return ""
@@ -64,8 +63,9 @@ class BaseTemplateEngine:
         return date.strftime(self.settings.date_format)
 
     @classmethod
-    def expires_when_str(cls, date, utcnow_fn=_utcnow):
-        # type: (Optional[datetime], Callable[[], datetime]) -> str
+    def expires_when_str(
+        cls, date: Optional[datetime], utcnow_fn: Callable[[], datetime] = _utcnow
+    ) -> str:
         """Format an expiration datetime.
 
         The utcnow_fn parameter is only used for testing and allows overriding the definition of
@@ -88,8 +88,7 @@ class BaseTemplateEngine:
             return delta_str
 
     @classmethod
-    def long_ago_str(cls, date, utcnow_fn=_utcnow):
-        # type: (datetime, Callable[[], datetime]) -> str
+    def long_ago_str(cls, date: datetime, utcnow_fn: Callable[[], datetime] = _utcnow) -> str:
         """Format a datetime as an interval in the past.
 
         The utcnow_fn parameter is only used for testing and allows overriding the definition of
@@ -110,8 +109,7 @@ class BaseTemplateEngine:
             return "{} ago".format(delta_str)
 
     @staticmethod
-    def _highest_period_delta_str(delta):
-        # type: (relativedelta) -> Optional[str]
+    def _highest_period_delta_str(delta: relativedelta) -> Optional[str]:
         """Return a string version of the longest non-microsecond interval in a relativedelta.
 
         Helper function for expires_when_str and long_ago_str.  If relativedelta is negative or

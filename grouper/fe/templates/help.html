@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import permission with context %}
+{% from 'macros/ui.html' import permission_link %}
 
 {% block subtitle %} help{% endblock %}
 
@@ -44,7 +44,7 @@ pairs from the groups of which they are members.</p>
 <h3>How do I request a permission?</h3>
 <p>First, make sure you're a member of an appropriate group.  We don't grant permissions
 directly to users because that approach is not scalable.  Once you're a member of a group
-that should have a particular permission but doesn't, check the {{permission(grant_perm)}}
+that should have a particular permission but doesn't, check the {{permission_link(grant_perm)}}
 page for a list of which groups can grant which permissions and reach out to the group(s)
 that control(s) the permission you need.</p>
 
@@ -58,19 +58,19 @@ which begins with no permissions.</p>
 on a manual way to pre-populate users.</p>
 
 <h3>Who can create permissions?</h3>
-<p>A user with the permission ({{permission(create_perm)}}, prefix.*) can create any
+<p>A user with the permission ({{permission_link(create_perm)}}, prefix.*) can create any
 permission starting with "prefix." We strongly encourage namespacing using the character
 '.' as a separator.</p>
 
 <h3>Who can grant permissions?</h3>
-<p>Generally, a user with the permission ({{permission(grant_perm)}}, prefix.*) can grant
+<p>Generally, a user with the permission ({{permission_link(grant_perm)}}, prefix.*) can grant
 any permission starting with "prefix." with any argument.  As a special case, the
 permission ({{grant_perm.name}}, {{grant_perm.name}}/prefix.*) allows a user to
 grant the permission to grant ({{grant_perm.name}}, prefix.*).</p>
 
 <h3>How does auditing work?</h3>
 <p>Certain grouper permissions are designated as audited permissions. Groups with at least
-one audited permission become audited groups.  Users with the {{permission(audit_perm)}}
+one audited permission become audited groups.  Users with the {{permission_link(audit_perm)}}
 permission (any argument) are considered auditors.  Only auditors can be the manager,
 owner, or np-owner of an audited group.</p>
 

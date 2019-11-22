@@ -161,6 +161,16 @@ class GrouperHandler(RequestHandler):
 
         return user
 
+    def get_path_argument(self, name: str) -> str:
+        """Get a URL path argument.
+
+        Parallel to get_request_argument() and get_body_argument(), this uses path_kwargs to find
+        an argument to the handler, undo any URL quoting, and return it.  Use this uniformly
+        instead of kwargs for all handler get() and post() methods to handle escaping properly.
+        """
+        value: str = self.path_kwargs[name]
+        return unquote(value)
+
     def prepare(self) -> None:
         username = self.request.headers.get(settings().user_auth_header)
 

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.fe.forms import GroupEditMemberForm
@@ -21,9 +20,9 @@ if TYPE_CHECKING:
 
 class GroupEditMember(GrouperHandler):
     def get(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
-        member_name: str = unquote(kwargs["member_name"])
-        member_type: str = kwargs["member_type"]
+        name = self.get_path_argument("name")
+        member_name = self.get_path_argument("member_name")
+        member_type = self.get_path_argument("member_type")
 
         group = Group.get(self.session, name=name)
         if not group:
@@ -54,9 +53,9 @@ class GroupEditMember(GrouperHandler):
         self.render("group-edit-member.html", group=group, member=member, edge=edge, form=form)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
-        member_name: str = unquote(kwargs["member_name"])
-        member_type: str = kwargs["member_type"]
+        name = self.get_path_argument("name")
+        member_name = self.get_path_argument("member_name")
+        member_type = self.get_path_argument("member_type")
 
         group = Group.get(self.session, name=name)
         if not group:

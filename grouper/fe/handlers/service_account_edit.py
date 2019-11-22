@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from grouper.fe.forms import ServiceAccountEditForm
 from grouper.fe.util import GrouperHandler
@@ -15,8 +14,8 @@ if TYPE_CHECKING:
 
 class ServiceAccountEdit(GrouperHandler):
     def get(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
-        accountname: str = unquote(kwargs["accountname"])
+        name = self.get_path_argument("name")
+        accountname = self.get_path_argument("accountname")
 
         group = Group.get(self.session, name=name)
         if not group:
@@ -35,8 +34,8 @@ class ServiceAccountEdit(GrouperHandler):
         )
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
-        accountname: str = unquote(kwargs["accountname"])
+        name = self.get_path_argument("name")
+        accountname = self.get_path_argument("accountname")
 
         group = Group.get(self.session, name=name)
         if not group:

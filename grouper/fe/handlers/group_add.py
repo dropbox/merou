@@ -3,7 +3,6 @@ from __future__ import annotations
 import operator
 from datetime import datetime
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.email_util import send_email
@@ -53,7 +52,7 @@ class GroupAdd(GrouperHandler):
         return form
 
     def get(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
+        name = self.get_path_argument("name")
 
         group = Group.get(self.session, name=name)
         if not group:
@@ -67,7 +66,7 @@ class GroupAdd(GrouperHandler):
         return self.render("group-add.html", form=self.get_form(role=my_role), group=group)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
+        name = self.get_path_argument("name")
 
         group = Group.get(self.session, name=name)
         if not group:

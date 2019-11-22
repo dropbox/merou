@@ -37,6 +37,6 @@ class PermissionView(GrouperHandler, ViewPermissionUI):
         )
 
     def get(self, *args: Any, **kwargs: Any) -> None:
-        name: str = kwargs["name"]
+        name = self.get_path_argument("name")
         usecase = self.usecase_factory.create_view_permission_usecase(self)
         usecase.view_permission(name, self.current_user.username, audit_log_limit=20)

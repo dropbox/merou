@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 class PermissionDisableAuditing(GrouperHandler):
     def post(self, *args: Any, **kwargs: Any) -> None:
-        name: str = kwargs["name"]
+        name = self.get_path_argument("name")
 
         if not (
             user_is_permission_admin(self.session, self.current_user)

@@ -5,7 +5,7 @@ import hmac
 import json
 import os
 from typing import cast, TYPE_CHECKING
-from urllib.parse import unquote, urlencode
+from urllib.parse import urlencode
 
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPResponse
@@ -83,13 +83,15 @@ class GitHubClient:
 
 class GitHubLinkBeginView(GrouperHandler):
     def get(self, *args: Any, **kwargs: Any) -> None:
+        user_id = int(self.get_path_argument("user_id"))
+
         # Redirect the user to GitHub to authorize our app.
         state = binascii.hexlify(os.urandom(16))
         self.set_cookie("github-link-state", state, httponly=True)
         params = {
             "client_id": settings().github_app_client_id,
             "state": state,
-            "redirect_uri": "{}/github/link_complete/{}".format(settings().url, kwargs["user_id"]),
+            "redirect_uri": f"{settings().url}/github/link_complete/{user_id}",
         }
         self.redirect("https://github.com/login/oauth/authorize?" + urlencode(params))
 
@@ -97,6 +99,8 @@ class GitHubLinkBeginView(GrouperHandler):
 class GitHubLinkCompleteView(GrouperHandler):
     @gen.coroutine
     def get(self, *args: Any, **kwargs: Any) -> Iterator[Future]:
+        user_id = int(self.get_path_argument("user_id"))
+
         # Check that the state parameter is correct.
         state = self.request.query_arguments.get("state", [b""])[-1]
         expected_state = self.get_cookie("github-link-state", "").encode("utf-8")
@@ -108,7 +112,6 @@ class GitHubLinkCompleteView(GrouperHandler):
         code = self.get_query_argument("code")
 
         # Make sure we're modifying the authenticated user before doing more.
-        user_id = kwargs["user_id"]
         user = User.get(self.session, user_id)
         if not user:
             self.notfound()
@@ -146,7 +149,7 @@ class UserClearGitHub(GrouperHandler):
         return actor.name == target.name
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
+        name = self.get_path_argument("name")
 
         user = User.get(self.session, name=name)
         if not user:

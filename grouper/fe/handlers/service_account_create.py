@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from grouper.fe.forms import ServiceAccountCreateForm
 from grouper.fe.util import GrouperHandler
@@ -51,7 +50,7 @@ class ServiceAccountCreate(GrouperHandler, CreateServiceAccountUI):
         self.redirect(url)
 
     def get(self, *args: Any, **kwargs: Any) -> None:
-        owner: str = unquote(kwargs["name"])
+        owner = self.get_path_argument("name")
 
         usecase = self.usecase_factory.create_create_service_account_usecase(
             self.current_user.username, self
@@ -64,7 +63,7 @@ class ServiceAccountCreate(GrouperHandler, CreateServiceAccountUI):
         self.render("service-account-create.html", form=form, owner=owner)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        owner: str = unquote(kwargs["name"])
+        owner = self.get_path_argument("name")
 
         form = ServiceAccountCreateForm(self.request.arguments)
         if not form.validate():

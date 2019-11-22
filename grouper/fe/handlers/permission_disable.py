@@ -45,7 +45,7 @@ class PermissionDisable(GrouperHandler, DisablePermissionUI):
         return self.forbidden()
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        name: str = kwargs["name"]
+        name = self.get_path_argument("name")
         usecase = self.usecase_factory.create_disable_permission_usecase(
             self.current_user.username, self
         )

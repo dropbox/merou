@@ -34,7 +34,7 @@ class PermissionsRevoke(GrouperHandler):
         return False
 
     def get(self, *args: Any, **kwargs: Any) -> None:
-        mapping_id = int(kwargs["mapping_id"])
+        mapping_id = int(self.get_path_argument("mapping_id"))
         mapping = PermissionMap.get(self.session, id=mapping_id)
 
         if not mapping:
@@ -46,7 +46,7 @@ class PermissionsRevoke(GrouperHandler):
         self.render("permission-revoke.html", mapping=mapping)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        mapping_id = int(kwargs["mapping_id"])
+        mapping_id = int(self.get_path_argument("mapping_id"))
         mapping = PermissionMap.get(self.session, id=mapping_id)
 
         if not mapping:

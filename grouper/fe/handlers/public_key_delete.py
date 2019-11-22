@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from grouper.email_util import send_email
 from grouper.fe.settings import settings
@@ -29,8 +28,8 @@ class PublicKeyDelete(GrouperHandler):
         )
 
     def get(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
-        key_id = int(kwargs["key_id"])
+        name = self.get_path_argument("name")
+        key_id = int(self.get_path_argument("key_id"))
 
         user = User.get(self.session, name=name)
         if not user:
@@ -47,8 +46,8 @@ class PublicKeyDelete(GrouperHandler):
         self.render("public-key-delete.html", user=user, key=key)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
-        key_id = int(kwargs["key_id"])
+        name = self.get_path_argument("name")
+        key_id = int(self.get_path_argument("key_id"))
 
         user = User.get(self.session, name=name)
         if not user:

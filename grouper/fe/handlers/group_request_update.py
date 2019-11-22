@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.email_util import send_email
@@ -22,8 +21,8 @@ if TYPE_CHECKING:
 
 class GroupRequestUpdate(GrouperHandler):
     def get(self, *args: Any, **kwargs: Any) -> None:
-        request_id: str = kwargs["request_id"]
-        name: str = unquote(kwargs["name"])
+        request_id = self.get_path_argument("request_id")
+        name = self.get_path_argument("name")
 
         group = Group.get(self.session, name=name)
         if not group:
@@ -57,8 +56,8 @@ class GroupRequestUpdate(GrouperHandler):
         )
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        request_id: str = kwargs["request_id"]
-        name: str = unquote(kwargs["name"])
+        request_id = self.get_path_argument("request_id")
+        name = self.get_path_argument("name")
 
         group = Group.get(self.session, name=name)
         if not group:

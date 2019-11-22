@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from grouper.fe.handlers.template_variables import get_user_view_template_vars
 from grouper.fe.util import GrouperHandler
@@ -13,7 +12,7 @@ if TYPE_CHECKING:
 
 class UserView(GrouperHandler):
     def get(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
+        name = self.get_path_argument("name")
 
         self.handle_refresh()
 

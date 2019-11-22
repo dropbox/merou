@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from sqlalchemy.exc import IntegrityError
 
@@ -20,7 +19,7 @@ if TYPE_CHECKING:
 
 class PermissionsGrant(GrouperHandler):
     def get(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
+        name = self.get_path_argument("name")
 
         grantable = user_grantable_permissions(self.session, self.current_user)
         if not grantable:
@@ -39,7 +38,7 @@ class PermissionsGrant(GrouperHandler):
         return self.render("permission-grant.html", form=form, group=group)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
+        name = self.get_path_argument("name")
 
         grantable = user_grantable_permissions(self.session, self.current_user)
         if not grantable:

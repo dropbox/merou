@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from sqlalchemy.exc import IntegrityError
 
@@ -31,7 +30,7 @@ class UserTokenAdd(GrouperHandler):
         )
 
     def get(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
+        name = self.get_path_argument("name")
 
         user = User.get(self.session, name=name)
         if not user:
@@ -43,7 +42,7 @@ class UserTokenAdd(GrouperHandler):
         self.render("user-token-add.html", form=UserTokenForm(), user=user)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        name = unquote(kwargs["name"])
+        name = self.get_path_argument("name")
 
         user = User.get(self.session, name=name)
         if not user:

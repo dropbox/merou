@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
@@ -28,8 +27,8 @@ class UserTokenDisable(GrouperHandler):
         )
 
     def get(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
-        token_id = int(kwargs["token_id"])
+        name = self.get_path_argument("name")
+        token_id = int(self.get_path_argument("token_id"))
 
         user = User.get(self.session, name=name)
         if not user:
@@ -42,8 +41,8 @@ class UserTokenDisable(GrouperHandler):
         return self.render("user-token-disable.html", user=user, token=token)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
-        token_id = int(kwargs["token_id"])
+        name = self.get_path_argument("name")
+        token_id = int(self.get_path_argument("token_id"))
 
         user = User.get(self.session, name=name)
         if not user:

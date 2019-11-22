@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from grouper.fe.forms import GroupEditForm
 from grouper.fe.util import GrouperHandler
@@ -17,7 +16,7 @@ if TYPE_CHECKING:
 
 class GroupEdit(GrouperHandler):
     def get(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
+        name = self.get_path_argument("name")
 
         group = Group.get(self.session, name=name)
         if not group:
@@ -31,7 +30,7 @@ class GroupEdit(GrouperHandler):
         self.render("group-edit.html", group=group, form=form)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
+        name = self.get_path_argument("name")
 
         group = Group.get(self.session, name=name)
         if not group:

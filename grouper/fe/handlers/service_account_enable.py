@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import operator
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from grouper.constants import USER_ADMIN
 from grouper.fe.forms import ServiceAccountEnableForm
@@ -42,7 +41,7 @@ class ServiceAccountEnable(GrouperHandler):
         return form
 
     def get(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
+        name = self.get_path_argument("name")
 
         service_account = ServiceAccount.get(self.session, name=name)
         if not service_account:
@@ -55,7 +54,7 @@ class ServiceAccountEnable(GrouperHandler):
         return self.render("service-account-enable.html", form=form, user=service_account.user)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
+        name = self.get_path_argument("name")
 
         service_account = ServiceAccount.get(self.session, name=name)
         if not service_account:

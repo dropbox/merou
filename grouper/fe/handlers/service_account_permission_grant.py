@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from grouper.fe.forms import ServiceAccountPermissionGrantForm
 from grouper.fe.util import Alert, GrouperHandler
@@ -14,8 +13,8 @@ if TYPE_CHECKING:
 
 class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAccountUI):
     def get(self, *args: Any, **kwargs: Any) -> None:
-        owner: str = unquote(kwargs["name"])
-        service: str = unquote(kwargs["accountname"])
+        owner = self.get_path_argument("name")
+        service = self.get_path_argument("accountname")
 
         usecase = self.usecase_factory.create_grant_permission_to_service_account_usecase(
             self.current_user.username, self
@@ -70,8 +69,8 @@ class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAcco
         self.redirect(url)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        self._owner: str = unquote(kwargs["name"])
-        service: str = unquote(kwargs["accountname"])
+        self._owner = self.get_path_argument("name")
+        service = self.get_path_argument("accountname")
 
         usecase = self.usecase_factory.create_grant_permission_to_service_account_usecase(
             self.current_user.username, self

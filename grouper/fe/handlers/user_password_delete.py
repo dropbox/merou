@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
@@ -28,8 +27,8 @@ class UserPasswordDelete(GrouperHandler):
         )
 
     def get(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
-        password_id = int(kwargs["password_id"])
+        name = self.get_path_argument("name")
+        password_id = int(self.get_path_argument("password_id"))
 
         user = User.get(self.session, name=name)
         if not user:
@@ -41,8 +40,8 @@ class UserPasswordDelete(GrouperHandler):
         return self.render("user-password-delete.html", user=user, password=password)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
-        password_id = int(kwargs["password_id"])
+        name = self.get_path_argument("name")
+        password_id = int(self.get_path_argument("password_id"))
 
         user = User.get(self.session, name=name)
         if not user:

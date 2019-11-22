@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from grouper.constants import USER_ADMIN
 from grouper.fe.util import GrouperHandler
@@ -27,9 +26,9 @@ class ServiceAccountPermissionRevoke(GrouperHandler):
         return can_manage_service_account(session, target, actor)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
-        accountname: str = unquote(kwargs["accountname"])
-        mapping_id = int(kwargs["mapping_id"])
+        name = self.get_path_argument("name")
+        accountname = self.get_path_argument("accountname")
+        mapping_id = int(self.get_path_argument("mapping_id"))
 
         group = Group.get(self.session, name=name)
         if not group:

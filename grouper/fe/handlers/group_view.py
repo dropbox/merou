@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from urllib.parse import unquote
 
 from grouper.audit import get_group_audit_members_infos
 from grouper.fe.handlers.template_variables import get_group_view_template_vars
@@ -15,7 +14,7 @@ if TYPE_CHECKING:
 
 class GroupView(GrouperHandler):
     def get(self, *args: Any, **kwargs: Any) -> None:
-        name: str = unquote(kwargs["name"])
+        name = self.get_path_argument("name")
 
         self.handle_refresh()
         group = Group.get(self.session, name=name)

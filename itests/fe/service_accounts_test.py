@@ -96,6 +96,17 @@ def test_wrong_owner(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> No
         assert page.has_text("whatever you were looking for wasn't found")
 
 
+def test_escaped_at_sign(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with setup.transaction():
+        setup.create_service_account("service@svc.localhost", "some-group")
+
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group/service/service%40svc.localhost"))
+        page = ServiceAccountViewPage(browser)
+        assert page.subheading == "Service Account: service@svc.localhost"
+        assert page.owner == "some-group"
+
+
 def test_create_duplicate(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("cbguder@a.co", "some-group")

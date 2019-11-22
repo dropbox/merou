@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from grouper.audit import get_group_audit_members_infos
@@ -7,17 +9,15 @@ from grouper.models.group import Group
 from grouper.models.user import User
 
 if TYPE_CHECKING:
-    from typing import Any, Optional
+    from typing import Any
 
 
 class RoleUserView(GrouperHandler):
-    def get(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        user_id = kwargs.get("user_id")  # type: Optional[int]
-        name = kwargs.get("name")  # type: Optional[str]
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        name = self.get_path_argument("name")
 
         self.handle_refresh()
-        user = User.get(self.session, user_id, name)
+        user = User.get(self.session, name=name)
 
         if not user or not user.role_user:
             return self.notfound()

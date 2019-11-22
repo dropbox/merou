@@ -1,14 +1,8 @@
 # These regexes must not include line anchors ('^', '$'). Those will be added by the
 # ValidateRegex library function and anybody else who needs them.
 
-_NAME_VALIDATION = r"(?P<{}>[@\-\w\.]+)"
-NAME_VALIDATION = _NAME_VALIDATION.format("name")
-
-# This regex needs to exactly match the above, EXCEPT that the name should be "name2".
-# This is kind of gross. :\ We have to do this because the name of the capture group becomes the
-# argument to route handler, named arguments have to be unique, and at least one route (edit
-# member) requires occurrences of the name validation regex.
-NAME2_VALIDATION = _NAME_VALIDATION.format("name2")
+# Used for group names.
+NAME_VALIDATION = r"(?P<name>[@\-\w\.]+)"
 
 # These regexes are specifically to validate usernames.  SERVICE_ACCOUNT_VALIDATION is the same as
 # USERNAME_VALIDATION but with a distinct capture group name so that it doesn't conflict with a

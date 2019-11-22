@@ -11,15 +11,14 @@ from grouper.role_user import is_role_user
 from grouper.user_group import user_can_manage_group
 
 if TYPE_CHECKING:
-    from typing import Any, Optional
+    from typing import Any
 
 
 class GroupEdit(GrouperHandler):
     def get(self, *args: Any, **kwargs: Any) -> None:
-        group_id: Optional[int] = kwargs.get("group_id")
-        name: Optional[str] = kwargs.get("name")
+        name = self.get_path_argument("name")
 
-        group = Group.get(self.session, group_id, name)
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 
@@ -31,10 +30,9 @@ class GroupEdit(GrouperHandler):
         self.render("group-edit.html", group=group, form=form)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        group_id: Optional[int] = kwargs.get("group_id")
-        name: Optional[str] = kwargs.get("name")
+        name = self.get_path_argument("name")
 
-        group = Group.get(self.session, group_id, name)
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 

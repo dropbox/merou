@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from grouper.fe.forms import ServiceAccountPermissionGrantForm
@@ -10,10 +12,9 @@ if TYPE_CHECKING:
 
 
 class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAccountUI):
-    def get(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        owner = kwargs["name"]  # type: str
-        service = kwargs["accountname"]  # type: str
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        owner = self.get_path_argument("name")
+        service = self.get_path_argument("accountname")
 
         usecase = self.usecase_factory.create_grant_permission_to_service_account_usecase(
             self.current_user.username, self
@@ -30,17 +31,15 @@ class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAcco
         )
 
     def grant_permission_to_service_account_failed_invalid_argument(
-        self, permission, argument, service, message
-    ):
-        # type: (str, str, str, str) -> None
+        self, permission: str, argument: str, service: str, message: str
+    ) -> None:
         form = self._get_form(self._grantable)
         form.argument.errors = [message]
         self._render_form_with_errors(form, service, self._owner)
 
     def grant_permission_to_service_account_failed_permission_denied(
-        self, permission, argument, service, message
-    ):
-        # type: (str, str, str, str) -> None
+        self, permission: str, argument: str, service: str, message: str
+    ) -> None:
         form = self._get_form(self._grantable)
         self.render(
             "service-account-permission-grant.html",
@@ -50,26 +49,28 @@ class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAcco
             alerts=[Alert("error", message)],
         )
 
-    def grant_permission_to_service_account_failed_permission_not_found(self, permission, service):
-        # type: (str, str) -> None
+    def grant_permission_to_service_account_failed_permission_not_found(
+        self, permission: str, service: str
+    ) -> None:
         message = "Unknown permission {}".format(permission)
         form = self._get_form(self._grantable)
         form.permission.errors = [message]
         self._render_form_with_errors(form, service, self._owner)
 
-    def grant_permission_to_service_account_failed_service_account_not_found(self, service):
-        # type: (str) -> None
+    def grant_permission_to_service_account_failed_service_account_not_found(
+        self, service: str
+    ) -> None:
         self.notfound()
 
-    def granted_permission_to_service_account(self, permission, argument, service):
-        # type: (str, str, str) -> None
+    def granted_permission_to_service_account(
+        self, permission: str, argument: str, service: str
+    ) -> None:
         url = "/groups/{}/service/{}?refresh=yes".format(self._owner, service)
         self.redirect(url)
 
-    def post(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        self._owner = kwargs["name"]  # type: str
-        service = kwargs["accountname"]  # type: str
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        self._owner = self.get_path_argument("name")
+        service = self.get_path_argument("accountname")
 
         usecase = self.usecase_factory.create_grant_permission_to_service_account_usecase(
             self.current_user.username, self
@@ -85,8 +86,9 @@ class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAcco
             form.data["permission"], form.data["argument"], service
         )
 
-    def _get_form(self, grantable):
-        # type: (Iterable[GroupPermissionGrant]) -> ServiceAccountPermissionGrantForm
+    def _get_form(
+        self, grantable: Iterable[GroupPermissionGrant]
+    ) -> ServiceAccountPermissionGrantForm:
         """Helper to create a ServiceAccountPermissionGrantForm.
 
         Populate it with all the grantable permissions.  Note that the first choice is blank so the
@@ -102,8 +104,9 @@ class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAcco
             form.permission.choices.append([grant.permission, entry])
         return form
 
-    def _render_form_with_errors(self, form, service, owner):
-        # type: (ServiceAccountPermissionGrantForm, str, str) -> None
+    def _render_form_with_errors(
+        self, form: ServiceAccountPermissionGrantForm, service: str, owner: str
+    ) -> None:
         self.render(
             "service-account-permission-grant.html",
             form=form,

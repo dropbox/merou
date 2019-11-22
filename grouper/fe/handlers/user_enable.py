@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from grouper.constants import USER_ADMIN, USER_ENABLE
 from grouper.fe.forms import UserEnableForm
 from grouper.fe.util import GrouperHandler
@@ -7,24 +11,30 @@ from grouper.role_user import enable_role_user, is_owner_of_role_user
 from grouper.user import enable_user
 from grouper.user_permissions import user_has_permission
 
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from typing import Any
+
 
 class UserEnable(GrouperHandler):
     @staticmethod
-    def check_access(session, actor, target):
+    def check_access(session: Session, actor: User, target: User) -> bool:
         return user_has_permission(session, actor, USER_ADMIN) or (
             target.role_user and is_owner_of_role_user(session, actor, tuser=target)
         )
 
     @staticmethod
-    def check_access_without_membership(session, actor, target):
+    def check_access_without_membership(session: Session, actor: User, target: User) -> bool:
         return (
             user_has_permission(session, actor, USER_ADMIN)
             or (target.role_user and is_owner_of_role_user(session, actor, tuser=target))
             or user_has_permission(session, actor, USER_ENABLE, argument=target.name)
         )
 
-    def post(self, user_id=None, name=None):
-        user = User.get(self.session, user_id, name)
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        name = self.get_path_argument("name")
+
+        user = User.get(self.session, name=name)
         if not user:
             return self.notfound()
 

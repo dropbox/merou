@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from grouper import public_key
@@ -12,25 +14,22 @@ from grouper.service_account import can_manage_service_account
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
-    from typing import Any, Optional
+    from typing import Any
 
 
 class PublicKeyAdd(GrouperHandler):
     @staticmethod
-    def check_access(session, actor, target):
-        # type: (Session, User, User) -> bool
+    def check_access(session: Session, actor: User, target: User) -> bool:
         return (
             actor.name == target.name
             or (target.role_user and can_manage_role_user(session, actor, tuser=target))
             or (target.is_service_account and can_manage_service_account(session, target, actor))
         )
 
-    def get(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        user_id = kwargs.get("user_id")  # type: Optional[int]
-        name = kwargs.get("name")  # type: Optional[str]
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        name = self.get_path_argument("name")
 
-        user = User.get(self.session, user_id, name)
+        user = User.get(self.session, name=name)
         if not user:
             return self.notfound()
 
@@ -39,12 +38,10 @@ class PublicKeyAdd(GrouperHandler):
 
         self.render("public-key-add.html", form=PublicKeyForm(), user=user)
 
-    def post(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        user_id = kwargs.get("user_id")  # type: Optional[int]
-        name = kwargs.get("name")  # type: Optional[str]
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        name = self.get_path_argument("name")
 
-        user = User.get(self.session, user_id, name)
+        user = User.get(self.session, name=name)
         if not user:
             return self.notfound()
 

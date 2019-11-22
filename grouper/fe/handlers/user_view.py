@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from grouper.fe.handlers.template_variables import get_user_view_template_vars
@@ -5,23 +7,22 @@ from grouper.fe.util import GrouperHandler
 from grouper.models.user import User
 
 if TYPE_CHECKING:
-    from typing import Any, Optional
+    from typing import Any
 
 
 class UserView(GrouperHandler):
-    def get(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        user_id = kwargs.get("user_id")  # type: Optional[int]
-        name = kwargs.get("name")  # type: Optional[str]
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        name = self.get_path_argument("name")
+
         self.handle_refresh()
 
-        user = User.get(self.session, user_id, name)
+        user = User.get(self.session, name=name)
 
         if not user:
             return self.notfound()
 
         if user.role_user:
-            return self.redirect("/service/{}".format(user_id or name))
+            return self.redirect("/service/{}".format(name))
 
         if user.is_service_account:
             service_account = user.service_account

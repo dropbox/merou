@@ -144,7 +144,7 @@
                 </button>
                 <h4 class="modal-title">Enable User</h4>
            </div>
-            <form action="/users/{{user.id}}/enable" method="post">
+            <form action="/users/{{user.username}}/enable" method="post">
                 <div class="modal-body">
                     <p>Are you sure you want to enable this user?</p>
                     <label class="checkbox normal-weight">
@@ -180,7 +180,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-default"
                         data-dismiss="modal">Close</button>
-                <form action="/users/{{user.id}}/disable" method="post"
+                <form action="/users/{{user.username}}/disable" method="post"
                       class="inline">
                     {{ xsrf_form()|safe }}
                     <button type="submit" class="btn btn-primary">Disable</button>
@@ -191,7 +191,7 @@
 </div>
 
 <div class="modal fade" id="removeUserModal" tabindex="-1" role="dialog"
-      data-group-id="{{group.id}}" aria-labelledby="removeUserModal" aria-hidden="true">
+      data-group-name="{{group.groupname}}" aria-labelledby="removeUserModal" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">

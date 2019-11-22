@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import operator
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -16,18 +18,15 @@ from grouper.user import get_all_enabled_users, get_user_or_group, user_role
 from grouper.user_group import user_can_manage_group
 
 if TYPE_CHECKING:
-    from typing import Any, Optional
+    from typing import Any
 
 
 class GroupAdd(GrouperHandler):
-    def get_form(self, role=None):
+    def get_form(self, role: str) -> GroupAddForm:
         """Helper to create a GroupAddForm populated with all users and groups as options.
 
         Note that the first choice is blank so the first user alphabetically
         isn't always selected.
-
-        Returns:
-            GroupAddForm object.
         """
 
         form = GroupAddForm(self.request.arguments)
@@ -52,12 +51,10 @@ class GroupAdd(GrouperHandler):
         )
         return form
 
-    def get(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        group_id = kwargs.get("group_id")  # type: Optional[int]
-        name = kwargs.get("name")  # type: Optional[str]
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        name = self.get_path_argument("name")
 
-        group = Group.get(self.session, group_id, name)
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 
@@ -68,12 +65,10 @@ class GroupAdd(GrouperHandler):
         my_role = user_role(self.current_user, members)
         return self.render("group-add.html", form=self.get_form(role=my_role), group=group)
 
-    def post(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        group_id = kwargs.get("group_id")  # type: Optional[int]
-        name = kwargs.get("name")  # type: Optional[str]
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        name = self.get_path_argument("name")
 
-        group = Group.get(self.session, group_id, name)
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
 

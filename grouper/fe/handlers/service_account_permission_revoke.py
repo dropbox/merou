@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from grouper.constants import USER_ADMIN
 from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
@@ -8,19 +12,28 @@ from grouper.models.service_account_permission_map import ServiceAccountPermissi
 from grouper.service_account import can_manage_service_account
 from grouper.user_permissions import user_has_permission
 
+if TYPE_CHECKING:
+    from grouper.models.base.session import Session
+    from grouper.models.user import User
+    from typing import Any
+
 
 class ServiceAccountPermissionRevoke(GrouperHandler):
     @staticmethod
-    def check_access(session, actor, target):
+    def check_access(session: Session, actor: User, target: ServiceAccount) -> bool:
         if user_has_permission(session, actor, USER_ADMIN):
             return True
         return can_manage_service_account(session, target, actor)
 
-    def post(self, group_id=None, name=None, account_id=None, accountname=None, mapping_id=None):
-        group = Group.get(self.session, group_id, name)
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        name = self.get_path_argument("name")
+        accountname = self.get_path_argument("accountname")
+        mapping_id = int(self.get_path_argument("mapping_id"))
+
+        group = Group.get(self.session, name=name)
         if not group:
             return self.notfound()
-        service_account = ServiceAccount.get(self.session, account_id, accountname)
+        service_account = ServiceAccount.get(self.session, name=accountname)
         if not service_account:
             return self.notfound()
 

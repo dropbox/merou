@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -19,12 +21,10 @@ if TYPE_CHECKING:
 
 
 class GroupJoin(GrouperHandler):
-    def get(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        group_id = kwargs.get("group_id")  # type: Optional[int]
-        name = kwargs.get("name")  # type: Optional[str]
+    def get(self, *args: Any, **kwargs: Any) -> None:
+        name = self.get_path_argument("name")
 
-        group = Group.get(self.session, group_id, name)
+        group = Group.get(self.session, name=name)
         if not group or not group.enabled:
             return self.notfound()
 
@@ -44,12 +44,10 @@ class GroupJoin(GrouperHandler):
             user_is_member=user_is_member,
         )
 
-    def post(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        group_id = kwargs.get("group_id")  # type: Optional[int]
-        name = kwargs.get("name")  # type: Optional[str]
+    def post(self, *args: Any, **kwargs: Any) -> None:
+        name = self.get_path_argument("name")
 
-        group = Group.get(self.session, group_id, name)
+        group = Group.get(self.session, name=name)
         if not group or not group.enabled:
             return self.notfound()
 
@@ -189,8 +187,7 @@ class GroupJoin(GrouperHandler):
 
         return self.redirect("/groups/{}?refresh=yes".format(group.name))
 
-    def _get_member(self, member_choice):
-        # type: (str) -> Optional[Union[User, Group]]
+    def _get_member(self, member_choice: str) -> Optional[Union[User, Group]]:
         member_type, member_name = member_choice.split(": ", 1)
         resource = None
 
@@ -204,8 +201,9 @@ class GroupJoin(GrouperHandler):
 
         return self.session.query(resource).filter_by(name=member_name, enabled=True).one()
 
-    def _get_choices(self, group, member_groups, user_is_member):
-        # type: (Group, Set[str], bool) -> List[Tuple[str, str]]
+    def _get_choices(
+        self, group: Group, member_groups: Set[str], user_is_member: bool
+    ) -> List[Tuple[str, str]]:
         choices = []
 
         if not user_is_member:
@@ -231,8 +229,7 @@ class GroupJoin(GrouperHandler):
 
         return choices
 
-    def _is_user_a_member(self, group, members):
-        # type: (Group, Mapping[Tuple[str, str], Any]) -> bool
+    def _is_user_a_member(self, group: Group, members: Mapping[Tuple[str, str], Any]) -> bool:
         """Returns whether the current user is a member or has a pending membership request."""
         if ("User", self.current_user.name) in members:
             return True

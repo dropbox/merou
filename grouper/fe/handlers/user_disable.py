@@ -15,7 +15,7 @@ from grouper.user_permissions import user_has_permission
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
-    from typing import Any, Optional
+    from typing import Any
 
 
 class UserDisable(GrouperHandler):
@@ -28,10 +28,9 @@ class UserDisable(GrouperHandler):
         )
 
     def post(self, *args: Any, **kwargs: Any) -> None:
-        user_id: Optional[int] = kwargs.get("user_id")
-        name: Optional[str] = kwargs.get("name")
+        name = self.get_path_argument("name")
 
-        user = User.get(self.session, user_id, name)
+        user = User.get(self.session, name=name)
         if not user:
             return self.notfound()
 

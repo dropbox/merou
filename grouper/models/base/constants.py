@@ -1,4 +1,12 @@
-REQUEST_STATUS_CHOICES = {
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Dict, Set
+
+
+REQUEST_STATUS_CHOICES: Dict[str, Set[str]] = {
     # Request has been made and awaiting action.
     "pending": set(["actioned", "cancelled"]),
     "actioned": set([]),

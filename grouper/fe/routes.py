@@ -5,10 +5,11 @@ provide additional handler arguments as a third argument of the tuple.  A standa
 additional arguments will be injected when the Tornado Application object is created.
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from grouper.constants import (
-    NAME2_VALIDATION,
     NAME_VALIDATION,
     PERMISSION_VALIDATION,
     SERVICE_ACCOUNT_VALIDATION,
@@ -75,114 +76,86 @@ if TYPE_CHECKING:
     from tornado.web import RequestHandler
     from typing import List, Tuple, Type
 
-HANDLERS = [
-    (r"/", Index),
-    (r"/audits", AuditsView),
-    (r"/audits/(?P<audit_id>[0-9]+)/complete", AuditsComplete),
-    (r"/audits/create", AuditsCreate),
-    (r"/github/link_begin/(?P<user_id>[0-9]+)", GitHubLinkBeginView),
-    (r"/github/link_complete/(?P<user_id>[0-9]+)", GitHubLinkCompleteView),
-    (r"/groups", GroupsView),
-    (r"/groups/{}/service/create".format(NAME_VALIDATION), ServiceAccountCreate),
-    (
-        r"/groups/{}/service/{}/grant".format(NAME_VALIDATION, SERVICE_ACCOUNT_VALIDATION),
-        ServiceAccountPermissionGrant,
-    ),
-    (r"/permissions/create", PermissionsCreate),
-    (r"/permissions/request", PermissionRequest),
-    (r"/permissions/requests", PermissionsRequests),
-    (r"/permissions/requests/(?P<request_id>[0-9]+)", PermissionsRequestUpdate),
-    (r"/permissions/{}".format(PERMISSION_VALIDATION), PermissionView),
-    (r"/permissions", PermissionsView),
-    (r"/permissions/{}/disable".format(PERMISSION_VALIDATION), PermissionDisable),
-    (r"/permissions/{}/enable-auditing".format(PERMISSION_VALIDATION), PermissionEnableAuditing),
-    (r"/permissions/{}/disable-auditing".format(PERMISSION_VALIDATION), PermissionDisableAuditing),
-    (r"/permissions/grant/{}".format(NAME_VALIDATION), PermissionsGrant),
-    (
-        r"/permissions/{}/revoke/(?P<mapping_id>[0-9]+)".format(PERMISSION_VALIDATION),
-        PermissionsRevoke,
-    ),
-    (r"/search", Search),
-    (r"/users", UsersView),
-    (r"/service", RoleUsersView),
-    (r"/users/public-keys", UsersPublicKey),
-    (r"/users/tokens", UsersUserTokens),
-    (r"/user/requests", UserRequests),
-]  # type: List[Tuple[str, Type[RequestHandler]]]
+# Regex capture groups for specific elements.
+_AUDIT_ID = r"(?P<audit_id>[0-9]+)"
+_KEY_ID = r"(?P<key_id>[0-9]+)"
+_MAPPING_ID = r"(?P<mapping_id>[0-9]+)"
+_PASSWORD_ID = r"(?P<password_id>[0-9]+)"
+_REQUEST_ID = r"(?P<request_id>[0-9]+)"
+_USER_ID = r"(?P<user_id>[0-9]+)"
+_TOKEN_ID = r"(?P<token_id>[0-9]+)"
+_TRACE_UUID = r"(?P<trace_uuid>[\-\w]+)"
 
-# We currently allow users to be referenced by either the name or the user ID, but it's not clear
-# the latter is ever useful and it leaks database user IDs into the UI.  Consider moving any new
-# routes into the HANDLERS definition above using only USERNAME_VALIDATION.
-for regex in (r"(?P<user_id>[0-9]+)", USERNAME_VALIDATION):
-    HANDLERS.extend(
-        [
-            (r"/users/{}".format(regex), UserView),
-            (r"/users/{}/disable".format(regex), UserDisable),
-            (r"/users/{}/enable".format(regex), UserEnable),
-            (r"/users/{}/github/clear".format(regex), UserClearGitHub),
-            (r"/users/{}/shell".format(regex), UserShell),
-            (r"/users/{}/public-key/add".format(regex), PublicKeyAdd),
-            (r"/users/{}/public-key/(?P<key_id>[0-9]+)/delete".format(regex), PublicKeyDelete),
-            (r"/users/{}/tokens/add".format(regex), UserTokenAdd),
-            (r"/users/{}/tokens/(?P<token_id>[0-9]+)/disable".format(regex), UserTokenDisable),
-            (r"/users/{}/passwords/add".format(regex), UserPasswordAdd),
-            (r"/users/{}/passwords/(?P<pass_id>[0-9]+)/delete".format(regex), UserPasswordDelete),
-            (r"/service/{}".format(regex), RoleUserView),
-            (r"/service/{}/enable".format(regex), ServiceAccountEnable),
-        ]
-    )
+# These come from grouper.constants, but we need to accept escaped @ as well, which requires some
+# manipulation of the regex.
+_NAME = NAME_VALIDATION.replace("@", "@%")
+_SERVICE = SERVICE_ACCOUNT_VALIDATION.replace("@", "(?:@|%40)")
+_USERNAME = USERNAME_VALIDATION.replace("@", "(?:@|%40)")
 
-# We currently allow groups to be referenced by either the name or the group ID, but it's not clear
-# the latter is ever useful and it leaks database group IDs into the UI.  Consider moving any new
-# routes into the HANDLERS definition above using only NAME_VALIDATION.
-for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
-    HANDLERS.extend(
-        [
-            (r"/groups/{}".format(regex), GroupView),
-            (r"/groups/{}/edit".format(regex), GroupEdit),
-            (
-                r"/groups/{}/edit/(?P<member_type>user|group)/{}".format(regex, NAME2_VALIDATION),
-                GroupEditMember,
-            ),
-            (r"/groups/{}/disable".format(regex), GroupDisable),
-            (r"/groups/{}/enable".format(regex), GroupEnable),
-            (r"/groups/{}/join".format(regex), GroupJoin),
-            (r"/groups/{}/add".format(regex), GroupAdd),
-            (r"/groups/{}/remove".format(regex), GroupRemove),
-            (r"/groups/{}/leave".format(regex), GroupLeave),
-            (r"/groups/{}/requests".format(regex), GroupRequests),
-            (r"/groups/{}/requests/(?P<request_id>[0-9]+)".format(regex), GroupRequestUpdate),
-        ]
-    )
+# This regex needs to exactly match _NAME, but the capture group should be member_name to generate
+# a different argument to the route handler.
+_MEMBER_NAME = _NAME.replace("<name>", "<member_name>")
 
-# We currently allow groups and service accounts to be referenced by either the name or the group
-# or user ID, but it's not clear the latter is ever useful and it leaks database group and user IDs
-# into the UI.  Consider moving any new routes into the HANDLERS definition above using only
-# NAME_VALIDATION and SERVICE_ACCOUNT_VALIDATION.
-for regex in (r"(?P<group_id>[0-9]+)", NAME_VALIDATION):
-    for service_regex in (r"(?P<account_id>[0-9]+)", SERVICE_ACCOUNT_VALIDATION):
-        HANDLERS.extend(
-            [
-                (r"/groups/{}/service/{}".format(regex, service_regex), ServiceAccountView),
-                (
-                    r"/groups/{}/service/{}/disable".format(regex, service_regex),
-                    ServiceAccountDisable,
-                ),
-                (r"/groups/{}/service/{}/edit".format(regex, service_regex), ServiceAccountEdit),
-                (
-                    r"/groups/{}/service/{}/revoke/(?P<mapping_id>[0-9]+)".format(
-                        regex, service_regex
-                    ),
-                    ServiceAccountPermissionRevoke,
-                ),
-            ]
-        )
+# Verbatim from grouper.constants, but create an alias for consistency.
+_PERMISSION = PERMISSION_VALIDATION
 
-HANDLERS.extend(
-    [
-        (r"/help", Help),
-        (r"/debug/health", HealthCheck),
-        (r"/debug/profile/(?P<trace_uuid>[\-\w]+)", PerfProfile),
-        (r"/.*", NotFound),
-    ]
-)
+HANDLERS: List[Tuple[str, Type[RequestHandler]]] = [
+    ("/", Index),
+    ("/audits", AuditsView),
+    (f"/audits/{_AUDIT_ID}/complete", AuditsComplete),
+    ("/audits/create", AuditsCreate),
+    ("/debug/health", HealthCheck),
+    (f"/debug/profile/{_TRACE_UUID}", PerfProfile),
+    (f"/github/link_begin/{_USER_ID}", GitHubLinkBeginView),
+    (f"/github/link_complete/{_USER_ID}", GitHubLinkCompleteView),
+    ("/groups", GroupsView),
+    (f"/groups/{_NAME}", GroupView),
+    (f"/groups/{_NAME}/edit", GroupEdit),
+    (f"/groups/{_NAME}/edit/(?P<member_type>user|group)/{_MEMBER_NAME}", GroupEditMember),
+    (f"/groups/{_NAME}/disable", GroupDisable),
+    (f"/groups/{_NAME}/enable", GroupEnable),
+    (f"/groups/{_NAME}/join", GroupJoin),
+    (f"/groups/{_NAME}/add", GroupAdd),
+    (f"/groups/{_NAME}/remove", GroupRemove),
+    (f"/groups/{_NAME}/leave", GroupLeave),
+    (f"/groups/{_NAME}/requests", GroupRequests),
+    (f"/groups/{_NAME}/requests/{_REQUEST_ID}", GroupRequestUpdate),
+    (f"/groups/{_NAME}/service/create", ServiceAccountCreate),
+    (f"/groups/{_NAME}/service/{_SERVICE}", ServiceAccountView),
+    (f"/groups/{_NAME}/service/{_SERVICE}/disable", ServiceAccountDisable),
+    (f"/groups/{_NAME}/service/{_SERVICE}/edit", ServiceAccountEdit),
+    (f"/groups/{_NAME}/service/{_SERVICE}/revoke/{_MAPPING_ID}", ServiceAccountPermissionRevoke),
+    (f"/groups/{_NAME}/service/{_SERVICE}/grant", ServiceAccountPermissionGrant),
+    ("/help", Help),
+    ("/permissions/create", PermissionsCreate),
+    ("/permissions/request", PermissionRequest),
+    ("/permissions/requests", PermissionsRequests),
+    (f"/permissions/requests/{_REQUEST_ID}", PermissionsRequestUpdate),
+    ("/permissions", PermissionsView),
+    (f"/permissions/{_PERMISSION}", PermissionView),
+    (f"/permissions/{_PERMISSION}/disable", PermissionDisable),
+    (f"/permissions/{_PERMISSION}/enable-auditing", PermissionEnableAuditing),
+    (f"/permissions/{_PERMISSION}/disable-auditing", PermissionDisableAuditing),
+    (f"/permissions/grant/{_NAME}", PermissionsGrant),
+    (f"/permissions/{_PERMISSION}/revoke/{_MAPPING_ID}", PermissionsRevoke),
+    ("/search", Search),
+    ("/users", UsersView),
+    ("/service", RoleUsersView),
+    (f"/service/{_USERNAME}", RoleUserView),
+    (f"/service/{_USERNAME}/enable", ServiceAccountEnable),
+    (f"/users/{_USERNAME}", UserView),
+    (f"/users/{_USERNAME}/disable", UserDisable),
+    (f"/users/{_USERNAME}/enable", UserEnable),
+    (f"/users/{_USERNAME}/github/clear", UserClearGitHub),
+    (f"/users/{_USERNAME}/shell", UserShell),
+    (f"/users/{_USERNAME}/public-key/add", PublicKeyAdd),
+    (f"/users/{_USERNAME}/public-key/{_KEY_ID}/delete", PublicKeyDelete),
+    (f"/users/{_USERNAME}/tokens/add", UserTokenAdd),
+    (f"/users/{_USERNAME}/tokens/{_TOKEN_ID}/disable", UserTokenDisable),
+    (f"/users/{_USERNAME}/passwords/add", UserPasswordAdd),
+    (f"/users/{_USERNAME}/passwords/{_PASSWORD_ID}/delete", UserPasswordDelete),
+    ("/users/public-keys", UsersPublicKey),
+    ("/users/tokens", UsersUserTokens),
+    ("/user/requests", UserRequests),
+    ("/.*", NotFound),
+]

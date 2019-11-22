@@ -76,7 +76,7 @@ $(function () {
     // text and set its form actions to correspond to the selected user.
 
     $("#removeUserModal").on("show.bs.modal", function(e) {
-        var groupId = $('#removeUserModal').data('group-id');
+        var groupName = $('#removeUserModal').data('group-name');
         var button = $(e.relatedTarget);
         var memberName = button.data("member-name");
         var memberType = button.data("member-type");
@@ -85,7 +85,7 @@ $(function () {
         modal.find(".member-name").html(memberName);
 
         var form = modal.find(".remove-member-form");
-        form.attr("action", "/groups/" + groupId + "/remove");
+        form.attr("action", "/groups/" + groupName + "/remove");
         form.find("input[name=member]").val(memberName);
         form.find("input[name=member_type]").val(memberType);
     });

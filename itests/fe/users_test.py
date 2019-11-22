@@ -19,6 +19,13 @@ if TYPE_CHECKING:
     from tests.setup import SetupTest
 
 
+def test_escaped_at_sign(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/users/gary%40a.co"))
+        page = UserViewPage(browser)
+        assert page.subheading == "gary@a.co"
+
+
 def test_disable_last_owner(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group", role="owner")

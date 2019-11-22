@@ -1,5 +1,6 @@
 from grouper.group_requests import get_requests_by_group
 from grouper.models.request import Request
+from grouper.role_user import is_role_user
 from grouper.user import user_requests_aggregate
 from tests.fixtures import (  # noqa: F401
     graph,
@@ -21,6 +22,7 @@ def test_basic_request(graph, groups, permissions, session, standard_graph, user
         [
             get_requests_by_group(session, group, status="pending").all()
             for group in groups.values()
+            if not is_role_user(session, group=group)
         ]
     ), "no group should start with pending requests"
 

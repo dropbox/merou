@@ -23,6 +23,8 @@ class RoleUserView(GrouperHandler):
             return self.notfound()
 
         group = Group.get(self.session, name=name)
+        if not group:
+            return self.notfound()
         actor = self.current_user
         graph = self.graph
         session = self.session

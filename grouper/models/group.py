@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import itertools
 import logging
 from collections import OrderedDict
@@ -26,6 +28,7 @@ from grouper.models.permission_map import PermissionMap
 from grouper.models.user import User
 
 if TYPE_CHECKING:
+    from grouper.models.base.session import Session
     from grouper.models.request import Request
     from typing import Mapping, List, Optional, Tuple, Union
 
@@ -64,21 +67,23 @@ class Group(Model, CommentObjectMixin):
     )
 
     @hybrid_property
-    def name(self):
+    def name(self) -> str:
         return self.groupname
 
     @property
-    def type(self):
+    def type(self) -> str:
         return "Group"
 
     @flush_transaction
-    def revoke_member(self, requester, user_or_group, reason):
-        """ Revoke a member (User or Group) from this group.
+    def revoke_member(
+        self, requester: User, user_or_group: Union[User, Group], reason: str
+    ) -> None:
+        """Revoke a member (User or Group) from this group.
 
-            Arguments:
-                requester: A User object of the person requesting the addition
-                user_or_group: A User/Group object of the member
-                reason: A comment on why this member should exist
+        Args:
+            requester: A User object of the person requesting the addition
+            user_or_group: A User/Group object of the member
+            reason: A comment on why this member should exist
         """
         logging.debug("Revoking member (%s) from %s", user_or_group.name, self.groupname)
 
@@ -97,14 +102,16 @@ class Group(Model, CommentObjectMixin):
         )
 
     @flush_transaction
-    def edit_member(self, requester, user_or_group, reason, **kwargs):
-        """ Edit an existing member (User or Group) of a group.
+    def edit_member(
+        self, requester: User, user_or_group: Union[User, Group], reason: str, **kwargs: Any
+    ) -> None:
+        """Edit an existing member (User or Group) of a group.
 
-            This takes the same parameters as add_member, except that we do not allow you to set
-            a status: this only works on existing members.
+        This takes the same parameters as add_member, except that we do not allow you to set a
+        status: this only works on existing members.
 
-            Any option that is not passed is not updated, and instead, the existing value for this
-            user is kept.
+        Any option that is not passed is not updated, and instead, the existing value for this user
+        is kept.
         """
         logging.debug("Editing member (%s) in %s", user_or_group.name, self.groupname)
 
@@ -128,24 +135,23 @@ class Group(Model, CommentObjectMixin):
     @flush_transaction
     def add_member(
         self,
-        requester,  # type: User
-        user_or_group,  # type: Union[User, Group]
-        reason,  # type: str
-        status="pending",  # type: str
-        expiration=None,  # type: Optional[datetime]
-        role="member",  # type: str
-    ):
-        # type: (...) -> Request
-        """ Add a member (User or Group) to this group.
+        requester: User,
+        user_or_group: Union[User, Group],
+        reason: str,
+        status: str = "pending",
+        expiration: Optional[datetime] = None,
+        role: str = "member",
+    ) -> Request:
+        """Add a member (User or Group) to this group.
 
-            Arguments:
-                requester: A User object of the person requesting the addition
-                user_or_group: A User/Group object of the member
-                reason: A comment on why this member should exist
-                status: pending/actioned, whether the request needs approval
-                        or should be immediate
-                expiration: datetime object when membership should expire.
-                role: member/manager/owner/np-owner of the Group.
+        Args:
+            requester: A User object of the person requesting the addition
+            user_or_group: A User/Group object of the member
+            reason: A comment on why this member should exist
+            status: pending/actioned, whether the request needs approval
+                    or should be immediate
+            expiration: datetime object when membership should expire.
+            role: member/manager/owner/np-owner of the Group.
         """
         logging.debug("Adding member (%s) to %s", user_or_group.name, self.groupname)
 
@@ -162,11 +168,11 @@ class Group(Model, CommentObjectMixin):
             active=True,
         )
 
-    def my_permissions(self):
-        """
+    def my_permissions(self) -> List[Any]:
+        """All permissions granted to a group.
+
         NOTE: Disabled permissions are not returned
         """
-
         permissions = (
             self.session.query(
                 Permission.id,
@@ -185,8 +191,7 @@ class Group(Model, CommentObjectMixin):
 
         return permissions
 
-    def my_users(self):
-
+    def my_users(self) -> List[Any]:
         now = datetime.utcnow()
         users = (
             self.session.query(label("name", User.username), label("role", GroupEdge._role))
@@ -205,34 +210,26 @@ class Group(Model, CommentObjectMixin):
 
         return users
 
-    def my_approver_users(self):
-        # type: () -> List[User]
-        """Returns a list of all users in this group that are approvers.
-
-        Returns:
-            A list of all User objects that are approvers for this group.
-        """
-
+    def my_approver_users(self) -> List[User]:
+        """Returns a list of all users in this group that are approvers."""
         return [user for user in self.my_users() if user.role in APPROVER_ROLE_INDICES]
 
-    def my_log_entries(self):
-
+    def my_log_entries(self) -> List[Any]:
         return AuditLog.get_entries(self.session, on_group_id=self.id, limit=20)
 
-    def my_owners_as_strings(self):
+    def my_owners_as_strings(self) -> List[str]:
         """Returns a list of usernames."""
         return list(self.my_owners().keys())
 
-    def my_owners(self):
+    def my_owners(self) -> OrderedDict[str, User]:
         """Returns a dictionary from username to records."""
-        od = OrderedDict()
+        od: OrderedDict[str, User] = OrderedDict()
         for (member_type, name), member in self.my_members().items():
             if member_type == "User" and member.role in OWNER_ROLE_INDICES:
                 od[name] = member
         return od
 
-    def my_members(self):
-        # type: () -> Mapping[Tuple[str, str], Any]
+    def my_members(self) -> Mapping[Tuple[str, str], Any]:
         """Returns a dictionary from ("User"|"Group", "name") tuples to records."""
 
         parent = aliased(Group)
@@ -287,7 +284,7 @@ class Group(Model, CommentObjectMixin):
 
         return OrderedDict(((r.type, r.name), r) for r in itertools.chain(users, groups))
 
-    def my_groups(self):
+    def my_groups(self) -> List[Any]:
         """Return the groups to which this group currently belongs."""
         now = datetime.utcnow()
         groups = (
@@ -309,7 +306,7 @@ class Group(Model, CommentObjectMixin):
         )
         return groups
 
-    def my_expiring_groups(self):
+    def my_expiring_groups(self) -> List[Any]:
         """Return the groups to which this group currently belongs but with an
         expiration date.
         """
@@ -331,26 +328,28 @@ class Group(Model, CommentObjectMixin):
         )
         return groups
 
-    def enable(self):
+    def enable(self) -> None:
         self.enabled = True
         Counter.incr(self.session, "updates")
 
-    def disable(self):
+    def disable(self) -> None:
         self.enabled = False
         Counter.incr(self.session, "updates")
 
     @staticmethod
-    def get(session, pk=None, name=None):
+    def get(
+        session: Session, pk: Optional[int] = None, name: Optional[str] = None
+    ) -> Optional[Group]:
         if pk is not None:
             return session.query(Group).filter_by(id=pk).scalar()
         if name is not None:
             return session.query(Group).filter_by(groupname=name).scalar()
         return None
 
-    def add(self, session):
+    def add(self, session: Session) -> Group:
         super().add(session)
         Counter.incr(session, "updates")
         return self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s: id=%s groupname=%s>" % (type(self).__name__, self.id, self.groupname)

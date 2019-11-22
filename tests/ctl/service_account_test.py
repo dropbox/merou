@@ -35,6 +35,7 @@ def test_create(setup):
     assert service_account.machine_set == "foo +bar -(org)"
     assert service_account.description == "this is a service account.\n\n it is for testing"
     group = Group.get(setup.session, name="some-group")
+    assert group
     assert get_service_accounts(setup.session, group) == [service_account]
 
     # If the account already exists, creating it again returns an error and does nothing.
@@ -55,6 +56,7 @@ def test_create(setup):
     assert service_account.machine_set == "foo +bar -(org)"
     assert service_account.description == "this is a service account.\n\n it is for testing"
     group = Group.get(setup.session, name="some-group")
+    assert group
     assert get_service_accounts(setup.session, group) == [service_account]
 
 
@@ -105,6 +107,7 @@ def test_create_invalid_actor(setup):
 
     assert ServiceAccount.get(setup.session, name="good-service@a.co") is None
     group = Group.get(setup.session, name="some-group")
+    assert group
     assert get_service_accounts(setup.session, group) == []
 
 
@@ -128,6 +131,7 @@ def test_create_bad_name(setup):
 
     assert ServiceAccount.get(setup.session, name="good-service@a.co") is None
     group = Group.get(setup.session, name="some-group")
+    assert group
     assert get_service_accounts(setup.session, group) == []
 
 
@@ -151,5 +155,6 @@ def test_create_bad_owner(setup):
 
     assert ServiceAccount.get(setup.session, name="good-service@svc.localhost") is None
     group = Group.get(setup.session, name="some-group")
+    assert group
     assert get_service_accounts(setup.session, group) == []
     assert Group.get(setup.session, name="nonexistent-group") is None

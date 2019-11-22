@@ -101,7 +101,6 @@ class Group(Model, CommentObjectMixin):
             active=False,
         )
 
-    @flush_transaction
     def edit_member(
         self, requester: User, user_or_group: Union[User, Group], reason: str, **kwargs: Any
     ) -> None:
@@ -115,15 +114,20 @@ class Group(Model, CommentObjectMixin):
         """
         logging.debug("Editing member (%s) in %s", user_or_group.name, self.groupname)
 
-        persist_group_member_changes(
-            session=self.session,
-            group=self,
-            requester=requester,
-            member=user_or_group,
-            status="actioned",
-            reason=reason,
-            **kwargs
-        )
+        try:
+            persist_group_member_changes(
+                session=self.session,
+                group=self,
+                requester=requester,
+                member=user_or_group,
+                status="actioned",
+                reason=reason,
+                **kwargs
+            )
+            self.session.flush()
+        except Exception:
+            self.session.rollback()
+            raise
 
         member_type = user_or_group.member_type
 
@@ -131,6 +135,7 @@ class Group(Model, CommentObjectMixin):
             OBJ_TYPES_IDX[member_type].lower(), user_or_group.name, reason
         )
         AuditLog.log(self.session, requester.id, "edit_member", message, on_group_id=self.id)
+        self.session.commit()
 
     @flush_transaction
     def add_member(

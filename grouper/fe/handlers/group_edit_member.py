@@ -29,9 +29,6 @@ class GroupEditMember(GrouperHandler):
         if not group:
             return self.notfound()
 
-        if self.current_user.name == user:
-            return self.forbidden()
-
         members = group.my_members()
         my_role = user_role(self.current_user, members)
         if my_role not in ("manager", "owner", "np-owner"):
@@ -50,15 +47,7 @@ class GroupEditMember(GrouperHandler):
         if not edge:
             return self.notfound()
 
-        form = GroupEditMemberForm(self.request.arguments)
-        form.role.choices = [["member", "Member"]]
-        if my_role in ("owner", "np-owner") and member_type != "group":
-            form.role.choices.append(["manager", "Manager"])
-            form.role.choices.append(["owner", "Owner"])
-            form.role.choices.append(["np-owner", "No-Permissions Owner"])
-        else:
-            form.role.render_kw = {"readonly": "readonly"}
-
+        form = self._get_form(user, my_role, member_type)
         form.role.data = edge.role
         form.expiration.data = edge.expiration.strftime("%m/%d/%Y") if edge.expiration else None
 
@@ -73,9 +62,6 @@ class GroupEditMember(GrouperHandler):
         group = Group.get(self.session, group_id, group_name)
         if not group:
             return self.notfound()
-
-        if self.current_user.name == user:
-            return self.forbidden()
 
         members = group.my_members()
         my_role = user_role(self.current_user, members)
@@ -102,15 +88,7 @@ class GroupEditMember(GrouperHandler):
         if not edge:
             return self.notfound()
 
-        form = GroupEditMemberForm(self.request.arguments)
-        form.role.choices = [["member", "Member"]]
-        if my_role in ("owner", "np-owner") and member_type != "group":
-            form.role.choices.append(["manager", "Manager"])
-            form.role.choices.append(["owner", "Owner"])
-            form.role.choices.append(["np-owner", "No-Permissions Owner"])
-        else:
-            form.role.render_kw = {"readonly": "readonly"}
-
+        form = self._get_form(user, my_role, member_type)
         if not form.validate():
             return self.render(
                 "group-edit-member.html",
@@ -156,3 +134,31 @@ class GroupEditMember(GrouperHandler):
             )
 
         return self.redirect("/groups/{}?refresh=yes".format(group.name))
+
+    def _get_form(self, user: str, my_role: str, member_type: str) -> GroupEditMemberForm:
+        """Get the form with possible role options filled in.
+
+        Groups cannot have their role changed at all.
+
+        Any owner or manager role can change the role of another user (this is a little weird for
+        manager, but we let them approve membership for any role, and manager is going to go away
+        in the future, so allow this).
+
+        Owners, np-owners, and managers can edit their own membership, but not upgrade it.
+        Therefore, we only allow (owner -> ANY, np-owner -> member, manager -> member).  Don't
+        attempt here to figure out if they're downgrading the last owner; we'll catch that later.
+        """
+        form = GroupEditMemberForm(self.request.arguments)
+        form.role.choices = [["member", "Member"]]
+        if member_type == "group":
+            form.role.render_kw = {"readonly": "readonly"}
+        elif user != self.current_user.username or my_role == "owner":
+            form.role.choices.append(["manager", "Manager"])
+            form.role.choices.append(["np-owner", "No-Permissions Owner"])
+            form.role.choices.append(["owner", "Owner"])
+        elif my_role == "manager":
+            form.role.choices.append(["manager", "Manager"])
+        elif my_role == "np-owner":
+            form.role.choices.append(["np-owner", "No-Permissions Owner"])
+
+        return form

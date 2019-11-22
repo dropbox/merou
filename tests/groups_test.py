@@ -325,17 +325,37 @@ def test_group_disable(session, groups, http_client, base_url):  # noqa: F811
 
 
 @pytest.mark.gen_test
-def test_graph_edit_role(session, graph, standard_graph, groups, users):  # noqa: F811
+def test_graph_edit_role(
+    session, graph, standard_graph, groups, users, http_client, base_url  # noqa: F811
+):
     """Test that membership role changes are refected in the graph."""
-    username = "figurehead@a.co"
-
-    user_role = graph.get_group_details("tech-ops")["users"][username]["rolename"]
+    user_role = graph.get_group_details("tech-ops")["users"]["figurehead@a.co"]["rolename"]
     assert user_role == "np-owner"
 
-    groups["tech-ops"].edit_member(
-        users["zorkian@a.co"], users[username], "a reason", role="owner"
-    )
+    # Ensure they are auditors so that they can be owner.
+    add_member(groups["auditors"], users["figurehead@a.co"])
+    session.commit()
 
+    # np-owner cannot upgrade themselves to owner
+    resp = yield http_client.fetch(
+        url(base_url, "/groups/tech-ops/edit/user/figurehead@a.co"),
+        method="POST",
+        headers={"X-Grouper-User": "figurehead@a.co"},
+        body=urlencode({"role": "owner", "reason": "testing"}),
+    )
+    assert resp.code == 200
     graph.update_from_db(session)
-    user_role = graph.get_group_details("tech-ops")["users"][username]["rolename"]
+    user_role = graph.get_group_details("tech-ops")["users"]["figurehead@a.co"]["rolename"]
+    assert user_role == "np-owner"
+
+    # but an owner can
+    resp = yield http_client.fetch(
+        url(base_url, "/groups/tech-ops/edit/user/figurehead@a.co"),
+        method="POST",
+        headers={"X-Grouper-User": "zay@a.co"},
+        body=urlencode({"role": "owner", "reason": "testing"}),
+    )
+    assert resp.code == 200
+    graph.update_from_db(session)
+    user_role = graph.get_group_details("tech-ops")["users"]["figurehead@a.co"]["rolename"]
     assert user_role == "owner"

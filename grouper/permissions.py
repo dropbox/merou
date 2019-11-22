@@ -683,7 +683,7 @@ def get_changes_by_request_id(
 
 
 def update_request(
-    session: Session, request: PermissionRequest, user: User, new_status: str, comment: str,
+    session: Session, request: PermissionRequest, user: User, new_status: str, comment: str
 ) -> None:
     """Update a request.
 

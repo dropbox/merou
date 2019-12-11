@@ -5,9 +5,10 @@ from tornado.web import HTTPError
 
 from grouper import permissions
 from grouper.audit import UserNotAuditor
+from grouper.fe.alerts import Alert
 from grouper.fe.forms import PermissionRequestForm
 from grouper.fe.settings import settings
-from grouper.fe.util import Alert, GrouperHandler
+from grouper.fe.util import GrouperHandler
 from grouper.models.group import Group
 from grouper.permissions import get_grantable_permissions, get_permission
 from grouper.user_group import get_groups_by_user

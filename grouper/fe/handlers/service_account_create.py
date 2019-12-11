@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from grouper.fe.forms import ServiceAccountCreateForm
+from grouper.fe.templates import ServiceAccountCreateTemplate
 from grouper.fe.util import GrouperHandler
 from grouper.usecases.create_service_account import CreateServiceAccountUI
 
@@ -11,33 +12,22 @@ if TYPE_CHECKING:
 
 
 class ServiceAccountCreate(GrouperHandler, CreateServiceAccountUI):
-    def render_form_with_errors(self, form: ServiceAccountCreateForm, owner: str) -> None:
-        self.render(
-            "service-account-create.html",
-            form=form,
-            owner=owner,
-            alerts=self.get_form_alerts(form.errors),
-        )
-
     def create_service_account_failed_already_exists(self, service: str, owner: str) -> None:
-        form = ServiceAccountCreateForm(self.request.arguments)
-        msg = "A user or service account with name {} already exists".format(service)
-        form.name.errors = [msg]
-        self.render_form_with_errors(form, owner)
+        error = f"A user or service account with name {service} already exists"
+        self._form.name.errors.append(error)
+        self._render_template(self._form, owner)
 
     def create_service_account_failed_invalid_name(
         self, service: str, owner: str, message: str
     ) -> None:
-        form = ServiceAccountCreateForm(self.request.arguments)
-        form.name.errors = [message]
-        self.render_form_with_errors(form, owner)
+        self._form.name.errors.append(message)
+        self._render_template(self._form, owner)
 
     def create_service_account_failed_invalid_machine_set(
         self, service: str, owner: str, machine_set: str, message: str
     ) -> None:
-        form = ServiceAccountCreateForm(self.request.arguments)
-        form.machine_set.errors = [message]
-        self.render_form_with_errors(form, owner)
+        self._form.machine_set.errors.append(message)
+        self._render_template(self._form, owner)
 
     def create_service_account_failed_invalid_owner(self, service: str, owner: str) -> None:
         self.notfound()
@@ -46,8 +36,7 @@ class ServiceAccountCreate(GrouperHandler, CreateServiceAccountUI):
         self.forbidden()
 
     def created_service_account(self, service: str, owner: str) -> None:
-        url = "/groups/{}/service/{}?refresh=yes".format(owner, service)
-        self.redirect(url)
+        self.redirect(f"/groups/{owner}/service/{service}?refresh=yes")
 
     def get(self, *args: Any, **kwargs: Any) -> None:
         owner = self.get_path_argument("name")
@@ -60,19 +49,27 @@ class ServiceAccountCreate(GrouperHandler, CreateServiceAccountUI):
             return
 
         form = ServiceAccountCreateForm()
-        self.render("service-account-create.html", form=form, owner=owner)
+        self._render_template(form, owner)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
         owner = self.get_path_argument("name")
 
-        form = ServiceAccountCreateForm(self.request.arguments)
-        if not form.validate():
-            self.render_form_with_errors(form, owner)
+        # Save the form in the handler object so that it can be reused in failure handlers.
+        self._form = ServiceAccountCreateForm(self.request.arguments)
+        if not self._form.validate():
+            self._render_template(self._form, owner)
             return
 
         usecase = self.usecase_factory.create_create_service_account_usecase(
             self.current_user.username, self
         )
         usecase.create_service_account(
-            form.data["name"], owner, form.data["machine_set"], form.data["description"]
+            self._form.data["name"],
+            owner,
+            self._form.data["machine_set"],
+            self._form.data["description"],
         )
+
+    def _render_template(self, form: ServiceAccountCreateForm, owner: str) -> None:
+        template = ServiceAccountCreateTemplate(form=form, owner=owner)
+        self.render_template_class(template)

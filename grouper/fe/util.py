@@ -10,11 +10,12 @@ from typing import TYPE_CHECKING
 from urllib.parse import quote, unquote, urlencode, urljoin
 from uuid import uuid4
 
-import tornado.web
 from plop.collector import Collector
+from tornado.concurrent import Future
 from tornado.web import HTTPError, RequestHandler
 
 from grouper.constants import AUDIT_SECURITY, RESERVED_NAMES, USERNAME_VALIDATION
+from grouper.fe.alerts import Alert
 from grouper.fe.settings import settings
 from grouper.graph import Graph
 from grouper.initialization import create_graph_usecase_factory
@@ -25,20 +26,11 @@ from grouper.repositories.factory import SingletonSessionFactory
 from grouper.user_permissions import user_permissions
 
 if TYPE_CHECKING:
+    from grouper.fe.templates import BaseTemplate
     from grouper.fe.templating import FrontendTemplateEngine
     from grouper.models.base.session import Session
     from types import TracebackType
     from typing import Any, Callable, Dict, List, Optional, Sequence, Type
-
-
-class Alert:
-    def __init__(self, severity: str, message: str, heading: str = None) -> None:
-        self.severity = severity
-        self.message = message
-        if heading is None:
-            self.heading = severity.title() + "!"
-        else:
-            self.heading = heading
 
 
 class InvalidUser(Exception):
@@ -214,12 +206,12 @@ class GrouperHandler(RequestHandler):
         namespace = super().get_template_namespace()
         namespace.update(
             {
-                "update_qs": self.update_qs,
-                "is_active": self.is_active,
-                "perf_trace_uuid": self.perf_trace_uuid,
-                "xsrf_form": self.xsrf_form_html,
                 "alerts": self.get_alerts(),
+                "is_active": self.is_active,
                 "static_url": self.static_url,
+                "perf_trace_uuid": self.perf_trace_uuid,
+                "update_qs": self.update_qs,
+                "xsrf_form": self.xsrf_form_html,
             }
         )
         return namespace
@@ -242,6 +234,11 @@ class GrouperHandler(RequestHandler):
         context["alerts"].extend(kwargs.get("alerts", []))
 
         self.write(self.render_template(template_name, **context))
+
+    def render_template_class(
+        self, template: BaseTemplate, alerts: Optional[List[Alert]] = None
+    ) -> Future[None]:
+        return self.finish(template.render(self, alerts))
 
     def set_alerts(self, alerts: Sequence[Alert]) -> None:
         if len(alerts) > 0:
@@ -273,23 +270,23 @@ class GrouperHandler(RequestHandler):
 
     def badrequest(self) -> None:
         self.set_status(400)
-        self.raise_and_log_exception(tornado.web.HTTPError(400))
+        self.raise_and_log_exception(HTTPError(400))
         self.render("errors/badrequest.html")
 
     def baduser(self, message) -> None:
         self.set_status(403)
-        self.raise_and_log_exception(tornado.web.HTTPError(403))
+        self.raise_and_log_exception(HTTPError(403))
         how_to_get_help = settings().how_to_get_help
         self.render("errors/baduser.html", message=message, how_to_get_help=how_to_get_help)
 
     def forbidden(self) -> None:
         self.set_status(403)
-        self.raise_and_log_exception(tornado.web.HTTPError(403))
+        self.raise_and_log_exception(HTTPError(403))
         self.render("errors/forbidden.html", how_to_get_help=settings().how_to_get_help)
 
     def notfound(self) -> None:
         self.set_status(404)
-        self.raise_and_log_exception(tornado.web.HTTPError(404))
+        self.raise_and_log_exception(HTTPError(404))
         self.render("errors/notfound.html")
 
 

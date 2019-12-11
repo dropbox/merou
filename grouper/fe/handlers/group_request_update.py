@@ -4,9 +4,10 @@ from typing import TYPE_CHECKING
 
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.email_util import send_email
+from grouper.fe.alerts import Alert
 from grouper.fe.forms import GroupRequestModifyForm
 from grouper.fe.settings import settings
-from grouper.fe.util import Alert, GrouperHandler
+from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import REQUEST_STATUS_CHOICES
 from grouper.models.group import Group

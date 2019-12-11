@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from grouper.fe.alerts import Alert
 from grouper.fe.forms import ServiceAccountPermissionGrantForm
-from grouper.fe.util import Alert, GrouperHandler
+from grouper.fe.templates import ServiceAccountPermissionGrantTemplate
+from grouper.fe.util import GrouperHandler
 from grouper.usecases.grant_permission_to_service_account import GrantPermissionToServiceAccountUI
 
 if TYPE_CHECKING:
     from grouper.entities.permission_grant import GroupPermissionGrant
-    from typing import Any, Iterable
+    from typing import Any, Iterable, List, Optional
 
 
 class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAccountUI):
@@ -26,36 +28,25 @@ class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAcco
 
         grantable = usecase.permission_grants_for_group(owner)
         form = self._get_form(grantable)
-        return self.render(
-            "service-account-permission-grant.html", form=form, service=service, owner=owner
-        )
+        self._render_template(form, service, owner)
 
     def grant_permission_to_service_account_failed_invalid_argument(
         self, permission: str, argument: str, service: str, message: str
     ) -> None:
-        form = self._get_form(self._grantable)
-        form.argument.errors = [message]
-        self._render_form_with_errors(form, service, self._owner)
+        self._form.argument.errors.append(message)
+        self._render_template(self._form, service, self._owner)
 
     def grant_permission_to_service_account_failed_permission_denied(
         self, permission: str, argument: str, service: str, message: str
     ) -> None:
-        form = self._get_form(self._grantable)
-        self.render(
-            "service-account-permission-grant.html",
-            form=form,
-            service=service,
-            owner=self._owner,
-            alerts=[Alert("error", message)],
-        )
+        alert = Alert("error", message)
+        self._render_template(self._form, service, self._owner, [alert])
 
     def grant_permission_to_service_account_failed_permission_not_found(
         self, permission: str, service: str
     ) -> None:
-        message = "Unknown permission {}".format(permission)
-        form = self._get_form(self._grantable)
-        form.permission.errors = [message]
-        self._render_form_with_errors(form, service, self._owner)
+        self._form.permission.errors.append(f"Unknown permission {permission}")
+        self._render_template(self._form, service, self._owner)
 
     def grant_permission_to_service_account_failed_service_account_not_found(
         self, service: str
@@ -65,10 +56,10 @@ class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAcco
     def granted_permission_to_service_account(
         self, permission: str, argument: str, service: str
     ) -> None:
-        url = "/groups/{}/service/{}?refresh=yes".format(self._owner, service)
-        self.redirect(url)
+        self.redirect(f"/groups/{self._owner}/service/{service}?refresh=yes")
 
     def post(self, *args: Any, **kwargs: Any) -> None:
+        # Stash the owner in the handler object for use in error handlers.
         self._owner = self.get_path_argument("name")
         service = self.get_path_argument("accountname")
 
@@ -77,13 +68,15 @@ class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAcco
         )
         if not usecase.service_account_exists_with_owner(service, self._owner):
             return self.notfound()
-        self._grantable = usecase.permission_grants_for_group(self._owner)
-        form = self._get_form(self._grantable)
-        if not form.validate():
-            return self._render_form_with_errors(form, service, self._owner)
+
+        # Stash the form in the handler object for use in error handlers.
+        grantable = usecase.permission_grants_for_group(self._owner)
+        self._form = self._get_form(grantable)
+        if not self._form.validate():
+            return self._render_template(self._form, service, self._owner)
 
         usecase.grant_permission_to_service_account(
-            form.data["permission"], form.data["argument"], service
+            self._form.data["permission"], self._form.data["argument"], service
         )
 
     def _get_form(
@@ -104,13 +97,12 @@ class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAcco
             form.permission.choices.append([grant.permission, entry])
         return form
 
-    def _render_form_with_errors(
-        self, form: ServiceAccountPermissionGrantForm, service: str, owner: str
+    def _render_template(
+        self,
+        form: ServiceAccountPermissionGrantForm,
+        service: str,
+        owner: str,
+        alerts: Optional[List[Alert]] = None,
     ) -> None:
-        self.render(
-            "service-account-permission-grant.html",
-            form=form,
-            service=service,
-            owner=owner,
-            alerts=self.get_form_alerts(form.errors),
-        )
+        template = ServiceAccountPermissionGrantTemplate(form=form, service=service, owner=owner)
+        self.render_template_class(template, alerts)

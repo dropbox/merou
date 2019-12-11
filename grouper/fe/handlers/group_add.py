@@ -6,9 +6,10 @@ from typing import TYPE_CHECKING
 
 from grouper.audit import assert_can_join, UserNotAuditor
 from grouper.email_util import send_email
+from grouper.fe.alerts import Alert
 from grouper.fe.forms import GroupAddForm
 from grouper.fe.settings import settings
-from grouper.fe.util import Alert, GrouperHandler
+from grouper.fe.util import GrouperHandler
 from grouper.group import get_all_groups
 from grouper.group_member import InvalidRoleForMember
 from grouper.models.audit_log import AuditLog

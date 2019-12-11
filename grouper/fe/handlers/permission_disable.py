@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from grouper.fe.util import Alert, GrouperHandler
+from grouper.fe.alerts import Alert
+from grouper.fe.util import GrouperHandler
 from grouper.usecases.disable_permission import DisablePermissionUI
 
 if TYPE_CHECKING:

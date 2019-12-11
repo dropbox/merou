@@ -280,6 +280,27 @@ provides a pre-constructed use case factory to its handlers, created as
 part of initialization of the UI.  For tests, repository, service, and use
 case factories are provided as attributes on the `SetupTest` object.
 
+Templates
+---------
+
+There is a new mechanism for wrapping templates for the frontend (the `fe`
+directory) in `grouper.fe.templates`.  Each template has a corresponding
+dataclass class in that module that defines the variables required by that
+template.  The call mechanism inside frontends then looks like:
+
+.. code:: python
+
+    template = SomeTemplate(variable=value, other=value)
+    self.render_template_class(template)
+
+This provides type checking for templates, ensuring that all the required
+variables are passed in and are of the correct type.
+
+Using this mechanism for all new templates is strongly encouraged, and
+existing templates should be converted to this mechanism as they are
+modified.  The code inside the frontend handlers is much cleaner and type
+checking will catch bugs.
+
 Testing
 -------
 
@@ -399,8 +420,9 @@ New View Use Case
 #. Implement each UI and its corresponding test case.  Many use cases will
    only make sense in one or two of these UIs.
 
-   #. Frontend UI invovles a handler in `grouper.fe.handlers` and possibly
-      a route and new templates, and an integration test in `itests.fe`
+   #. Frontend UI invovles a handler in `grouper.fe.handlers`, possibly a
+      route, possibly a new template and wrapper dataclass in
+      `grouper.fe.templates`, and an integration test in `itests.fe`
       (which may require defining new pages in `itests.pages`).
    #. API UI involves a handler in `grouper.api.handlers` and an
       integration test in `itests.api`.
@@ -455,8 +477,9 @@ New Modify Use Case
    frontend.  It's often faster to test and is convenient later for
    automation or operations.
 
-   #. Frontend UI invovles a handler in `grouper.fe.handlers` and possibly
-      a route and new templates, and an integration test in `itests.fe`
+   #. Frontend UI invovles a handler in `grouper.fe.handlers`, possibly a
+      route, possibly a new template and wrapper dataclass in
+      `grouper.fe.templates`, and an integration test in `itests.fe`
       (which may require defining new pages in `itests.pages`).
    #. `grouper-ctl` UI involves a new class in `grouper.ctl` and a test in
       `tests.ctl`.

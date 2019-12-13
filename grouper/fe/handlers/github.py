@@ -17,6 +17,7 @@ from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
 from grouper.plugin import get_plugin_proxy
 from grouper.user_metadata import set_user_metadata
+from grouper.user_permissions import user_is_user_admin
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
@@ -146,7 +147,7 @@ class GitHubLinkCompleteView(GrouperHandler):
 class UserClearGitHub(GrouperHandler):
     @staticmethod
     def check_access(session: Session, actor: User, target: User) -> bool:
-        return actor.name == target.name
+        return actor.name == target.name or user_is_user_admin(session, actor)
 
     def post(self, *args: Any, **kwargs: Any) -> None:
         name = self.get_path_argument("name")

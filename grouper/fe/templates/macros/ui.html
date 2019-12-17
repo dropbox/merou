@@ -337,7 +337,7 @@ enabled. Membership in this group is regularly reviewed.
     {% endif %}
 {% endmacro %}
 
-{% macro permission(perm) -%}
+{% macro permission_link(perm) -%}
 <a class="permission-link" href="/permissions/{{perm.name or perm.permission}}">
     <i class="fa fa-key hidden-xs"></i>
     {{perm.name or perm.permission}}
@@ -435,7 +435,7 @@ enabled. Membership in this group is regularly reviewed.
                                 Group: {{ account(entry.on_group) }}<br />
                             {% endif %}
                             {% if entry.on_permission %}
-                                Permission: {{ permission(entry.on_permission) }}<br />
+                                Permission: {{ permission_link(entry.on_permission) }}<br />
                             {% endif %}
                             {% if entry.on_user %}
                                 User: {{ account(entry.on_user) }}<br />
@@ -487,7 +487,7 @@ enabled. Membership in this group is regularly reviewed.
                                 Group: {{ account(entry.on_group, type="group") }}<br />
                             {% endif %}
                             {% if entry.on_permission %}
-                                Permission: {{ permission(entry.on_permission) }}<br />
+                                Permission: {{ permission_link(entry.on_permission) }}<br />
                             {% endif %}
                             {% if entry.on_user %}
                                 User: {{ account(entry.on_user, type="user") }}<br />
@@ -529,7 +529,7 @@ enabled. Membership in this group is regularly reviewed.
                 <tbody>
                 {% for map in mappings if not map.alias %}
                     <tr class="permission-row">
-                        <td class="permission-name">{{ permission(map) }}</td>
+                        <td class="permission-name">{{ permission_link(map) }}</td>
                         <td class="permission-argument col-sm-2">{{ map.argument|default("(unargumented)", True) }}</td>
                         <td class="permission-source col-sm-2">
                         {% if map.distance == 0 %}

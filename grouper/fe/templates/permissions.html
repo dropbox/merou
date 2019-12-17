@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import permission, paginator, dropdown with context %}
+{% from 'macros/ui.html' import permission_link, paginator, dropdown with context %}
 
 {% block subtitle %}
     {% if audited_permissions %}
@@ -51,7 +51,7 @@
             <tbody>
             {% for perm in permissions %}
                 <tr class="permission-row">
-                    <td class="permission-name">{{ permission(perm) }}</td>
+                    <td class="permission-name">{{ permission_link(perm) }}</td>
                     <td class="permission-description">{{ perm.description|default("", True) }}</td>
                     <td class="permission-created-on">{{ perm.created_on | print_date}}</td>
                 </tr>

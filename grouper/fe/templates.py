@@ -5,6 +5,8 @@ Jinja2 templates.  The goal is for every template page to have a corresponding w
 defined here, and for all handlers to interact with the template only through the wrapper class.
 This ensures that the template receives all of the parameters that it expects and that they are
 typed correctly, since mypy cannot analyze Jinja2 code.
+
+Keep all wrapper classes in this file so that they will be seen properly by the test suite.
 """
 
 from __future__ import annotations

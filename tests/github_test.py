@@ -12,7 +12,7 @@ from grouper.fe.settings import settings
 from grouper.models.audit_log import AuditLog
 from grouper.models.user import User
 from grouper.plugin.proxy import PluginProxy
-from grouper.user_metadata import get_user_metadata_by_key
+from grouper.user_metadata import get_user_metadata_by_key, set_user_metadata
 from tests.fixtures import (  # noqa: F401
     fe_app as app,
     graph,
@@ -140,3 +140,30 @@ def test_github(session, users, http_client, base_url, mocker):  # noqa: F811
     assert len(audit_entries) == 2
     audit_entries.sort(key=operator.attrgetter("id"))
     assert audit_entries[1].description == "Cleared GitHub link"
+
+
+@pytest.mark.gen_test
+def test_github_user_admin(session, users, http_client, base_url):  # noqa: F811
+    user = users["zorkian@a.co"]
+    set_user_metadata(session, user.id, USER_METADATA_GITHUB_USERNAME_KEY, "zorkian")
+    data = get_user_metadata_by_key(session, user.id, USER_METADATA_GITHUB_USERNAME_KEY)
+    assert data
+    assert data.data_value == "zorkian"
+
+    # Another random user should not be able to clear the GitHub identity.
+    fe_url = url(base_url, f"/users/{user.username}/github/clear")
+    with pytest.raises(HTTPError) as excinfo:
+        resp = yield http_client.fetch(
+            fe_url, method="POST", headers={"X-Grouper-User": "oliver@a.co"}, body=b""
+        )
+    assert excinfo.value.code == 403
+    data = get_user_metadata_by_key(session, user.id, USER_METADATA_GITHUB_USERNAME_KEY)
+    assert data
+    assert data.data_value == "zorkian"
+
+    # A user admin should be able to clear the GitHub identity.
+    resp = yield http_client.fetch(
+        fe_url, method="POST", headers={"X-Grouper-User": "cbguder@a.co"}, body=b""
+    )
+    assert resp.code == 200
+    assert get_user_metadata_by_key(session, user.id, USER_METADATA_GITHUB_USERNAME_KEY) is None

@@ -10,6 +10,7 @@ from itests.pages.base import BasePage
 from itests.pages.groups import GroupViewPage
 from itests.pages.service_accounts import (
     ServiceAccountCreatePage,
+    ServiceAccountEditPage,
     ServiceAccountEnablePage,
     ServiceAccountGrantPermissionPage,
     ServiceAccountViewPage,
@@ -81,6 +82,35 @@ def test_service_account_lifecycle(tmpdir: LocalPath, setup: SetupTest, browser:
 
         view_page = ServiceAccountViewPage(browser)
         assert view_page.owner == "some-group"
+
+
+def test_service_account_edit(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("cbguder@a.co", "some-group")
+        setup.create_service_account("service@svc.localhost", "some-group")
+
+    with frontend_server(tmpdir, "cbguder@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group/service/service@svc.localhost"))
+
+        view_page = ServiceAccountViewPage(browser)
+        assert view_page.owner == "some-group"
+        assert view_page.description == ""
+        assert view_page.machine_set == ""
+        view_page.click_edit_button()
+
+        edit_page = ServiceAccountEditPage(browser)
+        edit_page.set_description("some description")
+        edit_page.set_machine_set("some machines bad-machine")
+        edit_page.submit()
+        assert edit_page.has_alert("machine_set")
+        assert edit_page.has_alert("service@svc.localhost has invalid machine set")
+
+        edit_page.set_machine_set("some machines")
+        edit_page.submit()
+
+        assert browser.current_url.endswith("/groups/some-group/service/service@svc.localhost")
+        assert view_page.description == "some description"
+        assert view_page.machine_set == "some machines"
 
 
 def test_wrong_owner(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:

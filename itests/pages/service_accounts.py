@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from selenium.webdriver.common.keys import Keys
@@ -40,6 +42,10 @@ class ServiceAccountViewPage(BasePage):
     def click_disable_button(self):
         # type: () -> None
         button = self.find_element_by_class_name("disable-service-account")
+        button.click()
+
+    def click_edit_button(self) -> None:
+        button = self.find_element_by_class_name("edit-service-account")
         button.click()
 
     def click_enable_button(self):
@@ -90,6 +96,25 @@ class ServiceAccountCreatePage(BasePage):
         # type: () -> None
         form = self._get_new_service_account_form()
         form.submit()
+
+
+class ServiceAccountEditPage(BasePage):
+    @property
+    def form(self) -> WebElement:
+        return self.find_element_by_id("edit-service-account-form")
+
+    def set_description(self, name: str) -> None:
+        field = self.form.find_element_by_name("description")
+        field.clear()
+        field.send_keys(name)
+
+    def set_machine_set(self, name: str) -> None:
+        field = self.form.find_element_by_name("machine_set")
+        field.clear()
+        field.send_keys(name)
+
+    def submit(self) -> None:
+        self.form.submit()
 
 
 class ServiceAccountEnablePage(BasePage):

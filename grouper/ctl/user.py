@@ -60,6 +60,7 @@ def user_command(args, settings, session_factory):
                     session.commit()
                 except PluginRejectedDisablingUser as e:
                     logging.error("%s", e)
+                    sys.exit(1)
 
         return
 

@@ -1,4 +1,5 @@
 from mock import patch
+from pytest import raises
 
 from grouper.models.group import Group
 from grouper.plugin.proxy import PluginProxy
@@ -19,5 +20,6 @@ def test_group_disable_group_owner(get_plugin_proxy, session, tmpdir, users, gro
     assert ("User", username) in Group.get(session, name=groupname).my_members()
 
     # disable (fails)
-    call_main(session, tmpdir, "user", "disable", username)
+    with raises(SystemExit):
+        call_main(session, tmpdir, "user", "disable", username)
     assert ("User", username) in Group.get(session, name=groupname).my_members()

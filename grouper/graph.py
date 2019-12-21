@@ -412,6 +412,7 @@ class GroupGraph:
                 label("type", literal("Group")),
                 label("name", group_member.groupname),
                 label("role", GroupEdge._role),
+                label("expiration", GroupEdge.expiration),
             )
             .filter(
                 parent.id == GroupEdge.group_id,
@@ -428,6 +429,7 @@ class GroupGraph:
                     label("type", literal("User")),
                     label("name", user_member.username),
                     label("role", GroupEdge._role),
+                    label("expiration", GroupEdge.expiration),
                 ).filter(
                     parent.id == GroupEdge.group_id,
                     user_member.id == GroupEdge.member_pk,
@@ -443,7 +445,11 @@ class GroupGraph:
         edges = []
         for record in query.all():
             edges.append(
-                (("Group", record.groupname), (record.type, record.name), {"role": record.role})
+                (
+                    ("Group", record.groupname),
+                    (record.type, record.name),
+                    {"role": record.role, "expiration": record.expiration},
+                )
             )
 
         return edges
@@ -685,12 +691,14 @@ class GroupGraph:
                     continue
                 member_type, member_name = member
                 role = self._graph[group][path[1]]["role"]
+                expiration = self._graph[group][path[1]]["expiration"]
                 data[MEMBER_TYPE_MAP[member_type]][member_name] = {
                     "name": member_name,
                     "path": [elem[1] for elem in path],
                     "distance": len(path) - 1,
                     "role": role,
                     "rolename": GROUP_EDGE_ROLES[role],
+                    "expiration": str(expiration),
                 }
 
             for parent, path in rpaths.items():

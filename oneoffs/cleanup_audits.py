@@ -14,19 +14,29 @@ class AuditCleanup(BaseOneOff):
     def run(self, session, dry_run=True):
         # Pull the audits that are expiring on 2020-03-13 00:00:00. None of these have been completed
         # as of my checks. About half of the ones for the 31st have already been completed
-        audits = session.query(Audit).filter(Audit.ends_at == datetime(2020, 3, 13), Audit.complete == False).all()
+        audits = (
+            session.query(Audit)
+            .filter(Audit.ends_at == datetime(2020, 3, 13), Audit.complete == False)
+            .all()
+        )
 
         if dry_run:
             logging.info("Running AuditCleanup in dry run mode")
             for audit in audits:
-                print("Would delete: ID={}, Complete={}, started_at={}, ends_at={}".format(
-                         audit.id, audit.complete, audit.started_at, audit.ends_at))
+                logging.info(
+                    "Would delete: ID={}, Complete={}, started_at={}, ends_at={}".format(
+                        audit.id, audit.complete, audit.started_at, audit.ends_at
+                    )
+                )
 
         else:
             logging.info("Running AuditCleanup dry_run is False")
             for audit in audits:
-                print("Deleting: ID={}, Complete={}, started_at={}, ends_at={}".format(
-                      audit.id, audit.complete, audit.started_at, audit.ends_at))
+                logging.info(
+                    "Deleting: ID={}, Complete={}, started_at={}, ends_at={}".format(
+                        audit.id, audit.complete, audit.started_at, audit.ends_at
+                    )
+                )
                 session.query(Audit).filter(Audit.id == audit.id).delete()
 
             session.commit()

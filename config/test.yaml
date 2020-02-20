@@ -50,6 +50,7 @@ ctl:
     oneoff_module_paths:
       - oneoffs.check_public_keys
       - oneoffs.refresh_public_keys
+      - oneoffs.cleanup_audits
 
 fe:
     address: "127.0.0.1"

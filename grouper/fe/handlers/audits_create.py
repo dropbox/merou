@@ -15,6 +15,8 @@ from grouper.models.audit_member import AuditMember
 from grouper.models.group import Group
 from grouper.user_permissions import user_has_permission
 
+from tornado import locks
+
 if TYPE_CHECKING:
     from typing import Any
 
@@ -38,7 +40,12 @@ class AuditsCreate(GrouperHandler):
         if not user_has_permission(self.session, self.current_user, AUDIT_MANAGER):
             return self.forbidden()
 
+        # Need to lock this and prevent someone from requesting another set of audits
+        # while this is processing
+        lock = locks.Lock()
+
         # Step 1, detect if there are non-completed audits and fail if so.
+        lock.acquire()
         open_audits = self.session.query(Audit).filter(Audit.complete == False).all()
         if open_audits:
             raise Exception("Sorry, there are audits in progress.")
@@ -73,6 +80,7 @@ class AuditsCreate(GrouperHandler):
                     raise Exception("Failed to start the audit. Please try again.")
 
         self.session.commit()
+        lock.release()
 
         AuditLog.log(
             self.session,

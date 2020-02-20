@@ -1,6 +1,6 @@
 """
 There was an issue that allowed duplicate audits to be created
-This will cleanup all the ones due on the specific date
+This will cleanup all the ones due on the specific date:
 Run with: grouper-ctl -v oneoff run AuditCleanup --no-dry_run
 """
 import logging

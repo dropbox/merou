@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 from sqlalchemy.exc import IntegrityError
+from tornado import locks
 
 from grouper.constants import AUDIT_MANAGER
 from grouper.email_util import send_async_email, send_email
@@ -14,8 +15,6 @@ from grouper.models.audit_log import AuditLog, AuditLogCategory
 from grouper.models.audit_member import AuditMember
 from grouper.models.group import Group
 from grouper.user_permissions import user_has_permission
-
-from tornado import locks
 
 if TYPE_CHECKING:
     from typing import Any

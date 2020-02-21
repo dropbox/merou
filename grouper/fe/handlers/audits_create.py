@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from threading import Lock
 from typing import TYPE_CHECKING
 
 from sqlalchemy.exc import IntegrityError
@@ -38,41 +39,46 @@ class AuditsCreate(GrouperHandler):
         if not user_has_permission(self.session, self.current_user, AUDIT_MANAGER):
             return self.forbidden()
 
+        # Need to lock this and prevent someone from requesting another set of audits
+        # while this is processing
+        lock = Lock()
+
         # Step 1, detect if there are non-completed audits and fail if so.
-        open_audits = self.session.query(Audit).filter(Audit.complete == False).all()
-        if open_audits:
-            raise Exception("Sorry, there are audits in progress.")
-        ends_at = datetime.strptime(form.data["ends_at"], "%m/%d/%Y")
+        with lock:
+            open_audits = self.session.query(Audit).filter(Audit.complete == False).all()
+            if open_audits:
+                raise Exception("Sorry, there are audits in progress.")
+            ends_at = datetime.strptime(form.data["ends_at"], "%m/%d/%Y")
 
-        # Step 2, find all audited groups and schedule audits for each.
-        audited_groups = []
-        for groupname in self.graph.groups:
-            if not self.graph.get_group_details(groupname)["audited"]:
-                continue
-            group = Group.get(self.session, name=groupname)
-            assert group, f"Graph contains nonexistent group {groupname}"
-            audit = Audit(group_id=group.id, ends_at=ends_at)
-            try:
-                audit.add(self.session)
-                self.session.flush()
-            except IntegrityError:
-                self.session.rollback()
-                raise Exception("Failed to start the audit. Please try again.")
-
-            # Update group with new audit
-            audited_groups.append(group)
-            group.audit_id = audit.id
-
-            # Step 3, now get all members of this group and set up audit rows for those edges.
-            for member in group.my_members().values():
-                auditmember = AuditMember(audit_id=audit.id, edge_id=member.edge_id)
+            # Step 2, find all audited groups and schedule audits for each.
+            audited_groups = []
+            for groupname in self.graph.groups:
+                if not self.graph.get_group_details(groupname)["audited"]:
+                    continue
+                group = Group.get(self.session, name=groupname)
+                assert group, f"Graph contains nonexistent group {groupname}"
+                audit = Audit(group_id=group.id, ends_at=ends_at)
                 try:
-                    auditmember.add(self.session)
+                    audit.add(self.session)
+                    self.session.flush()
                 except IntegrityError:
                     self.session.rollback()
                     raise Exception("Failed to start the audit. Please try again.")
 
-        self.session.commit()
+                # Update group with new audit
+                audited_groups.append(group)
+                group.audit_id = audit.id
+
+                # Step 3, now get all members of this group and set up audit rows for those edges.
+                for member in group.my_members().values():
+                    auditmember = AuditMember(audit_id=audit.id, edge_id=member.edge_id)
+                    try:
+                        auditmember.add(self.session)
+                    except IntegrityError:
+                        self.session.rollback()
+                        raise Exception("Failed to start the audit. Please try again.")
+
+            self.session.commit()
 
         AuditLog.log(
             self.session,

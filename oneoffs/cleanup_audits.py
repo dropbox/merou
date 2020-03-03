@@ -1,19 +1,21 @@
 """
 There was an issue that allowed duplicate audits to be created
-This will cleanup all the ones due on the specific date:
+This will cleanup all the ones due on the specific date
 Run with: grouper-ctl -v oneoff run AuditCleanup --no-dry_run
 """
 import logging
 from datetime import datetime
 
 from grouper.models.audit import Audit
+from grouper.models.audit_member import AuditMember
 from grouper.oneoff import BaseOneOff
 
 
 class AuditCleanup(BaseOneOff):
     def run(self, session, dry_run=True):
         # Pull the audits that are expiring on 2020-03-13 00:00:00. None of these have been
-        # completed. About half of the ones for the 31st have already been completed
+        # completed as of my checks. About half of the ones for the 31st have already
+        # been completed
         audits = (
             session.query(Audit)
             .filter(Audit.ends_at == datetime(2020, 3, 13), Audit.complete == False)
@@ -22,18 +24,46 @@ class AuditCleanup(BaseOneOff):
 
         if dry_run:
             logging.info("Running AuditCleanup in dry run mode")
+
+            # now pull the list of audit members that belong to this audit.
             for audit in audits:
-                logging.info(
-                    "Would delete: ID={}, Complete={}, started_at={}, ends_at={}".format(
+                print(
+                    "Would delete Audit: ID={}, Complete={}, started_at={}, ends_at={}".format(
                         audit.id, audit.complete, audit.started_at, audit.ends_at
                     )
                 )
 
+                audit_members = (
+                    session.query(AuditMember).filter(AuditMember.audit_id == audit.id).all()
+                )
+
+                for audit_member in audit_members:
+                    print(
+                        "Would delete Audit Member: Audit ID={}, Member ID={}".format(
+                            audit_member.audit_id, audit_member.id
+                        )
+                    )
+
         else:
             logging.info("Running AuditCleanup dry_run is False")
             for audit in audits:
-                logging.info(
-                    "Deleting: ID={}, Complete={}, started_at={}, ends_at={}".format(
+                audit_members = (
+                    session.query(AuditMember).filter(AuditMember.audit_id == audit.id).all()
+                )
+
+                # Due to foreign key constraint we also need to remove the audit members that
+                # belong to this audit.
+                for audit_member in audit_members:
+                    print(
+                        "Deleting Audit Member: Audit ID={}, Member ID={}".format(
+                            audit_member.audit_id, audit_member.id
+                        )
+                    )
+                    session.query(AuditMember).filter(AuditMember.id == audit_member.id).delete()
+
+                # Now delete the duplicate audit.
+                print(
+                    "Deleting Audit: ID={}, Complete={}, started_at={}, ends_at={}".format(
                         audit.id, audit.complete, audit.started_at, audit.ends_at
                     )
                 )

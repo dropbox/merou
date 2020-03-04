@@ -13,9 +13,8 @@ from grouper.oneoff import BaseOneOff
 
 class AuditCleanup(BaseOneOff):
     def run(self, session, dry_run=True):
-        # Pull the audits that are expiring on 2020-03-13 00:00:00. None of these have been
-        # completed as of my checks. About half of the ones for the 31st have already
-        # been completed
+        # Pull the audits that are expiring on 2020-03-13 00:00:00. These are the
+        # duplicates we've chosen to delete in favor of the 31st
         audits = (
             session.query(Audit)
             .filter(Audit.ends_at == datetime(2020, 3, 13), Audit.complete == False)

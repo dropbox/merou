@@ -27,7 +27,7 @@ class AuditCleanup(BaseOneOff):
 
             # now pull the list of audit members that belong to this audit.
             for audit in audits:
-                print(
+                logging.info(
                     "Would delete Audit: ID={}, Complete={}, started_at={}, ends_at={}".format(
                         audit.id, audit.complete, audit.started_at, audit.ends_at
                     )
@@ -38,7 +38,7 @@ class AuditCleanup(BaseOneOff):
                 )
 
                 for audit_member in audit_members:
-                    print(
+                    logging.info(
                         "Would delete Audit Member: Audit ID={}, Member ID={}".format(
                             audit_member.audit_id, audit_member.id
                         )
@@ -54,7 +54,7 @@ class AuditCleanup(BaseOneOff):
                 # Due to foreign key constraint we also need to remove the audit members that
                 # belong to this audit.
                 for audit_member in audit_members:
-                    print(
+                    logging.info(
                         "Deleting Audit Member: Audit ID={}, Member ID={}".format(
                             audit_member.audit_id, audit_member.id
                         )
@@ -62,7 +62,7 @@ class AuditCleanup(BaseOneOff):
                     session.query(AuditMember).filter(AuditMember.id == audit_member.id).delete()
 
                 # Now delete the duplicate audit.
-                print(
+                logging.info(
                     "Deleting Audit: ID={}, Complete={}, started_at={}, ends_at={}".format(
                         audit.id, audit.complete, audit.started_at, audit.ends_at
                     )

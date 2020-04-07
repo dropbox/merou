@@ -10,7 +10,6 @@ from grouper.permissions import get_or_create_permission
 from grouper.plugin import set_global_plugin_proxy
 from grouper.plugin.base import BasePlugin
 from grouper.plugin.proxy import PluginProxy
-from grouper.role_user import create_role_user
 from grouper.user_metadata import get_user_metadata, set_user_metadata
 from grouper.user_token import add_new_user_token, disable_user_token
 from tests.fixtures import (  # noqa: F401
@@ -23,9 +22,9 @@ from tests.fixtures import (  # noqa: F401
     standard_graph,
     users,
 )
+from tests.setup import SetupTest
 from tests.url_util import url
 from tests.util import get_groups, grant_permission
-from tests.setup import SetupTest
 
 
 def test_basic_metadata(standard_graph, session, users, groups, permissions):  # noqa: F811

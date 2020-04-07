@@ -7,9 +7,9 @@ from grouper.constants import USER_ADMIN, USER_ENABLE
 from grouper.models.user import User
 from grouper.models.user_token import UserToken
 from grouper.permissions import get_or_create_permission
+from grouper.plugin import set_global_plugin_proxy
 from grouper.plugin.base import BasePlugin
 from grouper.plugin.proxy import PluginProxy
-from grouper.role_user import create_role_user
 from grouper.user_metadata import get_user_metadata, set_user_metadata
 from grouper.user_token import add_new_user_token, disable_user_token
 from tests.fixtures import (  # noqa: F401
@@ -22,6 +22,7 @@ from tests.fixtures import (  # noqa: F401
     standard_graph,
     users,
 )
+from tests.setup import SetupTest
 from tests.url_util import url
 from tests.util import get_groups, grant_permission
 
@@ -224,19 +225,16 @@ class UserCreatedPlugin(BasePlugin):
         self.calls += 1
 
 
-def test_user_created_plugin(mocker, session, users, groups):  # noqa: F811
+def test_user_created_plugin(setup: SetupTest):
     """Test calls to the user_created plugin."""
     plugin = UserCreatedPlugin()
-    mocker.patch("grouper.models.user.get_plugin_proxy", return_value=PluginProxy([plugin]))
+    # WARN: Relies on the user_created function being called from the global proxy.
+    # Will need to change once everything uses an injected plugin proxy.
+    set_global_plugin_proxy(PluginProxy([plugin]))
+    with setup.transaction():
+        setup.create_user("human@a.co")
+        assert plugin.calls == 1
 
-    # Create a regular user.  The service account flag should be false, and the plugin should be
-    # called.
-    user, created = User.get_or_create(session, username="test@a.co")
-    assert created == True
-    assert plugin.calls == 1
-
-    # Create a role user.  This should cause another plugin call and the service account flag
-    # should now be true.
-    plugin.expected_service_account = True
-    create_role_user(session, user, "testrole@a.co", "description", "canask")
-    assert plugin.calls == 2
+        plugin.expected_service_account = True
+        setup.create_service_account("service@a.co", "owner", "machine set", "desc")
+        assert plugin.calls == 2

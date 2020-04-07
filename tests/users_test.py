@@ -25,6 +25,7 @@ from tests.fixtures import (  # noqa: F401
 from tests.setup import SetupTest
 from tests.url_util import url
 from tests.util import get_groups, grant_permission
+from tests.setup import SetupTest
 
 
 def test_basic_metadata(standard_graph, session, users, groups, permissions):  # noqa: F811

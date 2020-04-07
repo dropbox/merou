@@ -50,9 +50,9 @@ class User(Model, CommentObjectMixin):
     def just_created(self):
         # type: () -> None
         """Call the user_created plugin on new User creation."""
-        # This is a little weird because the default value of the column isn't applied in the
-        # object at the time this is called, so role_user may be None instead of False.
-        is_service_account = self.role_user is not None and self.role_user
+        # This is a little weird because the default value of the column may not be applied in
+        # the object at the time this is called, so the flag may be None instead of False.
+        is_service_account = self.is_service_account is not None and self.is_service_account
         get_plugin_proxy().user_created(self, is_service_account)
 
     def add(self, session):

@@ -251,3 +251,25 @@ def test_name_rejected_by_plugin(setup):
     assert mock_ui.mock_calls == [
         call.created_service_account("service@svc.localhost", "some-group")
     ]
+
+
+class ServiceAccountCreatedPlugin(BasePlugin):
+    def user_created(self, user, is_service_account):
+        # type: (User, bool) -> None
+        assert is_service_account and user.is_service_account
+        assert user.id
+        assert user.enabled
+        assert not user.role_user
+
+
+def test_user_created_plugin_invocation(setup):
+    # type: (SetupTest) -> None
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group")
+
+    setup.plugins.add_plugin(ServiceAccountCreatedPlugin())
+
+    ui = MagicMock()
+    usecase = setup.usecase_factory.create_create_service_account_usecase("gary@a.co", ui)
+    usecase.create_service_account("service", "some-group", "", "")
+    assert ui.mock_calls == [call.created_service_account("service@svc.localhost", "some-group")]

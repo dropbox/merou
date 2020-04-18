@@ -27,12 +27,12 @@ class _Model:
 
         return instance, True
 
-    def just_created(self):
+    def just_created(self, session):
         pass
 
     def add(self, session):
         session._add(self)
-        self.just_created()
+        self.just_created(session)
         return self
 
     def delete(self, session):

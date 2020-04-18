@@ -47,13 +47,13 @@ class User(Model, CommentObjectMixin):
             return session.query(User).filter_by(username=name).scalar()
         return None
 
-    def just_created(self):
-        # type: () -> None
+    def just_created(self, session):
+        # type: (Session) -> None
         """Call the user_created plugin on new User creation."""
-        # This is a little weird because the default value of the column may not be applied in
-        # the object at the time this is called, so the flag may be None instead of False.
-        is_service_account = self.is_service_account is not None and self.is_service_account
-        get_plugin_proxy().user_created(self, is_service_account)
+        # Flush the session to apply defaults, allocate an id, and so forth
+        # in case any plugins rely on that data.
+        session.flush()
+        get_plugin_proxy().user_created(self, self.is_service_account)
 
     def add(self, session):
         # type: (Session) -> User

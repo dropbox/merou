@@ -154,7 +154,7 @@ class BasePlugin:
         """
         pass
 
-    def user_created(self, user, is_service_account=False):
+    def user_created(self, user, is_service_account=False, dry_run=False):
         # type: (User, bool) -> None
         """Called when a new user is created
 
@@ -164,6 +164,7 @@ class BasePlugin:
         Args:
             user: Object of new user.
             is_service_account: Whether this user is a service account (role user)
+            dry_run: Whether to actually create a user
 
         Returns:
             The return code of this method is ignored.

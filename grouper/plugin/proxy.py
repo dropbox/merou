@@ -119,10 +119,10 @@ class PluginProxy:
         for plugin in self._plugins:
             plugin.log_request(handler, status, duration_ms)
 
-    def user_created(self, user, is_service_account=False):
+    def user_created(self, user, is_service_account=False, dry_run=False):
         # type: (User, bool) -> None
         for plugin in self._plugins:
-            plugin.user_created(user, is_service_account)
+            plugin.user_created(user, is_service_account, dry_run)
 
     def will_add_public_key(self, key):
         # type: (SSHKey) -> None

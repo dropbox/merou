@@ -219,7 +219,7 @@ class UserCreatedPlugin(BasePlugin):
         self.calls = 0
         self.expected_service_account = False
 
-    def user_created(self, user, is_service_account=False):
+    def user_created(self, user, is_service_account=False, dry_run=False):
         # type: (User, bool) -> None
         assert is_service_account == self.expected_service_account
         self.calls += 1

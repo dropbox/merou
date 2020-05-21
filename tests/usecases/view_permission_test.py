@@ -95,7 +95,7 @@ def test_view_permissions(setup):
     assert not mock_ui.permission.enabled
     assert mock_ui.group_grants == []
     assert mock_ui.service_account_grants == []
-    audit_log_entries = [(l.actor, l.action, l.on_permission) for l in mock_ui.audit_log_entries]
+    audit_log_entries = [(e.actor, e.action, e.on_permission) for e in mock_ui.audit_log_entries]
     assert audit_log_entries == [
         ("gary@a.co", "disable_permission", "disabled-permission"),
         ("gary@a.co", "create_permission", "disabled-permission"),
@@ -103,7 +103,7 @@ def test_view_permissions(setup):
 
     # Limit the number of audit log entries.
     usecase.view_permission("disabled-permission", "gary@a.co", 1)
-    audit_log_entries = [(l.actor, l.action, l.on_permission) for l in mock_ui.audit_log_entries]
+    audit_log_entries = [(e.actor, e.action, e.on_permission) for e in mock_ui.audit_log_entries]
     assert audit_log_entries == [("gary@a.co", "disable_permission", "disabled-permission")]
 
 

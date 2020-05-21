@@ -254,7 +254,7 @@ def test_name_rejected_by_plugin(setup):
 
 
 class ServiceAccountCreatedPlugin(BasePlugin):
-    def user_created(self, user, is_service_account):
+    def user_created(self, user, is_service_account=False):
         # type: (User, bool) -> None
         assert is_service_account and user.is_service_account
         assert user.id

@@ -73,6 +73,7 @@ def assert_controllers_are_auditors(group: Group) -> None:
         cur_group = queue.pop()
         if cur_group in checked:
             continue
+        checked.add(cur_group)
         details = graph.get_group_details(cur_group)
         for chk_user, info in details["users"].items():
             if chk_user in checked:

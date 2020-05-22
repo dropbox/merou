@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from grouper.models.base.session import Session
     from grouper.models.group import Group
     from grouper.models.user import User
-    from typing import Any
+    from typing import Any, Union
 
 
 class InvalidRoleForMember(Exception):
@@ -51,14 +51,14 @@ def _validate_role(member_type, role):
 
 
 def _get_edge(session, group, member):
-    # type: (Session, Group, GroupEdge) -> GroupEdge
+    # type: (Session, Group, Union[User, Group]) -> GroupEdge
     return GroupEdge.get(
         session, group_id=group.id, member_type=member.member_type, member_pk=member.id
     )
 
 
 def _create_edge(session, group, member, role):
-    # type: (Session, Group, GroupEdge, str) -> GroupEdge
+    # type: (Session, Group, Union[User, Group], str) -> GroupEdge
     edge, new = GroupEdge.get_or_create(
         session, group_id=group.id, member_type=member.member_type, member_pk=member.id
     )
@@ -78,7 +78,7 @@ def persist_group_member_changes(
     session,  # type: Session
     group,  # type: Group
     requester,  # type: User
-    member,  # type: GroupEdge
+    member,  # type: Union[User, Group]
     status,  # type: str
     reason,  # type: str
     create_edge=False,  # type: bool

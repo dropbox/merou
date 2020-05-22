@@ -49,7 +49,7 @@
                                     {{ request.permission.name }}
                                 </a>
                             </dd>
-                            <dt>Argument:</dt><dd>{{ request.argument }}</dd>
+                            <dt>Argument:</dt><dd>{{ request.argument|default("(unargumented)", True) }}</dd>
                             <dt>Reason:</dt><dd>{{ comment.comment }}</dd>
                         </span>
                     </td>

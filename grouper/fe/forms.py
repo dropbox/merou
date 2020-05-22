@@ -212,7 +212,6 @@ class PermissionRequestForm(Form):
     argument = StringField(
         "Argument",
         [
-            validators.DataRequired(),
             validators.Length(min=0, max=64),
             ValidateRegex(constants.ARGUMENT_VALIDATION),
         ],

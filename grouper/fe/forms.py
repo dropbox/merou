@@ -211,10 +211,7 @@ class PermissionRequestForm(Form):
     permission = SelectField("Permission", [validators.DataRequired()])
     argument = StringField(
         "Argument",
-        [
-            validators.Length(min=0, max=64),
-            ValidateRegex(constants.ARGUMENT_VALIDATION),
-        ],
+        [validators.Length(min=0, max=64), ValidateRegex(constants.ARGUMENT_VALIDATION)],
     )
     reason = TextAreaField("Reason", [validators.DataRequired()])
 

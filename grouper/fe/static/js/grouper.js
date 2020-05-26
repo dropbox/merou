@@ -157,7 +157,7 @@ $(function () {
             if (args.length == 1 && args[0] == "*") {
                 $argument_input.show();
                 $argument_input.prop('name', 'argument');
-                $argument_input.prop('required', true);
+                $argument_input.prop('required', false);
 
                 $argument_select.hide();
                 $argument_select.prop('name', 'ignore');

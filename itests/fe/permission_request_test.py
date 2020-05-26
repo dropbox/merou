@@ -56,6 +56,30 @@ def test_requesting_permission(tmpdir, setup, browser):
         )
 
 
+def test_unargumented_request(tmpdir, setup, browser):
+    # type: (LocalPath, SetupTest, Chrome) -> None
+    with setup.transaction():
+        setup.create_permission("sample.permission")
+        setup.create_group("grouper-administrators")
+        setup.add_user_to_group("gary@a.co", "grouper-administrators")
+        setup.add_user_to_group("rra@a.co", "test-group")
+
+        setup.grant_permission_to_group(
+            PERMISSION_GRANT, "sample.permission", "grouper-administators"
+        )
+
+    with frontend_server(tmpdir, "rra@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/permissions/request?permission=sample.permission"))
+        page = PermissionRequestPage(browser)
+
+        page.set_group("test-group")
+        page.set_argument_freeform("")
+        page.set_reason("Some testing reason")
+        page.submit()
+
+        assert browser.current_url.endswith("/permissions/requests/1")
+
+
 def test_limited_arguments(tmpdir, setup, browser):
     # type: (LocalPath, SetupTest, Chrome) -> None
     with setup.transaction():

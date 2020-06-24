@@ -1,10 +1,9 @@
 from typing import TYPE_CHECKING
 
-from grouper.entities.pagination import PaginatedList
+from grouper.entities.pagination import ListPermissionsSortKey, PaginatedList
 from grouper.entities.permission import Permission, PermissionNotFoundException
 from grouper.models.permission import Permission as SQLPermission
 from grouper.repositories.interfaces import PermissionRepository
-from grouper.usecases.list_permissions import ListPermissionsSortKey
 
 if TYPE_CHECKING:
     from datetime import datetime

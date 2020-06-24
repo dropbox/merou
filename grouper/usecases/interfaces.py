@@ -362,3 +362,8 @@ class UserInterface(metaclass=ABCMeta):
     def user_is_user_admin(self, user):
         # type: (str) -> bool
         pass
+
+    @abstractmethod
+    def user_grantable_permissions(self, user):
+        # type: (str) -> List[Tuple[str, str]]
+        pass

@@ -1,19 +1,12 @@
 from abc import ABCMeta, abstractmethod
-from enum import Enum
 from typing import TYPE_CHECKING
 
 from grouper.entities.pagination import Pagination
 
 if TYPE_CHECKING:
-    from grouper.entities.pagination import PaginatedList
+    from grouper.entities.pagination import PaginatedList, ListPermissionsSortKey
     from grouper.entities.permission import Permission
     from grouper.usecases.interfaces import PermissionInterface, UserInterface
-
-
-class ListPermissionsSortKey(Enum):
-    NONE = "none"
-    NAME = "name"
-    DATE = "date"
 
 
 class ListPermissionsUI(metaclass=ABCMeta):

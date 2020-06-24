@@ -94,8 +94,13 @@ class ServiceFactory:
         # type: () -> UserInterface
         audit_log_service = self.create_audit_log_service()
         user_repository = self.repository_factory.create_user_repository()
+        permission_repository = self.repository_factory.create_permission_repository()
         permission_grant_repository = self.repository_factory.create_permission_grant_repository()
         group_edge_repository = self.repository_factory.create_group_edge_repository()
         return UserService(
-            user_repository, permission_grant_repository, group_edge_repository, audit_log_service
+            user_repository,
+            permission_repository,
+            permission_grant_repository,
+            group_edge_repository,
+            audit_log_service,
         )

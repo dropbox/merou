@@ -71,6 +71,7 @@ class ServiceFactory:
         user_repository = self.repository_factory.create_user_repository()
         service_account_repository = self.repository_factory.create_service_account_repository()
         permission_grant_repository = self.repository_factory.create_permission_grant_repository()
+        permission_repository = self.repository_factory.create_permission_repository()
         group_edge_repository = self.repository_factory.create_group_edge_repository()
         group_request_repository = self.repository_factory.create_group_request_repository()
         return ServiceAccountService(
@@ -79,6 +80,7 @@ class ServiceFactory:
             user_repository,
             service_account_repository,
             permission_grant_repository,
+            permission_repository,
             group_edge_repository,
             group_request_repository,
             audit_log_service,

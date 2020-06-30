@@ -1,10 +1,10 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
-from grouper.entities.pagination import Pagination
+from grouper.entities.pagination import ListPermissionsSortKey, Pagination
 
 if TYPE_CHECKING:
-    from grouper.entities.pagination import PaginatedList, ListPermissionsSortKey
+    from grouper.entities.pagination import PaginatedList
     from grouper.entities.permission import Permission
     from grouper.usecases.interfaces import PermissionInterface, UserInterface
 

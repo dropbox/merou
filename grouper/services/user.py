@@ -7,6 +7,7 @@ from grouper.constants import (
     PERMISSION_GRANT,
     USER_ADMIN,
 )
+from grouper.entities.pagination import ListPermissionsSortKey, Pagination
 from grouper.entities.permission import PermissionAccess
 from grouper.usecases.interfaces import UserInterface
 from grouper.util import matches_glob
@@ -14,7 +15,6 @@ from grouper.util import matches_glob
 if TYPE_CHECKING:
     from grouper.entities.permission_grant import GroupPermissionGrant
     from grouper.entities.user import User
-    from grouper.entities.pagination import Pagination, ListPermissionsSortKey
     from grouper.repositories.group_edge import GroupEdgeRepository
     from grouper.repositories.interfaces import PermissionGrantRepository, PermissionRepository
     from grouper.repositories.user import UserRepository
@@ -85,7 +85,7 @@ class UserService(UserInterface):
         # type: (str) -> bool
         return self.permission_grant_repository.user_has_permission(user, PERMISSION_CREATE)
 
-    def user_grantable_permissions(self, user):
+    def permissions_grantable_by_user(self, user):
         # type: (str) -> List[Tuple[str, str]]
         """Returns a name-sorted list of all (permission, argument glob) pairs a user can grant.
 

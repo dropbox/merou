@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from datetime import datetime
-    from grouper.entities.pagination import PaginatedList, Pagination
+    from grouper.entities.pagination import ListPermissionsSortKey, PaginatedList, Pagination
     from grouper.entities.permission import Permission
     from grouper.entities.permission_grant import (
         GroupPermissionGrant,
@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from grouper.repositories.schema import SchemaRepository
     from grouper.repositories.service_account import ServiceAccountRepository
     from grouper.repositories.transaction import TransactionRepository
-    from grouper.usecases.list_permissions import ListPermissionsSortKey
     from typing import Dict, List, Optional
 
 

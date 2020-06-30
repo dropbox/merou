@@ -5,7 +5,7 @@ from grouper.constants import ARGUMENT_VALIDATION, SYSTEM_PERMISSIONS
 from grouper.usecases.interfaces import PermissionInterface
 
 if TYPE_CHECKING:
-    from grouper.entities.pagination import PaginatedList, Pagination
+    from grouper.entities.pagination import ListPermissionsSortKey, PaginatedList, Pagination
     from grouper.entities.permission import Permission
     from grouper.entities.permission_grant import (
         GroupPermissionGrant,
@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from grouper.repositories.permission import PermissionRepository
     from grouper.repositories.permission_grant import PermissionGrantRepository
     from grouper.usecases.authorization import Authorization
-    from grouper.usecases.list_permissions import ListPermissionsSortKey
     from grouper.usecases.interfaces import AuditLogInterface
     from typing import Dict, List, Optional, Tuple
 

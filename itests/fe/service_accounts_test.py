@@ -215,7 +215,7 @@ def test_permission_grant_denied(tmpdir: LocalPath, setup: SetupTest, browser: C
         page.set_argument("bar")
         page.submit()
 
-        assert page.has_alert("The group some-group does not have that permission")
+        assert page.has_alert("Permission denied")
 
 
 def test_permission_grant_invalid_argument(

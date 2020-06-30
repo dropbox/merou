@@ -4,9 +4,11 @@ from typing import TYPE_CHECKING
 from grouper.constants import (
     MAX_NAME_LENGTH,
     PERMISSION_ADMIN,
+    PERMISSION_GRANT,
     SERVICE_ACCOUNT_VALIDATION,
     USER_ADMIN,
 )
+from grouper.entities.pagination import ListPermissionsSortKey, Pagination
 from grouper.entities.user import (
     UserHasPendingRequestsException,
     UserIsEnabledException,
@@ -14,13 +16,14 @@ from grouper.entities.user import (
 )
 from grouper.plugin.exceptions import PluginRejectedServiceAccountName
 from grouper.usecases.interfaces import ServiceAccountInterface
+from grouper.util import matches_glob
 
 if TYPE_CHECKING:
     from grouper.entities.permission_grant import ServiceAccountPermissionGrant
     from grouper.plugin import PluginProxy
     from grouper.repositories.group_edge import GroupEdgeRepository
     from grouper.repositories.group_request import GroupRequestRepository
-    from grouper.repositories.interfaces import PermissionGrantRepository
+    from grouper.repositories.interfaces import PermissionGrantRepository, PermissionRepository
     from grouper.repositories.service_account import ServiceAccountRepository
     from grouper.repositories.user import UserRepository
     from grouper.settings import Settings
@@ -39,6 +42,7 @@ class ServiceAccountService(ServiceAccountInterface):
         user_repository,  # type: UserRepository
         service_account_repository,  # type: ServiceAccountRepository
         permission_grant_repository,  # type: PermissionGrantRepository
+        permission_repository,  # type: PermissionRepository
         group_edge_repository,  # type: GroupEdgeRepository
         group_request_repository,  # type: GroupRequestRepository
         audit_log_service,  # type: AuditLogInterface
@@ -49,6 +53,7 @@ class ServiceAccountService(ServiceAccountInterface):
         self.user_repository = user_repository
         self.service_account_repository = service_account_repository
         self.permission_grant_repository = permission_grant_repository
+        self.permission_repository = permission_repository
         self.group_edge_repository = group_edge_repository
         self.group_request_repository = group_request_repository
         self.audit_log = audit_log_service
@@ -149,3 +154,28 @@ class ServiceAccountService(ServiceAccountInterface):
     def service_account_is_user_admin(self, service):
         # type: (str) -> bool
         return self.permission_grant_repository.service_account_has_permission(service, USER_ADMIN)
+
+    def permissions_grantable_by_service_account(self, service):
+        # type: (str) -> List[Tuple[str, str]]
+        """Returns a name-sorted list of (permission, argument glob) pairs a service can grant."""
+        pagination = Pagination(
+            sort_key=ListPermissionsSortKey.NAME, reverse_sort=False, offset=0, limit=None
+        )
+        all_permissions = self.permission_repository.list_permissions(pagination, False).values
+
+        if self.service_account_is_permission_admin(service):
+            return [(p.name, "*") for p in all_permissions]
+
+        grants = self.permission_grant_repository.permission_grants_for_service_account(service)
+        grants_of_permission_grant = [g for g in grants if g.permission == PERMISSION_GRANT]
+
+        result = []
+        for grant in grants_of_permission_grant:
+            grantable = grant.argument.split("/", 1)
+            if not grantable:
+                continue
+            for permission in all_permissions:
+                if matches_glob(grantable[0], permission.name):
+                    result.append((permission.name, grantable[1] if len(grantable) > 1 else "*"))
+
+        return result

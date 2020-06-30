@@ -9,8 +9,7 @@ from grouper.fe.util import GrouperHandler
 from grouper.usecases.grant_permission_to_service_account import GrantPermissionToServiceAccountUI
 
 if TYPE_CHECKING:
-    from grouper.entities.permission_grant import GroupPermissionGrant
-    from typing import Any, Iterable, List, Optional
+    from typing import Any, List, Optional, Tuple
 
 
 class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAccountUI):
@@ -23,11 +22,14 @@ class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAcco
         )
         if not usecase.service_account_exists_with_owner(service, owner):
             return self.notfound()
-        if not usecase.can_grant_permissions_for_service_account(service):
+
+        # Edge case where if owner group has no perms, a member of it with no other ability to
+        # grant perms will get a 403 trying to grant to a service account. Not a big deal.
+        grantable_permissions = usecase.permissions_grantable_to_service_account(service)
+        if not grantable_permissions:
             return self.forbidden()
 
-        grantable = usecase.permission_grants_for_group(owner)
-        form = self._get_form(grantable)
+        form = self._get_form(grantable_permissions)
         self._render_template(form, service, owner)
 
     def grant_permission_to_service_account_failed_invalid_argument(
@@ -70,7 +72,7 @@ class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAcco
             return self.notfound()
 
         # Stash the form in the handler object for use in error handlers.
-        grantable = usecase.permission_grants_for_group(self._owner)
+        grantable = usecase.permissions_grantable_to_service_account(service)
         self._form = self._get_form(grantable)
         if not self._form.validate():
             return self._render_template(self._form, service, self._owner)
@@ -79,9 +81,7 @@ class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAcco
             self._form.data["permission"], self._form.data["argument"], service
         )
 
-    def _get_form(
-        self, grantable: Iterable[GroupPermissionGrant]
-    ) -> ServiceAccountPermissionGrantForm:
+    def _get_form(self, grantable: List[Tuple[str, str]]) -> ServiceAccountPermissionGrantForm:
         """Helper to create a ServiceAccountPermissionGrantForm.
 
         Populate it with all the grantable permissions.  Note that the first choice is blank so the
@@ -92,9 +92,9 @@ class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAcco
         """
         form = ServiceAccountPermissionGrantForm(self.request.arguments)
         form.permission.choices = [["", "(select one)"]]
-        for grant in grantable:
-            entry = "{} ({})".format(grant.permission, grant.argument)
-            form.permission.choices.append([grant.permission, entry])
+        for permission, argument in grantable:
+            entry = "{} ({})".format(permission, argument)
+            form.permission.choices.append([permission, entry])
         return form
 
     def _render_template(

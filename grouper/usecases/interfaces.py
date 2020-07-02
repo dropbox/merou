@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from grouper.entities.audit_log_entry import AuditLogEntry
     from grouper.entities.group import GroupJoinPolicy
     from grouper.entities.group_request import GroupRequestStatus, UserGroupRequest
-    from grouper.entities.pagination import PaginatedList, Pagination
+    from grouper.entities.pagination import ListPermissionsSortKey, PaginatedList, Pagination
     from grouper.entities.permission import Permission, PermissionAccess
     from grouper.entities.permission_grant import (
         GroupPermissionGrant,
@@ -28,7 +28,6 @@ if TYPE_CHECKING:
     )
     from grouper.entities.user import User
     from grouper.usecases.authorization import Authorization
-    from grouper.usecases.list_permissions import ListPermissionsSortKey
     from typing import ContextManager, Dict, List, Optional, Tuple
 
 
@@ -306,6 +305,11 @@ class ServiceAccountInterface(metaclass=ABCMeta):
         # type: (str) -> bool
         pass
 
+    @abstractmethod
+    def permissions_grantable_by_service_account(self, user):
+        # type: (str) -> List[Tuple[str, str]]
+        pass
+
 
 class TransactionInterface(metaclass=ABCMeta):
     """Abstract base class for starting and committing transactions."""
@@ -361,4 +365,9 @@ class UserInterface(metaclass=ABCMeta):
     @abstractmethod
     def user_is_user_admin(self, user):
         # type: (str) -> bool
+        pass
+
+    @abstractmethod
+    def permissions_grantable_by_user(self, user):
+        # type: (str) -> List[Tuple[str, str]]
         pass

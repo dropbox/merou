@@ -4,9 +4,9 @@ from time import time
 from typing import TYPE_CHECKING
 
 from grouper.constants import PERMISSION_CREATE
-from grouper.entities.pagination import PaginatedList, Pagination
+from grouper.entities.pagination import ListPermissionsSortKey, PaginatedList, Pagination
 from grouper.entities.permission import Permission
-from grouper.usecases.list_permissions import ListPermissionsSortKey, ListPermissionsUI
+from grouper.usecases.list_permissions import ListPermissionsUI
 
 if TYPE_CHECKING:
     from tests.setup import SetupTest

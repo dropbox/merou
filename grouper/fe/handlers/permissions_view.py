@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from grouper.entities.pagination import PaginatedList, Pagination
+from grouper.entities.pagination import ListPermissionsSortKey, PaginatedList, Pagination
 from grouper.entities.permission import Permission
 from grouper.fe.templates import PermissionsTemplate
 from grouper.fe.util import GrouperHandler
-from grouper.usecases.list_permissions import ListPermissionsSortKey, ListPermissionsUI
+from grouper.usecases.list_permissions import ListPermissionsUI
 
 if TYPE_CHECKING:
     from typing import Any

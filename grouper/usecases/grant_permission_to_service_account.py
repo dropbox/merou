@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING
 
 from grouper.entities.permission import PermissionNotFoundException
 from grouper.usecases.authorization import Authorization
+from grouper.util import matches_glob
 
 if TYPE_CHECKING:
-    from grouper.entities.permission_grant import GroupPermissionGrant
     from grouper.usecases.interfaces import (
         GroupInterface,
         PermissionInterface,
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
         TransactionInterface,
         UserInterface,
     )
-    from typing import List
+    from typing import List, Tuple
 
 
 class GrantPermissionToServiceAccountUI(metaclass=ABCMeta):
@@ -67,20 +67,32 @@ class GrantPermissionToServiceAccount:
         self.group_service = group_service
         self.transaction_service = transaction_service
 
-    def can_grant_permissions_for_service_account(self, service):
-        # type: (str) -> bool
+    def permissions_grantable_to_service_account(self, service):
+        # type: (str) -> List[Tuple[str, str]]
+        """Returns all (permission, argument glob) pairs the actor can grant to the service."""
         if not self.service_account_service.service_account_is_enabled(service):
-            return False
+            return []
 
-        # If the actor is a permission admin, they can grant any permission to the service account.
-        # Otherwise, they have to be a member of the owning group.
+        # The actor can grant a permission to the service account for one of two reasons:
+        # (1) The actor independently has the ability to grant the permission, as a permission
+        #   admin or because of grants of grouper.permission.grants.
+        # (2) The actor is a member of the owning group, and thus can grant any permissions
+        #   that are granted to the owning group.
+        actor_grantable_perms = []  # type: List[Tuple[str, str]]
         if self.service_account_service.service_account_exists(self.actor):
-            return self.service_account_service.service_account_is_permission_admin(self.actor)
-        elif self.user_service.user_is_permission_admin(self.actor):
-            return True
-        else:
-            owner = self.service_account_service.owner_of_service_account(service)
-            return owner in self.user_service.groups_of_user(self.actor)
+            p = self.service_account_service.permissions_grantable_by_service_account(self.actor)
+            actor_grantable_perms = p  # line length :( if you see a nicer way, do it
+        else:  # actor is not a service account, and is thus a normal user
+            actor_grantable_perms = self.user_service.permissions_grantable_by_user(self.actor)
+
+        owner_grantable_perms = []  # type: List[Tuple[str, str]]
+        owner = self.service_account_service.owner_of_service_account(service)
+        if owner in self.user_service.groups_of_user(self.actor):
+            owner_grants = self.group_service.permission_grants_for_group(owner)
+            owner_grantable_perms = [(g.permission, g.argument) for g in owner_grants]
+
+        result = actor_grantable_perms + owner_grantable_perms
+        return sorted(result, key=lambda x: x[0] + x[1])
 
     def grant_permission_to_service_account(self, permission, argument, service):
         # type: (str, str, str) -> None
@@ -96,30 +108,20 @@ class GrantPermissionToServiceAccount:
             )
             return
 
-        # If the actor is a permission admin, they can grant any permission to the service account.
-        # Otherwise, they have to be a member of the owning group and the permission and argument
-        # being granted must have been granted to the owning group.
-        if self.service_account_service.service_account_exists(self.actor):
-            allowed = self.service_account_service.service_account_is_permission_admin(self.actor)
-        elif self.user_service.user_is_permission_admin(self.actor):
-            allowed = True
-        else:
-            owner = self.service_account_service.owner_of_service_account(service)
-            if owner in self.user_service.groups_of_user(self.actor):
-                allowed = self.group_service.group_has_matching_permission_grant(
-                    owner, permission, argument
-                )
-                if not allowed:
-                    message = "The group {} does not have that permission".format(owner)
-                    self.ui.grant_permission_to_service_account_failed_permission_denied(
-                        permission, argument, service, message
-                    )
-                    return
-            else:
-                allowed = False
+        allowed = False
+        grantable = self.permissions_grantable_to_service_account(service)
+        for grantable_perm, grantable_arg in grantable:
+            if grantable_perm == permission and matches_glob(grantable_arg, argument):
+                allowed = True
+                break
         if not allowed:
+            message = (
+                "Permission denied. To grant a permission to a service account you must either "
+                "independently have the ability to grant that permission, or the owner group "
+                "must have that permission and you must be a member of that owning group."
+            )
             self.ui.grant_permission_to_service_account_failed_permission_denied(
-                permission, argument, service, "Permission denied"
+                permission, argument, service, message
             )
             return
 
@@ -130,6 +132,9 @@ class GrantPermissionToServiceAccount:
                     permission, argument, service, authorization
                 )
             except PermissionNotFoundException:
+                # It should be impossible to hit this exception. In order to get this far, the
+                # perm must be on the list of perms the actor can grant, and thus must exist.
+                # Leaving the logic here however in case that changes in the future.
                 self.ui.grant_permission_to_service_account_failed_permission_not_found(
                     permission, service
                 )
@@ -144,12 +149,3 @@ class GrantPermissionToServiceAccount:
         if not self.service_account_service.owner_of_service_account(service) == owner:
             return False
         return True
-
-    def permission_grants_for_group(self, group):
-        # type: (str) -> List[GroupPermissionGrant]
-        """List of all permissions granted to a group.
-
-        Used by the UI to populate the dropdown list of permissions that are eligible for
-        delegation to the service account.
-        """
-        return self.group_service.permission_grants_for_group(group)

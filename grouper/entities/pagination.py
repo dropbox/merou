@@ -12,6 +12,7 @@ list of some other entity along with the total entity count and information abou
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Generic, TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
@@ -52,3 +53,12 @@ class PaginatedList(Generic[T]):
     total: int
     offset: int
     limit: Optional[int]
+
+
+# Define specific types used for pagination here, as they must be available throughout the layers.
+
+
+class ListPermissionsSortKey(Enum):
+    NONE = "none"
+    NAME = "name"
+    DATE = "date"

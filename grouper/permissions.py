@@ -207,14 +207,14 @@ def disable_permission_auditing(
     session.commit()
 
 
-def get_groups_by_permission(session: Session, permission: Permission) -> List[Tuple[Group, str]]:
+def get_groups_by_permission(session: Session, permission: Permission) -> List[Tuple[str, str]]:
     """Return the groups granted a permission and their associated arguments.
 
     For an enabled permission, return the groups and associated arguments that have that
     permission. If the permission is disabled, return empty list.
 
     Returns:
-        List of 2-tuple of the form (Group, argument).
+        List of 2-tuple of the form (group_name, argument).
     """
     if not permission.enabled:
         return []

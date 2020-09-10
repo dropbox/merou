@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from grouper.settings import Settings
     from grouper.usecases.authorization import Authorization
     from grouper.usecases.interfaces import AuditLogInterface
-    from typing import List, Optional, Tuple
+    from typing import Dict, List, Optional, Tuple
 
 
 class ServiceAccountService(ServiceAccountInterface):
@@ -58,10 +58,12 @@ class ServiceAccountService(ServiceAccountInterface):
         self.group_request_repository = group_request_repository
         self.audit_log = audit_log_service
 
-    def create_service_account(self, service, owner, machine_set, description, authorization):
-        # type: (str, str, str, str, Authorization) -> None
+    def create_service_account(
+        self, service, owner, machine_set, description, initial_metadata, authorization
+    ):
+        # type: (str, str, str, str, Optional[Dict[str,str]], Authorization) -> None
         self.service_account_repository.create_service_account(
-            service, owner, machine_set, description
+            service, owner, machine_set, description, initial_metadata
         )
         self.audit_log.log_create_service_account(service, owner, authorization)
 

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from grouper.entities.group import GroupNotFoundException
 from grouper.plugin.exceptions import PluginRejectedMachineSet
 from grouper.usecases.authorization import Authorization
+from grouper.user_metadata import set_user_metadata
 
 if TYPE_CHECKING:
     from grouper.plugin.proxy import PluginProxy
@@ -13,6 +14,7 @@ if TYPE_CHECKING:
         TransactionInterface,
         UserInterface,
     )
+    from typing import Dict, Optional
 
 
 class CreateServiceAccountUI(metaclass=ABCMeta):
@@ -87,8 +89,10 @@ class CreateServiceAccount:
         else:
             return self.user_service.user_is_user_admin(self.actor)
 
-    def create_service_account(self, service, owner, machine_set, description):
-        # type: (str, str, str, str) -> None
+    def create_service_account(
+        self, service, owner, machine_set, description, initial_metadata=None
+    ):
+        # type: (str, str, str, str, Optional[Dict[str,str]]) -> None
         if "@" not in service:
             service += "@" + self.settings.service_account_email_domain
 
@@ -122,7 +126,7 @@ class CreateServiceAccount:
         with self.transaction_service.transaction():
             try:
                 self.service_account_service.create_service_account(
-                    service, owner, machine_set, description, authorization
+                    service, owner, machine_set, description, initial_metadata, authorization
                 )
             except GroupNotFoundException:
                 self.ui.create_service_account_failed_invalid_owner(service, owner)

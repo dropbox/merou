@@ -9,5 +9,5 @@ if [ "$DB" = 'mysql' ]; then
     mysql -e 'CREATE DATABASE merou CHARACTER SET utf8mb4;'
 fi
 
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+pip3 install -r requirements.txt
+pip3 install -r requirements-dev.txt

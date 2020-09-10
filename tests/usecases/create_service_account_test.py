@@ -7,7 +7,6 @@ from grouper.models.group import Group
 from grouper.models.group_service_accounts import GroupServiceAccount
 from grouper.models.service_account import ServiceAccount
 from grouper.models.user import User
-from grouper.models.user_metadata import UserMetadata
 from grouper.plugin.base import BasePlugin
 from grouper.plugin.exceptions import PluginRejectedMachineSet, PluginRejectedServiceAccountName
 from grouper.user_metadata import get_user_metadata
@@ -118,10 +117,6 @@ def test_success_set_initial_metadata(setup):
     usecase.create_service_account(
         "another_service@svc.localhost", "some-group", "machine-set", "description"
     )
-    assert mock_ui.mock_calls[-1] == call.created_service_account(
-        "another_service@svc.localhost", "some-group"
-    )
-
     user = User.get(setup.session, name="another_service@svc.localhost")
     assert user is not None
     metadata_items = get_user_metadata(setup.session, user.id)

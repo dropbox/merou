@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 from grouper.entities.group import GroupNotFoundException
 from grouper.plugin.exceptions import PluginRejectedMachineSet
 from grouper.usecases.authorization import Authorization
-from grouper.user_metadata import set_user_metadata
 
 if TYPE_CHECKING:
     from grouper.plugin.proxy import PluginProxy

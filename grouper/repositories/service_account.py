@@ -60,6 +60,7 @@ class ServiceAccountRepository:
         # Set initial user metadata fields if present.
         if initial_metadata is not None:
             for key, value in initial_metadata.items():
+                # TODO: move this to use the hexagonal architecture model.
                 set_user_metadata(self.session, user.id, key, value)
 
         # Create the linkage to the owner.

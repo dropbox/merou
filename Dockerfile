@@ -34,7 +34,7 @@ RUN /etc/init.d/mysql start && mysql -e "\
  "
 
 RUN /etc/init.d/mysql start && \
- TRAVIS_PYTHON_VERSION=3.7 DB=mysql ci/setup.sh
+ TRAVIS_PYTHON_VERSION=3.7 ci/setup.sh
 
 COPY . /app
 ENV PYTHONPATH /app

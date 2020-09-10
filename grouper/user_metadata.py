@@ -10,6 +10,14 @@ if TYPE_CHECKING:
     from grouper.models.base.session import Session
 
 
+class InvalidUserMetadataKeyException(Exception):
+    """Setting metadata failed due to an invalid key string."""
+
+    def __init__(self, key):
+        # type: (str) -> None
+        super().__init__(f"Metadata key '{key}' is invalid.")
+
+
 def get_user_metadata(session, user_id):
     # type: (Session, int) -> Sequence[UserMetadata]
     """Return all of a user's metadata.
@@ -52,7 +60,8 @@ def set_user_metadata(session, user_id, data_key, data_value):
     Returns:
         the UserMetadata object or None if entry was deleted
     """
-    assert re.match(PERMISSION_VALIDATION, data_key), "proposed metadata key is valid"
+    if not re.match(PERMISSION_VALIDATION, data_key):
+        raise InvalidUserMetadataKeyException(data_key)
 
     user_md = get_user_metadata_by_key(session, user_id, data_key)  # type: Optional[UserMetadata]
 

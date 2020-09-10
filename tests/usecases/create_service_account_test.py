@@ -9,6 +9,7 @@ from grouper.models.service_account import ServiceAccount
 from grouper.models.user import User
 from grouper.plugin.base import BasePlugin
 from grouper.plugin.exceptions import PluginRejectedMachineSet, PluginRejectedServiceAccountName
+from grouper.user_metadata import get_user_metadata
 
 if TYPE_CHECKING:
     from tests.setup import SetupTest
@@ -88,6 +89,38 @@ def test_success(setup):
     assert metadata["service_account"]["owner"] == "some-group"
     group_details = setup.graph.get_group_details("some-group")
     assert group_details["service_accounts"] == ["service@svc.localhost"]
+
+
+def test_success_set_initial_metadata(setup):
+    # type: (SetupTest) -> None
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group")
+
+    initial_metadata = {"test-item-1": "foo", "test-item-2": "bar"}
+
+    mock_ui = MagicMock()
+    usecase = setup.usecase_factory.create_create_service_account_usecase("gary@a.co", mock_ui)
+    usecase.create_service_account(
+        "service@svc.localhost", "some-group", "machine-set", "description", initial_metadata
+    )
+
+    user = User.get(setup.session, name="service@svc.localhost")
+    assert user is not None
+    metadata_items = get_user_metadata(setup.session, user.id)
+    actual_items = {mi.data_key: mi.data_value for mi in metadata_items}
+    assert len(initial_metadata) == len(actual_items)
+    for key, value in initial_metadata.items():
+        assert key in actual_items
+        assert initial_metadata[key] == actual_items[key]
+
+    usecase = setup.usecase_factory.create_create_service_account_usecase("gary@a.co", mock_ui)
+    usecase.create_service_account(
+        "another_service@svc.localhost", "some-group", "machine-set", "description"
+    )
+    user = User.get(setup.session, name="another_service@svc.localhost")
+    assert user is not None
+    metadata_items = get_user_metadata(setup.session, user.id)
+    assert metadata_items == []
 
 
 def test_add_domain(setup):

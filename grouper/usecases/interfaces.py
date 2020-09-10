@@ -251,8 +251,10 @@ class ServiceAccountInterface(metaclass=ABCMeta):
     """Abstract base class for service account operations and queries."""
 
     @abstractmethod
-    def create_service_account(self, service, owner, machine_set, description, authorization):
-        # type: (str, str, str, str, Authorization) -> None
+    def create_service_account(
+        self, service, owner, machine_set, description, initial_metadata, authorization
+    ):
+        # type: (str, str, str, str, Optional[Dict[str,str]], Authorization) -> None
         pass
 
     @abstractmethod

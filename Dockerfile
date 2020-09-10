@@ -13,7 +13,7 @@
 # but its "MariaDB" replacement for MySQL dies with "Specified key was
 # too long; max key length is 767 bytes" when our tests try creating
 # their tables.
-FROM ubuntu:16.04
+FROM ubuntu:20.04
 
 RUN apt-get update
 
@@ -22,6 +22,7 @@ RUN apt-get install -y libmysqlclient-dev mysql-client mysql-server
 RUN apt-get install -y python3-dev python3-pip gcc
 RUN apt-get install -y chromium-driver
 RUN apt-get install -y procps unzip wget
+RUN apt-get install -y libcurl4-openssl-dev libssl-dev
 
 WORKDIR /app
 COPY ci/setup.sh /app/ci/setup.sh
@@ -33,14 +34,13 @@ RUN /etc/init.d/mysql start && mysql -e "\
  "
 
 RUN /etc/init.d/mysql start && \
- TRAVIS_PYTHON_VERSION=3.5 ci/setup.sh && \
- pip3 install isort mypy
+ TRAVIS_PYTHON_VERSION=3.7 ci/setup.sh
 
 COPY . /app
 ENV PYTHONPATH /app
 ENV GROUPER_SETTINGS /app/config/dev.yaml
 
-RUN bin/grouper-ctl sync_db && \
+RUN bin/grouper-ctl -vv sync_db && \
  bin/grouper-ctl -vv user create user@example.com && \
  bin/grouper-ctl -vv group add_member --owner grouper-administrators user@example.com
 
@@ -53,5 +53,5 @@ RUN ( \
 EXPOSE 8888
 
 ENV PYTHONDONTWRITEBYTECODE=PLEASE
-ENV TRAVIS_PYTHON_VERSION 3.5
+ENV TRAVIS_PYTHON_VERSION 3.7
 CMD ["/bin/bash", "-c", "/etc/init.d/mysql start && exec /bin/bash"]

@@ -7,9 +7,11 @@ from grouper.models.group import Group
 from grouper.models.group_service_accounts import GroupServiceAccount
 from grouper.models.service_account import ServiceAccount as SQLServiceAccount
 from grouper.models.user import User as SQLUser
+from grouper.user_metadata import set_user_metadata
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
+    from typing import Dict, Optional
 
 
 class ServiceAccountRepository:
@@ -40,8 +42,8 @@ class ServiceAccountRepository:
             )
             group_service_account.add(self.session)
 
-    def create_service_account(self, name, owner, machine_set, description):
-        # type: (str, str, str, str) -> None
+    def create_service_account(self, name, owner, machine_set, description, initial_metadata=None):
+        # type: (str, str, str, str, Optional[Dict[str,str]]) -> None
         group = Group.get(self.session, name=owner)
         if not group:
             raise GroupNotFoundException(owner)
@@ -52,8 +54,16 @@ class ServiceAccountRepository:
         user.add(self.session)
         service.add(self.session)
 
-        # Flush the account to allocate an ID, and then create the linkage to the owner.
+        # Flush the account to allocate an ID.
         self.session.flush()
+
+        # Set initial user metadata fields if present.
+        if initial_metadata is not None:
+            for key, value in initial_metadata.items():
+                # TODO: move this to use the hexagonal architecture model.
+                set_user_metadata(self.session, user.id, key, value)
+
+        # Create the linkage to the owner.
         GroupServiceAccount(group_id=group.id, service_account=service).add(self.session)
 
     def enable_service_account(self, name):

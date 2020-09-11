@@ -278,6 +278,11 @@ class UserShellForm(Form):
     shell = SelectField("Shell", [validators.DataRequired()])
 
 
+class UserMetadataForm(Form):
+    # Caller of form will add choices based on settings.
+    value = SelectField("Value", [validators.DataRequired()])
+
+
 class UserPasswordForm(Form):
     name = StringField(
         "Password name",

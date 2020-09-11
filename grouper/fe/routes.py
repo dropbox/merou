@@ -60,6 +60,7 @@ from grouper.fe.handlers.service_account_permission_revoke import ServiceAccount
 from grouper.fe.handlers.service_account_view import ServiceAccountView
 from grouper.fe.handlers.user_disable import UserDisable
 from grouper.fe.handlers.user_enable import UserEnable
+from grouper.fe.handlers.user_metadata import UserMetadata
 from grouper.fe.handlers.user_password_add import UserPasswordAdd
 from grouper.fe.handlers.user_password_delete import UserPasswordDelete
 from grouper.fe.handlers.user_requests import UserRequests
@@ -98,6 +99,7 @@ _MEMBER_NAME = _NAME.replace("<name>", "<member_name>")
 
 # Verbatim from grouper.constants, but create an alias for consistency.
 _PERMISSION = PERMISSION_VALIDATION
+_METADATA_KEY = PERMISSION_VALIDATION.replace("<name>", "<key>")
 
 HANDLERS: List[Tuple[str, Type[RequestHandler]]] = [
     ("/", Index),
@@ -148,6 +150,7 @@ HANDLERS: List[Tuple[str, Type[RequestHandler]]] = [
     (f"/users/{_USERNAME}/enable", UserEnable),
     (f"/users/{_USERNAME}/github/clear", UserClearGitHub),
     (f"/users/{_USERNAME}/shell", UserShell),
+    (f"/users/{_USERNAME}/metadata/{_METADATA_KEY}", UserMetadata),
     (f"/users/{_USERNAME}/public-key/add", PublicKeyAdd),
     (f"/users/{_USERNAME}/public-key/{_KEY_ID}/delete", PublicKeyDelete),
     (f"/users/{_USERNAME}/tokens/add", UserTokenAdd),

@@ -245,6 +245,23 @@ fe:
     shell:
         - [/bin/false, Your administrator has not configured Grouper for shell management]
 
+    # A dict of lists of lists representing the options that users are allowed
+    # to select for a given user metadata key.  The key is the user_metadata
+    # data_key. The dict values are lists of two item lists. The first argument
+    # is the value to be set in the database, and the second is a user readable
+    # representation for display.
+    #
+    # NOTE: The metadata key "shell" is special cased in the above "shell"
+    # configuration block. Ideally, "shell" will be folded in to the newly
+    # supported "metadata_options".
+    #
+    # Type: Dict[List[Tuple[str, str]]]
+    metadata_options:
+        test_key:
+            - [first, the first value]
+            - [second, the second value]
+            - [third, the third value]
+
     # Site-specific docs.  Each list entry should provide url, name, and
     # description keys.
     #

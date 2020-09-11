@@ -728,3 +728,61 @@ enabled. Membership in this group is regularly reviewed.
         </div>
     </div>
 {%- endmacro %}
+
+{% macro addl_metadata_panel(user, metadata, can_control=False) -%}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">{{ metadata.data_key }}</h3>
+        </div>
+        <div class="table-responsive standard-panel">
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th class="col-md-2">{{ metadata.data_key }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ metadata.data_value }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            {% if can_control %}
+            <div class='panel-footer'>
+                <a class="btn btn-default btn-sm" href="/users/{{ user.name }}/metadata/{{ metadata.data_key }}">
+                <span class="glyphicon glyphicon-pencil"></span> Change {{ metadata.data_key }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{%- endmacro %}
+
+{% macro unset_metadata_panel(user, key, can_control=False) -%}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">{{ key }}</h3>
+        </div>
+        <div class="table-responsive standard-panel">
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th class="col-md-2">{{ key }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>(Unset)</td>
+                    </tr>
+                </tbody>
+            </table>
+            {% if can_control %}
+            <div class='panel-footer'>
+                <a class="btn btn-default btn-sm" href="/users/{{ user.name }}/metadata/{{ key }}">
+                <span class="glyphicon glyphicon-pencil"></span> Change {{ key }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{%- endmacro %}

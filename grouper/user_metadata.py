@@ -6,7 +6,7 @@ from grouper.models.counter import Counter
 from grouper.models.user_metadata import UserMetadata
 
 if TYPE_CHECKING:
-    from typing import Optional, Sequence
+    from typing import List, Optional, Sequence
     from grouper.models.base.session import Session
 
 
@@ -18,17 +18,26 @@ class InvalidUserMetadataKeyException(Exception):
         super().__init__(f"Metadata key '{key}' is invalid.")
 
 
-def get_user_metadata(session, user_id):
-    # type: (Session, int) -> Sequence[UserMetadata]
+def get_user_metadata(session, user_id, exclude=None):
+    # type: (Session, int, Optional[List[str]]) -> Sequence[UserMetadata]
     """Return all of a user's metadata.
 
     Args:
         session(models.base.session.Session): database session
         user_id(int): id of user in question
+        exclude(Optional[list[str]]): metadata keys to exclude
 
     Returns:
         List of UserMetadata objects
     """
+    if exclude is not None:
+        return (
+            session.query(UserMetadata)
+            .filter(UserMetadata.user_id == user_id)
+            .filter(~UserMetadata.data_key.in_(exclude))
+            .all()
+        )
+
     return session.query(UserMetadata).filter(UserMetadata.user_id == user_id).all()
 
 

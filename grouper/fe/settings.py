@@ -35,6 +35,7 @@ class FrontendSettings(Settings):
         self.shell = (
             [["/bin/false", "Shell support in Grouper has not been setup by the administrator"]],
         )
+        self.metadata_options = {}  # type: Dict[List[str, str]]
         self.site_docs = []  # type: List[Dict[str, str]]
 
     def update_from_config(self, filename=None, section="fe"):

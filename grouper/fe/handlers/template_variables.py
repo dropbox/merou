@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from grouper.constants import USER_METADATA_GITHUB_USERNAME_KEY, USER_METADATA_SHELL_KEY
 from grouper.entities.group_edge import APPROVER_ROLE_INDICES, OWNER_ROLE_INDICES
 from grouper.fe.alerts import Alert
+from grouper.fe.settings import settings
 from grouper.graph import NoSuchGroup, NoSuchUser
 from grouper.group_requests import count_requests_by_group
 from grouper.group_service_account import get_service_accounts
@@ -20,7 +21,7 @@ from grouper.user import (
     user_role_index,
 )
 from grouper.user_group import get_groups_by_user
-from grouper.user_metadata import get_user_metadata_by_key
+from grouper.user_metadata import get_user_metadata, get_user_metadata_by_key
 from grouper.user_password import user_passwords
 from grouper.user_permissions import user_grantable_permissions, user_is_user_admin
 
@@ -138,6 +139,17 @@ def get_user_view_template_vars(session, actor, user, graph):
     ret["shell"] = shell_metadata.data_value if shell_metadata else "No shell configured"
     github_username = get_user_metadata_by_key(session, user.id, USER_METADATA_GITHUB_USERNAME_KEY)
     ret["github_username"] = github_username.data_value if github_username else "(Unset)"
+    addl_metadata = get_user_metadata(
+        session, user.id, exclude=[USER_METADATA_SHELL_KEY, USER_METADATA_GITHUB_USERNAME_KEY]
+    )
+
+    ret["addl_metadata"] = addl_metadata if addl_metadata else []
+
+    known_metadata_fields = set(settings().metadata_options.keys())
+    set_metadata_fields = {md.data_key for md in addl_metadata}
+
+    ret["unset_metadata"] = known_metadata_fields - set_metadata_fields
+
     ret["open_audits"] = user_open_audits(session, user)
     group_edge_list = get_groups_by_user(session, user) if user.enabled else []
     ret["groups"] = [

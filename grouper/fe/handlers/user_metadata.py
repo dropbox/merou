@@ -58,7 +58,13 @@ class UserMetadata(GrouperHandler):
             metadata_key, DEFAULT_METADATA_OPTIIONS
         )
 
-        self.render("user-metadata.html", form=form, user=user, metadata_key=metadata_key)
+        self.render(
+            "user-metadata.html",
+            form=form,
+            user=user,
+            is_enabled=known_field,
+            metadata_key=metadata_key,
+        )
 
     def post(self, *args: Any, **kwargs: Any) -> None:
         name = self.get_path_argument("name")
@@ -92,6 +98,7 @@ class UserMetadata(GrouperHandler):
                 form=form,
                 user=user,
                 metadata_key=metadata_key,
+                is_enabled=known_field,
                 alerts=self.get_form_alerts(form.errors),
             )
 

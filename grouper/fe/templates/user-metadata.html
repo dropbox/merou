@@ -23,7 +23,12 @@
                 {% include "forms/user-metadata.html" %}
                 <div class="form-shell">
                     <div class="col-sm-offset-3 col-sm-4">
-                        <button type="submit" class="btn btn-primary">Submit</button>
+                        {% if is_enabled %}
+                        <button type="submit" class="btn btn-primary">
+                        {% else %}
+                        <button type="submit" class="btn btn-secondary" disabled>
+                        {% endif %}
+                        Submit</button>
                     </div>
                 </div>
             </form>

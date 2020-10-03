@@ -24,6 +24,7 @@ RUN apt-get install -y chromium-driver
 RUN apt-get install -y procps unzip wget
 RUN apt-get install -y libcurl4-openssl-dev libssl-dev
 
+ENV DB mysql
 WORKDIR /app
 COPY ci/setup.sh /app/ci/setup.sh
 COPY requirements*.txt /app/

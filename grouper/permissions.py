@@ -314,6 +314,16 @@ def get_owners_by_grantable_permission(
         ):
             owners_by_arg_by_perm[perm.name][arg].append(group)
 
+        for gp in group_permissions:
+            aliases = get_plugin_proxy().get_aliases_for_mapped_permission(
+                    session, gp.name, group.name
+            )
+            for alias in aliases:
+                if alias[0] == PERMISSION_GRANT:
+                    perm, arg = alias[1].split('/', 1)
+                    owners_by_arg_by_perm[perm][arg].append(group)
+
+
     # merge in plugin results
     for res in get_plugin_proxy().get_owner_by_arg_by_perm(session):
         for permission_name, owners_by_arg in res.items():

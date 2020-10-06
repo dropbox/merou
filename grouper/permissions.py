@@ -320,8 +320,8 @@ def get_owners_by_grantable_permission(
             )
             for alias in aliases:
                 if alias[0] == PERMISSION_GRANT:
-                    perm, arg = alias[1].split('/', 1)
-                    owners_by_arg_by_perm[perm][arg].append(group)
+                    alias_perm, arg = alias[1].split('/', 1)
+                    owners_by_arg_by_perm[alias_perm][arg].append(group)
 
 
     # merge in plugin results

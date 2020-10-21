@@ -305,7 +305,7 @@ def test_permission_grant_to_owners(
             # type: (Session, str, str) -> List[Tuple[str, str]]
             if permission != "alias_perm" or argument != "team-sre":
                 return []
-            return [("grouper.permission.grant", "foo-perm/bar-arg")]
+            return [(perm_grant, "foo-perm/bar-arg")]
 
     owner_perm = create_permission(session, "alias_perm")
     session.commit()

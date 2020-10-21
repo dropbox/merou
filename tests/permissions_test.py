@@ -1,11 +1,11 @@
 import unittest
 from typing import TYPE_CHECKING
 from urllib.parse import urlencode
-
+from grouper.plugin.base import BasePlugin
 import pytest
 from tornado.httpclient import HTTPError
 from wtforms.validators import ValidationError
-
+from grouper.plugin import get_plugin_proxy
 import grouper.fe.util
 from grouper.constants import (
     ARGUMENT_VALIDATION,
@@ -295,6 +295,21 @@ def test_permission_grant_to_owners(
         )
     ]
     assert sorted(res) == ["all-teams"], "negative test of substring wildcard matches"
+
+    class FakePermissionAliasesPlugin(BasePlugin):
+        def get_aliases_for_mapped_permission(self, session, permission, argument):
+            # type: (Session, str, str) -> List[Tuple[str, str]]
+            if permission != "alias_perm" or argument != "team-sre":
+                return []
+            return [("grouper.permission.grant", "foo-perm/bar-arg")]
+
+    owner_perm = create_permission(session, "alias_perm")
+    session.commit()
+    get_plugin_proxy().add_plugin(FakePermissionAliasesPlugin())
+    grant_permission(groups["team-sre"], owner_perm, "team-sre")
+    owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
+    expected = [groups["team-sre"]]
+    assert owners_by_arg_by_perm["foo-perm"]["bar-arg"] == expected
 
     # permission admins have all the power
     grant_permission(groups["security-team"], permissions[PERMISSION_ADMIN])

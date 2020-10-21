@@ -1,11 +1,11 @@
 import unittest
 from typing import TYPE_CHECKING
 from urllib.parse import urlencode
-from grouper.plugin.base import BasePlugin
+
 import pytest
 from tornado.httpclient import HTTPError
 from wtforms.validators import ValidationError
-from grouper.plugin import get_plugin_proxy
+
 import grouper.fe.util
 from grouper.constants import (
     ARGUMENT_VALIDATION,
@@ -32,6 +32,8 @@ from grouper.permissions import (
     get_requests,
     grant_permission_to_service_account,
 )
+from grouper.plugin import get_plugin_proxy
+from grouper.plugin.base import BasePlugin
 from grouper.user_permissions import user_grantable_permissions, user_has_permission
 from tests.fixtures import (  # noqa: F401
     fe_app as app,
@@ -48,6 +50,8 @@ from tests.util import get_group_permissions, get_user_permissions, grant_permis
 
 if TYPE_CHECKING:
     from grouper.graph import GroupGraph
+    from typing import List, Tuple
+    from sqlalchemy.orm import Session
 
 
 @pytest.fixture

@@ -32,6 +32,8 @@ from grouper.permissions import (
     get_requests,
     grant_permission_to_service_account,
 )
+from grouper.plugin import get_plugin_proxy
+from grouper.plugin.base import BasePlugin
 from grouper.user_permissions import user_grantable_permissions, user_has_permission
 from tests.fixtures import (  # noqa: F401
     fe_app as app,
@@ -48,6 +50,8 @@ from tests.util import get_group_permissions, get_user_permissions, grant_permis
 
 if TYPE_CHECKING:
     from grouper.graph import GroupGraph
+    from typing import List, Tuple
+    from sqlalchemy.orm import Session
 
 
 @pytest.fixture
@@ -295,6 +299,21 @@ def test_permission_grant_to_owners(
         )
     ]
     assert sorted(res) == ["all-teams"], "negative test of substring wildcard matches"
+
+    class FakePermissionAliasesPlugin(BasePlugin):
+        def get_aliases_for_mapped_permission(self, session, permission, argument):
+            # type: (Session, str, str) -> List[Tuple[str, str]]
+            if permission != "alias_perm" or argument != "team-sre":
+                return []
+            return [(PERMISSION_GRANT, "foo-perm/bar-arg")]
+
+    owner_perm = create_permission(session, "alias_perm")
+    session.commit()
+    get_plugin_proxy().add_plugin(FakePermissionAliasesPlugin())
+    grant_permission(groups["team-sre"], owner_perm, "team-sre")
+    owners_by_arg_by_perm = get_owners_by_grantable_permission(session)
+    expected = [groups["team-sre"]]
+    assert owners_by_arg_by_perm["foo-perm"]["bar-arg"] == expected
 
     # permission admins have all the power
     grant_permission(groups["security-team"], permissions[PERMISSION_ADMIN])

@@ -170,6 +170,7 @@ def test_service_account_fe_edit(
 ):
     owner = "gary@a.co"
     plebe = "oliver@a.co"
+    admin = "tyleromeara@a.co"
 
     # Unrelated people cannot edit the service account.
     fe_url = url(base_url, "/groups/team-sre/service/service@a.co/edit")
@@ -192,7 +193,7 @@ def test_service_account_fe_edit(
     # A user admin also can.
     update["description"] = "done by admin"
     resp = yield http_client.fetch(
-        fe_url, method="POST", headers={"X-Grouper-User": owner}, body=urlencode(update)
+        fe_url, method="POST", headers={"X-Grouper-User": admin}, body=urlencode(update)
     )
     assert resp.code == 200
     graph.update_from_db(session)

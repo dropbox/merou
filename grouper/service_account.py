@@ -24,6 +24,7 @@ from grouper.models.user import User
 from grouper.plugin import get_plugin_proxy
 from grouper.plugin.exceptions import PluginRejectedMachineSet
 from grouper.user import disable_user, enable_user
+from grouper.user_permissions import user_is_user_admin
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
@@ -78,6 +79,8 @@ def edit_service_account(session, actor, service_account, description, machine_s
 def can_manage_service_account(session, target, user):
     # type: (Session, Union[ServiceAccount, User], User) -> bool
     """Returns whether a User has permission to manage a ServiceAccount."""
+    if user_is_user_admin(session, user):
+        return True
     if type(target) == User:
         if not target.is_service_account:
             return False

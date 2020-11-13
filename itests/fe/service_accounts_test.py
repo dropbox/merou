@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING
 import pytest
 from selenium.common.exceptions import NoSuchElementException
 
-from grouper.constants import USER_ADMIN
+from grouper.constants import USER_ADMIN, PERMISSION_ADMIN
 from itests.pages.base import BasePage
+from itests.pages.error import ErrorPage
 from itests.pages.groups import GroupViewPage
 from itests.pages.service_accounts import (
     ServiceAccountCreatePage,
@@ -151,6 +152,76 @@ def test_create_duplicate(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) 
         assert page.has_alert("service account with name service@svc.localhost already exists")
 
 
+def test_permission_grant(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
+    with setup.transaction():
+        setup.add_user_to_group("gary@a.co", "some-group")
+        setup.add_user_to_group("rra@a.co", "other-group")
+        setup.add_user_to_group("cbguder@a.co", "permission-admins")
+        setup.grant_permission_to_group("some-permission", "foo", "some-group")
+        setup.grant_permission_to_group(
+            "grouper.permission.grant", "some-permission/bar", "other-group"
+        )
+        setup.grant_permission_to_group(PERMISSION_ADMIN, "", "permission-admins")
+        setup.create_service_account("service@svc.localhost", "some-group")
+
+    # Member of the owning group should be able to delegate perms down from the owning group
+    with frontend_server(tmpdir, "gary@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group/service/service@svc.localhost"))
+
+        page = ServiceAccountViewPage(browser)
+        assert page.permission_rows == []
+        page.click_add_permission_button()
+
+        grant_page = ServiceAccountGrantPermissionPage(browser)
+        grant_page.select_permission("some-permission (foo)")
+        grant_page.set_argument("foo")
+        grant_page.submit()
+
+        permission_rows = page.permission_rows
+        assert len(permission_rows) == 1
+        permission = permission_rows[0]
+        assert permission.permission == "some-permission"
+        assert permission.argument == "foo"
+
+    # Unrelated user can grant perms for which they have the appropriate grouper.permission.grant
+    with frontend_server(tmpdir, "rra@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group/service/service@svc.localhost"))
+
+        page = ServiceAccountViewPage(browser)
+        assert len(page.permission_rows) == 1
+        page.click_add_permission_button()
+
+        grant_page = ServiceAccountGrantPermissionPage(browser)
+        grant_page.select_permission("some-permission (bar)")
+        grant_page.set_argument("bar")
+        grant_page.submit()
+
+        permission_rows = page.permission_rows
+        assert len(permission_rows) == 2
+        permission = permission_rows[1]
+        assert permission.permission == "some-permission"
+        assert permission.argument == "bar"
+
+    # Permission admin can grant any permission with any argument to any service account
+    with frontend_server(tmpdir, "cbguder@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group/service/service@svc.localhost"))
+
+        page = ServiceAccountViewPage(browser)
+        assert len(page.permission_rows) == 2
+        page.click_add_permission_button()
+
+        grant_page = ServiceAccountGrantPermissionPage(browser)
+        grant_page.select_permission("some-permission (*)")
+        grant_page.set_argument("weewoo")
+        grant_page.submit()
+
+        permission_rows = page.permission_rows
+        assert len(permission_rows) == 3
+        permission = permission_rows[2]
+        assert permission.permission == "some-permission"
+        assert permission.argument == "weewoo"
+
+
 def test_permission_grant_revoke(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group")
@@ -204,9 +275,11 @@ def test_permission_grant_revoke(tmpdir: LocalPath, setup: SetupTest, browser: C
 def test_permission_grant_denied(tmpdir: LocalPath, setup: SetupTest, browser: Chrome) -> None:
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group")
+        setup.add_user_to_group("rra@a.co", "other-group")
         setup.grant_permission_to_group("some-permission", "foo", "some-group")
         setup.create_service_account("service@svc.localhost", "some-group")
 
+    # Member of the owning team will get denied when trying to grant a perm the team doesn't have
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
         browser.get(url(frontend_url, "/groups/some-group/service/service@svc.localhost/grant"))
 
@@ -216,6 +289,18 @@ def test_permission_grant_denied(tmpdir: LocalPath, setup: SetupTest, browser: C
         page.submit()
 
         assert page.has_alert("Permission denied")
+
+    # Unrelated user can click the Add Permission button but will get a 403
+    with frontend_server(tmpdir, "rra@a.co") as frontend_url:
+        browser.get(url(frontend_url, "/groups/some-group/service/service@svc.localhost"))
+
+        page = ServiceAccountViewPage(browser)
+        assert len(page.permission_rows) == 0
+        page.click_add_permission_button()
+
+        forbidden_page = ErrorPage(browser)
+        assert forbidden_page.heading == "Error"
+        assert forbidden_page.subheading == "403 Forbidden"
 
 
 def test_permission_grant_invalid_argument(

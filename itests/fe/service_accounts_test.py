@@ -294,9 +294,9 @@ def test_permission_grant_denied(tmpdir: LocalPath, setup: SetupTest, browser: C
     with frontend_server(tmpdir, "rra@a.co") as frontend_url:
         browser.get(url(frontend_url, "/groups/some-group/service/service@svc.localhost"))
 
-        page = ServiceAccountViewPage(browser)
-        assert len(page.permission_rows) == 0
-        page.click_add_permission_button()
+        view_page = ServiceAccountViewPage(browser)
+        assert len(view_page.permission_rows) == 0
+        view_page.click_add_permission_button()
 
         forbidden_page = ErrorPage(browser)
         assert forbidden_page.heading == "Error"

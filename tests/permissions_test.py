@@ -34,6 +34,7 @@ from grouper.permissions import (
 )
 from grouper.plugin import get_plugin_proxy
 from grouper.plugin.base import BasePlugin
+from grouper.plugin.exceptions import PluginRejectedPermissionArgument
 from grouper.user_permissions import user_grantable_permissions, user_has_permission
 from tests.fixtures import (  # noqa: F401
     fe_app as app,
@@ -485,6 +486,85 @@ def test_permission_request_flow(
     perms = _load_permissions_by_group_name(session, "serving-team")
     assert len(perms) == 2
     assert "grantable.two" not in perms, "no new permissions should be granted for this"
+
+
+class PermissionValidationPlugin(BasePlugin):
+    def check_permission_argument(self, permission: str, argument: str) -> None:
+        if permission == "grantable.one" and "evil" in argument:
+            raise PluginRejectedPermissionArgument("Rejecting RFC 3514 request")
+
+
+@pytest.mark.gen_test
+def test_permission_plugin(
+    grantable_permissions, groups, http_client, base_url, setup  # noqa: F811
+):
+
+    perm_grant, _, perm1, perm2 = grantable_permissions
+    grant_permission(groups["all-teams"], perm_grant, argument="grantable.*")
+
+    setup.plugins.add_plugin(PermissionValidationPlugin())
+    groupname = "serving-team"
+    username = "zorkian@a.co"
+    permission_name = "grantable.one"
+
+    # Permission request checks
+    # Rejected
+    fe_url = url(base_url, f"/permissions/request?group={groupname}")
+    resp = yield http_client.fetch(
+        fe_url,
+        method="POST",
+        body=urlencode(
+            {
+                "permission": permission_name,
+                "argument": "quite-evil",
+                "reason": "blah blah black sheep",
+            }
+        ),
+        headers={"X-Grouper-User": username},
+    )
+    assert resp.code == 200
+    assert b"RFC 3514" in resp.body
+
+    # Accepted
+    resp = yield http_client.fetch(
+        fe_url,
+        method="POST",
+        body=urlencode(
+            {
+                "permission": permission_name,
+                "argument": "not-bad",
+                "reason": "blah blah black sheep",
+            }
+        ),
+        headers={"X-Grouper-User": username},
+    )
+    assert resp.code == 200
+    assert b"RFC 3514" not in resp.body
+
+    # Permission grant checks
+
+    user_name = "gary@a.co"
+    # Rejected
+    fe_url = url(base_url, f"/permissions/grant/{groupname}")
+    resp = yield http_client.fetch(
+        fe_url,
+        method="POST",
+        body=urlencode({"permission": permission_name, "argument": "dastardly-evil"}),
+        headers={"X-Grouper-User": user_name},
+    )
+    assert resp.code == 200
+    assert b"RFC 3514" in resp.body
+
+    # Accepted
+    fe_url = url(base_url, f"/permissions/grant/{groupname}")
+    resp = yield http_client.fetch(
+        fe_url,
+        method="POST",
+        body=urlencode({"permission": permission_name, "argument": "not-bad"}),
+        headers={"X-Grouper-User": user_name},
+    )
+    assert resp.code == 200
+    assert b"RFC 3514" not in resp.body
 
 
 @pytest.mark.gen_test

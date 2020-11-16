@@ -10,6 +10,7 @@ from grouper.fe.util import GrouperHandler
 from grouper.models.audit_log import AuditLog
 from grouper.models.group import Group
 from grouper.permissions import get_permission, grant_permission
+from grouper.plugin.exceptions import PluginRejectedPermissionArgument
 from grouper.user_permissions import user_grantable_permissions
 from grouper.util import matches_glob
 
@@ -99,7 +100,17 @@ class PermissionsGrant(GrouperHandler):
                 )
 
         try:
+            self.plugins.check_permission_argument(permission.name, argument)
             grant_permission(self.session, group.id, permission.id, argument=argument)
+        except PluginRejectedPermissionArgument as e:
+            self.session.rollback()
+            form.argument.errors.append(f"Rejected by plugin: {e}")
+            return self.render(
+                "permission-grant.html",
+                form=form,
+                group=group,
+                alerts=self.get_form_alerts(form.errors),
+            )
         except IntegrityError:
             self.session.rollback()
             form.argument.errors.append("Permission and Argument already mapped to this group.")

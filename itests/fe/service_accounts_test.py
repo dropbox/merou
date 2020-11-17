@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import pytest
 from selenium.common.exceptions import NoSuchElementException
 
-from grouper.constants import USER_ADMIN, PERMISSION_ADMIN
+from grouper.constants import PERMISSION_ADMIN, USER_ADMIN
 from itests.pages.base import BasePage
 from itests.pages.error import ErrorPage
 from itests.pages.groups import GroupViewPage

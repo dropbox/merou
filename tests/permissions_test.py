@@ -496,13 +496,9 @@ class PermissionValidationPlugin(BasePlugin):
 
 @pytest.mark.gen_test
 def test_permission_plugin(
-    grantable_permissions, groups, http_client, base_url, setup  # noqa: F811
+    session, grantable_permissions, http_client, base_url  # noqa: F811
 ):
-
-    perm_grant, _, perm1, perm2 = grantable_permissions
-    grant_permission(groups["all-teams"], perm_grant, argument="grantable.*")
-
-    setup.plugins.add_plugin(PermissionValidationPlugin())
+    get_plugin_proxy().add_plugin(PermissionValidationPlugin())
     groupname = "serving-team"
     username = "zorkian@a.co"
     permission_name = "grantable.one"

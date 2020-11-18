@@ -495,9 +495,7 @@ class PermissionValidationPlugin(BasePlugin):
 
 
 @pytest.mark.gen_test
-def test_permission_plugin(
-    session, grantable_permissions, http_client, base_url  # noqa: F811
-):
+def test_permission_plugin(session, grantable_permissions, http_client, base_url):  # noqa: F811
     get_plugin_proxy().add_plugin(PermissionValidationPlugin())
     groupname = "serving-team"
     username = "zorkian@a.co"

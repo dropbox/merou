@@ -49,6 +49,19 @@ class BasePlugin:
         """
         pass
 
+    def check_permission_argument(self, permission: str, argument: str) -> None:
+        """Check permission argument for validity
+
+        Args:
+            permission: A Grouper permission name
+            argument: The argument for that permission
+
+        Raises:
+            PluginRejectedPermissionArgument to reject the argument. The exception message will be
+            shown to the user.
+        """
+        pass
+
     def get_aliases_for_mapped_permission(self, session, permission, argument):
         # type: (Session, str, str) -> Optional[Iterable[Tuple[str, str]]]
         """Called when building the graph to get aliases of a mapped permission.

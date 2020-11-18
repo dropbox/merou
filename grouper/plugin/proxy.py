@@ -50,6 +50,10 @@ class PluginProxy:
         for plugin in self._plugins:
             plugin.check_service_account_name(name)
 
+    def check_permission_argument(self, permission: str, argument: str) -> None:
+        for plugin in self._plugins:
+            plugin.check_permission_argument(permission, argument)
+
     def get_aliases_for_mapped_permission(self, session, permission, argument):
         # type: (Session, str, str) -> Iterable[Tuple[str, str]]
         for plugin in self._plugins:

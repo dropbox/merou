@@ -5,6 +5,8 @@ class PluginException(Exception):
 class PluginsDirectoryDoesNotExist(PluginException):
     """The specified plugin directory does not exist."""
 
+    pass
+
 
 class PluginRejectedGroupMembershipUpdate(PluginException):
     pass
@@ -22,6 +24,12 @@ class PluginRejectedMachineSet(PluginException):
 
 class PluginRejectedServiceAccountName(PluginException):
     """A plugin rejected a name for a service account."""
+
+    pass
+
+
+class PluginRejectedPermissionArgument(PluginException):
+    """A plugin rejected a permission argument pairing."""
 
     pass
 

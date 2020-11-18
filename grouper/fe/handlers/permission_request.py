@@ -11,6 +11,7 @@ from grouper.fe.settings import settings
 from grouper.fe.util import GrouperHandler
 from grouper.models.group import Group
 from grouper.permissions import get_grantable_permissions, get_permission
+from grouper.plugin.exceptions import PluginRejectedPermissionArgument
 from grouper.user_group import get_groups_by_user
 
 if TYPE_CHECKING:
@@ -55,6 +56,7 @@ class PermissionRequest(GrouperHandler):
 
         # save off request
         try:
+            self.plugins.check_permission_argument(permission.name, argument)
             request = permissions.create_request(
                 self.session, self.current_user, group, permission, argument, form.reason.data
             )
@@ -83,6 +85,8 @@ class PermissionRequest(GrouperHandler):
             ]
         except UserNotAuditor as e:
             alerts = [Alert("danger", str(e))]
+        except PluginRejectedPermissionArgument as e:
+            alerts = [Alert("danger", f"Rejected by plugin: {e}")]
         else:
             alerts = []
 

@@ -141,6 +141,7 @@ def test_get_permission_details(setup):
         for permission_data in details["groups"][group]["permissions"]:
             assert permission_data["permission"] == "sudo"
             assert permission_data["argument"] == "shell"
+            assert permission_data["audited"] == False
     assert not details["service_accounts"]
 
     details = setup.graph.get_permission_details("team-sre")
@@ -150,6 +151,9 @@ def test_get_permission_details(setup):
         for permission_data in details["service_accounts"][service]["permissions"]:
             assert permission_data["permission"] == "team-sre"
             assert permission_data["argument"] == "*"
+
+    details = setup.graph.get_permission_details("audited")
+    assert details["audited"]["audited"] == True
 
 
 def test_get_disabled_groups(setup):
@@ -228,6 +232,9 @@ def test_get_group_details(setup):
         "zay@a.co",
         "zorkian@a.co",
     ]
+    perms_audited = list(filter(lambda p: p["audited"] == True, details["permissions"]))
+    assert len(perms_audited) == 1
+    assert perms_audited[0]["permission"] == "audited"
     assert details["audited"]
     user_details = details["users"]["zorkian@a.co"]
     assert user_details["name"] == "zorkian@a.co"

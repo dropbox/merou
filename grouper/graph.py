@@ -32,7 +32,7 @@ from grouper.util import singleton
 if TYPE_CHECKING:
     from grouper.entities.permission_grant import ServiceAccountPermissionGrant
     from grouper.models.base.session import Session
-    from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+    from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Union
 
     Node = Tuple[str, str]
     Edge = Tuple[Node, Node, Dict[str, int]]
@@ -563,13 +563,12 @@ class GroupGraph:
         return sorted(permissions, key=lambda p: p.name)
 
     def get_permission_details(self, name, expose_aliases=True):
-        # type: (str, bool) -> Dict[str, Dict[str, Any]]
+        # type: (str, bool) -> Dict[str, Union[bool, Dict[str, Any]]]
         """ Get a permission and what groups and service accounts it's assigned to. """
         with self.lock:
             data = {
                 "groups": {},
                 "service_accounts": {},
-                "audited": {},
             }  # type: Dict[str, Dict[str, Any]]
 
             # Get all mapped versions of the permission. This is only direct relationships.
@@ -616,13 +615,8 @@ class GroupGraph:
                             data["service_accounts"][account] = {"permissions": [details]}
 
             # Add permission audit value
-            permission_audited = False
-            for p in self._permissions.values():
-                if p.name == name:
-                    permission_audited = p.audited
-
-            data["audited"] = {"audited": permission_audited}
-            return data
+            permission_audited = {"audited": self._permissions[name].audited}
+            return {**data, **permission_audited}
 
     def get_disabled_groups(self):
         # type: () -> List[Group]

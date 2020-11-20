@@ -129,6 +129,8 @@ def test_get_permission_details(setup):
     build_test_graph(setup)
 
     details = setup.graph.get_permission_details("sudo")
+
+    assert isinstance(details["groups"], dict)
     groups_with_sudo = details["groups"].keys()
     assert sorted(groups_with_sudo) == [
         "security-team",
@@ -145,6 +147,8 @@ def test_get_permission_details(setup):
     assert not details["service_accounts"]
 
     details = setup.graph.get_permission_details("team-sre")
+
+    assert isinstance(details["service_accounts"], dict)
     service_accounts_with_sudo = details["service_accounts"].keys()
     assert sorted(service_accounts_with_sudo) == ["service@svc.localhost"]
     for service in service_accounts_with_sudo:
@@ -153,7 +157,8 @@ def test_get_permission_details(setup):
             assert permission_data["argument"] == "*"
 
     details = setup.graph.get_permission_details("audited")
-    assert details["audited"]["audited"] == True
+    assert isinstance(details["audited"], bool)
+    assert details["audited"] == True
 
 
 def test_get_disabled_groups(setup):

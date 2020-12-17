@@ -10,7 +10,8 @@ from sqlalchemy import asc
 from sqlalchemy.exc import IntegrityError
 
 from grouper.audit import assert_controllers_are_auditors
-from grouper.constants import ARGUMENT_VALIDATION, PERMISSION_ADMIN, PERMISSION_GRANT
+from grouper.constants import ARGUMENT_VALIDATION, PERMISSION_ADMIN, PERMISSION_GRANT, \
+    PERMISSION_MANAGE
 from grouper.email_util import EmailTemplateEngine, send_email
 from grouper.models.audit_log import AuditLog
 from grouper.models.base.constants import OBJ_TYPES_IDX
@@ -250,7 +251,7 @@ def filter_grantable_permissions(
 
     result = []
     for grant in grants:
-        assert grant.name == PERMISSION_GRANT
+        assert grant.name in (PERMISSION_GRANT, PERMISSION_MANAGE)
 
         grantable = grant.argument.split("/", 1)
         if not grantable:
@@ -307,7 +308,7 @@ def get_owners_by_grantable_permission(
                 owners_by_arg_by_perm[GLOBAL_OWNERS]["*"].append(group)
             continue
 
-        grants = [gp for gp in group_permissions if gp.name == PERMISSION_GRANT]
+        grants = [gp for gp in group_permissions if gp.name in (PERMISSION_GRANT, PERMISSION_MANAGE)]
 
         for perm, arg in filter_grantable_permissions(
             session, grants, all_permissions=all_permissions
@@ -319,7 +320,7 @@ def get_owners_by_grantable_permission(
                 session, gp.name, group.name
             )
             for alias in aliases:
-                if alias[0] == PERMISSION_GRANT:
+                if alias[0] == (PERMISSION_GRANT, PERMISSION_MANAGE):
                     alias_perm, arg = alias[1].split("/", 1)
                     owners_by_arg_by_perm[alias_perm][arg].append(group)
 

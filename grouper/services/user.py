@@ -5,7 +5,7 @@ from grouper.constants import (
     PERMISSION_ADMIN,
     PERMISSION_CREATE,
     PERMISSION_GRANT,
-    USER_ADMIN,
+    USER_ADMIN, PERMISSION_MANAGE,
 )
 from grouper.entities.pagination import ListPermissionsSortKey, Pagination
 from grouper.entities.permission import PermissionAccess
@@ -103,7 +103,7 @@ class UserService(UserInterface):
             return [(p.name, "*") for p in all_permissions]
 
         all_grants = self.permission_grant_repository.permission_grants_for_user(user)
-        grants_of_permission_grant = [g for g in all_grants if g.permission == PERMISSION_GRANT]
+        grants_of_permission_grant = [g for g in all_grants if g.permission in (PERMISSION_GRANT, PERMISSION_MANAGE)]
 
         result = []
         for grant in grants_of_permission_grant:

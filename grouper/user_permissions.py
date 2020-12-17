@@ -8,7 +8,7 @@ from grouper.constants import (
     PERMISSION_ADMIN,
     PERMISSION_CREATE,
     PERMISSION_GRANT,
-    USER_ADMIN,
+    USER_ADMIN, PERMISSION_MANAGE,
 )
 from grouper.models.group import Group
 from grouper.models.group_edge import GroupEdge
@@ -87,7 +87,7 @@ def user_grantable_permissions(session, user):
 
     # Someone can grant a permission if they are a member of a group that has a permission
     # of PERMISSION_GRANT with an argument that matches the name of a permission.
-    grants = [x for x in user_permissions(session, user) if x.name == PERMISSION_GRANT]
+    grants = [x for x in user_permissions(session, user) if x.name in (PERMISSION_GRANT, PERMISSION_MANAGE)]
     return filter_grantable_permissions(session, grants)
 
 
@@ -112,7 +112,7 @@ def user_creatable_permissions(session, user):
     return [
         permission.argument
         for permission in user_permissions(session, user)
-        if permission.name == PERMISSION_CREATE
+        if permission.name in (PERMISSION_CREATE, PERMISSION_MANAGE)
     ]
 
 

@@ -32,6 +32,7 @@ ARGUMENT_VALIDATION = r"(?P<argument>|[\^\*\w\[\]\$=+/.: -]+)"
 # Global permission names to prevent stringly typed things
 PERMISSION_GRANT = "grouper.permission.grant"
 PERMISSION_CREATE = "grouper.permission.create"
+PERMISSION_MANAGE = "grouper.permission.manage"
 PERMISSION_AUDITOR = "grouper.permission.auditor"
 PERMISSION_ADMIN = "grouper.admin.permissions"
 USER_ADMIN = "grouper.admin.users"
@@ -46,6 +47,7 @@ USER_ENABLE = "grouper.user.enable"
 SYSTEM_PERMISSIONS = [
     (PERMISSION_CREATE, "Ability to create permissions within Grouper."),
     (PERMISSION_GRANT, "Ability to grant a permission to a group."),
+    (PERMISSION_MANAGE, "Ability to create a permission or grant it to a group."),
     (PERMISSION_AUDITOR, "Ability to own or manage groups with audited permissions."),
     (PERMISSION_ADMIN, "Ability to manipulate any permission."),
     (USER_ADMIN, "Ability to to disable/enable any User account and modify its attributes."),

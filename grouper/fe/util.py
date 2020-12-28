@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 from functools import wraps
 from typing import TYPE_CHECKING
-from urllib.parse import quote, unquote, urlencode, urljoin
+from urllib.parse import quote, unquote, urlencode, urljoin, urlparse
 from uuid import uuid4
 
 from plop.collector import Collector
@@ -117,7 +117,8 @@ class GrouperHandler(RequestHandler):
 
     def redirect(self, url: str, *args: Any, **kwargs: Any) -> None:
         if self.is_refresh():
-            url = urljoin(url, "?refresh=yes")
+            url += ('&' if urlparse(url).query else '?') + urlencode({'refresh': 'yes'})
+
         alerts = kwargs.pop("alerts", [])  # type: List[Alert]
         self.set_alerts(alerts)
         super().redirect(url, *args, **kwargs)

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
         ServiceAccountPermissionGrant,
     )
     from grouper.usecases.interfaces import AuditLogInterface, PermissionInterface, UserInterface
-    from typing import List
+    from typing import List, Optional
 
 
 class ViewPermissionUI(metaclass=ABCMeta):
@@ -43,14 +43,15 @@ class ViewPermission:
         self.user_service = user_service
         self.audit_log_service = audit_log_service
 
-    def view_permission(self, name, actor, audit_log_limit):
-        # type: (str, str, int) -> None
+    def view_permission(self, name, actor, audit_log_limit, permission_arg=None):
+        # type: (str, str, int, Optional[str]) -> None
+
         permission = self.permission_service.permission(name)
         if not permission:
             self.ui.view_permission_failed_not_found(name)
             return
-        group_grants = self.permission_service.group_grants_for_permission(name)
-        service_grants = self.permission_service.service_account_grants_for_permission(name)
+        group_grants = self.permission_service.group_grants_for_permission(name, argument=permission_arg)
+        service_grants = self.permission_service.service_account_grants_for_permission(name, argument=permission_arg)
         audit_log = self.audit_log_service.entries_affecting_permission(name, audit_log_limit)
         access = self.user_service.permission_access_for_user(actor, name)
         self.ui.viewed_permission(permission, group_grants, service_grants, access, audit_log)

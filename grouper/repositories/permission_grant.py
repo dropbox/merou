@@ -25,7 +25,7 @@ from grouper.repositories.interfaces import PermissionGrantRepository
 if TYPE_CHECKING:
     from grouper.graph import GroupGraph
     from grouper.models.base.session import Session
-    from typing import Dict, Iterable, List
+    from typing import Dict, Iterable, List, Optional
 
 
 class GraphPermissionGrantRepository(PermissionGrantRepository):
@@ -52,9 +52,9 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
         # type: (str, str, str) -> None
         self.repository.grant_permission_to_service_account(permission, argument, service)
 
-    def group_grants_for_permission(self, name, include_disabled_groups=False):
-        # type: (str, bool) -> List[GroupPermissionGrant]
-        return self.repository.group_grants_for_permission(name)
+    def group_grants_for_permission(self, name, include_disabled_groups=False, argument=None):
+        # type: (str, bool, Optional[str]) -> List[GroupPermissionGrant]
+        return self.repository.group_grants_for_permission(name, include_disabled_groups, argument)
 
     def permission_grants_for_group(self, name):
         # type: (str) -> List[GroupPermissionGrant]
@@ -114,9 +114,9 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
         # type: (str) -> List[ServiceAccountPermissionGrant]
         return self.repository.revoke_all_service_account_grants(permission)
 
-    def service_account_grants_for_permission(self, name):
-        # type: (str) -> List[ServiceAccountPermissionGrant]
-        return self.repository.service_account_grants_for_permission(name)
+    def service_account_grants_for_permission(self, name, argument=None):
+        # type: (str, Optional[str]) -> List[ServiceAccountPermissionGrant]
+        return self.repository.service_account_grants_for_permission(name, argument)
 
     def service_account_has_permission(self, service, permission):
         # type: (str, str) -> bool
@@ -176,8 +176,8 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         )
         mapping.add(self.session)
 
-    def group_grants_for_permission(self, name, include_disabled_groups=False):
-        # type: (str, bool) -> List[GroupPermissionGrant]
+    def group_grants_for_permission(self, name, include_disabled_groups=False, argument=None):
+        # type: (str, bool, Optional[str]) -> List[GroupPermissionGrant]
         permission = Permission.get(self.session, name=name)
         if not permission or not permission.enabled:
             return []
@@ -192,6 +192,10 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         )
         if not include_disabled_groups:
             grants = grants.filter(Group.enabled == True)
+
+        if argument:
+            grants = grants.filter(PermissionMap.argument == argument)
+
         return [
             GroupPermissionGrant(
                 group=g.groupname,
@@ -348,8 +352,8 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
             for g in grants
         ]
 
-    def service_account_grants_for_permission(self, name):
-        # type: (str) -> List[ServiceAccountPermissionGrant]
+    def service_account_grants_for_permission(self, name, argument=None):
+        # type: (str, Optional[str]) -> List[ServiceAccountPermissionGrant]
         permission = Permission.get(self.session, name=name)
         if not permission or not permission.enabled:
             return []
@@ -367,6 +371,10 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
             )
             .order_by(User.username, ServiceAccountPermissionMap.argument)
         )
+
+        if argument:
+            grants = grants.filter(ServiceAccountPermissionMap.argument == argument)
+
         return [
             ServiceAccountPermissionGrant(
                 service_account=g.username,

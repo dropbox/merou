@@ -80,8 +80,8 @@ class PermissionGrantRepository(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def group_grants_for_permission(self, name, include_disabled_groups=False):
-        # type: (str, bool) -> List[GroupPermissionGrant]
+    def group_grants_for_permission(self, name, include_disabled_groups=False, argument=None):
+        # type: (str, bool, Optional[str]) -> List[GroupPermissionGrant]
         pass
 
     @abstractmethod
@@ -110,8 +110,8 @@ class PermissionGrantRepository(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def service_account_grants_for_permission(self, name):
-        # type: (str) -> List[ServiceAccountPermissionGrant]
+    def service_account_grants_for_permission(self, name, argument=None):
+        # type: (str, Optional[str]) -> List[ServiceAccountPermissionGrant]
         pass
 
     @abstractmethod

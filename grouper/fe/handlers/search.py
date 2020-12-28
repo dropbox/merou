@@ -5,6 +5,7 @@ from grouper.fe.util import GrouperHandler
 from grouper.models.group import Group
 from grouper.models.permission import Permission
 from grouper.models.user import User
+from urllib.parse import urlencode
 
 
 class Search(GrouperHandler):
@@ -14,6 +15,8 @@ class Search(GrouperHandler):
         limit = int(self.get_argument("limit", 100))
         if limit > 9000:
             limit = 9000
+
+        print("In search, got {}".format(query))
 
         groups = (
             self.session.query(
@@ -25,13 +28,15 @@ class Search(GrouperHandler):
             .subquery()
         )
 
+        permission_query = query.split("=")[0] if "=" in query else query
+        print("In search, looking for {}".format(permission_query))
         permissions = (
             self.session.query(
                 label("type", literal("Permission")),
                 label("id", Permission.id),
                 label("name", Permission.name),
             )
-            .filter(Permission.enabled == True, Permission.name.like("%{}%".format(query)))
+            .filter(Permission.enabled == True, Permission.name.like("%{}%".format(permission_query)))
             .subquery()
         )
 
@@ -51,7 +56,13 @@ class Search(GrouperHandler):
 
         if len(results) == 1:
             result = results[0]
-            return self.redirect("/{}s/{}".format(result.type.lower(), result.name))
+
+            params = {}
+            base_url = "/{}s/{}".format(result.type.lower(), result.name)
+            if result.type.lower() == "permission" and "=" in query:
+                params = {"permission_arg": query.split("=", 1)[1]}
+
+            return self.redirect(base_url + '?' + urlencode(params))
 
         self.render(
             "search.html",

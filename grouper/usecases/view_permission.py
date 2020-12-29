@@ -50,8 +50,12 @@ class ViewPermission:
         if not permission:
             self.ui.view_permission_failed_not_found(name)
             return
-        group_grants = self.permission_service.group_grants_for_permission(name, argument=permission_arg)
-        service_grants = self.permission_service.service_account_grants_for_permission(name, argument=permission_arg)
+        group_grants = self.permission_service.group_grants_for_permission(
+            name, argument=permission_arg
+        )
+        service_grants = self.permission_service.service_account_grants_for_permission(
+            name, argument=permission_arg
+        )
         audit_log = self.audit_log_service.entries_affecting_permission(name, audit_log_limit)
         access = self.user_service.permission_access_for_user(actor, name)
         self.ui.viewed_permission(permission, group_grants, service_grants, access, audit_log)

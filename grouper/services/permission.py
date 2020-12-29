@@ -73,11 +73,15 @@ class PermissionService(PermissionInterface):
 
     def group_grants_for_permission(self, name, argument=None):
         # type: (str, Optional[str]) -> List[GroupPermissionGrant]
-        return self.permission_grant_repository.group_grants_for_permission(name, argument=argument)
+        return self.permission_grant_repository.group_grants_for_permission(
+            name, argument=argument
+        )
 
     def service_account_grants_for_permission(self, name, argument=None):
         # type: (str, Optional[str]) -> List[ServiceAccountPermissionGrant]
-        return self.permission_grant_repository.service_account_grants_for_permission(name, argument=argument)
+        return self.permission_grant_repository.service_account_grants_for_permission(
+            name, argument=argument
+        )
 
     def is_system_permission(self, name):
         # type: (str) -> bool

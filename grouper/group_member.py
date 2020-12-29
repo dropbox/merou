@@ -26,7 +26,7 @@ class InvalidRoleForMember(Exception):
 
 class MemberNotFound(Exception):
     """This exception is raised when trying to perform a group operation on an account that is
-       not a member of the group."""
+    not a member of the group."""
 
     pass
 

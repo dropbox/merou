@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+
 from sqlalchemy import union_all
 from sqlalchemy.sql import label, literal
 
@@ -5,7 +7,6 @@ from grouper.fe.util import GrouperHandler
 from grouper.models.group import Group
 from grouper.models.permission import Permission
 from grouper.models.user import User
-from urllib.parse import urlencode
 
 
 class Search(GrouperHandler):
@@ -36,7 +37,9 @@ class Search(GrouperHandler):
                 label("id", Permission.id),
                 label("name", Permission.name),
             )
-            .filter(Permission.enabled == True, Permission.name.like("%{}%".format(permission_query)))
+            .filter(
+                Permission.enabled == True, Permission.name.like("%{}%".format(permission_query))
+            )
             .subquery()
         )
 
@@ -62,7 +65,7 @@ class Search(GrouperHandler):
             if result.type.lower() == "permission" and "=" in query:
                 params = {"permission_arg": query.split("=", 1)[1]}
 
-            return self.redirect(base_url + '?' + urlencode(params))
+            return self.redirect(base_url + "?" + urlencode(params))
 
         self.render(
             "search.html",

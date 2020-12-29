@@ -665,8 +665,8 @@ class GroupGraph:
 
     def get_group_details(self, groupname, show_permission=None, expose_aliases=True):
         # type: (str, Optional[str], bool) -> Dict[str, Any]
-        """ Get users and permissions that belong to a group. Raise NoSuchGroup
-        for missing groups. """
+        """Get users and permissions that belong to a group. Raise NoSuchGroup
+        for missing groups."""
 
         with self.lock:
             data = {

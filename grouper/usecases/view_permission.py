@@ -43,18 +43,16 @@ class ViewPermission:
         self.user_service = user_service
         self.audit_log_service = audit_log_service
 
-    def view_permission(self, name, actor, audit_log_limit, permission_arg=None):
+    def view_permission(self, name, actor, audit_log_limit, argument=None):
         # type: (str, str, int, Optional[str]) -> None
 
         permission = self.permission_service.permission(name)
         if not permission:
             self.ui.view_permission_failed_not_found(name)
             return
-        group_grants = self.permission_service.group_grants_for_permission(
-            name, argument=permission_arg
-        )
+        group_grants = self.permission_service.group_grants_for_permission(name, argument=argument)
         service_grants = self.permission_service.service_account_grants_for_permission(
-            name, argument=permission_arg
+            name, argument=argument
         )
         audit_log = self.audit_log_service.entries_affecting_permission(name, audit_log_limit)
         access = self.user_service.permission_access_for_user(actor, name)

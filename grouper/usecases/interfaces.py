@@ -198,13 +198,13 @@ class PermissionInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def group_grants_for_permission(self, name):
-        # type: (str) -> List[GroupPermissionGrant]
+    def group_grants_for_permission(self, name, argument=None):
+        # type: (str, Optional[str]) -> List[GroupPermissionGrant]
         pass
 
     @abstractmethod
-    def service_account_grants_for_permission(self, name):
-        # type: (str) -> List[ServiceAccountPermissionGrant]
+    def service_account_grants_for_permission(self, name, argument=None):
+        # type: (str, Optional[str]) -> List[ServiceAccountPermissionGrant]
         pass
 
     @abstractmethod

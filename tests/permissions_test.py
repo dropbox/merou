@@ -80,8 +80,8 @@ def _get_unsent_and_mark_as_sent_emails(session):  # noqa: F811
 def test_basic_permission(
     standard_graph, graph, session, users, groups, permissions  # noqa: F811
 ):
-    """ Test adding some permissions to various groups and ensuring that the permissions are all
-        implemented as expected. This also tests permissions inheritance in the graph. """
+    """Test adding some permissions to various groups and ensuring that the permissions are all
+    implemented as expected. This also tests permissions inheritance in the graph."""
 
     assert sorted(get_group_permissions(graph, "team-sre")) == [
         "audited:",

@@ -90,6 +90,9 @@ class PermissionTemplate(BaseTemplate):
     service_account_grants: List[ServiceAccountPermissionGrant]
     access: PermissionAccess
     audit_log_entries: List[AuditLogEntry]
+    offset: int
+    limit: int
+    total: int
 
     template: InitVar[str] = "permission.html"
 

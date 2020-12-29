@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros/ui.html' import audit_log_panel %}
+{% from 'macros/ui.html' import audit_log_panel, paginator, dropdown with context %}
 
 {% block subtitle %} permission {{ permission.name }}{% endblock %}
 
@@ -12,6 +12,8 @@
 {% endblock %}
 
 {% block headingbuttons %}
+    {{ dropdown("limit", limit, [100, 250, 500]) }}
+    {{ paginator(offset, limit, total) }}
     {% if permission.enabled and access.can_disable %}
         <button class="btn btn-danger disable-permission" data-toggle="modal" data-target="#disablePermModal">
             <i class="fa fa-minus"></i> Disable Permission

@@ -57,12 +57,12 @@ class Search(GrouperHandler):
         if len(results) == 1:
             result = results[0]
 
-            params = {}
-            base_url = "/{}s/{}".format(result.type.lower(), result.name)
+            encoded_params = ""
             if result.type.lower() == "permission" and "=" in query:
-                params = {"permission_arg": query.split("=", 1)[1]}
+                encoded_params = "?" + urlencode({"permission_arg": query.split("=", 1)[1]})
 
-            return self.redirect(base_url + "?" + urlencode(params))
+            base_url = "/{}s/{}".format(result.type.lower(), result.name)
+            return self.redirect(base_url + encoded_params)
 
         self.render(
             "search.html",

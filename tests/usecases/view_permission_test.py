@@ -48,6 +48,7 @@ def test_view_permissions(setup):
         setup.create_permission("argumented-permission", "Some argumented permission")
         setup.grant_permission_to_group("some-permission", "", "another-group")
         setup.grant_permission_to_group("some-permission", "foo", "some-group")
+        setup.grant_permission_to_group("argumented-permission", "foo-arg", "some-group")
         setup.create_service_account("service@svc.localhost", "owner-group")
         setup.create_service_account(
             "service_for_argumented_permission@svc.localhost", "foo-group"
@@ -113,13 +114,16 @@ def test_view_permissions(setup):
     audit_log_entries = [(e.actor, e.action, e.on_permission) for e in mock_ui.audit_log_entries]
     assert audit_log_entries == [("gary@a.co", "disable_permission", "disabled-permission")]
 
-    # Search for permission based on argument without group grants but some service account grants.
+    # Search for permission based on argument with group grants and service account grants.
     usecase.view_permission("argumented-permission", "gary@a.co", 20, "foo-arg")
     assert mock_ui.permission.name == "argumented-permission"
     assert mock_ui.permission.description == "Some argumented permission"
     assert not mock_ui.permission.audited
     assert mock_ui.permission.enabled
-    assert mock_ui.group_grants == []
+    group_grants = [(g.group, g.permission, g.argument) for g in mock_ui.group_grants]
+    assert group_grants == [
+        ("some-group", "argumented-permission", "foo-arg"),
+    ]
     service_account_grants = [
         (g.service_account, g.permission, g.argument) for g in mock_ui.service_account_grants
     ]

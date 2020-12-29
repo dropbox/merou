@@ -17,8 +17,6 @@ class Search(GrouperHandler):
         if limit > 9000:
             limit = 9000
 
-        print("In search, got {}".format(query))
-
         groups = (
             self.session.query(
                 label("type", literal("Group")),
@@ -30,7 +28,6 @@ class Search(GrouperHandler):
         )
 
         permission_query = query.split("=")[0] if "=" in query else query
-        print("In search, looking for {}".format(permission_query))
         permissions = (
             self.session.query(
                 label("type", literal("Permission")),

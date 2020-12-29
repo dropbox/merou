@@ -52,5 +52,8 @@ class PermissionView(GrouperHandler, ViewPermissionUI):
             sort_key=sort_key, reverse_sort=(sort_dir == "desc"), offset=offset, limit=limit
         )
 
+        argument = self.get_argument("argument", None)
         usecase = self.usecase_factory.create_view_permission_usecase(self)
-        usecase.view_permission(name, self.current_user.username, audit_log_limit=20)
+        usecase.view_permission(
+            name, self.current_user.username, audit_log_limit=20, argument=argument
+        )

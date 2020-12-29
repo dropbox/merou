@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+
 from sqlalchemy import union_all
 from sqlalchemy.sql import label, literal
 
@@ -25,13 +27,16 @@ class Search(GrouperHandler):
             .subquery()
         )
 
+        permission_query = query.split("=")[0] if "=" in query else query
         permissions = (
             self.session.query(
                 label("type", literal("Permission")),
                 label("id", Permission.id),
                 label("name", Permission.name),
             )
-            .filter(Permission.enabled == True, Permission.name.like("%{}%".format(query)))
+            .filter(
+                Permission.enabled == True, Permission.name.like("%{}%".format(permission_query))
+            )
             .subquery()
         )
 
@@ -51,7 +56,13 @@ class Search(GrouperHandler):
 
         if len(results) == 1:
             result = results[0]
-            return self.redirect("/{}s/{}".format(result.type.lower(), result.name))
+
+            encoded_params = ""
+            if result.type.lower() == "permission" and "=" in query:
+                encoded_params = "?" + urlencode({"argument": query.split("=", 1)[1]})
+
+            base_url = "/{}s/{}".format(result.type.lower(), result.name)
+            return self.redirect(base_url + encoded_params)
 
         self.render(
             "search.html",

@@ -205,14 +205,14 @@ def test_graph_cycle_direct(session, graph, users, groups):  # noqa: F811
 
 
 def test_graph_cycle_indirect(session, graph, users, groups):  # noqa: F811
-    """ Test adding a member that will create a cycle.
+    """Test adding a member that will create a cycle.
 
-        gary         zay            testuser
-         |            |                |
-        sre <----- tech-ops <----- team-infra <--
-         |                                       |
-         |                                       |
-          --------> all-teams --------------------
+    gary         zay            testuser
+     |            |                |
+    sre <----- tech-ops <----- team-infra <--
+     |                                       |
+     |                                       |
+      --------> all-teams --------------------
 
     """
 

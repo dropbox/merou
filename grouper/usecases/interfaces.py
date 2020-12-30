@@ -198,8 +198,18 @@ class PermissionInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def group_paginated_grants_for_permission(self, name, pagination, argument=None):
+        # type: (str, Pagination, Optional[str]) -> PaginatedList[GroupPermissionGrant]
+        pass
+
+    @abstractmethod
     def group_grants_for_permission(self, name, argument=None):
         # type: (str, Optional[str]) -> List[GroupPermissionGrant]
+        pass
+
+    @abstractmethod
+    def service_account_paginated_grants_for_permission(self, name, pagination, argument=None):
+        # type: (str, Pagination, Optional[str]) -> PaginatedList[ServiceAccountPermissionGrant]
         pass
 
     @abstractmethod

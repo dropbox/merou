@@ -71,10 +71,22 @@ class PermissionService(PermissionInterface):
         self.permission_repository.disable_permission(name)
         self.audit_log.log_disable_permission(name, authorization)
 
+    def group_paginated_grants_for_permission(self, name, pagination, argument=None):
+        # type: (str, Pagination, Optional[str]) -> PaginatedList[GroupPermissionGrant]
+        return self.permission_grant_repository.group_paginated_grants_for_permission(
+            name, pagination, argument=argument
+        )
+
     def group_grants_for_permission(self, name, argument=None):
         # type: (str, Optional[str]) -> List[GroupPermissionGrant]
         return self.permission_grant_repository.group_grants_for_permission(
             name, argument=argument
+        )
+
+    def service_account_paginated_grants_for_permission(self, name, pagination, argument=None):
+        # type: (str, Pagination, Optional[str]) -> PaginatedList[ServiceAccountPermissionGrant]
+        return self.permission_grant_repository.service_account_paginated_grants_for_permission(
+            name, pagination, argument=argument
         )
 
     def service_account_grants_for_permission(self, name, argument=None):

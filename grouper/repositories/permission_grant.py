@@ -5,6 +5,7 @@ from sqlalchemy import or_
 
 from grouper.entities.group import GroupNotFoundException
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
+from grouper.entities.pagination import PaginatedList, PermissionGrantSortKey
 from grouper.entities.permission import PermissionNotFoundException
 from grouper.entities.permission_grant import (
     GroupPermissionGrant,
@@ -24,12 +25,18 @@ from grouper.repositories.interfaces import PermissionGrantRepository
 
 if TYPE_CHECKING:
     from grouper.graph import GroupGraph
+    from grouper.entities.pagination import Pagination
     from grouper.models.base.session import Session
     from typing import Dict, Iterable, List, Optional
 
 
 class GraphPermissionGrantRepository(PermissionGrantRepository):
     """Graph-aware storage layer for permission grants."""
+
+    SORT_FIELD = {
+        PermissionGrantSortKey.GROUP: "group",
+        PermissionGrantSortKey.SERVICE_ACCOUNT: "service_account",
+    }
 
     def __init__(self, graph, repository):
         # type: (GroupGraph, PermissionGrantRepository) -> None
@@ -54,7 +61,38 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
 
     def group_grants_for_permission(self, name, include_disabled_groups=False, argument=None):
         # type: (str, bool, Optional[str]) -> List[GroupPermissionGrant]
-        return self.repository.group_grants_for_permission(name, include_disabled_groups, argument)
+        grants = self.repository.group_grants_for_permission(
+            name, include_disabled_groups, argument
+        )
+        return grants
+
+    def group_paginated_grants_for_permission(
+        self, name, pagination, include_disabled_groups=False, argument=None
+    ):
+        # type: (str, Pagination, bool, Optional[str]) -> PaginatedList[GroupPermissionGrant]
+        grants = self.repository.group_grants_for_permission(
+            name, include_disabled_groups, argument
+        )
+
+        print(grants)
+        if pagination.sort_key != PermissionGrantSortKey.NONE:
+            grants = sorted(
+                grants,
+                key=lambda p: getattr(p, self.SORT_FIELD[pagination.sort_key]),
+                reverse=pagination.reverse_sort,
+            )
+
+        # Find the total length and then optionally slice.
+        total = len(grants)
+        if pagination.limit:
+            grants = grants[pagination.offset : pagination.offset + pagination.limit]
+        elif pagination.offset > 0:
+            grants = grants[pagination.offset :]
+
+        # Convert to the correct data transfer object and return.
+        return PaginatedList[GroupPermissionGrant](
+            values=grants, total=total, offset=pagination.offset, limit=pagination.limit
+        )
 
     def permission_grants_for_group(self, name):
         # type: (str) -> List[GroupPermissionGrant]
@@ -116,7 +154,31 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
 
     def service_account_grants_for_permission(self, name, argument=None):
         # type: (str, Optional[str]) -> List[ServiceAccountPermissionGrant]
-        return self.repository.service_account_grants_for_permission(name, argument)
+        grants = self.repository.service_account_grants_for_permission(name, argument)
+        return grants
+
+    def service_account_paginated_grants_for_permission(self, name, pagination, argument=None):
+        # type: (str, Pagination, Optional[str]) -> PaginatedList[ServiceAccountPermissionGrant]
+        grants = self.repository.service_account_grants_for_permission(name, argument)
+
+        if pagination.sort_key != PermissionGrantSortKey.NONE:
+            grants = sorted(
+                grants,
+                key=lambda p: getattr(p, self.SORT_FIELD[pagination.sort_key]),
+                reverse=pagination.reverse_sort,
+            )
+
+        # Find the total length and then optionally slice.
+        total = len(grants)
+        if pagination.limit:
+            grants = grants[pagination.offset : pagination.offset + pagination.limit]
+        elif pagination.offset > 0:
+            grants = grants[pagination.offset :]
+
+        # Convert to the correct data transfer object and return.
+        return PaginatedList[ServiceAccountPermissionGrant](
+            values=grants, total=total, offset=pagination.offset, limit=pagination.limit
+        )
 
     def service_account_has_permission(self, service, permission):
         # type: (str, str) -> bool
@@ -461,3 +523,13 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
             )
             for g in group_permission_grants
         ]
+
+    def group_paginated_grants_for_permission(
+        self, name, pagination, include_disabled_groups=False, argument=None
+    ):
+        # type: (str, Pagination, bool, Optional[str]) -> PaginatedList[GroupPermissionGrant]
+        raise NotImplementedError()
+
+    def service_account_paginated_grants_for_permission(self, name, pagination, argument=None):
+        # type: (str, Pagination, Optional[str]) -> PaginatedList[ServiceAccountPermissionGrant]
+        raise NotImplementedError()

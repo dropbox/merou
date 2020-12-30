@@ -10,6 +10,7 @@ from grouper.usecases.list_grants import ListGrants
 from grouper.usecases.list_permissions import ListPermissions
 from grouper.usecases.list_users import ListUsers
 from grouper.usecases.view_permission import ViewPermission
+from grouper.usecases.view_permission_grants import ViewPermissionGrants
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
     from grouper.usecases.list_users import ListUsersUI
     from grouper.usecases.list_permissions import ListPermissionsUI
     from grouper.usecases.view_permission import ViewPermissionUI
+    from grouper.usecases.view_permission_grants import ViewPermissionGrantsUI
 
 
 class UseCaseFactory:
@@ -128,3 +130,10 @@ class UseCaseFactory:
         user_service = self.service_factory.create_user_service()
         audit_log_service = self.service_factory.create_audit_log_service()
         return ViewPermission(ui, permission_service, user_service, audit_log_service)
+
+    def create_view_permission_grants_usecase(self, ui):
+        # type: (ViewPermissionGrantsUI) -> ViewPermissionGrants
+        permission_service = self.service_factory.create_permission_service()
+        user_service = self.service_factory.create_user_service()
+        audit_log_service = self.service_factory.create_audit_log_service()
+        return ViewPermissionGrants(ui, permission_service, user_service, audit_log_service)

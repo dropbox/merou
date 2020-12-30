@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     )
     from grouper.fe.forms import ServiceAccountCreateForm, ServiceAccountPermissionGrantForm
     from grouper.fe.util import GrouperHandler
-    from typing import Dict, List, Optional
+    from typing import Dict, List, Optional, Union
     from wtforms_tornado import Form
 
 
@@ -63,6 +63,7 @@ class BaseTemplate:
             "perf_trace_uuid": handler.perf_trace_uuid,
             "update_qs": handler.update_qs,
             "xsrf_form": handler.xsrf_form_html,
+            "transfer_qs": handler.transfer_qs,
         }
 
         # It would be nice to be able to use asdict here, but alas, it tries to deep copies of
@@ -86,15 +87,25 @@ class BaseTemplate:
 @dataclass(repr=False, eq=False)
 class PermissionTemplate(BaseTemplate):
     permission: Permission
-    group_grants: List[GroupPermissionGrant]
-    service_account_grants: List[ServiceAccountPermissionGrant]
     access: PermissionAccess
+    audit_log_entries: List[AuditLogEntry]
+
+    template: InitVar[str] = "permission.html"
+
+
+@dataclass(repr=False, eq=False)
+class PermissionGrantsTemplate(BaseTemplate):
+    permission: Permission
+    access: PermissionAccess
+    grants: Union[List[GroupPermissionGrant], List[ServiceAccountPermissionGrant]]
     audit_log_entries: List[AuditLogEntry]
     offset: int
     limit: int
     total: int
+    sort_key: str
+    sort_dir: str
 
-    template: InitVar[str] = "permission.html"
+    template: InitVar[str]
 
 
 @dataclass(repr=False, eq=False)

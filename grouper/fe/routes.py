@@ -38,6 +38,7 @@ from grouper.fe.handlers.perf_profile import PerfProfile
 from grouper.fe.handlers.permission_disable import PermissionDisable
 from grouper.fe.handlers.permission_disable_auditing import PermissionDisableAuditing
 from grouper.fe.handlers.permission_enable_auditing import PermissionEnableAuditing
+from grouper.fe.handlers.permission_grants_view import PermissionGrantsView
 from grouper.fe.handlers.permission_request import PermissionRequest
 from grouper.fe.handlers.permission_view import PermissionView
 from grouper.fe.handlers.permissions_create import PermissionsCreate
@@ -135,6 +136,8 @@ HANDLERS: List[Tuple[str, Type[RequestHandler]]] = [
     (f"/permissions/requests/{_REQUEST_ID}", PermissionsRequestUpdate),
     ("/permissions", PermissionsView),
     (f"/permissions/{_PERMISSION}", PermissionView),
+    (f"/permissions/{_PERMISSION}/groups", PermissionGrantsView),
+    (f"/permissions/{_PERMISSION}/service_accounts", PermissionGrantsView),
     (f"/permissions/{_PERMISSION}/disable", PermissionDisable),
     (f"/permissions/{_PERMISSION}/enable-auditing", PermissionEnableAuditing),
     (f"/permissions/{_PERMISSION}/disable-auditing", PermissionDisableAuditing),

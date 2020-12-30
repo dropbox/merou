@@ -80,6 +80,13 @@ class PermissionGrantRepository(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def group_paginated_grants_for_permission(
+        self, name, pagination, include_disabled_groups=False, argument=None
+    ):
+        # type: (str, Pagination, bool, Optional[str]) -> PaginatedList[GroupPermissionGrant]
+        pass
+
+    @abstractmethod
     def group_grants_for_permission(self, name, include_disabled_groups=False, argument=None):
         # type: (str, bool, Optional[str]) -> List[GroupPermissionGrant]
         pass
@@ -112,6 +119,11 @@ class PermissionGrantRepository(metaclass=ABCMeta):
     @abstractmethod
     def service_account_grants_for_permission(self, name, argument=None):
         # type: (str, Optional[str]) -> List[ServiceAccountPermissionGrant]
+        pass
+
+    @abstractmethod
+    def service_account_paginated_grants_for_permission(self, name, pagination, argument=None):
+        # type: (str, Pagination, Optional[str]) -> PaginatedList[ServiceAccountPermissionGrant]
         pass
 
     @abstractmethod

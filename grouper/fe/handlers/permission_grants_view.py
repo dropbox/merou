@@ -21,6 +21,21 @@ class PermissionGrantsView(GrouperHandler, ViewPermissionGrantsUI):
     def view_permission_failed_not_found(self, name: str) -> None:
         self.notfound()
 
+    def get_sort_key(self, grant_type: GrantType) -> PermissionGrantSortKey:
+        sort_key_str = self.get_argument("sort_by", None)
+        if sort_key_str:
+            sort_key = PermissionGrantSortKey(sort_key_str)
+        else:
+            sort_key = (
+                PermissionGrantSortKey.GROUP
+                if grant_type == GrantType.Group
+                else PermissionGrantSortKey.SERVICE_ACCOUNT
+            )
+        return sort_key
+
+    def get_grant_type(self):
+        return GrantType.Group if "/groups" in self.request.uri else GrantType.ServiceAccount
+
     def viewed_permission(
         self,
         permission: Permission,
@@ -31,15 +46,14 @@ class PermissionGrantsView(GrouperHandler, ViewPermissionGrantsUI):
         audit_log_entries: List[AuditLogEntry],
     ) -> None:
 
+        grant_type = self.get_grant_type()
         template_html = (
             "permission-group.html"
-            if "/groups" in self.request.uri
+            if grant_type == GrantType.Group
             else "permission-service-account.html"
         )
 
-        print("Sending data {}".format(grants))
-
-        sort_key = self.get_argument("sort_by", "name")
+        sort_key = self.get_sort_key(grant_type).name
         sort_dir = self.get_argument("order", "asc")
 
         template = PermissionGrantsTemplate(
@@ -60,21 +74,11 @@ class PermissionGrantsView(GrouperHandler, ViewPermissionGrantsUI):
         name = self.get_path_argument("name")
         argument = self.get_argument("argument", None)
 
-        grant_type = GrantType.Group if "/groups" in self.request.uri else GrantType.ServiceAccount
+        grant_type = self.get_grant_type()
 
         offset = int(self.get_argument("offset", "0"))
         limit = int(self.get_argument("limit", "100"))
-
-        sort_key_str = self.get_argument("sort_by", None)
-        if sort_key_str:
-            sort_key = PermissionGrantSortKey(sort_key_str)
-        else:
-            sort_key = (
-                PermissionGrantSortKey.GROUP
-                if grant_type == GrantType.Group
-                else PermissionGrantSortKey.SERVICE_ACCOUNT
-            )
-
+        sort_key = self.get_sort_key(grant_type)
         sort_dir = self.get_argument("order", "asc")
         pagination = Pagination(
             sort_key=sort_key, reverse_sort=(sort_dir == "desc"), offset=offset, limit=limit

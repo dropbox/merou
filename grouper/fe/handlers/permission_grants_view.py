@@ -1,11 +1,19 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import cast, TYPE_CHECKING
 
 from grouper.entities.pagination import PaginatedList, Pagination, PermissionGrantSortKey
-from grouper.fe.templates import PermissionGrantsTemplate
+from grouper.fe.templates import (
+    PermissionGroupGrantsTemplate,
+    PermissionServiceAccountGrantsTemplate,
+)
 from grouper.fe.util import GrouperHandler
-from grouper.usecases.view_permission_grants import GrantType, ViewPermissionGrantsUI
+from grouper.usecases.view_permission_grants import (
+    GrantType,
+    GroupListType,
+    ServiceAccountListType,
+    ViewPermissionGrantsUI
+)
 
 if TYPE_CHECKING:
     from grouper.entities.audit_log_entry import AuditLogEntry
@@ -47,26 +55,34 @@ class PermissionGrantsView(GrouperHandler, ViewPermissionGrantsUI):
     ) -> None:
 
         grant_type = self.get_grant_type()
-        template_html = (
-            "permission-group.html"
-            if grant_type == GrantType.Group
-            else "permission-service-account.html"
-        )
 
         sort_key = self.get_sort_key(grant_type).name
         sort_dir = self.get_argument("order", "asc")
 
-        template = PermissionGrantsTemplate(
-            permission=permission,
-            access=access,
-            grants=grants.values,
-            audit_log_entries=audit_log_entries,
-            template=template_html,
-            offset=grants.offset,
-            limit=grants.limit or 100,
-            total=grants.total,
-            sort_key=sort_key,
-            sort_dir=sort_dir,
+        template = (
+            PermissionGroupGrantsTemplate(
+                permission=permission,
+                access=access,
+                grants=cast(GroupListType, grants).values,
+                audit_log_entries=audit_log_entries,
+                offset=grants.offset,
+                limit=grants.limit or 100,
+                total=grants.total,
+                sort_key=sort_key,
+                sort_dir=sort_dir,
+            )
+            if grant_type == GrantType.Group
+            else PermissionServiceAccountGrantsTemplate(
+                permission=permission,
+                access=access,
+                grants=cast(ServiceAccountListType, grants).values,
+                audit_log_entries=audit_log_entries,
+                offset=grants.offset,
+                limit=grants.limit or 100,
+                total=grants.total,
+                sort_key=sort_key,
+                sort_dir=sort_dir,
+            )
         )
         self.render_template_class(template)
 

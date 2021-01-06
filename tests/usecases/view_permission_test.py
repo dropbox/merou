@@ -306,6 +306,7 @@ def test_view_permissions_access(setup):
         assert mock_ui.access.can_change_audited_status
         assert mock_ui.access.can_disable
 
+
 def test_pagination(setup):
     # type: (SetupTest) -> None
 
@@ -333,6 +334,3 @@ def test_pagination(setup):
             for g in cast(GroupListType, mock_group_ui.grants).values
         ]
         assert group_grants == [("group{}".format(offset), "permission", "arg{}".format(offset))]
-
-
-

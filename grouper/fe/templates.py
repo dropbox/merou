@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     )
     from grouper.fe.forms import ServiceAccountCreateForm, ServiceAccountPermissionGrantForm
     from grouper.fe.util import GrouperHandler
-    from typing import Dict, List, Optional, Union
+    from typing import Dict, List, Optional
     from wtforms_tornado import Form
 
 
@@ -94,10 +94,10 @@ class PermissionTemplate(BaseTemplate):
 
 
 @dataclass(repr=False, eq=False)
-class PermissionGrantsTemplate(BaseTemplate):
+class PermissionGroupGrantsTemplate(BaseTemplate):
     permission: Permission
     access: PermissionAccess
-    grants: Union[List[GroupPermissionGrant], List[ServiceAccountPermissionGrant]]
+    grants: List[GroupPermissionGrant]
     audit_log_entries: List[AuditLogEntry]
     offset: int
     limit: int
@@ -105,7 +105,22 @@ class PermissionGrantsTemplate(BaseTemplate):
     sort_key: str
     sort_dir: str
 
-    template: InitVar[str]
+    template: InitVar[str] = "permission-group.html"
+
+
+@dataclass(repr=False, eq=False)
+class PermissionServiceAccountGrantsTemplate(BaseTemplate):
+    permission: Permission
+    access: PermissionAccess
+    grants: List[ServiceAccountPermissionGrant]
+    audit_log_entries: List[AuditLogEntry]
+    offset: int
+    limit: int
+    total: int
+    sort_key: str
+    sort_dir: str
+
+    template: InitVar[str] = "permission-service-account.html"
 
 
 @dataclass(repr=False, eq=False)

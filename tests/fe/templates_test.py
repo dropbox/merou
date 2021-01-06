@@ -16,7 +16,16 @@ if TYPE_CHECKING:
 
 # These fields are automatically added to the template namespace for all render invocations in
 # BaseTemplate or BaseTemplateEngine and thus don't need to be provided by the template dataclass.
-DEFAULT_FIELDS = {"ROLES", "TYPES", "alerts", "is_active", "static_url", "update_qs", "xsrf_form"}
+DEFAULT_FIELDS = {
+    "ROLES",
+    "TYPES",
+    "alerts",
+    "is_active",
+    "static_url",
+    "update_qs",
+    "xsrf_form",
+    "transfer_qs",
+}
 
 # Unfortunately, the trick that we're using doesn't expand macros, and macros show up as undefined
 # variables.  We therefore have to exclude them as well, and we can't look inside the macros to see

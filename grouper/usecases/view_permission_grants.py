@@ -1,23 +1,19 @@
 from abc import ABCMeta, abstractmethod
 from enum import Enum
+from typing import List, Optional, Union
 
+from grouper.entities.audit_log_entry import AuditLogEntry
 from grouper.entities.pagination import PaginatedList, Pagination, PermissionGrantSortKey
+from grouper.entities.permission import Permission, PermissionAccess
 from grouper.entities.permission_grant import (
     GroupPermissionGrant,
     ServiceAccountPermissionGrant,
 )
-
-from grouper.entities.audit_log_entry import AuditLogEntry
-from grouper.entities.permission import Permission, PermissionAccess
 from grouper.usecases.interfaces import AuditLogInterface, PermissionInterface, UserInterface
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from typing import List, Optional, Union
-
-    GroupListType = PaginatedList[GroupPermissionGrant]
-    ServiceAccountListType = PaginatedList[ServiceAccountPermissionGrant]
-    GrantsListType = Union[GroupListType, ServiceAccountListType]
+GroupListType = PaginatedList[GroupPermissionGrant]
+ServiceAccountListType = PaginatedList[ServiceAccountPermissionGrant]
+GrantsListType = Union[GroupListType, ServiceAccountListType]
 
 
 class ViewPermissionGrantsUI(metaclass=ABCMeta):

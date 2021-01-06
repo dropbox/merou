@@ -24,6 +24,9 @@ RUN apt-get install -y chromium-driver
 RUN apt-get install -y procps unzip wget
 RUN apt-get install -y libcurl4-openssl-dev libssl-dev
 
+RUN wget --no-verbose -O /tmp/google-chrome-stable_current_amd64.deb https://dl.google.com/dl/linux/direct/google-chrome-stable_current_amd64.deb
+RUN apt-get install -y /tmp/google-chrome-stable_current_amd64.deb
+
 ENV DB mysql
 WORKDIR /app
 COPY ci/setup.sh /app/ci/setup.sh

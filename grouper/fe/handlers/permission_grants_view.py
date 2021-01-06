@@ -12,7 +12,7 @@ from grouper.usecases.view_permission_grants import (
     GrantType,
     GroupListType,
     ServiceAccountListType,
-    ViewPermissionGrantsUI
+    ViewPermissionGrantsUI,
 )
 
 if TYPE_CHECKING:

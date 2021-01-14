@@ -96,9 +96,7 @@ class PermissionTemplate(BaseTemplate):
 @dataclass(repr=False, eq=False)
 class PermissionGroupGrantsTemplate(BaseTemplate):
     permission: Permission
-    access: PermissionAccess
     grants: List[GroupPermissionGrant]
-    audit_log_entries: List[AuditLogEntry]
     offset: int
     limit: int
     total: int
@@ -111,9 +109,7 @@ class PermissionGroupGrantsTemplate(BaseTemplate):
 @dataclass(repr=False, eq=False)
 class PermissionServiceAccountGrantsTemplate(BaseTemplate):
     permission: Permission
-    access: PermissionAccess
     grants: List[ServiceAccountPermissionGrant]
-    audit_log_entries: List[AuditLogEntry]
     offset: int
     limit: int
     total: int

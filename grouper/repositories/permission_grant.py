@@ -33,11 +33,6 @@ if TYPE_CHECKING:
 class GraphPermissionGrantRepository(PermissionGrantRepository):
     """Graph-aware storage layer for permission grants."""
 
-    SORT_FIELD = {
-        PermissionGrantSortKey.GROUP: "group",
-        PermissionGrantSortKey.SERVICE_ACCOUNT: "service_account",
-    }
-
     def __init__(self, graph, repository):
         # type: (GroupGraph, PermissionGrantRepository) -> None
         self.graph = graph
@@ -61,10 +56,7 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
 
     def group_grants_for_permission(self, name, include_disabled_groups=False, argument=None):
         # type: (str, bool, Optional[str]) -> List[GroupPermissionGrant]
-        grants = self.repository.group_grants_for_permission(
-            name, include_disabled_groups, argument
-        )
-        return grants
+        return self.repository.group_grants_for_permission(name, include_disabled_groups, argument)
 
     def group_paginated_grants_for_permission(
         self, name, pagination, include_disabled_groups=False, argument=None
@@ -74,11 +66,10 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
             name, include_disabled_groups, argument
         )
 
-        print(grants)
         if pagination.sort_key != PermissionGrantSortKey.NONE:
             grants = sorted(
                 grants,
-                key=lambda p: getattr(p, self.SORT_FIELD[pagination.sort_key]),
+                key=lambda p: getattr(p, pagination.sort_key.name.lower()),
                 reverse=pagination.reverse_sort,
             )
 
@@ -164,7 +155,7 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
         if pagination.sort_key != PermissionGrantSortKey.NONE:
             grants = sorted(
                 grants,
-                key=lambda p: getattr(p, self.SORT_FIELD[pagination.sort_key]),
+                key=lambda p: getattr(p, pagination.sort_key.name.lower()),
                 reverse=pagination.reverse_sort,
             )
 

@@ -43,6 +43,7 @@ RUN /etc/init.d/mysql start && \
 COPY . /app
 ENV PYTHONPATH /app
 ENV GROUPER_SETTINGS /app/config/dev.yaml
+ENV PATH="/app/chromedriver:${PATH}"
 
 RUN bin/grouper-ctl -vv sync_db && \
  bin/grouper-ctl -vv user create user@example.com && \

@@ -1,25 +1,27 @@
 from datetime import datetime, timedelta
-from typing import cast, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from grouper.constants import AUDIT_MANAGER, PERMISSION_ADMIN
+from grouper.entities.audit_log_entry import AuditLogEntry
 from grouper.entities.pagination import Pagination, PermissionGrantSortKey
 from grouper.usecases.authorization import Authorization
-from grouper.usecases.view_permission_grants import (
-    GrantType,
+from grouper.usecases.view_permission import ViewPermissionUI
+from grouper.usecases.view_permission_group_grants import (
     GroupListType,
+    ViewPermissionGroupGrantsUI,
+)
+from grouper.usecases.view_permission_service_account_grants import (
     ServiceAccountListType,
-    ViewPermissionGrantsUI,
+    ViewPermissionServiceAccountGrantsUI,
 )
 
 if TYPE_CHECKING:
-    from grouper.entities.audit_log_entry import AuditLogEntry
+    from typing import List
     from grouper.entities.permission import Permission, PermissionAccess
     from tests.setup import SetupTest
-    from typing import List
-    from grouper.usecases.view_permission_grants import GrantsListType
 
 
-class MockGroupUI(ViewPermissionGrantsUI):
+class MockGroupUI(ViewPermissionGroupGrantsUI):
     def view_permission_failed_not_found(self, name):
         # type: (str) -> None
         self.failed = True
@@ -27,18 +29,14 @@ class MockGroupUI(ViewPermissionGrantsUI):
     def viewed_permission(
         self,
         permission,  # type: Permission
-        grants,  # type: GrantsListType
-        access,  # type: PermissionAccess
-        audit_log_entries,  # type: List[AuditLogEntry]
+        grants,  # type: GroupListType
     ):
         # type (...) -> None
         self.permission = permission
         self.grants = grants
-        self.access = access
-        self.audit_log_entries = audit_log_entries
 
 
-class MockServiceAccountUI(ViewPermissionGrantsUI):
+class MockServiceAccountUI(ViewPermissionServiceAccountGrantsUI):
     def view_permission_failed_not_found(self, name):
         # type: (str) -> None
         self.failed = True
@@ -46,13 +44,26 @@ class MockServiceAccountUI(ViewPermissionGrantsUI):
     def viewed_permission(
         self,
         permission,  # type: Permission
-        grants,  # type: GrantsListType
+        grants,  # type: ServiceAccountListType
+    ):
+        # type (...) -> None
+        self.permission = permission
+        self.grants = grants
+
+
+class MockPermissionUI(ViewPermissionUI):
+    def view_permission_failed_not_found(self, name):
+        # type: (str) -> None
+        self.failed = True
+
+    def viewed_permission(
+        self,
+        permission,  # type: Permission
         access,  # type: PermissionAccess
         audit_log_entries,  # type: List[AuditLogEntry]
     ):
         # type (...) -> None
         self.permission = permission
-        self.grants = grants
         self.access = access
         self.audit_log_entries = audit_log_entries
 
@@ -61,11 +72,17 @@ def test_view_permissions(setup):
     # type: (SetupTest) -> None
     mock_group_ui = MockGroupUI()
     mock_service_account_ui = MockServiceAccountUI()
+    mock_permission_ui = MockPermissionUI()
 
-    group_usecase = setup.usecase_factory.create_view_permission_grants_usecase(mock_group_ui)
-    service_account_usecase = setup.usecase_factory.create_view_permission_grants_usecase(
-        mock_service_account_ui
+    group_usecase = setup.usecase_factory.create_view_permission_group_grants_usecase(
+        mock_group_ui
     )
+    service_account_usecase = (
+        setup.usecase_factory.create_view_permission_service_account_grants_usecase(
+            mock_service_account_ui
+        )
+    )
+    permission_usecase = setup.usecase_factory.create_view_permission_usecase(mock_permission_ui)
 
     with setup.transaction():
         setup.create_permission("audited-permission", "", audited=True)
@@ -102,66 +119,62 @@ def test_view_permissions(setup):
         sort_key=PermissionGrantSortKey.SERVICE_ACCOUNT, reverse_sort=False, offset=0, limit=100
     )
 
-    group_usecase.view_granted_permission(
-        "some-permission", "gary@a.co", 20, GrantType.Group, group_paginate
-    )
+    group_usecase.view_granted_permission("some-permission", "gary@a.co", group_paginate)
     service_account_usecase.view_granted_permission(
-        "some-permission", "gary@a.co", 20, GrantType.ServiceAccount, service_account_paginate
+        "some-permission", "gary@a.co", service_account_paginate
     )
+    permission_usecase.view_permission("some-permission", "gary@a.co", 20)
 
-    for mock_ui in [mock_group_ui, mock_service_account_ui]:
-        assert mock_ui.permission.name == "some-permission"
-        assert mock_ui.permission.description == "Some permission"
-        assert not mock_ui.permission.audited
-        assert mock_ui.permission.enabled
-        assert not mock_ui.access.can_disable
-        assert not mock_ui.access.can_change_audited_status
-    group_grants = [
-        (g.group, g.permission, g.argument)
-        for g in cast(GroupListType, mock_group_ui.grants).values
-    ]
+    assert mock_group_ui.permission.name == "some-permission"
+    assert mock_service_account_ui.permission.name == "some-permission"
+    assert mock_group_ui.permission.description == "Some permission"
+    assert mock_service_account_ui.permission.description == "Some permission"
+    assert not mock_permission_ui.permission.audited
+    assert mock_permission_ui.permission.enabled
+    assert not mock_permission_ui.access.can_disable
+    assert not mock_permission_ui.access.can_change_audited_status
+
+    group_grants = [(g.group, g.permission, g.argument) for g in mock_group_ui.grants.values]
     assert group_grants == [
         ("another-group", "some-permission", ""),
         ("some-group", "some-permission", "foo"),
     ]
-    assert cast(ServiceAccountListType, mock_service_account_ui.grants).values == []
-    assert mock_service_account_ui.audit_log_entries == []
+    assert mock_service_account_ui.grants.values == []
+    assert mock_permission_ui.audit_log_entries == []
 
     # Audited permission without group grants but some service account grants.
-    group_usecase.view_granted_permission(
-        "audited-permission", "gary@a.co", 20, GrantType.Group, group_paginate
-    )
+    group_usecase.view_granted_permission("audited-permission", "gary@a.co", group_paginate)
     service_account_usecase.view_granted_permission(
-        "audited-permission", "gary@a.co", 20, GrantType.ServiceAccount, service_account_paginate
+        "audited-permission", "gary@a.co", service_account_paginate
     )
 
-    for mock_ui in [mock_group_ui, mock_service_account_ui]:
-        assert mock_ui.permission.name == "audited-permission"
-        assert mock_ui.permission.description == ""
-        assert mock_ui.permission.audited
-        assert mock_ui.permission.enabled
-    assert cast(GroupListType, mock_group_ui.grants).values == []
+    assert mock_group_ui.permission.name == "audited-permission"
+    assert mock_service_account_ui.permission.name == "audited-permission"
+    assert mock_group_ui.permission.description == ""
+    assert mock_service_account_ui.permission.description == ""
+
+    assert mock_group_ui.grants.values == []
     service_account_grants = [
         (g.service_account, g.permission, g.argument)
-        for g in cast(ServiceAccountListType, mock_service_account_ui.grants).values
+        for g in mock_service_account_ui.grants.values
     ]
     assert service_account_grants == [("service@svc.localhost", "audited-permission", "argument")]
 
     # Disabled permission with some log entries.
-    group_usecase.view_granted_permission(
-        "disabled-permission", "gary@a.co", 20, GrantType.Group, group_paginate
-    )
+    group_usecase.view_granted_permission("disabled-permission", "gary@a.co", group_paginate)
     service_account_usecase.view_granted_permission(
-        "disabled-permission", "gary@a.co", 20, GrantType.ServiceAccount, service_account_paginate
+        "disabled-permission", "gary@a.co", service_account_paginate
     )
-    for mock_ui in [mock_group_ui, mock_service_account_ui]:
-        assert mock_ui.permission.name == "disabled-permission"
-        assert not mock_ui.permission.audited
-        assert not mock_ui.permission.enabled
-    assert cast(GroupListType, mock_group_ui.grants).values == []
-    assert cast(ServiceAccountListType, mock_service_account_ui.grants).values == []
+    permission_usecase.view_permission("disabled-permission", "gary@a.co", 20)
+
+    assert mock_group_ui.permission.name == "disabled-permission"
+    assert mock_service_account_ui.permission.name == "disabled-permission"
+    assert not mock_permission_ui.permission.audited
+    assert not mock_permission_ui.permission.enabled
+    assert mock_group_ui.grants.values == []
+    assert mock_service_account_ui.grants.values == []
     audit_log_entries = [
-        (e.actor, e.action, e.on_permission) for e in mock_group_ui.audit_log_entries
+        (e.actor, e.action, e.on_permission) for e in mock_permission_ui.audit_log_entries
     ]
     assert audit_log_entries == [
         ("gary@a.co", "disable_permission", "disabled-permission"),
@@ -169,48 +182,36 @@ def test_view_permissions(setup):
     ]
 
     # Limit the number of audit log entries.
-    group_usecase.view_granted_permission(
-        "disabled-permission", "gary@a.co", 1, GrantType.Group, group_paginate
+    permission_usecase.view_permission(
+        "disabled-permission", "gary@a.co", 1,
     )
-    service_account_usecase.view_granted_permission(
-        "disabled-permission", "gary@a.co", 1, GrantType.ServiceAccount, service_account_paginate
-    )
-    group_audit_log_entries = [
-        (e.actor, e.action, e.on_permission) for e in mock_group_ui.audit_log_entries
+    audit_log_entries = [
+        (e.actor, e.action, e.on_permission) for e in mock_permission_ui.audit_log_entries
     ]
-    sa_audit_log_entries = [
-        (e.actor, e.action, e.on_permission) for e in mock_service_account_ui.audit_log_entries
-    ]
-    assert group_audit_log_entries == [("gary@a.co", "disable_permission", "disabled-permission")]
-    assert sa_audit_log_entries == [("gary@a.co", "disable_permission", "disabled-permission")]
+    assert audit_log_entries == [("gary@a.co", "disable_permission", "disabled-permission")]
 
     # Search for permission based on argument with group grants and service account grants.
     group_usecase.view_granted_permission(
-        "argumented-permission", "gary@a.co", 20, GrantType.Group, group_paginate, "foo-arg"
+        "argumented-permission", "gary@a.co", group_paginate, "foo-arg"
     )
     service_account_usecase.view_granted_permission(
-        "argumented-permission",
-        "gary@a.co",
-        20,
-        GrantType.ServiceAccount,
-        service_account_paginate,
-        "foo-arg",
+        "argumented-permission", "gary@a.co", service_account_paginate, "foo-arg",
     )
-    for mock_ui in [mock_group_ui, mock_service_account_ui]:
-        assert mock_ui.permission.name == "argumented-permission"
-        assert mock_ui.permission.description == "Some argumented permission"
-        assert not mock_ui.permission.audited
-        assert mock_ui.permission.enabled
-    group_grants = [
-        (g.group, g.permission, g.argument)
-        for g in cast(GroupListType, mock_group_ui.grants).values
-    ]
+    permission_usecase.view_permission("argumented-permission", "gary@a.co", 20)
+
+    assert mock_group_ui.permission.name == "argumented-permission"
+    assert mock_service_account_ui.permission.name == "argumented-permission"
+    assert mock_group_ui.permission.description == "Some argumented permission"
+    assert mock_service_account_ui.permission.description == "Some argumented permission"
+    assert not mock_permission_ui.permission.audited
+    assert mock_permission_ui.permission.enabled
+    group_grants = [(g.group, g.permission, g.argument) for g in mock_group_ui.grants.values]
     assert group_grants == [
         ("some-group", "argumented-permission", "foo-arg"),
     ]
     service_account_grants = [
         (g.service_account, g.permission, g.argument)
-        for g in cast(ServiceAccountListType, mock_service_account_ui.grants).values
+        for g in mock_service_account_ui.grants.values
     ]
     assert service_account_grants == [
         ("service_for_argumented_permission@svc.localhost", "argumented-permission", "foo-arg")
@@ -218,50 +219,33 @@ def test_view_permissions(setup):
 
     # Search for permission based on argument which isn't present
     group_usecase.view_granted_permission(
-        "argumented-permission", "gary@a.co", 20, GrantType.Group, group_paginate, "foo"
+        "argumented-permission", "gary@a.co", group_paginate, "foo"
     )
     service_account_usecase.view_granted_permission(
-        "argumented-permission",
-        "gary@a.co",
-        20,
-        GrantType.ServiceAccount,
-        service_account_paginate,
-        "foo",
+        "argumented-permission", "gary@a.co", service_account_paginate, "foo",
     )
+    permission_usecase.view_permission("argumented-permission", "gary@a.co", 20)
 
-    for mock_ui in [mock_group_ui, mock_service_account_ui]:
-        assert mock_ui.permission.name == "argumented-permission"
-        assert mock_ui.permission.description == "Some argumented permission"
-        assert not mock_ui.permission.audited
-        assert mock_ui.permission.enabled
-    group_grants = [
-        (g.group, g.permission, g.argument)
-        for g in cast(GroupListType, mock_group_ui.grants).values
-    ]
+    assert mock_group_ui.permission.name == "argumented-permission"
+    assert mock_service_account_ui.permission.name == "argumented-permission"
+    assert mock_group_ui.permission.description == "Some argumented permission"
+    assert mock_service_account_ui.permission.description == "Some argumented permission"
+    assert not mock_permission_ui.permission.audited
+    assert mock_permission_ui.permission.enabled
+    group_grants = [(g.group, g.permission, g.argument) for g in mock_group_ui.grants.values]
     assert group_grants == []
     service_account_grants = [
         (g.service_account, g.permission, g.argument)
-        for g in cast(ServiceAccountListType, mock_service_account_ui.grants).values
+        for g in mock_service_account_ui.grants.values
     ]
     assert service_account_grants == []
 
 
 def test_view_permissions_access(setup):
     # type: (SetupTest) -> None
-    mock_group_ui = MockGroupUI()
-    mock_service_account_ui = MockServiceAccountUI()
 
-    group_usecase = setup.usecase_factory.create_view_permission_grants_usecase(mock_group_ui)
-    service_account_usecase = setup.usecase_factory.create_view_permission_grants_usecase(
-        mock_service_account_ui
-    )
-
-    group_paginate = Pagination(
-        sort_key=PermissionGrantSortKey.GROUP, reverse_sort=False, offset=0, limit=100
-    )
-    service_account_paginate = Pagination(
-        sort_key=PermissionGrantSortKey.SERVICE_ACCOUNT, reverse_sort=False, offset=0, limit=100
-    )
+    mock_permission_ui = MockPermissionUI()
+    permission_usecase = setup.usecase_factory.create_view_permission_usecase(mock_permission_ui)
 
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "audit-managers")
@@ -269,42 +253,24 @@ def test_view_permissions_access(setup):
         setup.create_permission("some-permission", "Some permission")
 
     # Can manage audited permissions, but is not a permission admin.
-    group_usecase.view_granted_permission(
-        "some-permission", "gary@a.co", 20, GrantType.Group, group_paginate
-    )
-    service_account_usecase.view_granted_permission(
-        "some-permission", "gary@a.co", 20, GrantType.ServiceAccount, service_account_paginate
-    )
-    for mock_ui in [mock_group_ui, mock_service_account_ui]:
-        assert mock_ui.access.can_change_audited_status
-        assert not mock_ui.access.can_disable
+    permission_usecase.view_permission("some-permission", "gary@a.co", 20)
+    assert mock_permission_ui.access.can_change_audited_status
+    assert not mock_permission_ui.access.can_disable
 
     with setup.transaction():
         setup.grant_permission_to_group(PERMISSION_ADMIN, "", "audit-managers")
         setup.add_user_to_group("zorkian@a.co", "grouper-administrators")
         setup.grant_permission_to_group(PERMISSION_ADMIN, "", "grouper-administrators")
 
-    # # Now is both a permission admin and an audit manager.
-    group_usecase.view_granted_permission(
-        "some-permission", "gary@a.co", 20, GrantType.Group, group_paginate
-    )
-    service_account_usecase.view_granted_permission(
-        "some-permission", "gary@a.co", 20, GrantType.ServiceAccount, service_account_paginate
-    )
-    for mock_ui in [mock_group_ui, mock_service_account_ui]:
-        assert mock_ui.access.can_change_audited_status
-        assert mock_ui.access.can_disable
+    # Now is both a permission admin and an audit manager.
+    permission_usecase.view_permission("some-permission", "gary@a.co", 20)
+    assert mock_permission_ui.access.can_change_audited_status
+    assert mock_permission_ui.access.can_disable
 
     # Just having permission admin is enough.
-    group_usecase.view_granted_permission(
-        "some-permission", "zorkian@a.co", 20, GrantType.Group, group_paginate
-    )
-    service_account_usecase.view_granted_permission(
-        "some-permission", "zorkian@a.co", 20, GrantType.ServiceAccount, service_account_paginate
-    )
-    for mock_ui in [mock_group_ui, mock_service_account_ui]:
-        assert mock_ui.access.can_change_audited_status
-        assert mock_ui.access.can_disable
+    permission_usecase.view_permission("some-permission", "zorkian@a.co", 20)
+    assert mock_permission_ui.access.can_change_audited_status
+    assert mock_permission_ui.access.can_disable
 
 
 def test_pagination(setup):
@@ -320,17 +286,14 @@ def test_pagination(setup):
         setup.create_user("gary@a.co")
 
     mock_group_ui = MockGroupUI()
-    group_usecase = setup.usecase_factory.create_view_permission_grants_usecase(mock_group_ui)
+    group_usecase = setup.usecase_factory.create_view_permission_group_grants_usecase(
+        mock_group_ui
+    )
 
     for offset in [0, 1, 2]:
         group_paginate = Pagination(
             sort_key=PermissionGrantSortKey.GROUP, reverse_sort=False, offset=offset, limit=1
         )
-        group_usecase.view_granted_permission(
-            "permission", "gary@a.co", 20, GrantType.Group, group_paginate
-        )
-        group_grants = [
-            (g.group, g.permission, g.argument)
-            for g in cast(GroupListType, mock_group_ui.grants).values
-        ]
+        group_usecase.view_granted_permission("permission", "gary@a.co", group_paginate)
+        group_grants = [(g.group, g.permission, g.argument) for g in mock_group_ui.grants.values]
         assert group_grants == [("group{}".format(offset), "permission", "arg{}".format(offset))]

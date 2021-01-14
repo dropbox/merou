@@ -59,26 +59,19 @@
                 <thead>
                     <tr>
                         <th class="col-sm-2">Permission Grants</th>
-                        <th class="col-sm-5">Type</th>
                     </tr>
                 </thead>
                 <tbody>
 
                 <tr class="permission-grant-row">
                     <td class="grant-group">
-                        <a href="{{transfer_qs('/permissions/', permission.name, '/groups')}}">Permission Group Grants</a>
-                    </td>
-                    <td class="grant-argument">
-                        Group
+                        <a href="{{transfer_qs('/permissions/', permission.name, '/groups')}}">Grants to Groups</a>
                     </td>
                 </tr>
 
                 <tr class="permission-grant-row">
                     <td class="grant-group">
-                        <a href="{{transfer_qs('/permissions/', permission.name, '/service_accounts')}}">Permission Service Account Grants</a>
-                    </td>
-                    <td class="grant-argument">
-                        Service Account
+                        <a href="{{transfer_qs('/permissions/', permission.name, '/service_accounts')}}">Grants to Service Accounts</a>
                     </td>
                 </tr>
 

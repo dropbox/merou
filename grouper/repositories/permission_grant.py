@@ -5,7 +5,11 @@ from sqlalchemy import or_
 
 from grouper.entities.group import GroupNotFoundException
 from grouper.entities.group_edge import GROUP_EDGE_ROLES
-from grouper.entities.pagination import PaginatedList, PermissionGrantSortKey
+from grouper.entities.pagination import (
+    PaginatedList,
+    PermissionGroupGrantSortKey,
+    PermissionServiceAccountGrantSortKey,
+)
 from grouper.entities.permission import PermissionNotFoundException
 from grouper.entities.permission_grant import (
     GroupPermissionGrant,
@@ -66,7 +70,7 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
             name, include_disabled_groups, argument
         )
 
-        if pagination.sort_key != PermissionGrantSortKey.NONE:
+        if pagination.sort_key != PermissionGroupGrantSortKey.NONE:
             grants = sorted(
                 grants,
                 key=lambda p: getattr(p, pagination.sort_key.name.lower()),
@@ -152,7 +156,7 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
         # type: (str, Pagination, Optional[str]) -> PaginatedList[ServiceAccountPermissionGrant]
         grants = self.repository.service_account_grants_for_permission(name, argument)
 
-        if pagination.sort_key != PermissionGrantSortKey.NONE:
+        if pagination.sort_key != PermissionServiceAccountGrantSortKey.NONE:
             grants = sorted(
                 grants,
                 key=lambda p: getattr(p, pagination.sort_key.name.lower()),

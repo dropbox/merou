@@ -2,7 +2,11 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum
 from typing import Optional
 
-from grouper.entities.pagination import PaginatedList, Pagination, PermissionGrantSortKey
+from grouper.entities.pagination import (
+    PaginatedList,
+    Pagination,
+    PermissionServiceAccountGrantSortKey,
+)
 from grouper.entities.permission import Permission
 from grouper.entities.permission_grant import ServiceAccountPermissionGrant
 from grouper.usecases.interfaces import PermissionInterface, UserInterface
@@ -49,7 +53,7 @@ class ViewPermissionServiceAccountGrants:
         self,
         name,  # type: str
         actor,  # type: str
-        pagination,  # type: Pagination[PermissionGrantSortKey]
+        pagination,  # type: Pagination[PermissionServiceAccountGrantSortKey]
         argument=None,  # type: Optional[str]
     ):
         # type: (...) -> None

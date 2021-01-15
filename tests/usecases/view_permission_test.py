@@ -3,7 +3,11 @@ from typing import TYPE_CHECKING
 
 from grouper.constants import AUDIT_MANAGER, PERMISSION_ADMIN
 from grouper.entities.audit_log_entry import AuditLogEntry
-from grouper.entities.pagination import Pagination, PermissionGrantSortKey
+from grouper.entities.pagination import (
+    Pagination,
+    PermissionGroupGrantSortKey,
+    PermissionServiceAccountGrantSortKey,
+)
 from grouper.usecases.authorization import Authorization
 from grouper.usecases.view_permission import ViewPermissionUI
 from grouper.usecases.view_permission_group_grants import (
@@ -77,10 +81,8 @@ def test_view_permissions(setup):
     group_usecase = setup.usecase_factory.create_view_permission_group_grants_usecase(
         mock_group_ui
     )
-    service_account_usecase = (
-        setup.usecase_factory.create_view_permission_service_account_grants_usecase(
-            mock_service_account_ui
-        )
+    service_account_usecase = setup.usecase_factory.create_view_permission_service_account_grants_usecase(
+        mock_service_account_ui
     )
     permission_usecase = setup.usecase_factory.create_view_permission_usecase(mock_permission_ui)
 
@@ -113,10 +115,13 @@ def test_view_permissions(setup):
 
     # Regular permission with some group grants.
     group_paginate = Pagination(
-        sort_key=PermissionGrantSortKey.GROUP, reverse_sort=False, offset=0, limit=100
+        sort_key=PermissionGroupGrantSortKey.GROUP, reverse_sort=False, offset=0, limit=100
     )
     service_account_paginate = Pagination(
-        sort_key=PermissionGrantSortKey.SERVICE_ACCOUNT, reverse_sort=False, offset=0, limit=100
+        sort_key=PermissionServiceAccountGrantSortKey.SERVICE_ACCOUNT,
+        reverse_sort=False,
+        offset=0,
+        limit=100,
     )
 
     group_usecase.view_granted_permission("some-permission", "gary@a.co", group_paginate)
@@ -292,7 +297,7 @@ def test_pagination(setup):
 
     for offset in [0, 1, 2]:
         group_paginate = Pagination(
-            sort_key=PermissionGrantSortKey.GROUP, reverse_sort=False, offset=offset, limit=1
+            sort_key=PermissionGroupGrantSortKey.GROUP, reverse_sort=False, offset=offset, limit=1
         )
         group_usecase.view_granted_permission("permission", "gary@a.co", group_paginate)
         group_grants = [(g.group, g.permission, g.argument) for g in mock_group_ui.grants.values]

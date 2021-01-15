@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from typing import Optional
 
-from grouper.entities.pagination import PaginatedList, Pagination, PermissionGrantSortKey
+from grouper.entities.pagination import PaginatedList, Pagination, PermissionGroupGrantSortKey
 from grouper.entities.permission import Permission
 from grouper.entities.permission_grant import GroupPermissionGrant
 from grouper.usecases.interfaces import PermissionInterface, UserInterface
@@ -45,7 +45,7 @@ class ViewPermissionGroupGrants:
         self,
         name,  # type: str
         actor,  # type: str
-        pagination,  # type: Pagination[PermissionGrantSortKey]
+        pagination,  # type: Pagination[PermissionGroupGrantSortKey]
         argument=None,  # type: Optional[str]
     ):
         # type: (...) -> None

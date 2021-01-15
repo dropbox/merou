@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from grouper.entities.pagination import PaginatedList, Pagination, PermissionGrantSortKey
+from grouper.entities.pagination import (
+    PaginatedList,
+    Pagination,
+    PermissionServiceAccountGrantSortKey,
+)
 from grouper.fe.templates import PermissionServiceAccountGrantsTemplate
 from grouper.fe.util import GrouperHandler
 from grouper.usecases.view_permission_service_account_grants import (
@@ -19,12 +23,12 @@ class PermissionGrantsServiceAccountView(GrouperHandler, ViewPermissionServiceAc
     def view_permission_failed_not_found(self, name: str) -> None:
         self.notfound()
 
-    def get_sort_key(self) -> PermissionGrantSortKey:
+    def get_sort_key(self) -> PermissionServiceAccountGrantSortKey:
         sort_key_str = self.get_argument("sort_by", None)
         if sort_key_str:
-            return PermissionGrantSortKey(sort_key_str)
+            return PermissionServiceAccountGrantSortKey(sort_key_str)
         else:
-            return PermissionGrantSortKey.SERVICE_ACCOUNT
+            return PermissionServiceAccountGrantSortKey.SERVICE_ACCOUNT
 
     def viewed_permission(
         self, permission: Permission, grants: PaginatedList[ServiceAccountPermissionGrant],

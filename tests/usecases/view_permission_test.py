@@ -78,13 +78,13 @@ def test_view_permissions(setup):
     mock_service_account_ui = MockServiceAccountUI()
     mock_permission_ui = MockPermissionUI()
 
-    group_usecase = setup.usecase_factory.create_view_permission_group_grants_usecase(
-        mock_group_ui
-    )
-    service_account_usecase = setup.usecase_factory.create_view_permission_service_account_grants_usecase(
+    usecase_factory = setup.usecase_factory
+
+    group_usecase = usecase_factory.create_view_permission_group_grants_usecase(mock_group_ui)
+    sa_usecase = usecase_factory.create_view_permission_service_account_grants_usecase(
         mock_service_account_ui
     )
-    permission_usecase = setup.usecase_factory.create_view_permission_usecase(mock_permission_ui)
+    permission_usecase = usecase_factory.create_view_permission_usecase(mock_permission_ui)
 
     with setup.transaction():
         setup.create_permission("audited-permission", "", audited=True)
@@ -125,9 +125,7 @@ def test_view_permissions(setup):
     )
 
     group_usecase.view_granted_permission("some-permission", "gary@a.co", group_paginate)
-    service_account_usecase.view_granted_permission(
-        "some-permission", "gary@a.co", service_account_paginate
-    )
+    sa_usecase.view_granted_permission("some-permission", "gary@a.co", service_account_paginate)
     permission_usecase.view_permission("some-permission", "gary@a.co", 20)
 
     assert mock_group_ui.permission.name == "some-permission"
@@ -149,9 +147,7 @@ def test_view_permissions(setup):
 
     # Audited permission without group grants but some service account grants.
     group_usecase.view_granted_permission("audited-permission", "gary@a.co", group_paginate)
-    service_account_usecase.view_granted_permission(
-        "audited-permission", "gary@a.co", service_account_paginate
-    )
+    sa_usecase.view_granted_permission("audited-permission", "gary@a.co", service_account_paginate)
 
     assert mock_group_ui.permission.name == "audited-permission"
     assert mock_service_account_ui.permission.name == "audited-permission"
@@ -167,7 +163,7 @@ def test_view_permissions(setup):
 
     # Disabled permission with some log entries.
     group_usecase.view_granted_permission("disabled-permission", "gary@a.co", group_paginate)
-    service_account_usecase.view_granted_permission(
+    sa_usecase.view_granted_permission(
         "disabled-permission", "gary@a.co", service_account_paginate
     )
     permission_usecase.view_permission("disabled-permission", "gary@a.co", 20)
@@ -199,7 +195,7 @@ def test_view_permissions(setup):
     group_usecase.view_granted_permission(
         "argumented-permission", "gary@a.co", group_paginate, "foo-arg"
     )
-    service_account_usecase.view_granted_permission(
+    sa_usecase.view_granted_permission(
         "argumented-permission", "gary@a.co", service_account_paginate, "foo-arg",
     )
     permission_usecase.view_permission("argumented-permission", "gary@a.co", 20)
@@ -226,7 +222,7 @@ def test_view_permissions(setup):
     group_usecase.view_granted_permission(
         "argumented-permission", "gary@a.co", group_paginate, "foo"
     )
-    service_account_usecase.view_granted_permission(
+    sa_usecase.view_granted_permission(
         "argumented-permission", "gary@a.co", service_account_paginate, "foo",
     )
     permission_usecase.view_permission("argumented-permission", "gary@a.co", 20)

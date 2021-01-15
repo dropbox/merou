@@ -63,9 +63,13 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
         return self.repository.group_grants_for_permission(name, include_disabled_groups, argument)
 
     def group_paginated_grants_for_permission(
-        self, name, pagination, include_disabled_groups=False, argument=None
+        self,
+        name,  # type: str
+        pagination,  # type: Pagination[PermissionGroupGrantSortKey]
+        include_disabled_groups=False,  # type: bool
+        argument=None,  # type: Optional[str]
     ):
-        # type: (str, Pagination, bool, Optional[str]) -> PaginatedList[GroupPermissionGrant]
+        # type: (...) -> PaginatedList[GroupPermissionGrant]
         grants = self.repository.group_grants_for_permission(
             name, include_disabled_groups, argument
         )
@@ -152,8 +156,13 @@ class GraphPermissionGrantRepository(PermissionGrantRepository):
         grants = self.repository.service_account_grants_for_permission(name, argument)
         return grants
 
-    def service_account_paginated_grants_for_permission(self, name, pagination, argument=None):
-        # type: (str, Pagination, Optional[str]) -> PaginatedList[ServiceAccountPermissionGrant]
+    def service_account_paginated_grants_for_permission(
+        self,
+        name,  # type: str
+        pagination,  # type: Pagination[PermissionServiceAccountGrantSortKey]
+        argument=None,  # type: Optional[str]
+    ):
+        # type: (...) -> PaginatedList[ServiceAccountPermissionGrant]
         grants = self.repository.service_account_grants_for_permission(name, argument)
 
         if pagination.sort_key != PermissionServiceAccountGrantSortKey.NONE:
@@ -520,11 +529,20 @@ class SQLPermissionGrantRepository(PermissionGrantRepository):
         ]
 
     def group_paginated_grants_for_permission(
-        self, name, pagination, include_disabled_groups=False, argument=None
+        self,
+        name,  # type: str
+        pagination,  # type: Pagination[PermissionGroupGrantSortKey]
+        include_disabled_groups=False,  # type: bool
+        argument=None,  # type: Optional[str]
     ):
-        # type: (str, Pagination, bool, Optional[str]) -> PaginatedList[GroupPermissionGrant]
+        # type: (...) -> PaginatedList[GroupPermissionGrant]
         raise NotImplementedError()
 
-    def service_account_paginated_grants_for_permission(self, name, pagination, argument=None):
-        # type: (str, Pagination, Optional[str]) -> PaginatedList[ServiceAccountPermissionGrant]
+    def service_account_paginated_grants_for_permission(
+        self,
+        name,  # type: str
+        pagination,  # type: Pagination[PermissionServiceAccountGrantSortKey]
+        argument=None,  # type: Optional[str]
+    ):
+        # type: (...) -> PaginatedList[ServiceAccountPermissionGrant]
         raise NotImplementedError()

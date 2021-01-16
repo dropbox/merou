@@ -34,7 +34,7 @@ class PermissionGrantsServiceAccountView(GrouperHandler, ViewPermissionServiceAc
         self, permission: Permission, grants: PaginatedList[ServiceAccountPermissionGrant],
     ) -> None:
 
-        sort_key = self.get_sort_key().name
+        sort_key = self.get_sort_key().name.lower()
         sort_dir = self.get_argument("order", "asc")
 
         template = PermissionServiceAccountGrantsTemplate(

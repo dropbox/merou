@@ -63,6 +63,7 @@ class BaseTemplate:
             "perf_trace_uuid": handler.perf_trace_uuid,
             "update_qs": handler.update_qs,
             "xsrf_form": handler.xsrf_form_html,
+            "transfer_qs": handler.transfer_qs,
         }
 
         # It would be nice to be able to use asdict here, but alas, it tries to deep copies of
@@ -86,12 +87,36 @@ class BaseTemplate:
 @dataclass(repr=False, eq=False)
 class PermissionTemplate(BaseTemplate):
     permission: Permission
-    group_grants: List[GroupPermissionGrant]
-    service_account_grants: List[ServiceAccountPermissionGrant]
     access: PermissionAccess
     audit_log_entries: List[AuditLogEntry]
 
     template: InitVar[str] = "permission.html"
+
+
+@dataclass(repr=False, eq=False)
+class PermissionGroupGrantsTemplate(BaseTemplate):
+    permission: Permission
+    grants: List[GroupPermissionGrant]
+    offset: int
+    limit: int
+    total: int
+    sort_key: str
+    sort_dir: str
+
+    template: InitVar[str] = "permission-group.html"
+
+
+@dataclass(repr=False, eq=False)
+class PermissionServiceAccountGrantsTemplate(BaseTemplate):
+    permission: Permission
+    grants: List[ServiceAccountPermissionGrant]
+    offset: int
+    limit: int
+    total: int
+    sort_key: str
+    sort_dir: str
+
+    template: InitVar[str] = "permission-service-account.html"
 
 
 @dataclass(repr=False, eq=False)

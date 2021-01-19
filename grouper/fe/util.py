@@ -197,6 +197,15 @@ class GrouperHandler(RequestHandler):
         qs.update(kwargs)
         return "?" + urlencode(sorted(qs.items()), True)
 
+    def transfer_qs(self, *path: Any) -> str:
+        qs = self.request.arguments.copy()
+        next_link = "".join(path)
+
+        if qs:
+            return next_link + "?" + urlencode(sorted(qs.items()), True)
+        else:
+            return next_link
+
     def is_active(self, test_path: str) -> str:
         path = self.request.path
         if path == test_path:
@@ -213,6 +222,7 @@ class GrouperHandler(RequestHandler):
                 "perf_trace_uuid": self.perf_trace_uuid,
                 "update_qs": self.update_qs,
                 "xsrf_form": self.xsrf_form_html,
+                "transfer_qs": self.transfer_qs,
             }
         )
         return namespace

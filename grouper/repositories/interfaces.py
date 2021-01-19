@@ -3,7 +3,13 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from datetime import datetime
-    from grouper.entities.pagination import ListPermissionsSortKey, PaginatedList, Pagination
+    from grouper.entities.pagination import (
+        ListPermissionsSortKey,
+        PaginatedList,
+        Pagination,
+        PermissionServiceAccountGrantSortKey,
+        PermissionGroupGrantSortKey,
+    )
     from grouper.entities.permission import Permission
     from grouper.entities.permission_grant import (
         GroupPermissionGrant,
@@ -80,8 +86,24 @@ class PermissionGrantRepository(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def group_grants_for_permission(self, name, include_disabled_groups=False, argument=None):
-        # type: (str, bool, Optional[str]) -> List[GroupPermissionGrant]
+    def group_paginated_grants_for_permission(
+        self,
+        name,  # type: str
+        pagination,  # type: Pagination[PermissionGroupGrantSortKey]
+        include_disabled_groups=False,  # type: bool
+        argument=None,  # type: Optional[str]
+    ):
+        # type: (...) -> PaginatedList[GroupPermissionGrant]
+        pass
+
+    @abstractmethod
+    def group_grants_for_permission(
+        self,
+        name,  # type: str
+        include_disabled_groups=False,  # type: bool
+        argument=None,  # type: Optional[str]
+    ):
+        # type: (...) -> List[GroupPermissionGrant]
         pass
 
     @abstractmethod
@@ -112,6 +134,16 @@ class PermissionGrantRepository(metaclass=ABCMeta):
     @abstractmethod
     def service_account_grants_for_permission(self, name, argument=None):
         # type: (str, Optional[str]) -> List[ServiceAccountPermissionGrant]
+        pass
+
+    @abstractmethod
+    def service_account_paginated_grants_for_permission(
+        self,
+        name,  # type: str
+        pagination,  # type: Pagination[PermissionServiceAccountGrantSortKey]
+        argument=None,  # type: Optional[str]
+    ):
+        # type: (...) -> PaginatedList[ServiceAccountPermissionGrant]
         pass
 
     @abstractmethod

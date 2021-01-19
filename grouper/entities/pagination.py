@@ -62,3 +62,13 @@ class ListPermissionsSortKey(Enum):
     NONE = "none"
     NAME = "name"
     DATE = "date"
+
+
+class PermissionGroupGrantSortKey(Enum):
+    NONE = "none"
+    GROUP = "group"
+
+
+class PermissionServiceAccountGrantSortKey(Enum):
+    NONE = "none"
+    SERVICE_ACCOUNT = "service_account"

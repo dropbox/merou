@@ -25,9 +25,9 @@ def test_view(tmpdir, setup, browser):
         )
 
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:
-        browser.get(url(frontend_url, "/permissions/some-permission"))
+        browser.get(url(frontend_url, "/permissions/some-permission/groups"))
         page = PermissionViewPage(browser)
-        assert page.subheading == "some-permission"
+        assert page.subheading == "some-permission 2 grant(s)"
         assert page.description == "Some permission"
         assert not page.has_disable_permission_button
         assert not page.has_disable_auditing_button
@@ -36,16 +36,22 @@ def test_view(tmpdir, setup, browser):
         assert not page.has_disabled_warning
         grants = [(r.group, r.argument) for r in page.group_permission_grant_rows]
         assert grants == [("another-group", "(unargumented)"), ("some-group", "foo")]
+
+        browser.get(url(frontend_url, "/permissions/some-permission/service_accounts"))
+        page = PermissionViewPage(browser)
         assert page.has_no_service_account_grants
 
-        browser.get(url(frontend_url, "/permissions/audited-permission"))
+        browser.get(url(frontend_url, "/permissions/audited-permission/groups"))
         page = PermissionViewPage(browser)
-        assert page.subheading == "audited-permission"
+        assert page.subheading == "audited-permission 0 grant(s)"
         assert not page.description
         assert page.has_audited_warning
         assert not page.has_disable_auditing_button
         assert not page.has_enable_auditing_button
         assert page.has_no_group_grants
+
+        browser.get(url(frontend_url, "/permissions/audited-permission/service_accounts"))
+        page = PermissionViewPage(browser)
         grants = [
             (r.service_account, r.argument) for r in page.service_account_permission_grant_rows
         ]

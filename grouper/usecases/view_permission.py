@@ -4,10 +4,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from grouper.entities.audit_log_entry import AuditLogEntry
     from grouper.entities.permission import Permission, PermissionAccess
-    from grouper.entities.permission_grant import (
-        GroupPermissionGrant,
-        ServiceAccountPermissionGrant,
-    )
     from grouper.usecases.interfaces import AuditLogInterface, PermissionInterface, UserInterface
     from typing import List, Optional
 
@@ -19,8 +15,6 @@ class ViewPermissionUI(metaclass=ABCMeta):
     def viewed_permission(
         self,
         permission,  # type: Permission
-        group_grants,  # type: List[GroupPermissionGrant]
-        service_account_grants,  # type: List[ServiceAccountPermissionGrant]
         access,  # type: PermissionAccess
         audit_log_entries,  # type: List[AuditLogEntry]
     ):
@@ -50,10 +44,7 @@ class ViewPermission:
         if not permission:
             self.ui.view_permission_failed_not_found(name)
             return
-        group_grants = self.permission_service.group_grants_for_permission(name, argument=argument)
-        service_grants = self.permission_service.service_account_grants_for_permission(
-            name, argument=argument
-        )
+
         audit_log = self.audit_log_service.entries_affecting_permission(name, audit_log_limit)
         access = self.user_service.permission_access_for_user(actor, name)
-        self.ui.viewed_permission(permission, group_grants, service_grants, access, audit_log)
+        self.ui.viewed_permission(permission, access, audit_log)

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from 'macros/ui.html' import audit_log_panel, paginator, dropdown with context %}
+
+{% block subtitle %} permission {{ permission.name }}{% endblock %}
+
+{% block heading %}
+Permissions
+{% endblock %}
+
+{% block subheading %}
+{{ permission.name }} {{total}} grant(s)
+{% endblock %}
+
+{% block headingbuttons %}
+{{ dropdown("limit", limit, [100, 250, 500]) }}
+{{ paginator(offset, limit, total) }}
+{% endblock %}
+
+{% block content %}
+{% if permission.description %}
+<p>
+    <b>Description:</b>
+    “<span class="permission-description">{{ permission.description }}</span>”
+</p>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-10 col-md-offset-1">
+        {% if not permission.enabled %}
+        <div class="alert alert-warning disabled-warning">
+            <strong>This permission is disabled.</strong> It continues to exist for the record but otherwise has no effect.
+        </div>
+        {% else %}
+        {% if permission.audited %}
+        <div class="alert alert-warning audited-warning">
+            <strong>This is an audited permission.</strong> Any group this permission is applied
+            to will become audited.
+        </div>
+        {% endif %}
+
+        <table class="table table-elist">
+            <thead>
+            <tr>
+                <th class="col-sm-2"><a href="{{update_qs(sort_by='group', order='desc' if sort_key == 'group' and sort_dir == 'asc' else 'asc', offset='0')}}" class="white">Group</a></th>
+                <th class="col-sm-5">Argument</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for grant in grants %}
+            <tr class="group-grant-row">
+                <td class="grant-group">
+                    <a href="/groups/{{grant.group}}">{{grant.group}}</a>
+                </td>
+                <td class="grant-argument">
+                    {{grant.argument|default("(unargumented)", True)}}
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not grants %}
+            <tr class="no-group-grants">
+                <td colspan="2" class="text-center"><em>This permission is not mapped to any
+                    groups. To grant this permission to a group, visit the group page.</em></td>
+            </tr>
+            {% endif %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

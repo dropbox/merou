@@ -642,7 +642,7 @@ enabled. Membership in this group is regularly reviewed.
         {% endif %}
 
         {% if offset != 0 %}
-            <a class="btn btn-default" href="{{ update_qs(offset=offset-limit) }}"><i class="fa fa-angle-left"></i></a>
+            <a class="btn btn-default" href="{{ update_qs(offset=[offset-limit, 0]|max) }}"><i class="fa fa-angle-left"></i></a>
         {% else %}
             <a class="btn btn-default disabled"><i class="fa fa-angle-left"></i></a>
         {% endif %}

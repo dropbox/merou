@@ -54,7 +54,7 @@ def test_disabling_group_clears_audit(
     emails = setup.session.query(AsyncNotification).filter_by(sent=False, email="gary@a.co").all()
     assert len(emails) > 0
     assert all((e.key is None or e.key == expected_key for e in emails))
-    assert all(("Group Audit" in e.subject for e in emails))
+    assert all(("Aciton required: Grouper Audit" in e.subject for e in emails))
 
     # Now, disable the group, which should complete the audit.
     with frontend_server(tmpdir, "gary@a.co") as frontend_url:

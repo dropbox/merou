@@ -1,14 +1,15 @@
 {% extends "email/base.txt" %}
 
-{% block subject %}Group Membership Audit{% endblock %}
+{% block subject %}Action required: Grouper Audit{% endblock %}
 
 {% block content %}
-The {{ group }} group is part of an ongoing audit. As you are an owner of this group, you must
-visit the management page and process the audit:
+Please visit:
 
     {{url}}/groups/{{group}}
 
-This is due by {{ ends_at|print_date }}.
+to complete the audit of {{ group }}.
 
-Thank you for your prompt attention!
+If the audit is not completed by {{ ends_at|print_date }}, {{ group }} risks temporary access disablement.
+
+We appreciate your prompt attention!
 {% endblock %}

@@ -111,7 +111,7 @@ class AuditsCreate(GrouperHandler):
             send_email(
                 self.session,
                 mail_to,
-                "Group Audit: {}".format(group.name),
+                "Action required: Grouper Audit",
                 "audit_notice",
                 settings(),
                 {"group": group.name, "ends_at": ends_at},
@@ -121,7 +121,7 @@ class AuditsCreate(GrouperHandler):
                 send_async_email(
                     self.session,
                     mail_to,
-                    "Group Audit: {} - {} day(s) left".format(group.name, days_prior),
+                    "Action required: Grouper Audit",
                     "audit_notice_reminder",
                     settings(),
                     {"group": group.name, "ends_at": ends_at, "days_left": days_prior},

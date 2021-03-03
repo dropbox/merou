@@ -316,7 +316,7 @@ def get_owners_by_grantable_permission(
 
         for gp in group_permissions:
             aliases = get_plugin_proxy().get_aliases_for_mapped_permission(
-                session, gp.name, group.name
+                session, gp.name, gp.argument
             )
             for alias in aliases:
                 if alias[0] == PERMISSION_GRANT:

@@ -173,7 +173,7 @@ class Settings:
         while True:
             try:
                 self._logger.debug("Getting database URL by running %s", self.database_source)
-                raw_url = subprocess.check_output([self.database_source], stderr=subprocess.STDOUT)
+                raw_url = subprocess.check_output([self.database_source], stderr=subprocess.PIPE)
                 url = raw_url.decode().strip()
                 if not url:
                     raise DatabaseSourceException("Returned URL is empty")
@@ -189,6 +189,8 @@ class Settings:
                     msg = "Unable to get a database URL from {} after {} tries: {}".format(
                         self.database_source, self.DB_URL_RETRIES, str(e)
                     )
+                    if isinstance(e, CalledProcessError):
+                        msg += f"\nstderr: {e.stderr!r}"
                     raise DatabaseSourceException(msg)
 
     def _url_without_password(self, url):

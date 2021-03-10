@@ -97,7 +97,7 @@ def test_database():
         mock_subprocess.return_value = b"sqlite:///other.sqlite\n"
         assert settings.database == "sqlite:///other.sqlite"
         assert mock_subprocess.call_args_list == [
-            call(["/path/to/program"], stderr=subprocess.STDOUT)
+            call(["/path/to/program"], stderr=subprocess.PIPE)
         ]
 
     # If the command fails, it should be retried.  Disable the delay to not make the test slow.

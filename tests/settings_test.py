@@ -6,6 +6,7 @@ import pytest
 import pytz
 from mock import call, patch
 
+from grouper.models.base.session import get_db_engine
 from grouper.settings import DatabaseSourceException, InvalidSettingsError, Settings
 
 if TYPE_CHECKING:
@@ -144,3 +145,11 @@ def test_mask_passsword_in_logs(caplog):
 
     assert test_url not in caplog.text
     assert expected_url in caplog.text
+
+
+def test_bad_db_url():
+    # type: () -> None
+    bad_url = "This is not even a valid URL"
+    with pytest.raises(InvalidSettingsError):
+        engine = get_db_engine(bad_url)
+        assert engine

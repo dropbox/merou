@@ -3,7 +3,10 @@ import logging
 from typing import TYPE_CHECKING
 
 from sqlalchemy import create_engine
+from sqlalchemy.exc import ArgumentError, OperationalError
 from sqlalchemy.orm import Session as _Session, sessionmaker
+
+from grouper.settings import InvalidSettingsError
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
@@ -31,7 +34,12 @@ def flush_transaction(method):
 
 def get_db_engine(url):
     # type: (str) -> Engine
-    return create_engine(url, pool_recycle=300)
+    try:
+        engine = create_engine(url, pool_recycle=300)
+    except (ArgumentError, OperationalError):
+        logging.exception("Can't create database engine.")
+        raise InvalidSettingsError("Invalid arguments. Can't create database engine")
+    return engine
 
 
 class SessionWithoutAdd(_Session):

@@ -469,7 +469,7 @@ def create_request(
     )
 
     if not owner_arg_list:
-        raise NoOwnersAvailable()
+        raise NoOwnersAvailable("No owner is available for the requested perm + arg.")
 
     if permission.audited:
         # will raise UserNotAuditor if any owner of the group is not an auditor

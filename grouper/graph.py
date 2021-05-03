@@ -776,7 +776,7 @@ class GroupGraph:
 
         with self.lock:
             if username not in self.user_metadata:
-                raise NoSuchUser(username)
+                raise NoSuchUser("User %s is either missing or disabled." % username)
 
             user = ("User", username)
 

@@ -98,7 +98,7 @@ def persist_group_member_changes(
     else:
         edge = _get_edge(session, group, member)
         if not edge:
-            raise MemberNotFound()
+            raise MemberNotFound("Member %s not a member of the group %s" % (member, group))
 
     changes = _serialize_changes(edge, **updates)
 

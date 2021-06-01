@@ -106,7 +106,7 @@ class UseCaseFactory:
         )
 
     def create_grant_permission_to_group_usecase(self, actor, ui):
-        # type: (str, GrantPermissionToGroupUI) -> GrantPermissionToServiceAccount
+        # type: (str, GrantPermissionToGroupUI) -> GrantPermissionToGroup
         permission_service = self.service_factory.create_permission_service()
         service_account_service = self.service_factory.create_service_account_service()
         user_service = self.service_factory.create_user_service()

@@ -35,9 +35,7 @@ def test_permissions_grantable(setup):
 
     mock_ui = MagicMock()
 
-    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(
-        "rra@a.co", mock_ui
-    )
+    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase("rra@a.co", mock_ui)
     expected = [
         ("some-permission", "*"),
     ]
@@ -50,10 +48,9 @@ def test_permissions_grantable(setup):
     expected = sorted([(perm, "*") for perm in all_permissions])
     assert usecase.permissions_grantable() == expected
 
-    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(
-        "gary@a.co", mock_ui
-    )
+    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase("gary@a.co", mock_ui)
     assert usecase.permissions_grantable() == []
+
 
 def test_success(setup):
     # type: (SetupTest) -> None
@@ -67,9 +64,7 @@ def test_success(setup):
         setup.create_service_account("admin@svc.localhost", "admins")
         setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admin@svc.localhost")
         setup.create_service_account("granter@svc.localhost", "other-group")
-        setup.grant_permission_to_group(
-            PERMISSION_GRANT, "some-permission/arg*", "some-group"
-        )
+        setup.grant_permission_to_group(PERMISSION_GRANT, "some-permission/arg*", "some-group")
 
     service = setup.service_factory.create_group_service()
     assert len(service.permission_grants_for_group("some-group")) == 2
@@ -79,13 +74,9 @@ def test_success(setup):
     usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(
         "zorkian@a.co", mock_ui
     )
-    usecase.grant_permission_to_group(
-        "some-permission", "different_argument", "some-group"
-    )
+    usecase.grant_permission_to_group("some-permission", "different_argument", "some-group")
     assert mock_ui.mock_calls == [
-        call.granted_permission_to_group(
-            "some-permission", "different_argument", "some-group"
-        )
+        call.granted_permission_to_group("some-permission", "different_argument", "some-group")
     ]
     expected = GroupPermissionGrant(
         group="some-group",
@@ -100,22 +91,17 @@ def test_success(setup):
     assert len(grants) == 3
     assert expected in grants
 
+
 def test_duplicate_grant(setup):
     # type: (SetupTest) -> None
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group")
         setup.grant_permission_to_group("some-permission", "argument", "some-group")
-        setup.grant_permission_to_group(
-            PERMISSION_GRANT, "some-permission/arg*", "some-group"
-        )
+        setup.grant_permission_to_group(PERMISSION_GRANT, "some-permission/arg*", "some-group")
 
     mock_ui = MagicMock()
-    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(
-        "gary@a.co", mock_ui
-    )
-    usecase.grant_permission_to_group(
-        "some-permission", "argument", "some-group"
-    )
+    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase("gary@a.co", mock_ui)
+    usecase.grant_permission_to_group("some-permission", "argument", "some-group")
     assert mock_ui.mock_calls == [
         call.grant_permission_to_group_failed_permission_already_exists("some-group")
     ]
@@ -130,9 +116,7 @@ def test_invalid_argument(setup):
         setup.create_permission("some-permission")
 
     mock_ui = MagicMock()
-    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(
-        "gary@a.co", mock_ui
-    )
+    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase("gary@a.co", mock_ui)
     usecase.grant_permission_to_group("some-permission", "@@@@", "some-group")
     assert mock_ui.mock_calls == [
         call.grant_permission_to_group_failed_invalid_argument(
@@ -161,12 +145,8 @@ def test_permission_denied(setup):
 
     # User with no special permissions.
     mock_ui = MagicMock()
-    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(
-        "gary@a.co", mock_ui
-    )
-    usecase.grant_permission_to_group(
-        "some-permission", "argument", "some-group"
-    )
+    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase("gary@a.co", mock_ui)
+    usecase.grant_permission_to_group("some-permission", "argument", "some-group")
     assert mock_ui.mock_calls == [
         call.grant_permission_to_group_failed_permission_denied(
             "some-permission", "argument", "some-group", ANY
@@ -179,9 +159,7 @@ def test_permission_denied(setup):
     usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(
         "service@svc.localhost", mock_ui
     )
-    usecase.grant_permission_to_group(
-        "some-permission", "argument", "some-group"
-    )
+    usecase.grant_permission_to_group("some-permission", "argument", "some-group")
     assert mock_ui.mock_calls == [
         call.grant_permission_to_group_failed_permission_denied(
             "some-permission", "argument", "some-group", ANY
@@ -195,12 +173,8 @@ def test_permission_denied(setup):
         setup.add_user_to_group("gary@a.co", "some-group")
 
     mock_ui.reset_mock()
-    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(
-        "gary@a.co", mock_ui
-    )
-    usecase.grant_permission_to_group(
-        "some-permission", "argument", "some-group"
-    )
+    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase("gary@a.co", mock_ui)
+    usecase.grant_permission_to_group("some-permission", "argument", "some-group")
     assert mock_ui.mock_calls == [
         call.grant_permission_to_group_failed_permission_denied(
             "some-permission", "argument", "some-group", ANY
@@ -217,14 +191,8 @@ def test_unknown_group(setup):
         setup.create_permission("some-permission")
 
     mock_ui = MagicMock()
-    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(
-        "gary@a.co", mock_ui
-    )
-    usecase.grant_permission_to_group(
-        "some-permission", "argument", "another-group"
-    )
+    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase("gary@a.co", mock_ui)
+    usecase.grant_permission_to_group("some-permission", "argument", "another-group")
     assert mock_ui.mock_calls == [
-        call.grant_permission_to_group_failed_group_not_found(
-            "another-group"
-        )
+        call.grant_permission_to_group_failed_group_not_found("another-group")
     ]

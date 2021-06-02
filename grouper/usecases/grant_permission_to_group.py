@@ -120,15 +120,11 @@ class GrantPermissionToGroup:
 
         with self.transaction_service.transaction():
             try:
-                self.group_service.grant_permission_to_group(
-                    permission, argument, group
-                )
+                self.group_service.grant_permission_to_group(permission, argument, group)
             except PermissionNotFoundException:
                 # It should be impossible to hit this exception. In order to get this far, the
                 # perm must be on the list of perms the actor can grant, and thus must exist.
                 # Leaving the logic here however in case that changes in the future.
-                self.ui.grant_permission_to_group_failed_permission_not_found(
-                    permission, group
-                )
+                self.ui.grant_permission_to_group_failed_permission_not_found(permission, group)
                 return
         self.ui.granted_permission_to_group(permission, argument, group)

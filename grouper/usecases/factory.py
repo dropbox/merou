@@ -24,9 +24,7 @@ if TYPE_CHECKING:
     from grouper.usecases.convert_user_to_service_account import ConvertUserToServiceAccountUI
     from grouper.usecases.disable_permission import DisablePermissionUI
     from grouper.usecases.dump_schema import DumpSchemaUI
-    from grouper.usecases.grant_permission_to_group import (
-        GrantPermissionToGroupUI,
-    )
+    from grouper.usecases.grant_permission_to_group import GrantPermissionToGroupUI
     from grouper.usecases.grant_permission_to_service_account import (
         GrantPermissionToServiceAccountUI,
     )

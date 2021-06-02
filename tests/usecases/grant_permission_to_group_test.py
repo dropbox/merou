@@ -22,12 +22,12 @@ def test_permissions_grantable(setup):
         setup.add_user_to_group("zorkian@a.co", "admin-group")
         setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admin-group")
         setup.create_service_account("admin@svc.localhost", "admin-group")
-        setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admin@svc.localhost")
+        setup.grant_permission_to_service_account(PERMISSION_ADMIN, "", "admin@svc.localhost")
 
         setup.add_user_to_group("rra@a.co", "granter-group")
         setup.grant_permission_to_group(PERMISSION_GRANT, "some-permission", "granter-group")
         setup.create_service_account("granter@svc.localhost", "granter-group")
-        setup.grant_permission_to_group(
+        setup.grant_permission_to_service_account(
             PERMISSION_GRANT, "some-permission/arg", "granter@svc.localhost"
         )
         # User with no special permissions should not be able to grant anything.
@@ -48,12 +48,36 @@ def test_permissions_grantable(setup):
     expected = sorted([(perm, "*") for perm in all_permissions])
     assert usecase.permissions_grantable() == expected
 
+    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(
+        "admin@svc.localhost", mock_ui
+    )
+    assert usecase.permissions_grantable() == expected
+
+    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(
+        "granter@svc.localhost", mock_ui
+    )
+    expected = [
+        ("some-permission", "arg"),
+    ]
+    assert usecase.permissions_grantable() == expected
+
     usecase = setup.usecase_factory.create_grant_permission_to_group_usecase("gary@a.co", mock_ui)
     assert usecase.permissions_grantable() == []
 
+    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(
+        "service@svc.localhost", mock_ui
+    )
+    assert usecase.permissions_grantable() == []
 
-def test_success(setup):
-    # type: (SetupTest) -> None
+    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(
+        "permless@a.co", mock_ui
+    )
+    assert usecase.permissions_grantable() == []
+
+
+def _test_success(setup, actor):
+    # type: (SetupTest, str) -> None
+
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group")
         setup.grant_permission_to_group("some-permission", "argument", "some-group")
@@ -62,18 +86,15 @@ def test_success(setup):
         setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admins")
         setup.create_service_account("service@svc.localhost", "some-group")
         setup.create_service_account("admin@svc.localhost", "admins")
-        setup.grant_permission_to_group(PERMISSION_ADMIN, "", "admin@svc.localhost")
+        setup.grant_permission_to_service_account(PERMISSION_ADMIN, "", "admin@svc.localhost")
         setup.create_service_account("granter@svc.localhost", "other-group")
         setup.grant_permission_to_group(PERMISSION_GRANT, "some-permission/arg*", "some-group")
 
     service = setup.service_factory.create_group_service()
     assert len(service.permission_grants_for_group("some-group")) == 2
 
-    # Delegation from a group member.
     mock_ui = MagicMock()
-    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(
-        "zorkian@a.co", mock_ui
-    )
+    usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(actor, mock_ui)
     usecase.grant_permission_to_group("some-permission", "different_argument", "some-group")
     assert mock_ui.mock_calls == [
         call.granted_permission_to_group("some-permission", "different_argument", "some-group")
@@ -90,6 +111,16 @@ def test_success(setup):
     grants = service.permission_grants_for_group("some-group")
     assert len(grants) == 3
     assert expected in grants
+
+
+def test_success_user(setup):
+    # type: (SetupTest) -> None
+    _test_success(setup, "zorkian@a.co")
+
+
+def test_success_service_account(setup):
+    # type: (SetupTest) -> None
+    _test_success(setup, "admin@svc.localhost")
 
 
 def test_duplicate_grant(setup):
@@ -167,8 +198,6 @@ def test_permission_denied(setup):
     ]
     _assert_sane_permission_denied_message(mock_ui)
 
-    # Add the user to the group, but don't delegate the permission to the group.  The user should
-    # now be able to grant permissions in general, but not this permission in particular.
     with setup.transaction():
         setup.add_user_to_group("gary@a.co", "some-group")
 

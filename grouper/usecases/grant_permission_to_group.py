@@ -79,7 +79,6 @@ class GrantPermissionToGroup:
 
         actor_grantable_perms = []  # type: List[Tuple[str, str]]
         if self.service_account_service.service_account_exists(self.actor):
-            owner = self.service_account_service.owner_of_service_account(self.actor)
             p = self.service_account_service.permissions_grantable_by_service_account(self.actor)
             actor_grantable_perms = p  # line length :( if you see a nicer way, do it
         else:  # actor is not a service account, and is thus a normal user
@@ -112,7 +111,10 @@ class GrantPermissionToGroup:
                 allowed = True
                 break
         if not allowed:
-            message = "Permission denied"
+            message = (
+                "Permission denied. Actor {actor} does not have the ability to"
+                "grant permission {permission} with argument {argument}."
+            ).format(actor=self.actor, permission=permission, argument=argument,)
             self.ui.grant_permission_to_group_failed_permission_denied(
                 permission, argument, group, message
             )

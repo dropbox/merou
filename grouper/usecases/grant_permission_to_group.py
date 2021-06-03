@@ -72,7 +72,7 @@ class GrantPermissionToGroup:
         self.transaction_service = transaction_service
 
     def permissions_grantable(self):
-        # The actor can grant a permission to the group if the actor independently has the 
+        # The actor can grant a permission to the group if the actor independently has the
         # ability to grant the permission, as a permission admin or because of grants of
         # grouper.permission.grants.
 

@@ -2,7 +2,6 @@ from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
 from grouper.entities.permission import PermissionNotFoundException
-from grouper.usecases.authorization import Authorization
 from grouper.util import matches_glob
 
 if TYPE_CHECKING:
@@ -73,8 +72,8 @@ class GrantPermissionToGroup:
         self.transaction_service = transaction_service
 
     def permissions_grantable(self):
-        # The actor can grant a permission to the group if the actor independently has the ability to
-        # to grant the permission, as a permission admin or because of grants of
+        # The actor can grant a permission to the group if the actor independently has the 
+        # ability to grant the permission, as a permission admin or because of grants of
         # grouper.permission.grants.
 
         actor_grantable_perms = []  # type: List[Tuple[str, str]]

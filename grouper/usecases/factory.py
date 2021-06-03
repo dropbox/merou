@@ -4,6 +4,7 @@ from grouper.usecases.convert_user_to_service_account import ConvertUserToServic
 from grouper.usecases.create_service_account import CreateServiceAccount
 from grouper.usecases.disable_permission import DisablePermission
 from grouper.usecases.dump_schema import DumpSchema
+from grouper.usecases.grant_permission_to_group import GrantPermissionToGroup
 from grouper.usecases.grant_permission_to_service_account import GrantPermissionToServiceAccount
 from grouper.usecases.initialize_schema import InitializeSchema
 from grouper.usecases.list_grants import ListGrants
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
     from grouper.usecases.convert_user_to_service_account import ConvertUserToServiceAccountUI
     from grouper.usecases.disable_permission import DisablePermissionUI
     from grouper.usecases.dump_schema import DumpSchemaUI
+    from grouper.usecases.grant_permission_to_group import GrantPermissionToGroupUI
     from grouper.usecases.grant_permission_to_service_account import (
         GrantPermissionToServiceAccountUI,
     )
@@ -95,6 +97,23 @@ class UseCaseFactory:
         group_service = self.service_factory.create_group_service()
         transaction_service = self.service_factory.create_transaction_service()
         return GrantPermissionToServiceAccount(
+            actor,
+            ui,
+            permission_service,
+            service_account_service,
+            user_service,
+            group_service,
+            transaction_service,
+        )
+
+    def create_grant_permission_to_group_usecase(self, actor, ui):
+        # type: (str, GrantPermissionToGroupUI) -> GrantPermissionToGroup
+        permission_service = self.service_factory.create_permission_service()
+        service_account_service = self.service_factory.create_service_account_service()
+        user_service = self.service_factory.create_user_service()
+        group_service = self.service_factory.create_group_service()
+        transaction_service = self.service_factory.create_transaction_service()
+        return GrantPermissionToGroup(
             actor,
             ui,
             permission_service,

@@ -32,6 +32,9 @@ WORKDIR /app
 COPY ci/setup.sh /app/ci/setup.sh
 COPY requirements*.txt /app/
 
+RUN pip3 install --no-cache-dir -r /app/requirements.txt
+RUN pip3 install --no-cache-dir -r /app/requirements-dev.txt
+
 RUN /etc/init.d/mysql start && mysql -e "\
  CREATE USER travis@localhost; \
  GRANT ALL ON *.* TO travis@localhost; \

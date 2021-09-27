@@ -190,7 +190,7 @@ class GrouperHandler(RequestHandler):
         handler = self.__class__.__name__
         duration_ms = int((datetime.utcnow() - self._request_start_time).total_seconds() * 1000)
         response_status = self.get_status()
-        self.plugins.log_request(handler, response_status, duration_ms)
+        self.plugins.log_request(handler, response_status, duration_ms, self.request)
 
     def update_qs(self, **kwargs: Any) -> str:
         qs = self.request.arguments.copy()

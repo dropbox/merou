@@ -118,10 +118,10 @@ class PluginProxy:
         for plugin in self._plugins:
             plugin.log_periodic_graph_update(success)
 
-    def log_request(self, handler, status, duration_ms):
-        # type: (str, int, int) -> None
+    def log_request(self, handler, status, duration_ms, request):
+        # type: (str, int, int, Optional[HTTPRequest]) -> None
         for plugin in self._plugins:
-            plugin.log_request(handler, status, duration_ms)
+            plugin.log_request(handler, status, duration_ms, request)
 
     def user_created(self, user, is_service_account=False):
         # type: (User, bool) -> None

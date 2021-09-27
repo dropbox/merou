@@ -53,8 +53,10 @@ def test_passwords(session, users):  # noqa: F811
 
     session.rollback()
 
-    # Technically there's a very very very small O(1/2^160) chance that this will fail for a
+    # NOTE: Technically there's a very very very small O(1/2^160) chance that this will fail for a
     # correct implementation.
+    # NOTE: This test may fail for systems on which crypt(3) defaults to a weak method that can
+    # only use 2 character salts, as all salts used are prefixed with $6$ to indicate SHA512
     assert (
         password.password_hash != password2.password_hash
     ), "2 passwords that are identical should hash differently because of the salts"

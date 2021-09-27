@@ -886,6 +886,7 @@ def test_request_logging(session, users, http_client, base_url):  # noqa: F811
     assert mock_plugin.log_request.call_args_list[0][0][1] == 200
     # the reported value should be within 1s of our own observation
     assert abs(mock_plugin.log_request.call_args_list[0][0][2] - duration_ms) <= 1000
+    assert mock_plugin.log_request.call_args_list[0][0][3].path == "/users"
 
     mock_plugin.log_request.reset_mock()
     start_time = time.time()
@@ -900,3 +901,4 @@ def test_request_logging(session, users, http_client, base_url):  # noqa: F811
     assert mock_plugin.log_request.call_args_list[0][0][1] == 404
     # the reported value should be within 1s of our own observation
     assert abs(mock_plugin.log_request.call_args_list[0][0][2] - duration_ms) <= 1000
+    assert mock_plugin.log_request.call_args_list[0][0][3].path == "/groups/does-not-exist"

@@ -566,10 +566,7 @@ class GroupGraph:
         # type: (str, bool) -> Dict[str, Union[bool, Dict[str, Any]]]
         """ Get a permission and what groups and service accounts it's assigned to. """
         with self.lock:
-            data = {
-                "groups": {},
-                "service_accounts": {},
-            }  # type: Dict[str, Dict[str, Any]]
+            data = {"groups": {}, "service_accounts": {}}  # type: Dict[str, Dict[str, Any]]
 
             # Get all mapped versions of the permission. This is only direct relationships.
             direct_groups = set()

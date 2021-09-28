@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
+import time
 from selenium.common.exceptions import NoSuchElementException
 
 from grouper.entities.group import GroupJoinPolicy
@@ -100,6 +101,8 @@ def test_require_clickthru(tmpdir: LocalPath, setup: SetupTest, browser: Chrome)
         create_group_modal.set_join_policy(GroupJoinPolicy.CAN_JOIN)
         create_group_modal.click_require_clickthru_checkbox()
         create_group_modal.confirm()
+
+    time.sleep(0.5)  # Help prevent flakiness of unclear cause
 
     with frontend_server(tmpdir, "rra@a.co") as frontend_url:
         browser.get(url(frontend_url, "/groups/test-group/join"))

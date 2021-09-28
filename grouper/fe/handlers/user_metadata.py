@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 DEFAULT_METADATA_OPTIIONS = [
-    ["n/a", "No values have been setup by the administrator for this metadata item"],
+    ["n/a", "No values have been setup by the administrator for this metadata item"]
 ]
 
 

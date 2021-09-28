@@ -31,7 +31,7 @@ class PermissionGrantsServiceAccountView(GrouperHandler, ViewPermissionServiceAc
             return PermissionServiceAccountGrantSortKey.SERVICE_ACCOUNT
 
     def viewed_permission(
-        self, permission: Permission, grants: PaginatedList[ServiceAccountPermissionGrant],
+        self, permission: Permission, grants: PaginatedList[ServiceAccountPermissionGrant]
     ) -> None:
 
         sort_key = self.get_sort_key().name.lower()
@@ -63,5 +63,5 @@ class PermissionGrantsServiceAccountView(GrouperHandler, ViewPermissionServiceAc
 
         usecase = self.usecase_factory.create_view_permission_service_account_grants_usecase(self)
         usecase.view_granted_permission(
-            name, self.current_user.username, argument=argument, pagination=pagination,
+            name, self.current_user.username, argument=argument, pagination=pagination
         )

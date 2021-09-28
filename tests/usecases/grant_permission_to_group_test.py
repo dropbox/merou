@@ -36,9 +36,7 @@ def test_permissions_grantable(setup):
     mock_ui = MagicMock()
 
     usecase = setup.usecase_factory.create_grant_permission_to_group_usecase("rra@a.co", mock_ui)
-    expected = [
-        ("some-permission", "*"),
-    ]
+    expected = [("some-permission", "*")]
     assert usecase.permissions_grantable() == expected
 
     all_permissions = ["some-permission", "other-permission", PERMISSION_ADMIN, PERMISSION_GRANT]
@@ -56,9 +54,7 @@ def test_permissions_grantable(setup):
     usecase = setup.usecase_factory.create_grant_permission_to_group_usecase(
         "granter@svc.localhost", mock_ui
     )
-    expected = [
-        ("some-permission", "arg"),
-    ]
+    expected = [("some-permission", "arg")]
     assert usecase.permissions_grantable() == expected
 
     usecase = setup.usecase_factory.create_grant_permission_to_group_usecase("gary@a.co", mock_ui)

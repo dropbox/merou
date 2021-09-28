@@ -183,9 +183,7 @@ def test_view_permissions(setup):
     ]
 
     # Limit the number of audit log entries.
-    permission_usecase.view_permission(
-        "disabled-permission", "gary@a.co", 1,
-    )
+    permission_usecase.view_permission("disabled-permission", "gary@a.co", 1)
     audit_log_entries = [
         (e.actor, e.action, e.on_permission) for e in mock_permission_ui.audit_log_entries
     ]
@@ -196,7 +194,7 @@ def test_view_permissions(setup):
         "argumented-permission", "gary@a.co", group_paginate, "foo-arg"
     )
     sa_usecase.view_granted_permission(
-        "argumented-permission", "gary@a.co", service_account_paginate, "foo-arg",
+        "argumented-permission", "gary@a.co", service_account_paginate, "foo-arg"
     )
     permission_usecase.view_permission("argumented-permission", "gary@a.co", 20)
 
@@ -207,9 +205,7 @@ def test_view_permissions(setup):
     assert not mock_permission_ui.permission.audited
     assert mock_permission_ui.permission.enabled
     group_grants = [(g.group, g.permission, g.argument) for g in mock_group_ui.grants.values]
-    assert group_grants == [
-        ("some-group", "argumented-permission", "foo-arg"),
-    ]
+    assert group_grants == [("some-group", "argumented-permission", "foo-arg")]
     service_account_grants = [
         (g.service_account, g.permission, g.argument)
         for g in mock_service_account_ui.grants.values
@@ -223,7 +219,7 @@ def test_view_permissions(setup):
         "argumented-permission", "gary@a.co", group_paginate, "foo"
     )
     sa_usecase.view_granted_permission(
-        "argumented-permission", "gary@a.co", service_account_paginate, "foo",
+        "argumented-permission", "gary@a.co", service_account_paginate, "foo"
     )
     permission_usecase.view_permission("argumented-permission", "gary@a.co", 20)
 

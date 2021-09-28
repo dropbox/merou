@@ -101,8 +101,7 @@ def test_require_clickthru(tmpdir: LocalPath, setup: SetupTest, browser: Chrome)
         create_group_modal.set_join_policy(GroupJoinPolicy.CAN_JOIN)
         create_group_modal.click_require_clickthru_checkbox()
         create_group_modal.confirm()
-
-    time.sleep(0.5)  # Help prevent flakiness of unclear cause
+        time.sleep(0.5)  # Ensure confirm() goes through before FE server is shut down
 
     with frontend_server(tmpdir, "rra@a.co") as frontend_url:
         browser.get(url(frontend_url, "/groups/test-group/join"))

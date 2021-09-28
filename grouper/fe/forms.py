@@ -64,7 +64,11 @@ class PublicKeyForm(Form):
 
 class PermissionGrantForm(Form):
     permission = SelectField(
-        "Permission", [validators.DataRequired()], choices=[["", "(select one)"]], default=""
+        "Permission",
+        [validators.DataRequired()],
+        choices=[["", "(select one)"]],
+        default="",
+        description="Note: The 'arguments' provided in this selector are not really arguments...they are more like suggestions.  you still need to type the argument in the 'Argument' textbox below.",
     )
     argument = StringField(
         "Argument",

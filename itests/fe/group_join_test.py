@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import time
 from typing import TYPE_CHECKING
 
 import pytest
-import time
 from selenium.common.exceptions import NoSuchElementException
 
 from grouper.entities.group import GroupJoinPolicy

@@ -1,3 +1,4 @@
+import time
 from typing import TYPE_CHECKING
 
 from mock import ANY
@@ -121,6 +122,7 @@ def test_end_to_end_whitespace_in_argument(tmpdir, setup, browser):
         permission_request_page.set_argument_freeform("  arg u  ment  ")
         permission_request_page.set_reason("testing whitespace")
         permission_request_page.submit()
+        time.sleep(0.5)  # Ensure submit() goes through before FE server shut down
 
     with frontend_server(tmpdir, "zorkian@a.co") as frontend_url:
         browser.get(url(frontend_url, "/permissions/requests?status=pending"))

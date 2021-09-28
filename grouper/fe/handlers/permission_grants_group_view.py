@@ -25,7 +25,7 @@ class PermissionGrantsGroupView(GrouperHandler, ViewPermissionGroupGrantsUI):
             return PermissionGroupGrantSortKey.GROUP
 
     def viewed_permission(
-        self, permission: Permission, grants: PaginatedList[GroupPermissionGrant],
+        self, permission: Permission, grants: PaginatedList[GroupPermissionGrant]
     ) -> None:
 
         sort_key = self.get_sort_key().name.lower()
@@ -57,5 +57,5 @@ class PermissionGrantsGroupView(GrouperHandler, ViewPermissionGroupGrantsUI):
 
         usecase = self.usecase_factory.create_view_permission_group_grants_usecase(self)
         usecase.view_granted_permission(
-            name, self.current_user.username, argument=argument, pagination=pagination,
+            name, self.current_user.username, argument=argument, pagination=pagination
         )

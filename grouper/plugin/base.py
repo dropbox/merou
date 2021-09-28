@@ -156,14 +156,15 @@ class BasePlugin:
         """
         pass
 
-    def log_request(self, handler, status, duration_ms):
-        # type: (str, int, int) -> None
+    def log_request(self, handler, status, duration_ms, request):
+        # type: (str, int, int, Optional[HTTPRequest]) -> None
         """Log information about a handled request
 
         Arg(s):
             handler: name of the handler class that handled the request
             status: the response status of the request (e.g., 200, 404, etc.)
             duration_ms: the request processing latency
+            request: the Tornado request that was handled
         """
         pass
 

@@ -1,6 +1,6 @@
 {% from 'macros/ui.html' import form_field -%}
 
-{{ form_field(form.permission, 3, 8, class_="form-control") }}
+{{ form_field(form.permission, 3, 8, class_="form-control", help=form.permission.description, help_title="Permission") }}
 {{ form_field(form.argument, 3, 8, class_="form-control") }}
 
 {{ xsrf_form()|safe }}

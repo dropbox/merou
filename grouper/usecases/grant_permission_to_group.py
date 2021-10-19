@@ -114,6 +114,8 @@ class GrantPermissionToGroup:
                 "Permission denied. Actor {actor} does not have the ability to"
                 "grant the permission {permission} with argument {argument}."
             ).format(actor=self.actor, permission=permission, argument=argument)
+            if argument == "":
+                message += " (Did you mean to leave the argument empty?)"
             self.ui.grant_permission_to_group_failed_permission_denied(
                 permission, argument, group, message
             )

@@ -120,6 +120,8 @@ class GrantPermissionToServiceAccount:
                 "independently have the ability to grant that permission, or the owner group "
                 "must have that permission and you must be a member of that owning group."
             )
+            if argument == "":
+                message += " (Did you mean to leave the argument field empty?)"
             self.ui.grant_permission_to_service_account_failed_permission_denied(
                 permission, argument, service, message
             )

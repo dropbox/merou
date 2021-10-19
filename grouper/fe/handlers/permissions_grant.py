@@ -76,9 +76,10 @@ class PermissionsGrant(GrouperHandler):
                     allowed = True
                     break
         if not allowed:
-            form.argument.errors.append(
-                "You do not have grant authority over that permission/argument combination."
-            )
+            msg = "You do not have grant authority over that permission/argument combination."
+            if argument == "":
+                msg += " (Did you mean to leave the argument field empty?)"
+            form.argument.errors.append(msg)
             return self.render(
                 "permission-grant.html",
                 form=form,

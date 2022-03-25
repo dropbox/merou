@@ -16,6 +16,15 @@ SSH_KEY_2 = (
 
 SSH_KEY_BAD = "ssh-rsa AAAblahblahkey some-comment"
 
+SSH_KEY_BAD_MULTILINE = SSH_KEY_1 + "\r" + SSH_KEY_2
+
+SSH2_KEY_BAD = """\
+---- BEGIN SSH2 PUBLIC KEY ----
+foobar: this is a chance to hide bad things
+AAAAC3NzaC1lZDI1NTE5AAAAIJ5O/AXibtVhySDYn60ATXftAU1oCe4BQubFYoV2juEb
+---- END SSH2 PUBLIC KEY ----
+"""
+
 SSH_KEY_RSA_1024 = (
     "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDhKgSsCJR9UyQa/Gsheb5F56hg23CVnCLpmpyC2JMqVEptG9CL83Oft"
     "pOPvEb/785Act4En1VFvwMwTj25VurbG3XI984csiNdWPlM1ke4lHK2PQepSYyZVYn+hhXhzSILNDixhBYeDVv4GOfJM1"

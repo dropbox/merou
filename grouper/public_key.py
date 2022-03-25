@@ -72,6 +72,13 @@ def add_public_key(session, user, public_key_str):
     except sshpubkeys.InvalidKeyException as e:
         raise PublicKeyParseError(str(e))
 
+    # Allowing newlines can lead to injection attacks depending on how the key is
+    # consumed, such as if it's dumped in an authorized_keys file with a `command`
+    # restriction.
+    # Note parsing the key is insufficient to block this.
+    if "\r" in public_key_str or "\n" in public_key_str:
+        raise PublicKeyParseError("Public key cannot have newlines")
+
     try:
         get_plugin_proxy().will_add_public_key(pubkey)
     except PluginRejectedPublicKey as e:

@@ -122,7 +122,7 @@ class Group(Model, CommentObjectMixin):
                 member=user_or_group,
                 status="actioned",
                 reason=reason,
-                **kwargs
+                **kwargs,
             )
             self.session.flush()
         except Exception:

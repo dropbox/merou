@@ -564,7 +564,7 @@ class GroupGraph:
 
     def get_permission_details(self, name, expose_aliases=True):
         # type: (str, bool) -> Dict[str, Union[bool, Dict[str, Any]]]
-        """ Get a permission and what groups and service accounts it's assigned to. """
+        """Get a permission and what groups and service accounts it's assigned to."""
         with self.lock:
             data = {"groups": {}, "service_accounts": {}}  # type: Dict[str, Dict[str, Any]]
 
@@ -617,7 +617,7 @@ class GroupGraph:
 
     def get_disabled_groups(self):
         # type: () -> List[Group]
-        """ Get the list of disabled groups as Group instances sorted by groupname. """
+        """Get the list of disabled groups as Group instances sorted by groupname."""
         with self.lock:
             return sorted(self._disabled_groups.values(), key=lambda g: g.name)
 
@@ -766,7 +766,7 @@ class GroupGraph:
 
     def get_user_details(self, username, expose_aliases=True):
         # type: (str, bool) -> Dict[str, Any]
-        """ Get a user's groups and permissions.  Raise NoSuchUser for missing users."""
+        """Get a user's groups and permissions.  Raise NoSuchUser for missing users."""
         groups = {}  # type: Dict[str, Dict[str, Any]]
         permissions = []  # type: List[Dict[str, Any]]
         user_details = {"groups": groups, "permissions": permissions}

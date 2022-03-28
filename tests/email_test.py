@@ -54,7 +54,7 @@ def expired_graph(session, graph, groups, users):  # noqa: F811
 
 
 def test_expire_edges(expired_graph, session):  # noqa: F811
-    """ Test expiration auditing and notification. """
+    """Test expiration auditing and notification."""
     email = session.query(AsyncNotification).all()
     assert email == []
     for edge in session.query(GroupEdge).all():
@@ -93,7 +93,7 @@ def test_expire_edges(expired_graph, session):  # noqa: F811
 def test_promote_nonauditors(
     mock_gagn, standard_graph, graph, users, groups, session, permissions  # noqa: F811
 ):
-    """ Test expiration auditing and notification. """
+    """Test expiration auditing and notification."""
 
     assert graph.get_group_details("audited-team")["audited"]
 

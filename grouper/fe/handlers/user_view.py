@@ -38,12 +38,12 @@ class UserView(GrouperHandler):
                     user=user,
                     **get_user_view_template_vars(
                         self.session, self.current_user, user, self.graph
-                    )
+                    ),
                 )
                 return
 
         self.render(
             "user.html",
             user=user,
-            **get_user_view_template_vars(self.session, self.current_user, user, self.graph)
+            **get_user_view_template_vars(self.session, self.current_user, user, self.graph),
         )

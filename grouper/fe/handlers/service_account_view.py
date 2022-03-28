@@ -36,5 +36,5 @@ class ServiceAccountView(GrouperHandler):
             service_account=service_account,
             group=group,
             user=user,
-            **get_user_view_template_vars(self.session, self.current_user, user, self.graph)
+            **get_user_view_template_vars(self.session, self.current_user, user, self.graph),
         )

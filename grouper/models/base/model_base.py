@@ -3,7 +3,7 @@ from sqlalchemy.orm import object_session
 
 
 class _Model:
-    """ Custom model mixin with helper methods. """
+    """Custom model mixin with helper methods."""
 
     @property
     def session(self):

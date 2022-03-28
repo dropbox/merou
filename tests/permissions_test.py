@@ -127,7 +127,7 @@ def test_basic_permission(
 
 
 def test_has_permission(session, standard_graph, users):  # noqa: F811
-    """ Tests the has_permission method of a user object. """
+    """Tests the has_permission method of a user object."""
 
     # In our setup, zorkian has 'audited' with no arguments
     assert user_has_permission(

@@ -28,5 +28,5 @@ class GroupView(GrouperHandler):
             "group.html",
             group=group,
             audit_members_infos=get_group_audit_members_infos(self.session, group),
-            **get_group_view_template_vars(self.session, self.current_user, group, self.graph)
+            **get_group_view_template_vars(self.session, self.current_user, group, self.graph),
         )

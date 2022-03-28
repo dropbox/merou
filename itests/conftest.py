@@ -17,7 +17,7 @@ from itests.setup import selenium_browser
 from tests.setup import SetupTest
 
 if TYPE_CHECKING:
-    from py import LocalPath
+    from py._path.local import LocalPath
     from selenium.webdriver import Chrome
     from typing import Iterator
 

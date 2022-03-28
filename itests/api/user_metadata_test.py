@@ -7,7 +7,7 @@ from tests.constants import SSH_KEY_1, SSH_KEY_2
 from tests.util import key_to_public_key
 
 if TYPE_CHECKING:
-    from py.path import LocalPath
+    from py._path.local import LocalPath
     from tests.setup import SetupTest
 
 

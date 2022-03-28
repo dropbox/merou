@@ -36,7 +36,7 @@ def setup_desc_to_ances(session, users, groups):  # noqa: F811
 
 
 def test_graph_desc_to_ances(session, graph, users, groups):  # noqa: F811
-    """ Test adding members where all descendants already exist."""
+    """Test adding members where all descendants already exist."""
 
     setup_desc_to_ances(session, users, groups)
     session.commit()
@@ -66,7 +66,7 @@ def test_graph_desc_to_ances(session, graph, users, groups):  # noqa: F811
 
 
 def test_graph_add_member_existing(session, graph, users, groups):  # noqa: F811
-    """ Test adding members to an existing relationship."""
+    """Test adding members to an existing relationship."""
 
     add_member(groups["team-sre"], users["gary@a.co"], role="owner")
     add_member(groups["tech-ops"], users["gary@a.co"], role="owner")
@@ -108,7 +108,7 @@ def test_graph_add_member_existing(session, graph, users, groups):  # noqa: F811
 
 
 def test_graph_with_removes(session, graph, users, groups):  # noqa: F811
-    """ Test adding members where all descendants already exist."""
+    """Test adding members where all descendants already exist."""
 
     setup_desc_to_ances(session, users, groups)
 
@@ -181,7 +181,7 @@ def test_graph_with_removes(session, graph, users, groups):  # noqa: F811
 
 
 def test_graph_cycle_direct(session, graph, users, groups):  # noqa: F811
-    """ Test adding members where all descendants already exist."""
+    """Test adding members where all descendants already exist."""
 
     add_member(groups["team-sre"], users["gary@a.co"])
     add_member(groups["tech-ops"], users["zay@a.co"])
@@ -255,7 +255,7 @@ def test_graph_cycle_indirect(session, graph, users, groups):  # noqa: F811
 
 @pytest.mark.gen_test
 def test_graph_disable(session, graph, groups, http_client, base_url):  # noqa: F811
-    """ Test that disabled groups work with the graph as expected."""
+    """Test that disabled groups work with the graph as expected."""
     groupname = "serving-team"
 
     graph.update_from_db(session)

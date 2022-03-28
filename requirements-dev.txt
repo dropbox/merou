@@ -1,10 +1,10 @@
-black==19.10b0
+black==22.3.0
 flake8-import-order==0.18.1
 flake8==3.9.0
 groupy>=0.5.1
 isort==5.5.2
 mock==2.0.0
-py==1.8.0
+py==1.10.0
 mypy==0.740
 pytest-mock==1.10.4
 pytest-tornado==0.8.0

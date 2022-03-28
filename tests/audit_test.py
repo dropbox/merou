@@ -55,14 +55,14 @@ def test_group_audited(standard_graph, graph, session, groups, permissions):  # 
 
 
 def test_user_is_auditor(standard_graph):  # noqa: F811
-    """ Ensure users get the ability to audit. """
+    """Ensure users get the ability to audit."""
 
     assert user_is_auditor("zorkian@a.co")
     assert not user_is_auditor("oliver@a.co")
 
 
 def test_assert_can_join(standard_graph, users, groups):  # noqa: F811
-    """ Test various audit constraints to ensure that users can/can't join as appropriate. """
+    """Test various audit constraints to ensure that users can/can't join as appropriate."""
 
     # Non-auditor can join non-audited group as owner.
     assert_can_join(groups["team-infra"], users["zay@a.co"], role="owner")
@@ -93,7 +93,7 @@ def test_assert_can_join(standard_graph, users, groups):  # noqa: F811
 
 
 def test_assert_controllers_are_auditors(standard_graph, groups):  # noqa: F811
-    """ Test the method that determines if a subtree is controlled by auditors. """
+    """Test the method that determines if a subtree is controlled by auditors."""
 
     # Group is safely controlled by auditors.
     assert_controllers_are_auditors(groups["sad-team"])
@@ -158,7 +158,7 @@ class Audit:
 
 @pytest.mark.gen_test
 def test_audit_end_to_end(session, users, groups, http_client, base_url, graph):  # noqa: F811
-    """ Tests an end-to-end audit cycle. """
+    """Tests an end-to-end audit cycle."""
     groupname = "audited-team"
 
     gary_id = users["gary@a.co"].id

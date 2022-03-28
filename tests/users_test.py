@@ -28,7 +28,7 @@ from tests.util import get_groups, grant_permission
 
 
 def test_basic_metadata(standard_graph, session, users, groups, permissions):  # noqa: F811
-    """ Test basic metadata functionality. """
+    """Test basic metadata functionality."""
 
     user_id = users["zorkian@a.co"].id
 
@@ -92,7 +92,7 @@ def user_admin_perm_to_auditors(session, groups):  # noqa: F811
 
 @pytest.fixture
 def user_enable_perm_to_sre(session, groups):  # noqa: F811
-    """Adds the (USER_ENABLE, *) permission to the group `team-sre` """
+    """Adds the (USER_ENABLE, *) permission to the group `team-sre`"""
     user_enable_perm, is_new = get_or_create_permission(
         session, USER_ENABLE, description="grouper.user.enable perm"
     )

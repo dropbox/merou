@@ -5,7 +5,7 @@ from tests.path_util import db_url, src_path
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
-    from py.path import LocalPath
+    from py._path.local import LocalPath
     from tests.setup import SetupTest
 
 

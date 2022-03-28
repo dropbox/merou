@@ -3,6 +3,7 @@ Jinja2==2.11.3
 PyYAML==5.4.1
 SQLAlchemy==1.3.24
 WTForms==2.2.1
+markupsafe==1.1.1
 mysqlclient==1.4.3
 networkx==2.7.1
 plop==0.3.0

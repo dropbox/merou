@@ -21,7 +21,7 @@ from plugins import group_ownership_policy
 from tests.url_util import url
 
 if TYPE_CHECKING:
-    from py.path import LocalPath
+    from py._path import LocalPath
     from selenium.webdriver import Chrome
     from tests.setup import SetupTest
 

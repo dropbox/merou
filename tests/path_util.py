@@ -2,7 +2,7 @@ import os
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from py.path import LocalPath
+    from py._path import LocalPath
     from typing import Dict
 
 

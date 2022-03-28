@@ -10,7 +10,7 @@ from grouper.models.base.session import get_db_engine
 from grouper.settings import DatabaseSourceException, InvalidSettingsError, Settings
 
 if TYPE_CHECKING:
-    from py._path import LocalPath
+    from py._path.local import LocalPath
     from pytest.logging import LogCaptureFixture
 
 # Data to test loading settings from different sections.

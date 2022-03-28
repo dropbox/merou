@@ -5,7 +5,7 @@ from groupy.client import Groupy
 from itests.setup import api_server
 
 if TYPE_CHECKING:
-    from py._path import LocalPath
+    from py._path.local import LocalPath
     from tests.setup import SetupTest
 
 

@@ -16,7 +16,7 @@ import pytest
 from tests.setup import SetupTest
 
 if TYPE_CHECKING:
-    from py import LocalPath
+    from py._path.local import LocalPath
     from typing import Iterator
 
 

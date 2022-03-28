@@ -11,7 +11,7 @@ from grouper.public_key import (
     get_public_keys_of_user,
     PublicKeyParseError,
 )
-from tests.constants import SSH_KEY_1, SSH_KEY_BAD
+from tests.constants import SSH2_KEY_BAD, SSH_KEY_1, SSH_KEY_BAD, SSH_KEY_BAD_MULTILINE
 from tests.fixtures import session, users  # noqa: F401
 
 
@@ -37,6 +37,16 @@ def test_bad_key(session, users):  # noqa: F811
 
     with pytest.raises(PublicKeyParseError):
         add_public_key(session, user, SSH_KEY_BAD)
+
+    assert get_public_keys_of_user(session, user.id) == []
+
+
+@pytest.mark.parametrize("key", [SSH_KEY_BAD_MULTILINE, SSH2_KEY_BAD])
+def test_multiline_key(key, session, users):  # noqa: F811
+    user = users["cbguder@a.co"]
+
+    with pytest.raises(PublicKeyParseError, match="Public key cannot have newlines"):
+        add_public_key(session, user, key)
 
     assert get_public_keys_of_user(session, user.id) == []
 

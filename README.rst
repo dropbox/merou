@@ -2,9 +2,9 @@
 merou
 =====
 
-.. image:: https://travis-ci.org/dropbox/merou.svg?branch=master
+.. image:: https://travis-ci.com/dropbox/merou.svg?branch=master
     :alt: Build Status
-    :target: https://travis-ci.org/dropbox/merou
+    :target: https://app.travis-ci.com/github/dropbox/merou
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :alt: Code Style: Black

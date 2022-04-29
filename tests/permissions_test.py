@@ -364,6 +364,23 @@ def test_permission_request_flow(
     emails = _get_unsent_and_mark_as_sent_emails(session)
     assert len(emails) == 0, "no emails queued"
 
+    # REQUEST: permission with argument longer than 64 characters
+    resp = yield http_client.fetch(
+        fe_url,
+        method="POST",
+        body=urlencode(
+            {
+                "permission": "grantable.one",
+                "argument": "some argument longer than 64 character, some argument longer than "
+                "64 character, some argument longer than 64 character",
+                "reason": "blah blah black sheep",
+            }
+        ),
+        headers={"X-Grouper-User": username},
+    )
+    assert resp.code == 200
+    assert b"Field must be between" not in resp.body
+
     # REQUEST: 'grantable.one', 'some argument' for 'serving-team'
     resp = yield http_client.fetch(
         fe_url,

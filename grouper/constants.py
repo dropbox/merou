@@ -76,8 +76,12 @@ RESERVED_NAMES = [
     r".*\|.*",
 ]
 
-# Maximum length a name can be. This applies to user names and permission arguments.
+# Maximum length a name can be. This applies to user names.
 MAX_NAME_LENGTH = 128
+
+# Maximum length a permission argument can be. This applies to permission_requests and
+# permissions_map arguments.
+MAX_ARGUMENT_LENGTH = 128
 
 # Grouper used UserMetadata data_keys
 USER_METADATA_SHELL_KEY = "shell"

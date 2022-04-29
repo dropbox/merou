@@ -372,7 +372,7 @@ def test_permission_request_flow(
             {
                 "permission": "grantable.one",
                 "argument": "some argument longer than 64 character, some argument longer than "
-                            "64 character, some argument longer than 64 character",
+                "64 character, some argument longer than 64 character",
                 "reason": "blah blah black sheep",
             }
         ),

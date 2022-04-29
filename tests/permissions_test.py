@@ -371,7 +371,8 @@ def test_permission_request_flow(
         body=urlencode(
             {
                 "permission": "grantable.one",
-                "argument": "some argument longer than 64 character, some argument longer than 64 character, some argument longer than 64 character",
+                "argument": "some argument longer than 64 character, some argument longer than "
+                            "64 character, some argument longer than 64 character",
                 "reason": "blah blah black sheep",
             }
         ),

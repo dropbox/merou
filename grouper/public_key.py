@@ -1,3 +1,6 @@
+import base64
+import binascii
+
 import sshpubkeys
 from sqlalchemy.exc import IntegrityError
 
@@ -65,6 +68,7 @@ def add_public_key(session, user, public_key_str):
     Returns:
         PublicKey model object representing the key
     """
+    public_key_str = public_key_str.strip()
     pubkey = sshpubkeys.SSHKey(public_key_str, strict=True)
 
     try:
@@ -72,12 +76,24 @@ def add_public_key(session, user, public_key_str):
     except sshpubkeys.InvalidKeyException as e:
         raise PublicKeyParseError(str(e))
 
+    if pubkey.options or pubkey.options_raw:
+        raise BadPublicKey("Public key cannot have options")
+
     # Allowing newlines can lead to injection attacks depending on how the key is
     # consumed, such as if it's dumped in an authorized_keys file with a `command`
     # restriction.
     # Note parsing the key is insufficient to block this.
     if "\r" in public_key_str or "\n" in public_key_str:
         raise PublicKeyParseError("Public key cannot have newlines")
+
+    # Work around bug in sshpubkeys package, where it doesn't reject invalid base64 like
+    #     eA==junk suffix
+    # SSH does reject such keys, so we should be consistent.
+    try:
+        decoded_key = base64.b64decode(public_key_str.split(None, 2)[1], validate=True)
+    except binascii.Error as e:
+        raise PublicKeyParseError(str(e))
+    assert decoded_key == pubkey._decoded_key
 
     try:
         get_plugin_proxy().will_add_public_key(pubkey)

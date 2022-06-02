@@ -18,6 +18,8 @@ SSH_KEY_BAD = "ssh-rsa AAAblahblahkey some-comment"
 
 SSH_KEY_BAD_MULTILINE = SSH_KEY_1 + "\r" + SSH_KEY_2
 
+SSH_KEY_BAD_HAS_OPTIONS = 'command="bash" ' + SSH_KEY_1
+
 SSH2_KEY_BAD = """\
 ---- BEGIN SSH2 PUBLIC KEY ----
 foobar: this is a chance to hide bad things
@@ -30,6 +32,8 @@ SSH_KEY_RSA_1024 = (
     "pOPvEb/785Act4En1VFvwMwTj25VurbG3XI984csiNdWPlM1ke4lHK2PQepSYyZVYn+hhXhzSILNDixhBYeDVv4GOfJM1"
     "HBO2AEtupOMHOqtnQLjV1UnQ== rsa-1024"
 )
+
+SSH_KEY_BAD_NO_SPACE = SSH_KEY_RSA_1024.replace("== rsa-1024", "==rsa-1024")
 
 SSH_KEY_DSA = (
     "ssh-dss AAAAB3NzaC1kc3MAAACBAKdCbYh9GgDPFppJmyRcpWhFn3Xc5vcljGE20df84KYQeBVCQg3zTLkwynHyrpEwT"

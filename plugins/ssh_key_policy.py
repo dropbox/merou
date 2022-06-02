@@ -2,7 +2,7 @@ from grouper.plugin.base import BasePlugin
 from grouper.plugin.exceptions import PluginRejectedPublicKey
 
 MIN_KEY_SIZES = {
-    b"ssh-rsa": 2048,
+    b"ssh-rsa": 4096,
     # All ed25519 keys are sufficiently large.
     b"ssh-ed25519": 0,
 }

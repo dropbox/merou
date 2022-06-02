@@ -413,8 +413,8 @@ def test_public_keys(session, users, http_client, base_url):  # noqa: F811
 
     assert len(rows) == 1
     assert rows[0]["username"] == "cbguder@a.co"
-    assert rows[0]["fingerprint"] == "e9:ae:c5:8f:39:9b:3a:9c:6a:b8:33:6b:cb:6f:ba:35"
-    assert rows[0]["fingerprint_sha256"] == "MP9uWaujW96EWxbjDtPdPWheoMDu6BZ8FZj0+CBkVWU"
+    assert rows[0]["fingerprint"] == "6f:c4:6b:f1:d7:29:b0:14:41:52:3c:83:fb:53:a5:85"
+    assert rows[0]["fingerprint_sha256"] == "x9HI/CF9Aoi7Mh7bfDMi0FzcqfIU4FEup6dfYh3b1w0"
     assert rows[0]["comment"] == "some-comment"
 
 

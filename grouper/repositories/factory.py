@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from grouper.graph import Graph
-from grouper.models.base.session import get_db_engine, Session
+from grouper.models.base.session import DbEngineManager, Session
 from grouper.repositories.audit_log import AuditLogRepository
 from grouper.repositories.checkpoint import CheckpointRepository
 from grouper.repositories.group import GroupRepository
@@ -42,10 +42,11 @@ class SessionFactory:
     def __init__(self, settings):
         # type: (Settings) -> None
         self.settings = settings
+        self._db_engine_manager = DbEngineManager()
 
     def create_session(self):
         # type: () -> Session
-        db_engine = get_db_engine(self.settings.database)
+        db_engine = self._db_engine_manager.get_db_engine(self.settings.database)
         Session.configure(bind=db_engine)
         return Session()
 

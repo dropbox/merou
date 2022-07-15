@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING
 
 from grouper.usecases.convert_user_to_service_account import ConvertUserToServiceAccount
@@ -46,6 +47,20 @@ class UseCaseFactory:
         self.settings = settings
         self.plugins = plugins
         self.service_factory = service_factory
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            session = self.service_factory.repository_factory.session
+            session.close()
+        except Exception:
+            logging.error(
+                "Unable to close Session, service will continue to operate but may result in DB "
+                "connections leak",
+                exc_info=True,
+            )
 
     def create_create_service_account_usecase(self, actor, ui):
         # type: (str, CreateServiceAccountUI) -> CreateServiceAccount

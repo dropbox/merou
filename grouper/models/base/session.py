@@ -1,5 +1,6 @@
 import functools
 import logging
+from threading import Lock
 from typing import TYPE_CHECKING
 
 from sqlalchemy import create_engine
@@ -7,9 +8,11 @@ from sqlalchemy.exc import ArgumentError, OperationalError
 from sqlalchemy.orm import Session as _Session, sessionmaker
 
 from grouper.settings import InvalidSettingsError
+from grouper.util import singleton
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
+    from typing import Dict
 
 
 def flush_transaction(method):
@@ -35,7 +38,10 @@ def flush_transaction(method):
 def get_db_engine(url):
     # type: (str) -> Engine
     try:
-        engine = create_engine(url, pool_recycle=300)
+        if "sqlite:" in url.lower():
+            engine = create_engine(url, pool_recycle=300)
+        else:
+            engine = create_engine(url, max_overflow=25, pool_recycle=300)
     except (ArgumentError, OperationalError):
         logging.exception("Can't create database engine.")
         raise InvalidSettingsError("Invalid arguments. Can't create database engine")
@@ -64,3 +70,43 @@ class SessionWithoutAdd(_Session):
 
 
 Session = sessionmaker(class_=SessionWithoutAdd)
+
+
+@singleton
+def DbEngineManager():
+    # type: () -> _DbEngineManager
+    return _DbEngineManager()
+
+
+class _DbEngineManager:
+    """The cached database engine manager that initializates and stores SqlAlchemy engines per
+    connection string. This manager provides a single database engine object per connection
+    that can be accessed and re-used anywhere in the application throughout application lifecycle.
+
+    Currently it is only used in `SessionFactory` but eventually all usages of `get_db_engine` will
+    migrate to this manager.
+
+     Attributes:
+        None
+     """
+
+    def __init__(self):
+        # type: () -> None
+        self._engine_holder = {}  # type: Dict[str, Engine]
+        self._lock = Lock()
+
+    def get_db_engine(self, url):
+        # type: (str) -> Engine
+        if url not in self._engine_holder:
+            with self._lock:
+                if url not in self._engine_holder:
+                    self._engine_holder[url] = get_db_engine(url)
+                    assert self._engine_holder[url] is not None
+
+                    logging.info(
+                        f"Engine for url: {url} doesn't exist, creating..., engine_manager_id - "
+                        f"{id(self)}, engine_id - {id(self._engine_holder[url])}"
+                    )
+
+        assert self._engine_holder[url] is not None
+        return self._engine_holder[url]

@@ -1,4 +1,5 @@
 import functools
+import hashlib
 import logging
 from threading import Lock
 from typing import TYPE_CHECKING
@@ -104,7 +105,8 @@ class _DbEngineManager:
                     assert self._engine_holder[url] is not None
 
                     logging.info(
-                        f"Engine for url: {url} doesn't exist, creating..., engine_manager_id - "
+                        f"Engine for DB url hash: {hashlib.sha256(url.encode()).hexdigest()} "
+                        f"doesn't exist, creating..., engine_manager_id - "
                         f"{id(self)}, engine_id - {id(self._engine_holder[url])}"
                     )
 

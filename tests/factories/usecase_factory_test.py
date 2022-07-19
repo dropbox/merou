@@ -31,6 +31,7 @@ def test_session_closing_failed(session, plugin_proxy, settings):
 @patch("grouper.plugin.proxy.PluginProxy")
 def test_same_db_url_same_engine_used(plugin_proxy):
     with mock.patch("grouper.settings.Settings") as settings:
+        settings.database = "some db url"
         with mock.patch("grouper.models.base.session.get_db_engine"):
             old_use_case_factory = create_graph_usecase_factory(settings, plugin_proxy)
             old_engine_id = id(
@@ -49,6 +50,7 @@ def test_same_db_url_same_engine_used(plugin_proxy):
 @patch("grouper.plugin.proxy.PluginProxy")
 def test_diff_db_url_diff_engine_used(plugin_proxy):
     with mock.patch("grouper.settings.Settings") as settings:
+        settings.database = "some db url"
         with mock.patch("grouper.models.base.session.get_db_engine"):
             old_use_case_factory = create_graph_usecase_factory(settings, plugin_proxy)
             old_engine_id = id(
@@ -56,6 +58,7 @@ def test_diff_db_url_diff_engine_used(plugin_proxy):
             )
 
     with mock.patch("grouper.settings.Settings") as settings:
+        settings.database = "some other db url"
         with mock.patch("grouper.models.base.session.get_db_engine"):
             new_use_case_factory = create_graph_usecase_factory(settings, plugin_proxy)
             new_engine_id = id(

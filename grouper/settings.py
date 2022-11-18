@@ -79,7 +79,6 @@ class Settings:
         self.http_proxy_host = None  # type: Optional[str]
         self.http_proxy_port = None  # type: Optional[int]
         self.log_format = "%(asctime)-15s\t%(levelname)s\t%(message)s  [%(name)s]"
-        self.log_redact_patterns = [] # type: List[str]
         self.plugin_dirs = []  # type: List[str]
         self.plugin_module_paths = []  # type: List[str]
         self.restricted_ownership_permissions = []  # type: List[str]

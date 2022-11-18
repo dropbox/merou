@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import logging
 import re
 
+
 @dataclass
 class RedactionPattern:
     # regular expression to match for redaction
@@ -9,12 +10,9 @@ class RedactionPattern:
     # sensitive string will be replaced by this "redacted_message" in the log output
     redacted_message: str
 
+
 class RedactingFormatter(logging.Formatter):
-    """
-    RedactingFormatter masks sensitive regular expressions from log entries.
-    
-    Configure the sensitive log regular expressions in settings.log_redact_patterns.
-    """
+    """RedactingFormatter masks sensitive regular expressions from log entries."""
 
     _REDACT_PATTERNS = [
         RedactionPattern(  # mysql url
@@ -31,12 +29,17 @@ class RedactingFormatter(logging.Formatter):
         ),
     ]
 
-    def _filter(self, log_string: str) -> str:
+    def _redact(self, log_string: str) -> str:
         new_string = log_string
         for pattern in RedactingFormatter._REDACT_PATTERNS:
-            new_string = re.sub(pattern.regex, f"<{pattern.redacted_message}>", new_string)
+            new_string = re.sub(
+                pattern.regex,
+                f"<{pattern.redacted_message}>",
+                new_string,
+                flags=re.IGNORECASE,
+            )
         return new_string
-    
+
     def format(self, record: logging.LogRecord) -> str:
-        original_log_message = logging.Formatter.format(self, record)
-        return self._filter(original_log_message)
+        original_log_message = super().format(record)
+        return self._redact(original_log_message)

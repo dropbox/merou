@@ -1,6 +1,7 @@
 import re
 from grouper.log_redact import RedactingFormatter
 
+
 def test_redact_regex() -> None:
     """Test regular expressions compile correctly."""
     for pattern in RedactingFormatter._REDACT_PATTERNS:
@@ -9,7 +10,7 @@ def test_redact_regex() -> None:
 
 def test_known_bad_strings() -> None:
     """Test the redaction filter on known sensitive log strings.
-    
+
     The actual value of the password in each sample is replaced
     with the string "PASSWORD".
     """
@@ -22,5 +23,5 @@ def test_known_bad_strings() -> None:
     redactor = RedactingFormatter()
 
     for sample in bad_strings:
-        filtered = redactor._filter(sample)
+        filtered = redactor._redact(sample)
         assert "PASSWORD" not in filtered

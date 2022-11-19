@@ -14,7 +14,6 @@ from grouper.plugin.proxy import PluginProxy
 from grouper.repositories.factory import SessionFactory, SingletonSessionFactory
 from grouper.settings import default_settings_path
 from grouper.setup import setup_logging
-from grouper.util import get_loglevel
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session

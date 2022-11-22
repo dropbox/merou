@@ -13,13 +13,11 @@ from grouper.plugin.exceptions import PluginsDirectoryDoesNotExist
 from grouper.plugin.proxy import PluginProxy
 from grouper.repositories.factory import SessionFactory, SingletonSessionFactory
 from grouper.settings import default_settings_path
-from grouper.util import get_loglevel
+from grouper.setup import setup_logging
 
 if TYPE_CHECKING:
     from grouper.models.base.session import Session
     from typing import List, Optional
-
-sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
 
 def main(sys_argv=sys.argv, session=None):
@@ -63,18 +61,14 @@ def main(sys_argv=sys.argv, session=None):
     if args.database_url:
         settings.database = args.database_url
 
+    setup_logging(args, settings.log_format)
+
     # Construct a session factory, which is passed into all the legacy commands that haven't been
     # converted to usecases yet.
     if session:
         session_factory = SingletonSessionFactory(session)  # type: SessionFactory
     else:
         session_factory = SessionFactory(settings)
-
-    log_level = get_loglevel(args, base=logging.INFO)
-    logging.basicConfig(level=log_level, format=settings.log_format)
-
-    if log_level < 0:
-        sa_log.setLevel(logging.INFO)
 
     # Initialize plugins.  The global plugin proxy is used by legacy code.
     try:

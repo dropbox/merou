@@ -3,14 +3,16 @@ from argparse import ArgumentParser
 from typing import TYPE_CHECKING
 
 from grouper import __version__
+from grouper.log_redact import RedactingFormatter
 from grouper.settings import default_settings_path
+from grouper.util import get_loglevel
 
 if TYPE_CHECKING:
     from argparse import Namespace
 
 
 def build_arg_parser(description):
-    # type(str) -> ArgumentParser
+    # type: (str) -> ArgumentParser
 
     parser = ArgumentParser(description=description)
 
@@ -51,15 +53,13 @@ def build_arg_parser(description):
 
 def setup_logging(args, log_format):
     # type: (Namespace, str) -> None
-
-    # `logging` levels are integer multiples of 10. so each verbose/quiet level
-    # is multiplied by 10
-    verbose = args.verbose * 10
-    quiet = args.quiet * 10
-    log_level = logging.getLogger().level - verbose + quiet
+    log_level = get_loglevel(args)
 
     sa_log = logging.getLogger("sqlalchemy.engine.base.Engine")
 
     logging.basicConfig(level=log_level, format=log_format)
     if log_level < 0:
         sa_log.setLevel(logging.INFO)
+
+    for handler in logging.root.handlers:
+        handler.setFormatter(RedactingFormatter(log_format))

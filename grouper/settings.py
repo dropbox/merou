@@ -4,7 +4,7 @@ import subprocess
 import time
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse
+from urllib.parse import ParseResult, urlparse
 
 import pytz
 import yaml
@@ -177,7 +177,9 @@ class Settings:
                 url = raw_url.decode().strip()
                 if not url:
                     raise DatabaseSourceException("Returned URL is empty")
-                self._logger.debug("New database URL is %s", self._url_without_password(url))
+                self._logger.debug(
+                    "New database configuration is %s", self._db_connection_info(url)
+                )
                 return url
             except (UnicodeDecodeError, DatabaseSourceException, CalledProcessError) as e:
                 self._logger.exception("Running %s failed", self.database_source)
@@ -191,16 +193,18 @@ class Settings:
                     )
                     raise DatabaseSourceException(msg)
 
-    def _url_without_password(self, url):
-        # type: (str) -> str
+    def _db_connection_info(self, url):
+        # type: (str) -> ParseResult
         """Parse a URL and remove any password, returning a version suitable for logging."""
         parsed_url = urlparse(url)
+
         if parsed_url.password is None:
-            return url  # type: ignore[misc]  # typeshed/pull/3332
+            netloc = parsed_url.netloc
         else:
             host = parsed_url.netloc.rsplit("@", 1)[-1]
-            masked_url = parsed_url._replace(netloc="{}:???@{}".format(parsed_url.username, host))
-            return masked_url.geturl()
+            netloc = f"{parsed_url.username}:<REDACTED>@{host}"
+
+        return parsed_url._replace(netloc=netloc)
 
 
 def settings():

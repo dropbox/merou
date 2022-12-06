@@ -136,7 +136,6 @@ def test_mask_passsword_in_logs(caplog):
     settings._logger.setLevel(logging.DEBUG)
     settings.database_source = "/path/to/program"
     test_url = "mysql://user:password@example.com:8888/merou"
-    expected_url = "mysql://user:???@example.com:8888/merou"
 
     # Reading settings.database will run the external program and trigger the logging.
     with patch("subprocess.check_output") as mock_subprocess:
@@ -144,7 +143,7 @@ def test_mask_passsword_in_logs(caplog):
         assert settings.database == test_url
 
     assert test_url not in caplog.text
-    assert expected_url in caplog.text
+    assert "REDACTED" in caplog.text
 
 
 def test_bad_db_url():

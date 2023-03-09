@@ -1,0 +1,32 @@
+name: Grouper Pull Request Tests Actions
+
+on:
+  push:
+
+env:
+  PYTHON_VERSION: "3.8"
+
+jobs:
+  grouper_test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install language packs
+        run: sudo apt-get install libcurl4-openssl-dev libssl-dev
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+          cache: 'pip' # caching pip dependencies
+
+      - name: Run for Sqlite
+        run: ./ci/setup.sh sqlite && ./ci/test.sh sqlite
+
+      - name: Run for MySql
+        run: ./ci/setup.sh mysql && ./ci/test.sh mysql
+

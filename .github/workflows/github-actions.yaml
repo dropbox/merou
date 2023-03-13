@@ -43,4 +43,5 @@ jobs:
         run: |
           sudo /etc/init.d/mysql start
           mysql -e 'CREATE DATABASE merou CHARACTER SET utf8mb4;' -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
+          mysql -e " CREATE USER travis@localhost; GRANT ALL ON *.* TO travis@localhost;" -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
           ci/setup.sh mysql && ci/test.sh mysql

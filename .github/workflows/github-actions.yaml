@@ -13,6 +13,7 @@ jobs:
       mysql:
         image: mysql:5.7
         env:
+          DB_USER: travis
           MYSQL_DATABASE: merou
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
         ports:

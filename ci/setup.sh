@@ -3,7 +3,7 @@
 set -eux
 
 wget 'https://chromedriver.storage.googleapis.com/2.37/chromedriver_linux64.zip'
-y | unzip chromedriver_linux64.zip -d chromedriver
+echo "y" | unzip chromedriver_linux64.zip -d chromedriver
 
 echo "Creating Database: $1"
 

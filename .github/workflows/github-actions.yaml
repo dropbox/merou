@@ -1,0 +1,47 @@
+name: Grouper Pull Request Tests Actions
+
+on:
+  pull_request:
+
+env:
+  PYTHON_VERSION: "3.8"
+
+jobs:
+  grouper_test:
+    runs-on: ubuntu-22.04
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_DATABASE: merou
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    steps:
+      - name: Install ubuntu dependencies
+        run: sudo apt-get install libcurl4-openssl-dev libssl-dev
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+          cache: 'pip' # caching pip dependencies
+
+      - name: Run for Sqlite
+        run: ci/setup.sh sqlite && ci/test.sh sqlite
+
+      - name: Run for MySql
+        env:
+          DB_USER: root
+          DB_PASSWORD: root
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE merou CHARACTER SET utf8mb4;' -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
+          mysql -e " CREATE USER travis@localhost; GRANT ALL ON *.* TO travis@localhost;" -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
+          ci/setup.sh mysql && ci/test.sh mysql

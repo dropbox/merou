@@ -5,7 +5,9 @@ set -eux
 wget 'https://chromedriver.storage.googleapis.com/2.37/chromedriver_linux64.zip'
 unzip chromedriver_linux64.zip -d chromedriver
 
-if [ "$DB" = 'mysql' ]; then
+echo "Creating Database: $1"
+
+if [ "$1" = 'mysql' ]; then
     mysql -e 'CREATE DATABASE merou CHARACTER SET utf8mb4;'
 fi
 

@@ -40,4 +40,5 @@ jobs:
       - name: Run for MySql
         run: |
           sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE ${{ env.DB_DATABASE }} CHARACTER SET utf8mb4;' -u${{ env.DB_USER }}
           ci/setup.sh mysql && ci/test.sh mysql

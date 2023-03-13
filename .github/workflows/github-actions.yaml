@@ -14,7 +14,8 @@ jobs:
         image: mysql:5.7
         env:
           MYSQL_DATABASE: merou
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          DB_USER: root
+          DB_PASSWORD: root
         ports:
           - 3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
@@ -39,5 +40,5 @@ jobs:
       - name: Run for MySql
         run: |
           sudo /etc/init.d/mysql start
-          mysql -e 'CREATE DATABASE merou CHARACTER SET utf8mb4;'
+          mysql -e 'CREATE DATABASE merou CHARACTER SET utf8mb4;' -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
           ci/setup.sh mysql && ci/test.sh mysql

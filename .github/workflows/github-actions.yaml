@@ -12,6 +12,11 @@ jobs:
     services:
       mysql:
         image: mysql:5.7
+        env:
+          MYSQL_DATABASE: merou
+        ports:
+          - 33306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
       - name: Install ubuntu dependencies
         run: sudo apt-get install libcurl4-openssl-dev libssl-dev

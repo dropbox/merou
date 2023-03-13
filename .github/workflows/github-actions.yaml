@@ -9,7 +9,9 @@ env:
 jobs:
   grouper_test:
     runs-on: ubuntu-22.04
-    services: mysql
+    services:
+      mysql:
+        image: mysql:5.7
     steps:
       - name: Install ubuntu dependencies
         run: sudo apt-get install libcurl4-openssl-dev libssl-dev

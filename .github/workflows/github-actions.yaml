@@ -25,7 +25,7 @@ jobs:
           cache: 'pip' # caching pip dependencies
 
       - name: Run for Sqlite
-        run: ../ci/setup.sh sqlite && ../ci/test.sh sqlite
+        run: ci/setup.sh sqlite && ci/test.sh sqlite
 
       - name: Run for MySql
-        run: ../ci/setup.sh mysql && ../ci/test.sh mysql
+        run: ci/setup.sh mysql && ci/test.sh mysql

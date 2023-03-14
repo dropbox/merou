@@ -3,11 +3,9 @@
 set -eux
 
 wget 'https://chromedriver.storage.googleapis.com/2.37/chromedriver_linux64.zip'
-unzip chromedriver_linux64.zip -d chromedriver
+echo "y" | unzip chromedriver_linux64.zip -d chromedriver
 
-if [ "$DB" = 'mysql' ]; then
-    mysql -e 'CREATE DATABASE merou CHARACTER SET utf8mb4;'
-fi
+echo "Creating Database: $1"
 
 pip3 install -r requirements.txt
 pip3 install -r requirements-dev.txt

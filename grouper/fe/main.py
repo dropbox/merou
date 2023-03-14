@@ -59,10 +59,11 @@ def start_server(args, settings, plugins):
     ), "debug mode does not support multiple processes"
 
     # setup database
-    logging.debug("configure database session")
+    logging.info("configure database session")
     if args.database_url:
         settings.database = args.database_url
     Session.configure(bind=get_db_engine(settings.database))
+    logging.info("database session is configured")
 
     application = create_fe_application(settings, args.deployment_name)
     ssl_context = plugins.get_ssl_context()
@@ -89,13 +90,17 @@ def start_server(args, settings, plugins):
         server.bind(port, address=address)
 
     # When using multiple processes, the forking happens here
+    logging.info("Attempting to start application server")
     server.start(settings.num_processes)
+    logging.info("Application server started successfully")
 
     # Create the Graph and start the graph update thread post fork to ensure each process gets
     # updated.
+    logging.info("Initializing DB Graph")
     with closing(Session()) as session:
         graph = Graph()
         graph.update_from_db(session)
+    logging.info("DB Graph successfully initialized")
 
     refresher = DbRefreshThread(settings, plugins, graph, settings.refresh_interval)
     refresher.daemon = True

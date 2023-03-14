@@ -47,14 +47,17 @@ def start_server(args, settings, plugins):
     ), "debug mode does not support multiple processes"
 
     # setup database
-    logging.debug("configure database session")
+    logging.info("configure database session")
     if args.database_url:
         settings.database = args.database_url
     Session.configure(bind=get_db_engine(settings.database))
+    logging.info("database session is configured")
 
+    logging.info("Initializing DB Graph")
     with closing(Session()) as session:
         graph = Graph()
         graph.update_from_db(session)
+    logging.info("DB Graph successfully initialized")
 
     refresher = DbRefreshThread(settings, plugins, graph, settings.refresh_interval)
     refresher.daemon = True
@@ -62,6 +65,8 @@ def start_server(args, settings, plugins):
 
     usecase_factory = create_graph_usecase_factory(settings, plugins, graph=graph)
     application = create_api_application(graph, settings, plugins, usecase_factory)
+
+    logging.info("Usecase factory and application created successfully")
 
     if args.listen_stdin:
         logging.info("Starting application server on stdin")
@@ -77,7 +82,9 @@ def start_server(args, settings, plugins):
         server = HTTPServer(application)
         server.bind(port, address=address)
 
+    logging.info("Attempting to start application server")
     server.start(settings.num_processes)
+    logging.info("Application server started successfully")
 
     try:
         IOLoop.current().start()

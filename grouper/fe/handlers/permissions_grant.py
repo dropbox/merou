@@ -128,7 +128,7 @@ class PermissionsGrant(GrouperHandler):
             self.session,
             self.current_user.id,
             "grant_permission",
-            "Granted permission with argument: {}".format(form.data["argument"]),
+            f"Granted permission {permission.name} with argument: {form.data['argument']}",
             on_permission_id=permission.id,
             on_group_id=group.id,
         )

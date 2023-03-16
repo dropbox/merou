@@ -5,6 +5,8 @@ from grouper.entities.permission import PermissionNotFoundException
 from grouper.usecases.authorization import Authorization
 from grouper.util import matches_glob
 
+from sqlalchemy.exc import IntegrityError
+
 if TYPE_CHECKING:
     from grouper.usecases.interfaces import (
         GroupInterface,
@@ -34,6 +36,11 @@ class GrantPermissionToServiceAccountUI(metaclass=ABCMeta):
     @abstractmethod
     def grant_permission_to_service_account_failed_permission_not_found(self, permission, service):
         # type: (str, str) -> None
+        pass
+
+    @abstractmethod
+    def grant_permission_to_service_account_failed_permission_already_granted(self, permission, argument, service):
+        # type: (str, str, str) -> None
         pass
 
     @abstractmethod
@@ -139,6 +146,11 @@ class GrantPermissionToServiceAccount:
                 # Leaving the logic here however in case that changes in the future.
                 self.ui.grant_permission_to_service_account_failed_permission_not_found(
                     permission, service
+                )
+                return
+            except IntegrityError:
+                self.ui.grant_permission_to_service_account_failed_permission_already_granted(
+                    permission, argument, service
                 )
                 return
         self.ui.granted_permission_to_service_account(permission, argument, service)

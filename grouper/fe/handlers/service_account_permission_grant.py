@@ -50,6 +50,13 @@ class ServiceAccountPermissionGrant(GrouperHandler, GrantPermissionToServiceAcco
         self._form.permission.errors.append(f"Unknown permission {permission}")
         self._render_template(self._form, service, self._owner)
 
+    def grant_permission_to_service_account_failed_permission_already_granted(
+        self, permission: str, argument: str, service: str
+    ) -> None:
+        self._form.permission.errors.append(f"Permission {permission} with argument {argument} "
+                                            f"has already been granted to this service account")
+        self._render_template(self._form, service, self._owner)
+
     def grant_permission_to_service_account_failed_service_account_not_found(
         self, service: str
     ) -> None:

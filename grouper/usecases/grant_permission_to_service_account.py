@@ -1,11 +1,12 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
+from sqlalchemy.exc import IntegrityError
+
 from grouper.entities.permission import PermissionNotFoundException
 from grouper.usecases.authorization import Authorization
 from grouper.util import matches_glob
 
-from sqlalchemy.exc import IntegrityError
 
 if TYPE_CHECKING:
     from grouper.usecases.interfaces import (

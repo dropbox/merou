@@ -39,7 +39,9 @@ class GrantPermissionToServiceAccountUI(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def grant_permission_to_service_account_failed_permission_already_granted(self, permission, argument, service):
+    def grant_permission_to_service_account_failed_permission_already_granted(
+        self, permission, argument, service
+    ):
         # type: (str, str, str) -> None
         pass
 

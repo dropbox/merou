@@ -1,9 +1,13 @@
+import logging
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
+
+from sqlalchemy.exc import IntegrityError
 
 from grouper.entities.permission import PermissionNotFoundException
 from grouper.usecases.authorization import Authorization
 from grouper.util import matches_glob
+
 
 if TYPE_CHECKING:
     from grouper.usecases.interfaces import (
@@ -34,6 +38,13 @@ class GrantPermissionToServiceAccountUI(metaclass=ABCMeta):
     @abstractmethod
     def grant_permission_to_service_account_failed_permission_not_found(self, permission, service):
         # type: (str, str) -> None
+        pass
+
+    @abstractmethod
+    def grant_permission_to_service_account_failed_permission_already_granted(
+        self, permission, argument, service
+    ):
+        # type: (str, str, str) -> None
         pass
 
     @abstractmethod
@@ -141,6 +152,18 @@ class GrantPermissionToServiceAccount:
                     permission, service
                 )
                 return
+            except IntegrityError as err:
+                if "Duplicate entry" in str(err):
+                    logging.error(
+                        f"Duplicate entry for service account permission grant found for "
+                        f"permission {permission}, argument {argument}, service {service}"
+                    )
+                    self.ui.grant_permission_to_service_account_failed_permission_already_granted(
+                        permission, argument, service
+                    )
+                    return
+
+                raise err
         self.ui.granted_permission_to_service_account(permission, argument, service)
 
     def service_account_exists_with_owner(self, service, owner):

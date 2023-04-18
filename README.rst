@@ -10,6 +10,11 @@ merou
     :alt: Code Style: Black
     :target: https://github.com/ambv/black
 
+Deprecation
+-----------
+
+The Merou/Grouper project has been deprecated. You may continue to use and maintain forks of the project, but the Dropbox team will no longer contribute to this repository.
+
 Description
 -----------
 
